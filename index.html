@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.5.9 (Hunter's Path)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.6.0 (Hunter's Log)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -199,7 +199,78 @@
     .stat-label { font-family: 'Orbitron', sans-serif; color: #88ddff; font-size: 1.1rem; }
     .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
     .stat-points-info { text-align: center; color: #ffd700; margin-bottom: 20px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; }
-    
+
+    /* Status window tabs */
+    .status-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+    .status-tab {
+      flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid #00aaff33;
+      color: #5599cc; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; letter-spacing: 1px;
+      text-transform: uppercase; border-radius: 6px; cursor: pointer;
+    }
+    .status-tab.active { color: #40c0ff; border-color: #40c0ff; background: rgba(0,140,255,0.1); box-shadow: 0 0 10px rgba(0,140,255,0.2); }
+
+    /* Calendar */
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cal-arrow { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #40c0ff; cursor: pointer; opacity: 0.85; padding: 4px 8px; }
+    .cal-arrow.disabled { color: #444; opacity: 0.4; cursor: default; }
+    .cal-month-label { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #88ddff; letter-spacing: 1px; }
+    .cal-today-row { text-align: center; margin-bottom: 10px; }
+    .today-btn {
+      background: rgba(0,140,255,0.12); border: 1px solid #40c0ff; color: #40c0ff;
+      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 1px;
+      padding: 5px 14px; border-radius: 6px; text-transform: uppercase; cursor: pointer;
+    }
+    .today-btn:hover { background: rgba(0,140,255,0.25); }
+    .cal-streak-line {
+      text-align: center; font-family: 'Orbitron', sans-serif; font-size: 0.75rem;
+      color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.5); margin-bottom: 4px;
+    }
+    .cal-month-summary { text-align: center; font-size: 0.65rem; color: #88ccff; opacity: 0.85; margin-bottom: 14px; }
+    .weekday-row, .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .weekday-row { margin-bottom: 6px; }
+    .weekday-row div { text-align: center; font-size: 0.6rem; color: #5599cc; opacity: 0.7; }
+    .day-cell {
+      position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 4px; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: bold;
+      background: rgba(255,255,255,0.02); border: 2px solid transparent;
+    }
+    .day-cell.has-data { cursor: pointer; }
+    .day-cell.success { border-color: #40ffaa; color: #40ffaa; text-shadow: 0 0 6px rgba(64,255,170,0.5); box-shadow: 0 0 8px rgba(64,255,170,0.35); }
+    .day-cell.penalty { border-color: #ff4444; color: #ff4444; text-shadow: 0 0 6px rgba(255,68,68,0.5); box-shadow: 0 0 8px rgba(255,68,68,0.35); }
+    .day-cell.protected { border-color: #40c0ff; color: #40c0ff; text-shadow: 0 0 6px rgba(64,192,255,0.5); box-shadow: 0 0 8px rgba(64,192,255,0.35); }
+    .day-cell.today { color: #40c0ff; box-shadow: 0 0 6px rgba(64,192,255,0.2); }
+    .day-cell.none { border-color: #2a2f3a; color: #445; }
+    .day-cell .cal-star { position: absolute; top: -6px; right: -4px; font-size: 0.65rem; filter: drop-shadow(0 0 3px rgba(255,215,0,0.8)); }
+    .cal-tc { position: absolute; width: 7px; height: 7px; border: 2px solid #40c0ff; opacity: 0.9; }
+    .cal-tc.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+    .cal-tc.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+    .cal-tc.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+    .cal-tc.br2 { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+    .legend-toggle {
+      margin-top: 14px; font-family: 'Orbitron', sans-serif; font-size: 0.68rem;
+      letter-spacing: 1px; color: #5599cc; opacity: 0.8; cursor: pointer;
+      text-transform: uppercase; user-select: none;
+    }
+    .legend {
+      margin-top: 8px; padding-top: 10px; border-top: 1px solid #00aaff22;
+      display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.62rem; color: #88ccff;
+    }
+    .cal-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
+    .cal-today-swatch { position: relative; border: none !important; box-shadow: none !important; }
+    .cal-today-swatch .cal-tc { width: 3px; height: 3px; border-width: 1.5px; }
+    .cal-tooltip {
+      position: absolute; z-index: 20; width: 200px;
+      background: rgba(5,12,25,0.97);
+      background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.04) 0px, rgba(64,192,255,0.04) 1px, transparent 1px, transparent 3px);
+      border: 1px solid #40c0ff; border-radius: 6px; padding: 10px 12px;
+      box-shadow: 0 0 20px rgba(0,140,255,0.35); font-size: 0.68rem;
+    }
+    .cal-tooltip-header {
+      font-family: 'Orbitron', sans-serif; font-size: 0.55rem; letter-spacing: 2px;
+      color: #40c0ff; opacity: 0.8; margin-bottom: 5px; text-transform: uppercase;
+    }
+    .cal-tooltip-body { color: #e0f4ff; line-height: 1.4; }
+
     .close-status {
       display: block; width: 100%; margin-top: 15px; padding: 12px; background: transparent;
       border: 1px solid #40c0ff; color: #40c0ff; font-family: 'Orbitron', sans-serif;
@@ -428,29 +499,66 @@
 <div class="status-overlay" id="statusOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ХАРАКТЕРИСТИКИ</div>
-    <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
-    
-    <div class="stat-row">
-      <span class="stat-label">СИЛА (STR)</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valStr">10</span>
-        <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
+
+    <div class="status-tabs">
+      <button class="status-tab active" id="tabStatsBtn" onclick="switchStatusTab('stats')">Характеристики</button>
+      <button class="status-tab" id="tabCalendarBtn" onclick="switchStatusTab('calendar')">Календарь</button>
+    </div>
+
+    <div id="statsTabContent">
+      <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
+
+      <div class="stat-row">
+        <span class="stat-label">СИЛА (STR)</span>
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <span class="stat-value" id="valStr">10</span>
+          <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">ЛОВКОСТЬ (AGI)</span>
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <span class="stat-value" id="valAgi">10</span>
+          <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">ИНТЕЛЛЕКТ (INT)</span>
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <span class="stat-value" id="valInt">10</span>
+          <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
+        </div>
       </div>
     </div>
-    <div class="stat-row">
-      <span class="stat-label">ЛОВКОСТЬ (AGI)</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valAgi">10</span>
-        <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
+
+    <div id="calendarTabContent" style="display:none;">
+      <div class="cal-header">
+        <span class="cal-arrow" id="calPrevBtn" onclick="calShiftMonth(-1)">&#8592;</span>
+        <span class="cal-month-label" id="calMonthLabel">АВГУСТ 2026</span>
+        <span class="cal-arrow" id="calNextBtn" onclick="calShiftMonth(1)">&#8594;</span>
+      </div>
+      <div class="cal-today-row"><button class="today-btn" id="calTodayBtn" onclick="calGoToday()">Сегодня</button></div>
+      <div class="cal-streak-line" id="calStreakLine">Рекорд серии: 0 дней</div>
+      <div class="cal-month-summary" id="calMonthSummary">В этом месяце: выполнено 0 · штрафов 0 · под защитой 0</div>
+      <div class="weekday-row">
+        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+      </div>
+      <div class="day-grid" id="calDayGrid"></div>
+      <div class="legend-toggle" id="legendToggle" onclick="toggleCalLegend()">Обозначения <span id="legendArrow">▸</span></div>
+      <div class="legend" id="legendBody" style="display:none;">
+        <span><span class="cal-swatch" style="border:2px solid #40ffaa; box-shadow:0 0 5px rgba(64,255,170,0.5);"></span>Выполнено</span>
+        <span><span class="cal-swatch" style="border:2px solid #ff4444; box-shadow:0 0 5px rgba(255,68,68,0.5);"></span>Штраф</span>
+        <span><span class="cal-swatch" style="border:2px solid #40c0ff; box-shadow:0 0 5px rgba(64,192,255,0.5);"></span>Защищено</span>
+        <span><span class="cal-swatch cal-today-swatch"><span class="cal-tc tl"></span><span class="cal-tc tr"></span><span class="cal-tc bl"></span><span class="cal-tc br2"></span></span>Сегодня</span>
+        <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
+        <span>⭐ Новый уровень</span>
+      </div>
+      <div id="calTooltip" class="cal-tooltip" style="display:none;">
+        <div class="cal-tooltip-header">Система</div>
+        <div class="cal-tooltip-body" id="calTooltipText"></div>
       </div>
     </div>
-    <div class="stat-row">
-      <span class="stat-label">ИНТЕЛЛЕКТ (INT)</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valInt">10</span>
-        <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
-      </div>
-    </div>
+
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -649,7 +757,10 @@
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
         dailyNotices: oldData.dailyNotices || { morning: false, urgent: false, complete: false },
-        notifiedLimitBreakUnlock: typeof oldData.notifiedLimitBreakUnlock === 'boolean' ? oldData.notifiedLimitBreakUnlock : (oldData.level >= 3)
+        notifiedLimitBreakUnlock: typeof oldData.notifiedLimitBreakUnlock === 'boolean' ? oldData.notifiedLimitBreakUnlock : (oldData.level >= 3),
+        history: oldData.history || {},
+        bestStreak: oldData.bestStreak || 0,
+        pendingLevelUpToday: oldData.pendingLevelUpToday || 0
       };
     } else {
       isFreshInstall = true;
@@ -661,7 +772,8 @@
         insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
         lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, titlesUnlocked: ["Новичок"],
         playerName: "", dailyNotices: { morning: false, urgent: false, complete: false },
-        notifiedLimitBreakUnlock: false
+        notifiedLimitBreakUnlock: false,
+        history: {}, bestStreak: 0, pendingLevelUpToday: 0
       };
     }
   }
@@ -673,6 +785,9 @@
   data.dailyNotices.urgent = !!data.dailyNotices.urgent;
   data.dailyNotices.complete = !!data.dailyNotices.complete;
   if (typeof data.notifiedLimitBreakUnlock !== 'boolean') data.notifiedLimitBreakUnlock = data.level >= 3;
+  if (!data.history || typeof data.history !== 'object') data.history = {};
+  if (typeof data.bestStreak !== 'number') data.bestStreak = 0;
+  if (typeof data.pendingLevelUpToday !== 'number') data.pendingLevelUpToday = 0;
 
   let totalStats = JSON.parse(localStorage.getItem(STATS_KEY)) || null;
   if (!totalStats) {
@@ -738,6 +853,22 @@
 
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  const RU_MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  const RU_MONTHS_NOM = ["ЯНВАРЬ","ФЕВРАЛЬ","МАРТ","АПРЕЛЬ","МАЙ","ИЮНЬ","ИЮЛЬ","АВГУСТ","СЕНТЯБРЬ","ОКТЯБРЬ","НОЯБРЬ","ДЕКАБРЬ"];
+  const RU_WEEKDAYS_MON_FIRST = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+
+  // Date key uses the calendar date, independent of the 5am quest-reset boundary —
+  // the caller is responsible for passing the timestamp of the day that actually started.
+  function dateKeyFromTimestamp(ts) {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function formatDateRu(dateKey) {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    return `${d} ${RU_MONTHS_GEN[m-1]}`;
   }
 
   function sanitizePlayerName(raw) {
@@ -882,10 +1013,20 @@
     let dayRolled = false;
     while (now >= nextReset) {
       dayRolled = true;
-      if (!data.insurance) {
+      const dayKey = dateKeyFromTimestamp(data.lastReset);
+      let dayStatus;
+      if (data.insurance) {
+        dayStatus = 'protected';
+      } else {
         const result = applyPenaltyLogic();
-        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; }
+        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; }
+        else { dayStatus = 'success'; }
       }
+      const historyEntry = { status: dayStatus };
+      if (data.pendingLevelUpToday) historyEntry.level = data.pendingLevelUpToday;
+      data.history[dayKey] = historyEntry;
+      data.pendingLevelUpToday = 0;
+
       data.insurance = false;
       data.lastReset = nextReset;
       data.totalDays++;
@@ -922,6 +1063,7 @@
       return { loss, pct: Math.round(finalPen * 100) };
     } else {
       data.consecutiveDays++;
+      if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
       updateTitleStatus();
       return null;
     }
@@ -1144,6 +1286,7 @@
       }
     }
     if (leveled) {
+      data.pendingLevelUpToday = data.level;
       const p = document.createElement('div'); p.className = 'levelup-popup'; p.textContent = 'LEVEL UP';
       document.body.appendChild(p); setTimeout(() => p.remove(), 3000);
       const rankAfter = getRank(data.level).name;
@@ -1232,6 +1375,146 @@
     ['btnStr','btnAgi','btnInt'].forEach(id => document.getElementById(id).disabled = (data.statPoints <= 0));
   }
 
+  // ===== CALENDAR TAB =====
+  let calViewYear = null, calViewMonth = null; // calViewMonth is 0-indexed
+
+  function switchStatusTab(tab) {
+    document.getElementById('calTooltip').style.display = 'none';
+    document.getElementById('tabStatsBtn').classList.toggle('active', tab === 'stats');
+    document.getElementById('tabCalendarBtn').classList.toggle('active', tab === 'calendar');
+    document.getElementById('statsTabContent').style.display = (tab === 'stats') ? 'block' : 'none';
+    document.getElementById('calendarTabContent').style.display = (tab === 'calendar') ? 'block' : 'none';
+    if (tab === 'calendar') {
+      if (calViewYear === null) {
+        const now = new Date();
+        calViewYear = now.getFullYear();
+        calViewMonth = now.getMonth();
+      }
+      calRenderCalendar();
+    }
+  }
+
+  function calGoToday() {
+    const now = new Date();
+    calViewYear = now.getFullYear();
+    calViewMonth = now.getMonth();
+    calRenderCalendar();
+  }
+
+  function calShiftMonth(delta) {
+    const now = new Date();
+    let y = calViewYear, m = calViewMonth + delta;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    if (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth())) return;
+    calViewYear = y; calViewMonth = m;
+    calRenderCalendar();
+  }
+
+  function calRenderCalendar() {
+    document.getElementById('calTooltip').style.display = 'none';
+    const now = new Date();
+    const isCurrentMonth = (calViewYear === now.getFullYear() && calViewMonth === now.getMonth());
+    document.getElementById('calMonthLabel').textContent = `${RU_MONTHS_NOM[calViewMonth]} ${calViewYear}`;
+    document.getElementById('calNextBtn').classList.toggle('disabled', isCurrentMonth);
+
+    const todayKey = dateKeyFromTimestamp(data.lastReset);
+    const firstOfMonth = new Date(calViewYear, calViewMonth, 1);
+    const leadingBlank = (firstOfMonth.getDay() + 6) % 7; // Monday-first offset
+    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+
+    const grid = document.getElementById('calDayGrid');
+    grid.innerHTML = '';
+
+    let successCount = 0, penaltyCount = 0, protectedCount = 0;
+
+    for (let i = 0; i < leadingBlank; i++) {
+      const blank = document.createElement('div');
+      blank.style.visibility = 'hidden';
+      grid.appendChild(blank);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = `${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const entry = data.history[dateKey];
+      const cell = document.createElement('div');
+      let statusClass = 'none';
+      let detail = null;
+
+      if (dateKey === todayKey) {
+        statusClass = 'today';
+        detail = `${formatDateRu(dateKey)} — День ещё не завершён.`;
+      } else if (entry) {
+        statusClass = entry.status;
+        if (entry.status === 'success') { successCount++; detail = `${formatDateRu(dateKey)} — Задание выполнено.`; }
+        else if (entry.status === 'penalty') { penaltyCount++; detail = `${formatDateRu(dateKey)} — Штраф.`; }
+        else if (entry.status === 'protected') { protectedCount++; detail = `${formatDateRu(dateKey)} — Штраф предотвращён (Свиток).`; }
+        if (entry.level) detail += ` Получен ${entry.level}-й уровень.`;
+      }
+
+      cell.className = 'day-cell ' + statusClass + (detail ? ' has-data' : '');
+      cell.textContent = day;
+
+      if (statusClass === 'today') {
+        ['tl','tr','bl','br2'].forEach(pos => {
+          const c = document.createElement('span');
+          c.className = 'cal-tc ' + pos;
+          cell.appendChild(c);
+        });
+      }
+
+      if (entry && entry.level) {
+        const star = document.createElement('span');
+        star.className = 'cal-star';
+        star.textContent = '⭐';
+        cell.appendChild(star);
+      }
+
+      if (detail) {
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          calShowTooltip(cell, detail);
+        });
+      }
+
+      grid.appendChild(cell);
+    }
+
+    document.getElementById('calStreakLine').textContent = `Рекорд серии: ${data.bestStreak} дней`;
+    document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount}`;
+  }
+
+  function calShowTooltip(cell, text) {
+    const tooltip = document.getElementById('calTooltip');
+    document.getElementById('calTooltipText').textContent = text;
+    const root = cell.closest('.status-window');
+    const rootRect = root.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    let left = cellRect.left - rootRect.left + cellRect.width / 2 - 100;
+    left = Math.max(4, Math.min(left, root.clientWidth - 204));
+    let top = cellRect.top - rootRect.top + cellRect.height + 6;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+    tooltip.style.display = 'block';
+  }
+
+  function toggleCalLegend() {
+    const body = document.getElementById('legendBody');
+    const arrow = document.getElementById('legendArrow');
+    const isOpen = body.style.display !== 'none';
+    body.style.display = isOpen ? 'none' : 'flex';
+    arrow.textContent = isOpen ? '▸' : '▾';
+  }
+
+  document.addEventListener('click', (e) => {
+    const tooltip = document.getElementById('calTooltip');
+    if (tooltip && tooltip.style.display !== 'none') {
+      if (!e.target.closest('.day-cell') && !e.target.closest('#calTooltip')) {
+        tooltip.style.display = 'none';
+      }
+    }
+  });
+
   function bytesToBase64(jsonString) {
     const bytes = new TextEncoder().encode(jsonString);
     let binary = '';
@@ -1287,6 +1570,20 @@
       complete: !!(s.dailyNotices && s.dailyNotices.complete)
     };
 
+    const VALID_STATUSES = ['success', 'penalty', 'protected'];
+    const cleanHistory = {};
+    if (s.history && typeof s.history === 'object') {
+      for (const key in s.history) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) continue;
+        const entry = s.history[key];
+        if (!entry || typeof entry !== 'object' || !VALID_STATUSES.includes(entry.status)) continue;
+        const clean = { status: entry.status };
+        const lvl = sanitizeNumber(entry.level, 0, 1);
+        if (lvl > 0) clean.level = Math.floor(lvl);
+        cleanHistory[key] = clean;
+      }
+    }
+
     const cleanState = {
       level: Math.max(1, Math.floor(sanitizeNumber(s.level, 1, 1))),
       exp: sanitizeNumber(s.exp, 0),
@@ -1309,7 +1606,10 @@
       titlesUnlocked: cleanTitlesUnlocked,
       playerName: sanitizePlayerName(typeof s.playerName === 'string' ? s.playerName : ''),
       dailyNotices: cleanDailyNotices,
-      notifiedLimitBreakUnlock: !!s.notifiedLimitBreakUnlock
+      notifiedLimitBreakUnlock: !!s.notifiedLimitBreakUnlock,
+      history: cleanHistory,
+      bestStreak: sanitizeNumber(s.bestStreak, 0),
+      pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0)
     };
 
     const cleanTotal = {
@@ -1580,7 +1880,7 @@
         saveData(); location.reload();
     });
   };
-  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; };
+  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); switchStatusTab('stats'); document.getElementById('statusOverlay').style.display='flex'; };
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
 
   checkMissedDays();
