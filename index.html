@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SLDT">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0e17">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  
+  <title>Solo Leveling — Тренировочный счётчик v5.5.9 (Hunter's Path)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      min-height: 100vh;
+      background: #0a0e17;
+      color: #e0f7ff;
+      font-family: 'Roboto Mono', monospace;
+      background-image:
+        radial-gradient(circle at 15% 50%, rgba(0,140,255,0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(0,200,255,0.06) 0%, transparent 50%);
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* CUSTOM SCROLLBAR FIX */
+    .status-window::-webkit-scrollbar {
+      width: 6px;
+    }
+    .status-window::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    .status-window::-webkit-scrollbar-thumb {
+      background: rgba(64, 192, 255, 0.4);
+      border-radius: 10px;
+      border: 1px solid rgba(64, 192, 255, 0.2);
+    }
+    .status-window::-webkit-scrollbar-thumb:hover {
+      background: rgba(64, 192, 255, 0.7);
+      box-shadow: 0 0 10px rgba(64, 192, 255, 0.5);
+    }
+
+    .system-container {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px 12px 60px;
+      background: inherit;
+    }
+    .quest-panel {
+      width: 100%;
+      max-width: 620px;
+      background: rgba(15,25,45,0.82);
+      background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.03) 0px, rgba(64,192,255,0.03) 1px, transparent 1px, transparent 3px);
+      border: 1px solid #00aaff44;
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      position: relative;
+      box-shadow:
+        0 0 40px rgba(0,120,255,0.25),
+        inset 0 0 20px rgba(0,80,200,0.12);
+      overflow: hidden;
+    }
+    /* HUD corner brackets — reused on the main panel and on modal windows */
+    .hud-frame { position: relative; }
+    .hud-frame::before, .hud-frame::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+      z-index: 6;
+      opacity: 0.8;
+    }
+    .hud-frame::before {
+      top: 7px; left: 7px;
+      border-top: 2px solid #40c0ff;
+      border-left: 2px solid #40c0ff;
+    }
+    .hud-frame::after {
+      bottom: 7px; right: 7px;
+      border-bottom: 2px solid #40c0ff;
+      border-right: 2px solid #40c0ff;
+    }
+    .header {
+      background: linear-gradient(180deg, #001833 0%, #001122 100%);
+      padding: 16px 20px;
+      border-bottom: 1px solid #00aaff33;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.7rem;
+      color: #40c0ff;
+      text-shadow: 0 0 12px #00aaffaa;
+      letter-spacing: 1.5px;
+    }
+    .rank-info {
+      text-align: right;
+      font-size: 1.05rem;
+      line-height: 1.35;
+      min-width: 180px;
+      cursor: pointer;
+    }
+    .rank { font-weight: bold; text-shadow: 0 0 10px currentColor; }
+    .rank.e { color: #aaaaaa; text-shadow: 0 0 8px #aaaaaa; }
+    .rank.d { color: #88ffcc; }
+    .rank.c { color: #40ffaa; }
+    .rank.b { color: #00ff88; }
+    .rank.a { color: #00ddff; text-shadow: 0 0 12px #00ddff; }
+    .rank.s { color: #0088ff; text-shadow: 0 0 16px #0088ff; }
+    .rank.national { color: #ffaa00; text-shadow: 0 0 16px #ffaa00; }
+    .rank.sss { color: #cc00ff; text-shadow: 0 0 20px #cc00ff; animation: auraPulseSss 2.4s ease-in-out infinite; }
+    .rank.monarch { color: #aa00ff; text-shadow: 0 0 24px #aa00ff, 0 0 40px #6600aa; animation: auraPulseMonarch 2.2s ease-in-out infinite; }
+    @keyframes auraPulseSss {
+      0%, 100% { text-shadow: 0 0 16px #cc00ff; }
+      50% { text-shadow: 0 0 28px #cc00ff, 0 0 12px #ff66ff; }
+    }
+    @keyframes auraPulseMonarch {
+      0%, 100% { text-shadow: 0 0 24px #aa00ff, 0 0 40px #6600aa; }
+      50% { text-shadow: 0 0 36px #aa00ff, 0 0 58px #6600aa; }
+    }
+    .exp { font-size: 0.85rem; color: #88ffcc; }
+    .credits { font-size: 0.85rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
+    .title-display { font-size: 0.75rem; color: #40ffaa; font-style: italic; opacity: 0.9; margin-top: 2px; }
+    .player-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #88ddff;
+      letter-spacing: 0.5px;
+      opacity: 0.9;
+      margin-bottom: 3px;
+    }
+
+    .reset-timer {
+      text-align: center;
+      width: 220px;
+      min-width: 180px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(0, 40, 80, 0.5);
+      border: 1px solid #00448866;
+      transition: all 0.4s ease;
+      overflow: hidden;
+    }
+    .reset-label { font-size: 0.9rem; color: #88ddff; margin-bottom: 4px; }
+    .reset-time {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #40c0ff;
+      text-shadow: 0 0 12px #40c0ffcc;
+      letter-spacing: 2px;
+      white-space: nowrap;
+      width: 165px;
+      margin: 0 auto;
+      text-align: left;
+      position: relative;
+      left: 2px;
+    }
+    .reset-timer.warning {
+      background: rgba(80,20,20,0.6);
+      border-color: #ff4444aa;
+      box-shadow: 0 0 20px rgba(255,68,68,0.5);
+      animation: pulse-bg 1.8s infinite;
+    }
+    .reset-timer.warning .reset-time {
+      color: #ff7777;
+      text-shadow: 0 0 16px #ff4444;
+      animation: pulse-text 1.2s infinite alternate;
+    }
+
+    .status-overlay {
+      position: fixed; inset: 0; background: rgba(0,5,15,0.95);
+      display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(10px);
+    }
+    .status-window {
+      width: 95%; max-width: 420px; background: #0d1a2d; border: 2px solid #40c0ff;
+      background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.035) 0px, rgba(64,192,255,0.035) 1px, transparent 1px, transparent 3px);
+      border-radius: 12px; padding: 25px; box-shadow: 0 0 40px rgba(0,136,255,0.4);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .status-header { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid #00aaff22; }
+    .stat-label { font-family: 'Orbitron', sans-serif; color: #88ddff; font-size: 1.1rem; }
+    .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
+    .stat-points-info { text-align: center; color: #ffd700; margin-bottom: 20px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; }
+    
+    .close-status {
+      display: block; width: 100%; margin-top: 15px; padding: 12px; background: transparent;
+      border: 1px solid #40c0ff; color: #40c0ff; font-family: 'Orbitron', sans-serif;
+      border-radius: 8px; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
+    }
+    .close-status:hover { background: rgba(0,170,255,0.2); box-shadow: 0 0 15px #00aaff; }
+    
+    .stat-add-btn {
+      width: 32px; height: 32px; padding: 0; min-width: auto;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: bold;
+    }
+    .quest-list { padding: 16px 18px; }
+    .quest-item {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid #00448855;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .quest-name { font-size: 1.05rem; color: #ccffff; }
+    .quest-progress { text-align: right; min-width: 160px; }
+    .counter { font-size: 1.5rem; font-weight: bold; color: #40ffaa; letter-spacing: 1px; }
+    .target { font-size: 0.85rem; color: #88ffccaa; }
+    .reward { font-size: 0.8rem; color: #ffd700cc; margin-top: 2px; }
+    .buttons { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; flex-wrap: wrap; }
+    
+    button {
+      background: #002b55;
+      border: 1px solid #0088ff66;
+      color: #88ddff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      min-width: 52px;
+      touch-action: manipulation;
+    }
+    button:hover { background: #004488; border-color: #00aaff; color: white; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .stats-container {
+      background: rgba(0,0,0,0.4);
+      border-top: 1px solid #00448866;
+      padding: 16px 20px 8px;
+      font-size: 0.9rem;
+      color: #aaddff;
+      text-align: left;
+      padding-left: 24px;
+    }
+    .stats-container div { margin-bottom: 6px; }
+    .stats-container .stat-line { display: flex; align-items: baseline; }
+    .stats-container .stat-line span { display: inline-block; min-width: 150px; }
+    .stats-container strong { color: #40ffaa; font-family: 'Roboto Mono', monospace; text-align: left; }
+    .stats-days { color: #40c0ff !important; }
+    .stats-penalties { color: #ff7777 !important; }
+
+    .sub-menu-btns {
+      display: flex; gap: 10px; margin-top: 15px; padding-bottom: 10px;
+    }
+    .sub-menu-btns button {
+      flex: 1; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; 
+      background: rgba(0, 136, 255, 0.05); border: 1px solid #0088ff44;
+      letter-spacing: 1px; padding: 10px 5px;
+    }
+
+    .reset-container { text-align: center; padding: 12px 20px 24px; width: 100%; }
+    .reset-all {
+      background: #550000;
+      border: 1px solid #ff444466;
+      color: #ffaaaa;
+      margin: 0 auto;
+      display: block;
+      padding: 8px 20px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 180px;
+      transition: all 0.2s;
+      position: relative;
+      z-index: 100; 
+      touch-action: manipulation; 
+      -webkit-appearance: none;
+    }
+    .reset-all:hover { background: #880000 !important; border-color: #ff0000 !important; color: #ffffff !important; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+    .reset-all:active { transform: scale(0.96); background: #aa0000 !important; }
+
+    .restore-link {
+        display: inline-block; margin-top: 15px; color: #40c0ff; font-size: 0.75rem; 
+        text-decoration: underline; cursor: pointer; opacity: 0.7; transition: 0.3s;
+    }
+    .restore-link:hover { opacity: 1; color: #00ff88; }
+
+    /* BACKUP MODAL */
+    .backup-section { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #00aaff22; }
+    .backup-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .backup-section-title { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #40c0ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .backup-section-title.danger { color: #ff7777; }
+    .backup-summary { font-size: 0.75rem; color: #88ccff; opacity: 0.85; margin-bottom: 10px; line-height: 1.5; }
+    .backup-action-btn {
+      width: 100%; padding: 10px; background: rgba(0,140,255,0.15); border: 1px solid #40c0ff;
+      color: #40c0ff; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 1px;
+      border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+    }
+    .backup-action-btn:hover { background: rgba(0,140,255,0.3); box-shadow: 0 0 15px rgba(0,140,255,0.3); }
+    .backup-section input[type="file"] { display: none; }
+
+    .danger-warning-step { text-align: center; }
+    .danger-icon { font-size: 2rem; color: #ff5555; text-shadow: 0 0 15px rgba(255,0,0,0.6); margin-bottom: 10px; }
+    .danger-text { font-size: 0.85rem; color: #ffbbbb; margin-bottom: 14px; line-height: 1.4; }
+    .danger-text strong { color: #ffe066; letter-spacing: 1px; }
+    .danger-list { list-style: none; padding: 0; margin: 0 0 14px; text-align: left; }
+    .danger-list li { font-size: 0.8rem; color: #ffcccc; padding: 4px 0 4px 18px; position: relative; }
+    .danger-list li::before { content: '—'; position: absolute; left: 0; color: #ff5555; }
+    .danger-btn-row { display: flex; gap: 10px; }
+    .danger-btn-cancel, .danger-btn-continue, .danger-btn-confirm, .confirm-btn-continue {
+      flex: 1; padding: 10px; border-radius: 8px; font-family: 'Orbitron', sans-serif;
+      font-size: 0.72rem; letter-spacing: 1px; cursor: pointer; text-transform: uppercase;
+    }
+    .danger-btn-cancel { background: rgba(255,255,255,0.05); border: 1px solid #444; color: #aaa; }
+    .danger-btn-cancel:hover { background: rgba(255,255,255,0.1); }
+    .danger-btn-continue { background: rgba(255,68,68,0.15); border: 1px solid #ff4444; color: #ff8888; }
+    .danger-btn-continue:hover { background: rgba(255,68,68,0.3); }
+    .danger-btn-confirm { background: #550000; border: 1px solid #ff0000; color: #ffaaaa; }
+    .danger-btn-confirm:disabled { opacity: 0.35; cursor: not-allowed; }
+    .danger-btn-confirm:not(:disabled):hover { background: #880000; box-shadow: 0 0 15px rgba(255,0,0,0.5); }
+    .confirm-btn-continue { background: rgba(0,140,255,0.15); border: 1px solid #40c0ff; color: #40c0ff; }
+    .confirm-btn-continue:hover { background: rgba(0,140,255,0.3); box-shadow: 0 0 15px rgba(0,140,255,0.3); }
+    .danger-input {
+      width: 100%; padding: 10px; margin-bottom: 14px; text-align: center; font-family: 'Orbitron', sans-serif;
+      font-size: 1rem; letter-spacing: 3px; background: rgba(0,0,0,0.4); border: 1px solid #ff4444;
+      border-radius: 8px; color: #ff8888; text-transform: uppercase; box-sizing: border-box;
+    }
+    .danger-input:focus { outline: none; box-shadow: 0 0 10px rgba(255,68,68,0.4); }
+    .code-input-area {
+      width: 100%; min-height: 80px; padding: 10px; margin-bottom: 10px; resize: vertical;
+      background: rgba(0,0,0,0.4); border: 1px solid #40c0ff; border-radius: 8px;
+      color: #88ddff; font-family: 'Roboto Mono', monospace; font-size: 0.7rem; box-sizing: border-box;
+    }
+    .code-input-area:focus { outline: none; box-shadow: 0 0 10px rgba(64,192,255,0.4); }
+
+    /* ANIMATIONS & EFFECTS */
+    @keyframes flash { 0% { background: rgba(0,255,136,0.35); } 100% { background: transparent; } }
+    @keyframes completeText { 0% {opacity:0; transform:scale(0.4) translateY(30px);} 40% {opacity:1; transform:scale(1.35) translateY(0);} 100% {opacity:0; transform:scale(2) translateY(-60px);} }
+    @keyframes levelUp { 0% {opacity:0; transform:scale(0.3) rotate(-20deg);} 25% {opacity:1; transform:scale(1.5) rotate(12deg);} 75% {transform:scale(1.1) rotate(-8deg);} 100% {opacity:0; transform:scale(2.2) rotate(0);} }
+    @keyframes pulse-bg { 0% { background: rgba(80,20,20,0.6); } 50% { background: rgba(120,30,30,0.8); } 100% { background: rgba(80,20,20,0.6); } }
+    @keyframes pulse-text { 0% { opacity: 0.8; } 100% { opacity: 1; text-shadow: 0 0 20px #ff4444; } }
+    
+    .completion-effect { position:absolute; inset:0; pointer-events:none; animation:flash 1.2s ease-out forwards; z-index: 1; }
+    .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-size:1.8rem; font-weight:bold; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
+    .levelup-popup { position:fixed; top:20%; left:50%; transform:translateX(-50%); color:#ffd700; font-family:'Orbitron',sans-serif; font-size:4.5rem; text-shadow:0 0 30px #ffd700; pointer-events:none; animation:levelUp 3s forwards; z-index:100; }
+
+    @keyframes systemPopupIn {
+      0% { opacity: 0; transform: translate(-50%, -46%) scale(0.92); }
+      12% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      85% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -54%) scale(0.98); }
+    }
+    .system-popup {
+      position: fixed; top: 64%; left: 50%; transform: translate(-50%, -50%);
+      width: min(320px, 82vw);
+      background: rgba(5,12,25,0.94);
+      background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.04) 0px, rgba(64,192,255,0.04) 1px, transparent 1px, transparent 3px);
+      border: 1px solid #40c0ff;
+      border-radius: 4px;
+      padding: 14px 20px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 2000;
+      animation: systemPopupIn 3s ease forwards;
+      box-shadow: 0 0 25px rgba(0,140,255,0.35), inset 0 0 15px rgba(0,80,200,0.15);
+    }
+    .system-popup-header {
+      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 4px;
+      color: #40c0ff; opacity: 0.85; margin-bottom: 8px; text-transform: uppercase;
+    }
+    .system-popup-body {
+      font-family: 'Orbitron', sans-serif; font-size: 1.05rem; color: #ffd700;
+      text-shadow: 0 0 12px rgba(255,215,0,0.5); margin-bottom: 4px;
+    }
+    .system-popup-body.tone-warn { color: #ffaa44; text-shadow: 0 0 12px rgba(255,170,68,0.5); }
+    .system-popup-body.tone-danger { color: #ff5555; text-shadow: 0 0 12px rgba(255,68,68,0.5); }
+    .system-popup-sub { font-size: 0.75rem; color: #88ddff; opacity: 0.85; }
+
+    /* SHOP/INV SPECIFIC */
+    .section-title { font-size: 0.8rem; color: #40c0ff; margin: 15px 0 10px; font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid #40c0ff; padding-left: 8px; }
+    .item-card { background: rgba(0,0,0,0.4); border: 1px solid #00aaff33; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .item-icon { font-size: 1.4rem; min-width: 40px; text-align: center; }
+    .item-info { flex: 1; min-width: 0; }
+    .item-name { color: #40c0ff; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; }
+    .item-desc { color: #88ddffaa; font-size: 0.75rem; margin-top: 2px; line-height: 1.2; }
+    .item-price { color: #ffd700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; border: 1px solid #ffd70044; padding: 5px 8px; border-radius: 4px; background: rgba(255,215,0,0.05); flex-shrink: 0; }
+    .use-btn { 
+      background: #004422; border: 1px solid #00ff8866; color: #00ff88; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; 
+      min-width: auto; padding: 6px 8px; text-transform: uppercase; border-radius: 6px; flex-shrink: 0; white-space: nowrap;
+    }
+    .use-btn:hover { background: #006633; border-color: #00ff88; }
+
+    #limitBreakBtn {
+      width: 100%; padding: 12px; background: rgba(100, 100, 100, 0.1); border: 1px solid #444; color: #666; font-family: 'Orbitron', sans-serif; cursor: not-allowed; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease; border-radius: 12px; font-size: 0.85rem;
+    }
+    #limitBreakBtn.ready {
+      background: rgba(0,140,255,0.2);
+      border-color: #008cff;
+      color: #40c0ff;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 140, 255, 0.3);
+    }
+
+    @media (max-width: 600px) {
+      .system-container { padding: 16px 10px 60px; }
+      .header { flex-direction: column; align-items: stretch; text-align: center; gap: 12px; }
+      .title { font-size: 1.5rem; }
+      .rank-info { text-align: center; min-width: auto; font-size: 1rem; }
+      .reset-timer { width: 100%; max-width: none; }
+      .reset-time { font-size: 1.8rem; }
+      .item-card { padding: 8px; gap: 6px; }
+      .item-icon { min-width: 30px; font-size: 1.2rem; }
+      .use-btn { padding: 5px 6px; font-size: 0.65rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="status-overlay" id="statusOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">ХАРАКТЕРИСТИКИ</div>
+    <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
+    
+    <div class="stat-row">
+      <span class="stat-label">СИЛА (STR)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valStr">10</span>
+        <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
+      </div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">ЛОВКОСТЬ (AGI)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valAgi">10</span>
+        <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
+      </div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">ИНТЕЛЛЕКТ (INT)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valInt">10</span>
+        <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
+      </div>
+    </div>
+    <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="shopOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header" id="shopHeader">МАГАЗИН СИСТЕМЫ</div>
+    <div id="shopContent"></div>
+    <button class="close-status" onclick="document.getElementById('shopOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="invOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">ИНВЕНТАРЬ</div>
+    <div id="invContent"></div>
+    <button class="close-status" onclick="document.getElementById('invOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="backupOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">АРХИВ СИСТЕМЫ</div>
+    <div id="backupContent"></div>
+    <button class="close-status" onclick="closeBackupModal()">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="penaltyOverlay">
+  <div class="status-window hud-frame" style="border-color:#ff4444; box-shadow: 0 0 40px rgba(255,68,68,0.4);">
+    <div class="status-header" style="color:#ff5555; text-shadow: 0 0 10px rgba(255,68,68,0.6);">ШТРАФ СИСТЕМЫ</div>
+    <div id="penaltyContent"></div>
+    <button class="close-status" onclick="document.getElementById('penaltyOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="confirmOverlay" style="z-index: 1500;">
+  <div class="status-window hud-frame">
+    <div class="status-header">СИСТЕМА</div>
+    <div id="confirmContent"></div>
+  </div>
+</div>
+
+<div class="status-overlay" id="nameOverlay" style="z-index: 1500;">
+  <div class="status-window hud-frame">
+    <div class="status-header">СИСТЕМА АКТИВИРОВАНА</div>
+    <div class="danger-warning-step">
+      <div class="danger-text" style="color:#a8d8ff;">Назовите себя, Игрок.</div>
+      <input type="text" id="playerNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" placeholder="Имя">
+      <div class="danger-btn-row">
+        <button class="danger-btn-cancel" onclick="skipPlayerName()">Пропустить</button>
+        <button class="confirm-btn-continue" onclick="submitPlayerName()">Подтвердить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="system-container">
+  <div class="quest-panel hud-frame">
+    <div class="header">
+      <div class="title">ЕЖЕДНЕВНЫЕ ЗАДАНИЯ</div>
+      <div class="rank-info" id="rankInfoBtn">
+        <div class="player-name" id="playerNameDisplay">Игрок</div>
+        <div class="rank" id="rankDisplay">Ранг: E-Rank (Уровень: 1)</div>
+        <div class="title-display" id="titleDisplay">Новичок</div>
+        <div class="exp">EXP: <span id="exp">0</span> / <span id="expToNext">1000</span></div>
+        <div class="credits">Кредиты: <span id="creditsVal">0</span> ◈</div>
+      </div>
+      <div class="reset-timer" id="resetTimerContainer">
+        <div class="reset-label">Сброс заданий через</div>
+        <div class="reset-time" id="timer">00:00:00</div>
+      </div>
+    </div>
+    <div class="quest-list">
+      <div class="quest-item" data-id="pushups" data-target="100" data-exp="80">
+        <div class="quest-name">Отжимания</div>
+        <div class="quest-progress">
+          <div class="counter" id="pushups">0</div>
+          <div class="target">/ 100</div>
+          <div class="reward">+80 EXP</div>
+          <div class="buttons">
+            <button class="add" data-value="1">+1</button>
+            <button class="add" data-value="5">+5</button>
+            <button class="add" data-value="10">+10</button>
+          </div>
+        </div>
+      </div>
+      <div class="quest-item" data-id="squats" data-target="120" data-exp="90">
+        <div class="quest-name">Приседания</div>
+        <div class="quest-progress">
+          <div class="counter" id="squats">0</div>
+          <div class="target">/ 120</div>
+          <div class="reward">+90 EXP</div>
+          <div class="buttons">
+            <button class="add" data-value="1">+1</button>
+            <button class="add" data-value="5">+5</button>
+            <button class="add" data-value="10">+10</button>
+          </div>
+        </div>
+      </div>
+      <div class="quest-item" data-id="pullups" data-target="40" data-exp="120">
+        <div class="quest-name">Подтягивания</div>
+        <div class="quest-progress">
+          <div class="counter" id="pullups">0</div>
+          <div class="target">/ 40</div>
+          <div class="reward">+120 EXP</div>
+          <div class="buttons">
+            <button class="add" data-value="1">+1</button>
+            <button class="add" data-value="5">+5</button>
+            <button class="add" data-value="10">+10</button>
+          </div>
+        </div>
+      </div>
+      <div class="quest-item" data-id="press" data-target="100" data-exp="80">
+        <div class="quest-name">Пресс</div>
+        <div class="quest-progress">
+          <div class="counter" id="press">0</div>
+          <div class="target">/ 100</div>
+          <div class="reward">+80 EXP</div>
+          <div class="buttons">
+            <button class="add" data-value="1">+1</button>
+            <button class="add" data-value="10">+10</button>
+            <button class="add" data-value="20">+20</button>
+          </div>
+        </div>
+      </div>
+      <div class="quest-item" data-id="steps" data-target="10000" data-exp="150">
+        <div class="quest-name">Пробежка / шаги</div>
+        <div class="quest-progress">
+          <div class="counter" id="steps">0</div>
+          <div class="target">/ 10000</div>
+          <div class="reward">+150 EXP</div>
+          <div class="buttons">
+            <button class="add" data-value="100">+100</button>
+            <button class="add" data-value="500">+500</button>
+            <button class="add" data-value="1000">+1000</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stats-container" id="stats">
+      <div>Общий прогресс за всё время:</div>
+      <div class="stat-line"><span>Отжимания:</span><strong id="totalPushups">0</strong></div>
+      <div class="stat-line"><span>Приседания:</span><strong id="totalSquats">0</strong></div>
+      <div class="stat-line"><span>Подтягивания:</span><strong id="totalPullups">0</strong></div>
+      <div class="stat-line"><span>Пресс:</span><strong id="totalPress">0</strong></div>
+      <div class="stat-line"><span>Шаги:</span><strong id="totalSteps">0</strong></div>
+      <div style="height: 12px;"></div>
+      <div class="stat-line"><span>Всего дней:</span><strong class="stats-days" id="totalDays">0</strong></div>
+      <div class="stat-line"><span>Всего штрафов:</span><strong class="stats-penalties" id="totalPenalties">0</strong></div>
+
+      <div class="sub-menu-btns">
+        <button onclick="openShop()">МАГАЗИН</button>
+        <button onclick="openInv()">ИНВЕНТАРЬ</button>
+        <button onclick="openBackupModal()">АРХИВ</button>
+      </div>
+    </div>
+        <div class="limit-break-container" id="limitBreakContainer" style="padding: 0 20px 28px; margin-top: 15px; display: none;">
+      <button id="limitBreakBtn">
+        ПРЕОДОЛЕНИЕ ЛИМИТА
+        <div id="limitStatus" style="font-size: 0.55rem; margin-top: 2px; opacity: 0.7;">Завершите все текущие задания</div>
+      </button>
+    </div>
+  </div> 
+</div> 
+
+<script>
+  const STORAGE_KEY = 'sl_daily_v5_5_0';
+  const STATS_KEY = 'sl_total_stats_v5_5_0';
+  const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
+  const PREV_STATS_KEYS = ['sl_total_stats_v5_4_0', 'sl_total_stats_v5_3_3', 'sl_total_stats_v5_1_9', 'sl_total_stats_v5_1_8'];
+
+  function getLastResetThreshold(date) {
+    const d = new Date(date);
+    d.setHours(5, 0, 0, 0);
+    if (d.getTime() > date) d.setDate(d.getDate() - 1);
+    return d.getTime();
+  }
+
+  let isFreshInstall = false;
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  if (!data) {
+    let oldData = null;
+    for (let key of PREV_KEYS) {
+        let found = localStorage.getItem(key);
+        if (found) { oldData = JSON.parse(found); break; }
+    }
+    if (oldData) {
+      data = { 
+        ...oldData, 
+        consumables: oldData.consumables || [], 
+        inventory: oldData.inventory || [],
+        lastExpLoss: oldData.lastExpLoss || 0,
+        limitBreaksCount: oldData.limitBreaksCount || 0,
+        limitBreaksToday: oldData.limitBreaksToday || 0,
+        titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
+        playerName: oldData.playerName || "",
+        dailyNotices: oldData.dailyNotices || { morning: false, urgent: false, complete: false },
+        notifiedLimitBreakUnlock: typeof oldData.notifiedLimitBreakUnlock === 'boolean' ? oldData.notifiedLimitBreakUnlock : (oldData.level >= 3)
+      };
+    } else {
+      isFreshInstall = true;
+      data = {
+        level: 1, exp: 0, lastReset: getLastResetThreshold(Date.now()),
+        completed: {}, totalDays: 0, totalPenalties: 0,
+        statPoints: 0, stats: { str: 10, agi: 10, int: 10 },
+        isGoalMet: false, credits: 0, inventory: [], consumables: [], 
+        insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
+        lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, titlesUnlocked: ["Новичок"],
+        playerName: "", dailyNotices: { morning: false, urgent: false, complete: false },
+        notifiedLimitBreakUnlock: false
+      };
+    }
+  }
+  // Defensive: data saved by an earlier build won't have these fields yet.
+  if (typeof data.limitBreaksToday !== 'number') data.limitBreaksToday = 0;
+  if (typeof data.playerName !== 'string') data.playerName = "";
+  if (!data.dailyNotices || typeof data.dailyNotices !== 'object') data.dailyNotices = {};
+  data.dailyNotices.morning = !!data.dailyNotices.morning;
+  data.dailyNotices.urgent = !!data.dailyNotices.urgent;
+  data.dailyNotices.complete = !!data.dailyNotices.complete;
+  if (typeof data.notifiedLimitBreakUnlock !== 'boolean') data.notifiedLimitBreakUnlock = data.level >= 3;
+
+  let totalStats = JSON.parse(localStorage.getItem(STATS_KEY)) || null;
+  if (!totalStats) {
+    for (let key of PREV_STATS_KEYS) {
+      const found = localStorage.getItem(key);
+      if (found) { totalStats = JSON.parse(found); break; }
+    }
+  }
+  if (!totalStats) {
+    totalStats = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
+  }
+
+  const ARTEFACTS = {
+    "ring_speed": { name: "Кольцо Спешки", icon: "💍", desc: "Пассивно: +10% Кредитов за шаги", level: 10 },
+    "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "Пассивно: Штрафы снижены на 15%", level: 20 },
+    "medal_dev": { name: "Медаль Развития", icon: "🎖", desc: "Пассивно: +2 очка статов при Lvl Up", level: 30 }
+  };
+
+  const TITLES_DB = {
+    "Новичок": { icon: "🔰", desc: "Статус начинающего охотника. Без бонусов." },
+    "Пробужденный": { icon: "✨", desc: "Вы осознали свою силу. Бонус: +1% к EXP." },
+    "Целеустремленный": { icon: "🔥", desc: "7 дней без пропусков. Бонус: +5% EXP." },
+    "Преодолевший предел": { icon: "⚡", desc: "Активировать Limit Break 5 раз. Бонус: +10% Кредитов." },
+    "Вечный странник": { icon: "👣", desc: "Набрать 100,000 шагов суммарно. Бонус: +10% EXP за шаги." }
+  };
+
+  const SHOP_CATALOG = {
+    "elixir": { name: "Эликсир Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500 },
+    "scroll": { name: "Свиток Иммунитета", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000 },
+    "potion": { name: "Зелье Стойкости", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800 }
+  };
+
+  const SYSTEM_NOTICES = {
+    morning: [
+      "Новый день начался. Ежедневное задание получено.",
+      "Система: Получено новое задание на сегодня.",
+      "Доступно новое задание. Слабость нужно превращать в силу ежедневно."
+    ],
+    urgent: [
+      "До сброса задания осталось менее 2 часов. Норма не выполнена.",
+      "Внимание: время истекает. Задание под угрозой срыва.",
+      "Система фиксирует риск невыполнения задания. Осталось меньше 2 часов."
+    ],
+    complete: [
+      "Ежедневное задание полностью выполнено. Хорошая работа.",
+      "Норма дня закрыта. Система одобряет ваш прогресс.",
+      "Задание выполнено. Слабость отступает."
+    ],
+    limitBreakUnlock: [
+      "Новая способность разблокирована: Преодоление лимита.",
+      "Достигнут 3-й уровень. Открыт доступ к Преодолению лимита."
+    ]
+  };
+
+  function pickRandomNotice(pool) {
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(STATS_KEY, JSON.stringify(totalStats));
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  function sanitizePlayerName(raw) {
+    if (typeof raw !== 'string') return '';
+    return raw.replace(/[<>"'`]/g, '').trim().slice(0, 20);
+  }
+
+  function openNameModal() {
+    document.getElementById('nameOverlay').style.display = 'flex';
+  }
+
+  function skipPlayerName() {
+    document.getElementById('nameOverlay').style.display = 'none';
+    render();
+  }
+
+  function submitPlayerName() {
+    const field = document.getElementById('playerNameInput');
+    data.playerName = sanitizePlayerName(field ? field.value : '');
+    saveData();
+    document.getElementById('nameOverlay').style.display = 'none';
+    render();
+  }
+
+  // Removes only this app's own keys (current + all known previous versions),
+  // never touches anything else that might live in localStorage on this origin.
+  function clearAppStorage() {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STATS_KEY);
+    PREV_KEYS.forEach(k => localStorage.removeItem(k));
+    PREV_STATS_KEYS.forEach(k => localStorage.removeItem(k));
+  }
+
+  function getRank(level) {
+    if (level >= 100) return { name: "Shadow Monarch", class: "monarch" };
+    if (level >= 80)  return { name: "SSS-Rank", class: "sss" };
+    if (level >= 60)  return { name: "National Level", class: "national" };
+    if (level >= 50)  return { name: "S-Rank", class: "s" };
+    if (level >= 40)  return { name: "A-Rank", class: "a" };
+    if (level >= 30)  return { name: "B-Rank", class: "b" };
+    if (level >= 20)  return { name: "C-Rank", class: "c" };
+    if (level >= 10)  return { name: "D-Rank", class: "d" };
+    return { name: "E-Rank", class: "e" };
+  }
+
+  function getExpToNext(lvl) { return Math.floor(1000 * Math.pow(1.15, lvl - 1)); }
+
+  // Beginner ramp: at level 1 targets are half of the normal formula, rising
+  // linearly to 100% by level 10. From level 10 onward, no discount at all.
+  function getBeginnerMultiplier(lvl) {
+    if (lvl >= 10) return 1;
+    if (lvl <= 1) return 0.5;
+    return 0.5 + 0.5 * (lvl - 1) / 9;
+  }
+
+  function getDynamicTarget(base, lvl) {
+    return Math.floor(base * (1 + (lvl - 1) * 0.05) * getBeginnerMultiplier(lvl));
+  }
+  
+  function getDynamicExp(base, lvl, id) { 
+    let mul = 1 + (lvl - 1) * 0.05;
+    if (data.activeTitle === "Пробужденный") mul += 0.01; 
+    const bonusInt = Math.max(0, data.stats.int - 10);
+    mul += (bonusInt * 0.01);
+    if (data.activeTitle === "Целеустремленный") mul += 0.05;
+    if (data.activeTitle === "Вечный странник" && id === "steps") mul += 0.10;
+    return Math.floor(base * mul);
+  }
+
+  // Shared "are today's 5 quests all done" check, used by Limit Break gating,
+  // the penalty logic, and the completion notice.
+  function allQuestsDone() {
+    const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+    for (let id in targets) {
+      if ((data.completed[id] || 0) < getDynamicTarget(targets[id], data.level)) return false;
+    }
+    return true;
+  }
+
+  let pendingConfirmAction = null;
+
+  function showConfirm(message, onConfirm) {
+    pendingConfirmAction = onConfirm;
+    document.getElementById('confirmContent').innerHTML = `
+      <div class="danger-warning-step">
+        <div class="danger-text" style="color:#a8d8ff;">${escapeHtml(message)}</div>
+        <div class="danger-btn-row">
+          <button class="danger-btn-cancel" onclick="closeConfirmModal()">Отмена</button>
+          <button class="confirm-btn-continue" onclick="runConfirmedAction()">Подтвердить</button>
+        </div>
+      </div>`;
+    document.getElementById('confirmOverlay').style.display = 'flex';
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirmOverlay').style.display = 'none';
+    pendingConfirmAction = null;
+  }
+
+  function runConfirmedAction() {
+    const action = pendingConfirmAction;
+    closeConfirmModal();
+    if (action) action();
+  }
+
+  function showNotice(message, tone) {
+    const offset = activeSystemPopups * 90;
+    activeSystemPopups++;
+    const toneClass = tone === 'warn' ? 'tone-warn' : (tone === 'danger' ? 'tone-danger' : '');
+    const p = document.createElement('div');
+    p.className = 'system-popup hud-frame';
+    p.style.top = `calc(64% + ${offset}px)`;
+    p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body ${toneClass}">${escapeHtml(message)}</div>`;
+    document.body.appendChild(p);
+    setTimeout(() => {
+      p.remove();
+      activeSystemPopups = Math.max(0, activeSystemPopups - 1);
+    }, 3000);
+  }
+
+  function showPenaltyBanner(totalLoss, pct, daysCount) {
+    const cont = document.getElementById('penaltyContent');
+    const daysLine = daysCount > 1 ? `<li>Пропущено дней: ${daysCount}</li>` : '';
+    cont.innerHTML = `
+      <div class="danger-warning-step">
+        <div class="danger-icon">⚠</div>
+        <div class="danger-text">Система зафиксировала невыполнение задания.</div>
+        <ul class="danger-list">
+          <li>Потеряно опыта: ${totalLoss} (-${pct}%)</li>
+          ${daysLine}
+        </ul>
+      </div>`;
+    document.getElementById('penaltyOverlay').style.display = 'flex';
+  }
+
+  function checkMissedDays() {
+    let now = Date.now();
+    let nextReset = data.lastReset + 86400000;
+    let penalizedDays = 0;
+    let totalLoss = 0;
+    let lastPct = 0;
+    let dayRolled = false;
+    while (now >= nextReset) {
+      dayRolled = true;
+      if (!data.insurance) {
+        const result = applyPenaltyLogic();
+        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; }
+      }
+      data.insurance = false;
+      data.lastReset = nextReset;
+      data.totalDays++;
+      data.completed = {};
+      data.isGoalMet = false;
+      data.limitBreaksToday = 0;
+      data.dailyNotices = { morning: false, urgent: false, complete: false };
+      nextReset += 86400000;
+    }
+    saveData(); render();
+    if (penalizedDays > 0) showPenaltyBanner(totalLoss, lastPct, penalizedDays);
+    if (dayRolled && !data.dailyNotices.morning) {
+      data.dailyNotices.morning = true;
+      saveData();
+      showNotice(pickRandomNotice(SYSTEM_NOTICES.morning), 'info');
+    }
+  }
+
+  function applyPenaltyLogic() {
+    if (data.isGoalMet) return null;
+    if (!allQuestsDone()) {
+      let basePen = 0.15; 
+      const lvlReduction = Math.floor(data.level / 10) * 0.03;
+      const bonusStr = Math.max(0, data.stats.str - 10);
+      const strReduction = bonusStr * 0.005;
+      let finalPen = Math.max(0.01, basePen - lvlReduction - strReduction);
+      if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
+      const loss = Math.floor(getExpToNext(data.level) * finalPen);
+      data.exp = Math.max(0, data.exp - loss);
+      data.lastExpLoss = loss;
+      data.totalPenalties++;
+      data.consecutiveDays = 0;
+      updateTitleStatus();
+      return { loss, pct: Math.round(finalPen * 100) };
+    } else {
+      data.consecutiveDays++;
+      updateTitleStatus();
+      return null;
+    }
+  }
+
+  // Order matters: index 0 = most significant title. Unknown/default title = least significant.
+  const TITLE_PRIORITY = ["Преодолевший предел", "Вечный странник", "Целеустремленный", "Пробужденный", "Новичок"];
+
+  function titleRank(name) {
+    const idx = TITLE_PRIORITY.indexOf(name);
+    return idx === -1 ? TITLE_PRIORITY.length : idx;
+  }
+
+  function getBestAvailableTitle() {
+    let best = "Новичок";
+    for (let t of data.titlesUnlocked) {
+      if (titleRank(t) < titleRank(best)) best = t;
+    }
+    return best;
+  }
+
+  let activeSystemPopups = 0;
+  function showSystemPopup(title, message) {
+    const offset = activeSystemPopups * 90;
+    activeSystemPopups++;
+    const p = document.createElement('div');
+    p.className = 'system-popup hud-frame';
+    p.style.top = `calc(64% + ${offset}px)`;
+    p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body">${escapeHtml(title)}</div><div class="system-popup-sub">${escapeHtml(message)}</div>`;
+    document.body.appendChild(p);
+    setTimeout(() => {
+      p.remove();
+      activeSystemPopups = Math.max(0, activeSystemPopups - 1);
+    }, 3000);
+  }
+
+  // Unlocks a title. Only auto-equips it if it outranks the currently active title,
+  // so a manually chosen title is never silently overridden by a lesser one.
+  function unlockTitle(name) {
+    if (!data.titlesUnlocked.includes(name)) {
+      data.titlesUnlocked.push(name);
+      if (titleRank(name) < titleRank(data.activeTitle)) data.activeTitle = name;
+      const t = TITLES_DB[name];
+      showSystemPopup(`Новый титул: ${name}`, t ? t.desc : '');
+    }
+  }
+
+  function selectTitle(name) {
+    if (!data.titlesUnlocked.includes(name)) return;
+    data.activeTitle = name;
+    saveData(); render(); openInv();
+  }
+
+  function updateTitleStatus() {
+    if (data.level >= 10) {
+        unlockTitle("Пробужденный");
+        data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== "Новичок");
+    }
+    if (data.consecutiveDays >= 7) unlockTitle("Целеустремленный");
+    if (data.limitBreaksCount >= 5) unlockTitle("Преодолевший предел");
+    if (totalStats.steps >= 100000) unlockTitle("Вечный странник");
+
+    // "Целеустремленный" requires an unbroken streak — losing it removes the title entirely.
+    if (data.consecutiveDays < 7 && data.titlesUnlocked.includes("Целеустремленный")) {
+      data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== "Целеустремленный");
+      if (data.activeTitle === "Целеустремленный") data.activeTitle = getBestAvailableTitle();
+    }
+
+    // Safety net: if the active title is somehow no longer unlocked, fall back gracefully.
+    if (!data.titlesUnlocked.includes(data.activeTitle)) {
+      data.activeTitle = getBestAvailableTitle();
+    }
+  }
+
+  function updateTimer() {
+    const nextReset = getNextResetTime();
+    const timeLeft = nextReset - Date.now();
+    if (timeLeft <= 0) { checkMissedDays(); return; }
+    const h = Math.floor(timeLeft/3600000), m = Math.floor((timeLeft%3600000)/60000), s = Math.floor((timeLeft%60000)/1000);
+    document.getElementById('timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    document.getElementById('resetTimerContainer').classList.toggle('warning', h < 1);
+    checkUrgentNotice(timeLeft);
+  }
+
+  function checkUrgentNotice(timeLeft) {
+    if (data.dailyNotices.urgent) return;
+    if (timeLeft > 2 * 3600 * 1000) return;
+    if (allQuestsDone()) return;
+    data.dailyNotices.urgent = true;
+    saveData();
+    showNotice(pickRandomNotice(SYSTEM_NOTICES.urgent), 'warn');
+  }
+
+  function getNextResetTime() {
+    const now = new Date();
+    const next = new Date();
+    next.setHours(5, 0, 0, 0);
+    if (now.getTime() >= next.getTime()) next.setDate(next.getDate() + 1);
+    return next.getTime();
+  }
+
+  function openShop() {
+    document.getElementById('shopHeader').innerHTML = `МАГАЗИН (Баланс: ${Math.floor(data.credits)} ◈)`;
+    const cont = document.getElementById('shopContent');
+    cont.innerHTML = '';
+    for (let id in SHOP_CATALOG) {
+      const item = SHOP_CATALOG[id];
+      cont.innerHTML += `
+        <div class="item-card">
+          <div class="item-icon">${item.icon}</div>
+          <div class="item-info">
+            <div class="item-name">${item.name}</div>
+            <div class="item-desc">${item.desc}</div>
+          </div>
+          <button onclick="buyItem('${id}')" class="item-price">${item.price} ◈</button>
+        </div>`;
+    }
+    document.getElementById('shopOverlay').style.display = 'flex';
+  }
+
+  function buyItem(id) {
+    const item = SHOP_CATALOG[id];
+    if (data.credits < item.price) { showNotice("Недостаточно кредитов!", 'warn'); return; }
+    data.credits -= item.price;
+    data.consumables.push(id);
+    saveData(); render(); openShop();
+  }
+
+  function openInv() {
+    const cont = document.getElementById('invContent');
+    cont.innerHTML = `<div class="section-title">Титулы</div>`;
+    data.titlesUnlocked.forEach(tName => {
+        const t = TITLES_DB[tName];
+        if (!t) return;
+        const isActive = data.activeTitle === tName;
+        cont.innerHTML += `
+          <div class="item-card" style="${isActive ? 'border-color:#40ffaa;' : ''} cursor:pointer;" onclick="selectTitle('${tName}')" title="${isActive ? 'Активный титул' : 'Нажмите, чтобы сделать активным'}">
+            <div class="item-icon">${t.icon}</div>
+            <div class="item-info">
+              <div class="item-name" style="${isActive ? 'color:#40ffaa;' : ''}">${escapeHtml(tName)}${isActive ? ' 🛡️' : ''}</div>
+              <div class="item-desc">${t.desc}</div>
+            </div>
+          </div>`;
+    });
+    cont.innerHTML += `<div class="section-title">Артефакты</div>`;
+    let arts = data.inventory.filter(k => ARTEFACTS[k]);
+    if (!arts.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
+    arts.forEach(key => {
+      const art = ARTEFACTS[key];
+      cont.innerHTML += `<div class="item-card"><div class="item-icon">${art.icon}</div><div class="item-info"><div class="item-name">${art.name}</div><div class="item-desc">${art.desc}</div></div></div>`;
+    });
+    cont.innerHTML += `<div class="section-title">Расходники</div>`;
+    if (!data.consumables.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
+    data.consumables.forEach((id, index) => {
+      const item = SHOP_CATALOG[id];
+      cont.innerHTML += `
+        <div class="item-card">
+          <div class="item-icon">${item.icon}</div>
+          <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div></div>
+          <button onclick="useItem(${index})" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
+        </div>`;
+    });
+    document.getElementById('invOverlay').style.display = 'flex';
+  }
+
+  function useItem(index) {
+    const id = data.consumables[index];
+    const item = SHOP_CATALOG[id];
+    if (!item) return;
+    showConfirm(`Использовать «${item.name}»?`, () => performUseItem(index));
+  }
+
+  function performUseItem(index) {
+    const id = data.consumables[index];
+    let used = false;
+    if (id === 'elixir') {
+        if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Эликсир использован. Один штраф удалён из истории.", 'info'); }
+        else { showNotice("У вас нет штрафов для удаления.", 'warn'); }
+    } else if (id === 'scroll') {
+        if (!data.insurance) { data.insurance = true; used = true; showNotice("Свиток активирован. Завтра штраф не будет начислен.", 'info'); }
+        else { showNotice("Свиток уже активирован.", 'warn'); }
+    } else if (id === 'potion') {
+        if (data.lastExpLoss > 0) {
+            const recovery = Math.floor(data.lastExpLoss * 0.5);
+            data.exp += recovery; 
+            data.lastExpLoss = 0; checkLevelUp(); used = true;
+            showNotice(`Зелье использовано. Восстановлено ${recovery} EXP.`, 'info');
+        } else { showNotice("Нет доступных потерь опыта для восстановления.", 'warn'); }
+    }
+    if (used) { data.consumables.splice(index, 1); saveData(); render(); openInv(); }
+  }
+
+  function checkLimitBreak() {
+    const container = document.getElementById('limitBreakContainer');
+    if (data.level < 3) { container.style.display = 'none'; return; }
+    container.style.display = 'block';
+    const allDone = allQuestsDone();
+    const usesLeft = Math.max(0, 2 - data.limitBreaksToday);
+    const canUse = allDone && usesLeft > 0;
+    const btn = document.getElementById('limitBreakBtn');
+    btn.disabled = !canUse;
+    btn.classList.toggle('ready', canUse);
+    let statusText;
+    if (!allDone) statusText = "Завершите все текущие задания";
+    else if (usesLeft > 0) statusText = `ЛИМИТ СНЯТ: КРЕДИТЫ x2 · Осталось использований сегодня: ${usesLeft}`;
+    else statusText = "Лимит на сегодня исчерпан";
+    document.getElementById('limitStatus').textContent = statusText;
+  }
+
+  function checkLevelUp() {
+    let leveled = false;
+    const rankBefore = getRank(data.level).name;
+    while (data.exp >= getExpToNext(data.level)) {
+      data.exp -= getExpToNext(data.level);
+      data.level++;
+      data.statPoints += (data.inventory.includes("medal_dev") ? 5 : 3);
+      leveled = true;
+      for (let k in ARTEFACTS) {
+        if (data.level >= ARTEFACTS[k].level && !data.inventory.includes(k)) data.inventory.push(k);
+      }
+    }
+    if (leveled) {
+      const p = document.createElement('div'); p.className = 'levelup-popup'; p.textContent = 'LEVEL UP';
+      document.body.appendChild(p); setTimeout(() => p.remove(), 3000);
+      const rankAfter = getRank(data.level).name;
+      if (rankAfter !== rankBefore) {
+        showSystemPopup(`Новый ранг: ${rankAfter}`, 'Ваши способности признаны Системой');
+      }
+      if (data.level >= 3 && !data.notifiedLimitBreakUnlock) {
+        data.notifiedLimitBreakUnlock = true;
+        showNotice(pickRandomNotice(SYSTEM_NOTICES.limitBreakUnlock), 'info');
+      }
+    }
+  }
+
+  function render() {
+    updateTitleStatus();
+    const rank = getRank(data.level);
+    const rankEl = document.getElementById('rankDisplay');
+    rankEl.textContent = `Ранг: ${rank.name} (Уровень: ${data.level})`;
+    rankEl.className = 'rank ' + rank.class;
+    document.getElementById('playerNameDisplay').textContent = data.playerName || "Игрок";
+    document.getElementById('exp').textContent = Math.floor(data.exp);
+    document.getElementById('expToNext').textContent = getExpToNext(data.level);
+    document.getElementById('creditsVal').textContent = Math.floor(data.credits);
+    document.getElementById('titleDisplay').textContent = (TITLES_DB[data.activeTitle]?.icon || "") + " " + data.activeTitle;
+    document.querySelectorAll('.quest-item').forEach(item => {
+      const id = item.dataset.id;
+      const target = getDynamicTarget(parseInt(item.dataset.target), data.level);
+      const current = data.completed[id] || 0;
+      item.querySelector('.counter').textContent = current;
+      item.querySelector('.target').textContent = `/ ${target}`;
+      item.querySelector('.reward').textContent = `+${getDynamicExp(parseInt(item.dataset.exp), data.level, id)} EXP`;
+      item.querySelectorAll('.add').forEach(b => b.disabled = (current >= target));
+    });
+    document.getElementById('totalPushups').textContent = totalStats.pushups;
+    document.getElementById('totalSquats').textContent = totalStats.squats;
+    document.getElementById('totalPullups').textContent = totalStats.pullups;
+    document.getElementById('totalPress').textContent = totalStats.press;
+    document.getElementById('totalSteps').textContent = totalStats.steps;
+    document.getElementById('totalDays').textContent = data.totalDays;
+    document.getElementById('totalPenalties').textContent = data.totalPenalties;
+    checkLimitBreak();
+  }
+
+  document.querySelectorAll('.add').forEach(btn => {
+    btn.onclick = (e) => {
+      const item = e.target.closest('.quest-item');
+      const id = item.dataset.id;
+      const val = parseInt(e.target.dataset.value);
+      const target = getDynamicTarget(parseInt(item.dataset.target), data.level);
+      let current = data.completed[id] || 0;
+      if (current >= target) return;
+      data.completed[id] = current + val;
+      totalStats[id] += val;
+      if (data.completed[id] >= target) {
+        const expGained = getDynamicExp(parseInt(item.dataset.exp), data.level, id);
+        data.exp += expGained;
+        let creds = Math.floor(parseInt(item.dataset.exp) * 0.5);
+        const critChance = (data.stats.agi - 10) * 0.5;
+        let critMsg = "";
+        if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " [CRIT!]"; }
+        if (id === "steps" && data.inventory.includes("ring_speed")) creds *= 1.1;
+        if (data.activeTitle === "Преодолевший предел") creds *= 1.1;
+        if (data.isGoalMet) creds *= 2;
+        data.credits += Math.floor(creds);
+        const p = document.createElement('div'); p.className='complete-popup'; p.innerHTML=`COMPLETE<br><span style="font-size:0.8rem; color:#40ffaa">+${expGained} EXP</span> <span style="font-size:0.8rem; color:#ffd700">+${Math.floor(creds)} ◈${critMsg}</span>`; item.appendChild(p);
+        setTimeout(() => p.remove(), 1800);
+        checkLevelUp();
+        if (!data.dailyNotices.complete && allQuestsDone()) {
+          data.dailyNotices.complete = true;
+          showNotice(pickRandomNotice(SYSTEM_NOTICES.complete), 'info');
+        }
+      }
+      saveData(); render();
+    };
+  });
+
+  function incStat(stat) {
+    if (data.statPoints > 0) { data.stats[stat]++; data.statPoints--; updateStatusUI(); saveData(); }
+  }
+
+  function updateStatusUI() {
+    document.getElementById('statPoints').textContent = data.statPoints;
+    document.getElementById('valStr').textContent = data.stats.str;
+    document.getElementById('valAgi').textContent = data.stats.agi;
+    document.getElementById('valInt').textContent = data.stats.int;
+    ['btnStr','btnAgi','btnInt'].forEach(id => document.getElementById(id).disabled = (data.statPoints <= 0));
+  }
+
+  function bytesToBase64(jsonString) {
+    const bytes = new TextEncoder().encode(jsonString);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+  }
+
+  function base64ToString(base64Code) {
+    const binary = atob(base64Code);
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  function sanitizeNumber(val, fallback, min) {
+    const n = Number(val);
+    if (min === undefined) min = 0;
+    return (Number.isFinite(n) && n >= min) ? n : fallback;
+  }
+
+  // Validates and rebuilds a backup into a known-safe shape. Unknown/malformed
+  // fields fall back to sane defaults instead of crashing or being trusted as-is.
+  function sanitizeImportedData(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const s = raw.state, t = raw.total;
+    if (!s || typeof s !== 'object' || !t || typeof t !== 'object') return null;
+
+    const QUEST_IDS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
+
+    const cleanCompleted = {};
+    if (s.completed && typeof s.completed === 'object') {
+      QUEST_IDS.forEach(id => {
+        if (s.completed[id] !== undefined) cleanCompleted[id] = sanitizeNumber(s.completed[id], 0);
+      });
+    }
+
+    const cleanStats = {
+      str: sanitizeNumber(s.stats && s.stats.str, 10),
+      agi: sanitizeNumber(s.stats && s.stats.agi, 10),
+      int: sanitizeNumber(s.stats && s.stats.int, 10)
+    };
+
+    const cleanInventory = Array.isArray(s.inventory) ? s.inventory.filter(k => ARTEFACTS[k]) : [];
+    const cleanConsumables = Array.isArray(s.consumables) ? s.consumables.filter(k => SHOP_CATALOG[k]) : [];
+    let cleanTitlesUnlocked = Array.isArray(s.titlesUnlocked) ? s.titlesUnlocked.filter(k => TITLES_DB[k]) : [];
+    if (cleanTitlesUnlocked.length === 0) cleanTitlesUnlocked = ["Новичок"];
+
+    let cleanActiveTitle = (typeof s.activeTitle === 'string' && TITLES_DB[s.activeTitle]) ? s.activeTitle : "Новичок";
+    if (!cleanTitlesUnlocked.includes(cleanActiveTitle)) cleanActiveTitle = cleanTitlesUnlocked[0];
+
+    const cleanDailyNotices = {
+      morning: !!(s.dailyNotices && s.dailyNotices.morning),
+      urgent: !!(s.dailyNotices && s.dailyNotices.urgent),
+      complete: !!(s.dailyNotices && s.dailyNotices.complete)
+    };
+
+    const cleanState = {
+      level: Math.max(1, Math.floor(sanitizeNumber(s.level, 1, 1))),
+      exp: sanitizeNumber(s.exp, 0),
+      lastReset: sanitizeNumber(s.lastReset, getLastResetThreshold(Date.now())),
+      completed: cleanCompleted,
+      totalDays: sanitizeNumber(s.totalDays, 0),
+      totalPenalties: sanitizeNumber(s.totalPenalties, 0),
+      statPoints: sanitizeNumber(s.statPoints, 0),
+      stats: cleanStats,
+      isGoalMet: !!s.isGoalMet,
+      credits: sanitizeNumber(s.credits, 0),
+      inventory: cleanInventory,
+      consumables: cleanConsumables,
+      insurance: !!s.insurance,
+      activeTitle: cleanActiveTitle,
+      consecutiveDays: sanitizeNumber(s.consecutiveDays, 0),
+      lastExpLoss: sanitizeNumber(s.lastExpLoss, 0),
+      limitBreaksCount: sanitizeNumber(s.limitBreaksCount, 0),
+      limitBreaksToday: Math.min(2, sanitizeNumber(s.limitBreaksToday, 0)),
+      titlesUnlocked: cleanTitlesUnlocked,
+      playerName: sanitizePlayerName(typeof s.playerName === 'string' ? s.playerName : ''),
+      dailyNotices: cleanDailyNotices,
+      notifiedLimitBreakUnlock: !!s.notifiedLimitBreakUnlock
+    };
+
+    const cleanTotal = {
+      pushups: sanitizeNumber(t.pushups, 0),
+      squats: sanitizeNumber(t.squats, 0),
+      pullups: sanitizeNumber(t.pullups, 0),
+      press: sanitizeNumber(t.press, 0),
+      steps: sanitizeNumber(t.steps, 0)
+    };
+
+    return { state: cleanState, total: cleanTotal };
+  }
+
+  // ===== BACKUP MODAL =====
+  let backupModalStep = 'main';
+  let pendingImport = null;
+
+  function buildBackupFilename() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const timePart = `${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+    return `solo-leveling-backup_${datePart}_${timePart}.json`;
+  }
+
+  function currentSummaryHtml() {
+    return `Уровень ${data.level} · ${Math.floor(data.credits)} кредитов · ${data.totalDays} дней всего · серия ${data.consecutiveDays} дн.`;
+  }
+
+  function openBackupModal() {
+    backupModalStep = 'main';
+    pendingImport = null;
+    renderBackupModal();
+    document.getElementById('backupOverlay').style.display = 'flex';
+  }
+
+  function closeBackupModal() {
+    document.getElementById('backupOverlay').style.display = 'none';
+    backupModalStep = 'main';
+    pendingImport = null;
+  }
+
+  function renderBackupModal() {
+    const cont = document.getElementById('backupContent');
+    if (backupModalStep === 'main') {
+      cont.innerHTML = `
+        <div class="backup-section">
+          <div class="backup-section-title">Игрок</div>
+          <div class="backup-summary">Имя: ${escapeHtml(data.playerName || 'Игрок')}</div>
+          <button class="backup-action-btn" onclick="startEditNameFlow()">Изменить имя</button>
+        </div>
+        <div class="backup-section">
+          <div class="backup-section-title">Экспорт</div>
+          <div class="backup-summary">${escapeHtml(currentSummaryHtml())}</div>
+          <button class="backup-action-btn" onclick="exportDataFile()">Скачать файл бэкапа</button>
+          <span class="restore-link" onclick="exportDataCode()">Через код</span>
+        </div>
+        <div class="backup-section">
+          <div class="backup-section-title">Импорт</div>
+          <input type="file" id="backupFileInput" accept="application/json,.json" onchange="handleBackupFileSelected(event)">
+          <button class="backup-action-btn" onclick="document.getElementById('backupFileInput').click()">Выбрать файл</button>
+          <span class="restore-link" onclick="startImportCodeFlow()">Через код</span>
+        </div>
+        <div class="backup-section danger-zone">
+          <div class="backup-section-title danger">Опасная зона</div>
+          <button class="reset-all" onclick="startResetFlow()">Сбросить всё</button>
+        </div>`;
+    } else if (backupModalStep === 'editName') {
+      cont.innerHTML = `
+        <div class="backup-section">
+          <div class="backup-section-title">Изменить имя</div>
+          <input type="text" id="editNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" value="${escapeHtml(data.playerName || '')}" placeholder="Имя">
+          <div class="danger-btn-row">
+            <button class="danger-btn-cancel" onclick="cancelEditName()">Отмена</button>
+            <button class="confirm-btn-continue" onclick="submitEditName()">Сохранить</button>
+          </div>
+        </div>`;
+    } else if (backupModalStep === 'importCodeInput') {
+      cont.innerHTML = `
+        <div class="backup-section">
+          <div class="backup-section-title">Вставьте код бэкапа</div>
+          <textarea id="importCodeInputField" class="code-input-area" autocomplete="off" placeholder="Код бэкапа..."></textarea>
+          <div class="danger-btn-row">
+            <button class="danger-btn-cancel" onclick="cancelImportFlow()">Отмена</button>
+            <button class="confirm-btn-continue" onclick="submitImportCode()">Вставить</button>
+          </div>
+        </div>`;
+    } else if (backupModalStep === 'importConfirm' && pendingImport) {
+      const s = pendingImport.state;
+      cont.innerHTML = `
+        <div class="danger-warning-step">
+          <div class="backup-section-title">Найден бэкап</div>
+          <ul class="danger-list">
+            <li>Уровень: ${s.level}</li>
+            <li>Кредитов: ${Math.floor(s.credits)}</li>
+            <li>Серия дней подряд: ${s.consecutiveDays}</li>
+            <li>Всего дней: ${s.totalDays}</li>
+          </ul>
+          <div class="danger-text">Текущий прогресс будет полностью заменён данными из этого файла.</div>
+          <div class="danger-btn-row">
+            <button class="danger-btn-cancel" onclick="cancelImportFlow()">Отмена</button>
+            <button class="danger-btn-continue" onclick="confirmImport()">Заменить прогресс</button>
+          </div>
+        </div>`;
+    } else if (backupModalStep === 'warn1') {
+      cont.innerHTML = `
+        <div class="danger-warning-step">
+          <div class="danger-icon">⚠</div>
+          <div class="danger-text">Вы собираетесь удалить весь прогресс в этом приложении. Это действие необратимо.</div>
+          <div class="danger-btn-row">
+            <button class="danger-btn-cancel" onclick="cancelResetFlow()">Отмена</button>
+            <button class="danger-btn-continue" onclick="resetFlowStep2()">Продолжить</button>
+          </div>
+        </div>`;
+    } else if (backupModalStep === 'warn2') {
+      cont.innerHTML = `
+        <div class="danger-warning-step">
+          <div class="danger-icon">⚠</div>
+          <div class="danger-text">Будет удалено безвозвратно:</div>
+          <ul class="danger-list">
+            <li>Уровень и опыт</li>
+            <li>Кредиты</li>
+            <li>Инвентарь и артефакты</li>
+            <li>Титулы и достижения</li>
+            <li>Вся статистика и история дней</li>
+          </ul>
+          <div class="danger-btn-row">
+            <button class="danger-btn-cancel" onclick="cancelResetFlow()">Отмена</button>
+            <button class="danger-btn-continue" onclick="resetFlowStep3()">Продолжить</button>
+          </div>
+        </div>`;
+    } else if (backupModalStep === 'warn3') {
+      cont.innerHTML = `
+        <div class="danger-warning-step">
+          <div class="danger-icon">⚠</div>
+          <div class="danger-text">Для подтверждения введите слово <strong>УДАЛИТЬ</strong> заглавными буквами:</div>
+          <input type="text" id="resetConfirmInput" class="danger-input" autocomplete="off" autocapitalize="characters" oninput="checkResetConfirmInput()">
+          <div class="danger-btn-row">
+            <button class="danger-btn-cancel" onclick="cancelResetFlow()">Отмена</button>
+            <button class="danger-btn-confirm" id="resetConfirmBtn" disabled onclick="performReset()">Удалить безвозвратно</button>
+          </div>
+        </div>`;
+    }
+  }
+
+  function startResetFlow() { backupModalStep = 'warn1'; renderBackupModal(); }
+  function cancelResetFlow() { backupModalStep = 'main'; renderBackupModal(); }
+  function resetFlowStep2() { backupModalStep = 'warn2'; renderBackupModal(); }
+  function resetFlowStep3() { backupModalStep = 'warn3'; renderBackupModal(); }
+
+  function checkResetConfirmInput() {
+    const val = document.getElementById('resetConfirmInput').value;
+    document.getElementById('resetConfirmBtn').disabled = (val !== 'УДАЛИТЬ');
+  }
+
+  function performReset() {
+    clearAppStorage();
+    location.reload();
+  }
+
+  function exportDataFile() {
+    try {
+      const fullData = { state: data, total: totalStats };
+      const jsonString = JSON.stringify(fullData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = buildBackupFilename();
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      showNotice("Ошибка при сохранении файла бэкапа.", 'danger');
+    }
+  }
+
+  function handleBackupFileSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(reader.result);
+        const clean = sanitizeImportedData(imported);
+        if (!clean) throw new Error("Invalid Format");
+        pendingImport = clean;
+        backupModalStep = 'importConfirm';
+        renderBackupModal();
+      } catch (e) {
+        showNotice("Ошибка: файл повреждён или это не бэкап этого приложения.", 'danger');
+      }
+    };
+    reader.onerror = () => showNotice("Не удалось прочитать файл.", 'danger');
+    reader.readAsText(file);
+  }
+
+  function cancelImportFlow() { pendingImport = null; backupModalStep = 'main'; renderBackupModal(); }
+
+  function startEditNameFlow() { backupModalStep = 'editName'; renderBackupModal(); }
+  function cancelEditName() { backupModalStep = 'main'; renderBackupModal(); }
+  function submitEditName() {
+    const field = document.getElementById('editNameInput');
+    data.playerName = sanitizePlayerName(field ? field.value : '');
+    saveData();
+    backupModalStep = 'main';
+    renderBackupModal();
+    render();
+  }
+
+
+  function confirmImport() {
+    if (!pendingImport) return;
+    data = pendingImport.state;
+    totalStats = pendingImport.total;
+    saveData();
+    location.reload();
+  }
+
+  // Legacy fallback: clipboard code, kept for devices where file download/picking misbehaves.
+  function exportDataCode() {
+    const fullData = { state: data, total: totalStats };
+    try {
+        const jsonString = JSON.stringify(fullData);
+        const base64Code = bytesToBase64(jsonString);
+        const el = document.createElement('textarea');
+        el.value = base64Code;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        showNotice("Код бэкапа скопирован в буфер обмена!", 'info');
+    } catch(e) {
+        showNotice("Ошибка при экспорте данных.", 'danger');
+    }
+  }
+
+  function startImportCodeFlow() {
+    backupModalStep = 'importCodeInput';
+    renderBackupModal();
+  }
+
+  function submitImportCode() {
+    const field = document.getElementById('importCodeInputField');
+    const code = field ? field.value.trim() : '';
+    if (!code) return;
+    try {
+        const jsonString = base64ToString(code);
+        const imported = JSON.parse(jsonString);
+        const clean = sanitizeImportedData(imported);
+        if (!clean) throw new Error("Invalid Format");
+        pendingImport = clean;
+        backupModalStep = 'importConfirm';
+        renderBackupModal();
+    } catch(e) {
+        showNotice("Ошибка: неверный код бэкапа или данные повреждены.", 'danger');
+    }
+  }
+
+  document.getElementById('limitBreakBtn').onclick = () => {
+    if (data.limitBreaksToday >= 2) return;
+    showConfirm('Активировать «Преодоление лимита»? Награды в Кредитах удвоятся.', () => {
+        data.limitBreaksCount++;
+        data.limitBreaksToday++;
+        data.isGoalMet = true; data.completed = {}; 
+        saveData(); location.reload();
+    });
+  };
+  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; };
+  document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
+
+  checkMissedDays();
+  setInterval(updateTimer, 1000);
+  updateTimer(); render();
+  if (isFreshInstall) openNameModal();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
