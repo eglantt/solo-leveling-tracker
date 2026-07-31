@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.6.0 (Hunter's Log)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.0 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -200,16 +200,7 @@
     .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
     .stat-points-info { text-align: center; color: #ffd700; margin-bottom: 20px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; }
 
-    /* Status window tabs */
-    .status-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
-    .status-tab {
-      flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid #00aaff33;
-      color: #5599cc; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; letter-spacing: 1px;
-      text-transform: uppercase; border-radius: 6px; cursor: pointer;
-    }
-    .status-tab.active { color: #40c0ff; border-color: #40c0ff; background: rgba(0,140,255,0.1); box-shadow: 0 0 10px rgba(0,140,255,0.2); }
-
-    /* Calendar */
+    /* Calendar (Летопись) */
     .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .cal-arrow { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #40c0ff; cursor: pointer; opacity: 0.85; padding: 4px 8px; }
     .cal-arrow.disabled { color: #444; opacity: 0.4; cursor: default; }
@@ -329,11 +320,11 @@
     .stats-days { color: #40c0ff !important; }
     .stats-penalties { color: #ff7777 !important; }
 
-    .sub-menu-btns {
-      display: flex; gap: 10px; margin-top: 15px; padding-bottom: 10px;
+    .sub-menu-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; padding: 0 20px 10px;
     }
-    .sub-menu-btns button {
-      flex: 1; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; 
+    .sub-menu-grid button {
+      font-family: 'Orbitron', sans-serif; font-size: 0.75rem; 
       background: rgba(0, 136, 255, 0.05); border: 1px solid #0088ff44;
       letter-spacing: 1px; padding: 10px 5px;
     }
@@ -440,9 +431,10 @@
       border-radius: 4px;
       padding: 14px 20px;
       text-align: center;
-      pointer-events: none;
+      pointer-events: auto;
+      cursor: pointer;
       z-index: 2000;
-      animation: systemPopupIn 3s ease forwards;
+      animation: systemPopupIn 10s ease forwards;
       box-shadow: 0 0 25px rgba(0,140,255,0.35), inset 0 0 15px rgba(0,80,200,0.15);
     }
     .system-popup-header {
@@ -459,6 +451,14 @@
 
     /* SHOP/INV SPECIFIC */
     .section-title { font-size: 0.8rem; color: #40c0ff; margin: 15px 0 10px; font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid #40c0ff; padding-left: 8px; }
+    .codex-chapter { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #00aaff22; }
+    .codex-chapter:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .codex-chapter-title { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); margin-bottom: 6px; letter-spacing: 0.5px; }
+    .codex-chapter-text { font-size: 0.8rem; color: #aaddff; line-height: 1.5; }
+    .notif-log-list { max-height: 320px; overflow-y: auto; }
+    .notif-log-row { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #00aaff15; font-size: 0.72rem; }
+    .notif-log-time { color: #40c0ff; font-family: 'Roboto Mono', monospace; flex-shrink: 0; opacity: 0.85; }
+    .notif-log-text { color: #aaddff; }
     .item-card { background: rgba(0,0,0,0.4); border: 1px solid #00aaff33; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .item-icon { font-size: 1.4rem; min-width: 40px; text-align: center; }
     .item-info { flex: 1; min-width: 0; }
@@ -499,67 +499,62 @@
 <div class="status-overlay" id="statusOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ХАРАКТЕРИСТИКИ</div>
+    <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
 
-    <div class="status-tabs">
-      <button class="status-tab active" id="tabStatsBtn" onclick="switchStatusTab('stats')">Характеристики</button>
-      <button class="status-tab" id="tabCalendarBtn" onclick="switchStatusTab('calendar')">Календарь</button>
-    </div>
-
-    <div id="statsTabContent">
-      <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
-
-      <div class="stat-row">
-        <span class="stat-label">СИЛА (STR)</span>
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <span class="stat-value" id="valStr">10</span>
-          <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
-        </div>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">ЛОВКОСТЬ (AGI)</span>
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <span class="stat-value" id="valAgi">10</span>
-          <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
-        </div>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">ИНТЕЛЛЕКТ (INT)</span>
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <span class="stat-value" id="valInt">10</span>
-          <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
-        </div>
+    <div class="stat-row">
+      <span class="stat-label">СИЛА (STR)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valStr">10</span>
+        <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
       </div>
     </div>
-
-    <div id="calendarTabContent" style="display:none;">
-      <div class="cal-header">
-        <span class="cal-arrow" id="calPrevBtn" onclick="calShiftMonth(-1)">&#8592;</span>
-        <span class="cal-month-label" id="calMonthLabel">АВГУСТ 2026</span>
-        <span class="cal-arrow" id="calNextBtn" onclick="calShiftMonth(1)">&#8594;</span>
-      </div>
-      <div class="cal-today-row"><button class="today-btn" id="calTodayBtn" onclick="calGoToday()">Сегодня</button></div>
-      <div class="cal-streak-line" id="calStreakLine">Рекорд серии: 0 дней</div>
-      <div class="cal-month-summary" id="calMonthSummary">В этом месяце: выполнено 0 · штрафов 0 · под защитой 0</div>
-      <div class="weekday-row">
-        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
-      </div>
-      <div class="day-grid" id="calDayGrid"></div>
-      <div class="legend-toggle" id="legendToggle" onclick="toggleCalLegend()">Обозначения <span id="legendArrow">▸</span></div>
-      <div class="legend" id="legendBody" style="display:none;">
-        <span><span class="cal-swatch" style="border:2px solid #40ffaa; box-shadow:0 0 5px rgba(64,255,170,0.5);"></span>Выполнено</span>
-        <span><span class="cal-swatch" style="border:2px solid #ff4444; box-shadow:0 0 5px rgba(255,68,68,0.5);"></span>Штраф</span>
-        <span><span class="cal-swatch" style="border:2px solid #40c0ff; box-shadow:0 0 5px rgba(64,192,255,0.5);"></span>Защищено</span>
-        <span><span class="cal-swatch cal-today-swatch"><span class="cal-tc tl"></span><span class="cal-tc tr"></span><span class="cal-tc bl"></span><span class="cal-tc br2"></span></span>Сегодня</span>
-        <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
-        <span>⭐ Новый уровень</span>
-      </div>
-      <div id="calTooltip" class="cal-tooltip" style="display:none;">
-        <div class="cal-tooltip-header">Система</div>
-        <div class="cal-tooltip-body" id="calTooltipText"></div>
+    <div class="stat-row">
+      <span class="stat-label">ЛОВКОСТЬ (AGI)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valAgi">10</span>
+        <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
       </div>
     </div>
-
+    <div class="stat-row">
+      <span class="stat-label">ИНТЕЛЛЕКТ (INT)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valInt">10</span>
+        <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
+      </div>
+    </div>
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="chronicleOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">ЛЕТОПИСЬ ДНЕЙ</div>
+    <div class="cal-header">
+      <span class="cal-arrow" id="calPrevBtn" onclick="calShiftMonth(-1)">&#8592;</span>
+      <span class="cal-month-label" id="calMonthLabel">АВГУСТ 2026</span>
+      <span class="cal-arrow" id="calNextBtn" onclick="calShiftMonth(1)">&#8594;</span>
+    </div>
+    <div class="cal-today-row"><button class="today-btn" id="calTodayBtn" onclick="calGoToday()">Сегодня</button></div>
+    <div class="cal-streak-line" id="calStreakLine">Рекорд серии: 0 дней</div>
+    <div class="cal-month-summary" id="calMonthSummary">В этом месяце: выполнено 0 · штрафов 0 · под защитой 0</div>
+    <div class="weekday-row">
+      <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+    </div>
+    <div class="day-grid" id="calDayGrid"></div>
+    <div class="legend-toggle" id="legendToggle" onclick="toggleCalLegend()">Обозначения <span id="legendArrow">▸</span></div>
+    <div class="legend" id="legendBody" style="display:none;">
+      <span><span class="cal-swatch" style="border:2px solid #40ffaa; box-shadow:0 0 5px rgba(64,255,170,0.5);"></span>Выполнено</span>
+      <span><span class="cal-swatch" style="border:2px solid #ff4444; box-shadow:0 0 5px rgba(255,68,68,0.5);"></span>Штраф</span>
+      <span><span class="cal-swatch" style="border:2px solid #40c0ff; box-shadow:0 0 5px rgba(64,192,255,0.5);"></span>Защищено</span>
+      <span><span class="cal-swatch cal-today-swatch"><span class="cal-tc tl"></span><span class="cal-tc tr"></span><span class="cal-tc bl"></span><span class="cal-tc br2"></span></span>Сегодня</span>
+      <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
+      <span>⭐ Новый уровень</span>
+    </div>
+    <div id="calTooltip" class="cal-tooltip" style="display:none;">
+      <div class="cal-tooltip-header">Система</div>
+      <div class="cal-tooltip-body" id="calTooltipText"></div>
+    </div>
+    <button class="close-status" onclick="document.getElementById('chronicleOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
 
@@ -592,6 +587,32 @@
     <div class="status-header" style="color:#ff5555; text-shadow: 0 0 10px rgba(255,68,68,0.6);">ШТРАФ СИСТЕМЫ</div>
     <div id="penaltyContent"></div>
     <button class="close-status" onclick="document.getElementById('penaltyOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="progressOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">ПРОГРЕСС</div>
+    <div class="stats-container" id="stats" style="background:transparent; border-top:none; padding:0;">
+      <div>Общий прогресс за всё время:</div>
+      <div class="stat-line"><span>Отжимания:</span><strong id="totalPushups">0</strong></div>
+      <div class="stat-line"><span>Приседания:</span><strong id="totalSquats">0</strong></div>
+      <div class="stat-line"><span>Подтягивания:</span><strong id="totalPullups">0</strong></div>
+      <div class="stat-line"><span>Пресс:</span><strong id="totalPress">0</strong></div>
+      <div class="stat-line"><span>Шаги:</span><strong id="totalSteps">0</strong></div>
+      <div style="height: 12px;"></div>
+      <div class="stat-line"><span>Всего дней:</span><strong class="stats-days" id="totalDays">0</strong></div>
+      <div class="stat-line"><span>Всего штрафов:</span><strong class="stats-penalties" id="totalPenalties">0</strong></div>
+    </div>
+    <button class="close-status" onclick="document.getElementById('progressOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="codexOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">КОДЕКС СИСТЕМЫ</div>
+    <div id="codexContent"></div>
+    <button class="close-status" onclick="document.getElementById('codexOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
 
@@ -699,22 +720,13 @@
         </div>
       </div>
     </div>
-    <div class="stats-container" id="stats">
-      <div>Общий прогресс за всё время:</div>
-      <div class="stat-line"><span>Отжимания:</span><strong id="totalPushups">0</strong></div>
-      <div class="stat-line"><span>Приседания:</span><strong id="totalSquats">0</strong></div>
-      <div class="stat-line"><span>Подтягивания:</span><strong id="totalPullups">0</strong></div>
-      <div class="stat-line"><span>Пресс:</span><strong id="totalPress">0</strong></div>
-      <div class="stat-line"><span>Шаги:</span><strong id="totalSteps">0</strong></div>
-      <div style="height: 12px;"></div>
-      <div class="stat-line"><span>Всего дней:</span><strong class="stats-days" id="totalDays">0</strong></div>
-      <div class="stat-line"><span>Всего штрафов:</span><strong class="stats-penalties" id="totalPenalties">0</strong></div>
-
-      <div class="sub-menu-btns">
-        <button onclick="openShop()">МАГАЗИН</button>
-        <button onclick="openInv()">ИНВЕНТАРЬ</button>
-        <button onclick="openBackupModal()">АРХИВ</button>
-      </div>
+    <div class="sub-menu-grid">
+      <button onclick="openCodex()">КОДЕКС</button>
+      <button onclick="openChronicle()">ЛЕТОПИСЬ</button>
+      <button onclick="openBackupModal()">АРХИВ</button>
+      <button onclick="openShop()">МАГАЗИН</button>
+      <button onclick="openInv()">ИНВЕНТАРЬ</button>
+      <button onclick="openProgressModal()">ПРОГРЕСС</button>
     </div>
         <div class="limit-break-container" id="limitBreakContainer" style="padding: 0 20px 28px; margin-top: 15px; display: none;">
       <button id="limitBreakBtn">
@@ -756,11 +768,15 @@
         limitBreaksToday: oldData.limitBreaksToday || 0,
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
-        dailyNotices: oldData.dailyNotices || { morning: false, urgent: false, complete: false },
+        dailyNotices: oldData.dailyNotices || { morning: false, complete: false },
         notifiedLimitBreakUnlock: typeof oldData.notifiedLimitBreakUnlock === 'boolean' ? oldData.notifiedLimitBreakUnlock : (oldData.level >= 3),
         history: oldData.history || {},
         bestStreak: oldData.bestStreak || 0,
-        pendingLevelUpToday: oldData.pendingLevelUpToday || 0
+        pendingLevelUpToday: oldData.pendingLevelUpToday || 0,
+        codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop"],
+        notificationLog: oldData.notificationLog || [],
+        remindersFiredHours: oldData.remindersFiredHours || [],
+        lastNoticeText: oldData.lastNoticeText || {}
       };
     } else {
       isFreshInstall = true;
@@ -771,9 +787,11 @@
         isGoalMet: false, credits: 0, inventory: [], consumables: [], 
         insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
         lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, titlesUnlocked: ["Новичок"],
-        playerName: "", dailyNotices: { morning: false, urgent: false, complete: false },
+        playerName: "", dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
-        history: {}, bestStreak: 0, pendingLevelUpToday: 0
+        history: {}, bestStreak: 0, pendingLevelUpToday: 0,
+        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop"],
+        notificationLog: [], remindersFiredHours: [], lastNoticeText: {}
       };
     }
   }
@@ -782,12 +800,15 @@
   if (typeof data.playerName !== 'string') data.playerName = "";
   if (!data.dailyNotices || typeof data.dailyNotices !== 'object') data.dailyNotices = {};
   data.dailyNotices.morning = !!data.dailyNotices.morning;
-  data.dailyNotices.urgent = !!data.dailyNotices.urgent;
   data.dailyNotices.complete = !!data.dailyNotices.complete;
   if (typeof data.notifiedLimitBreakUnlock !== 'boolean') data.notifiedLimitBreakUnlock = data.level >= 3;
   if (!data.history || typeof data.history !== 'object') data.history = {};
   if (typeof data.bestStreak !== 'number') data.bestStreak = 0;
   if (typeof data.pendingLevelUpToday !== 'number') data.pendingLevelUpToday = 0;
+  if (!Array.isArray(data.codexUnlocked)) data.codexUnlocked = ["daily_quota", "penalty", "chronicle", "shop"];
+  if (!Array.isArray(data.notificationLog)) data.notificationLog = [];
+  if (!Array.isArray(data.remindersFiredHours)) data.remindersFiredHours = [];
+  if (!data.lastNoticeText || typeof data.lastNoticeText !== 'object') data.lastNoticeText = {};
 
   let totalStats = JSON.parse(localStorage.getItem(STATS_KEY)) || null;
   if (!totalStats) {
@@ -822,19 +843,47 @@
 
   const SYSTEM_NOTICES = {
     morning: [
-      "Новый день начался. Ежедневное задание получено.",
-      "Система: Получено новое задание на сегодня.",
-      "Доступно новое задание. Слабость нужно превращать в силу ежедневно."
+      "Новый день начался. Задание получено.",
+      "Система: получено новое задание на сегодня.",
+      "Система сформировала дневное задание.",
+      "Отсчёт начат. Задание дня активно.",
+      "Новый цикл открыт. Задание ожидает выполнения.",
+      "Система активна. Задание на сегодня сформировано.",
+      "Задание дня получено.",
+      "Система: сформирована ежедневная задача.",
+      "Новый цикл. Задание сформировано."
     ],
-    urgent: [
-      "До сброса задания осталось менее 2 часов. Норма не выполнена.",
-      "Внимание: время истекает. Задание под угрозой срыва.",
-      "Система фиксирует риск невыполнения задания. Осталось меньше 2 часов."
+    reminder: [
+      "Задание дня всё ещё не выполнено.",
+      "Система напоминает: задание ожидает завершения.",
+      "Задание пока не закрыто.",
+      "Прогресс дня остановлен. Задание не завершено.",
+      "Система фиксирует: задание не выполнено.",
+      "Время для завершения задания сокращается.",
+      "Задание всё ещё активно.",
+      "Система: незавершённое задание требует внимания.",
+      "Статус задания: не выполнено."
+    ],
+    reminderUrgent: [
+      "Осталось менее двух часов. Задание не выполнено.",
+      "Система: критически малое время до сброса.",
+      "Менее двух часов до сброса. Статус: не выполнено.",
+      "Время почти истекло. Задание не закрыто.",
+      "Система фиксирует: срок задания почти истёк.",
+      "Менее двух часов. При бездействии наказание неотвратимо.",
+      "Финальное окно для завершения задания.",
+      "Меньше двух часов до сброса задания."
     ],
     complete: [
-      "Ежедневное задание полностью выполнено. Хорошая работа.",
-      "Норма дня закрыта. Система одобряет ваш прогресс.",
-      "Задание выполнено. Слабость отступает."
+      "Ежедневное задание полностью выполнено.",
+      "Задание дня закрыто.",
+      "Задание выполнено.",
+      "Задание закрыто. Система фиксирует прогресс.",
+      "Задание дня завершено.",
+      "Система: задание выполнено полностью.",
+      "Статус задания: выполнено.",
+      "Система фиксирует выполнение задания.",
+      "День закрыт. Задание выполнено."
     ],
     limitBreakUnlock: [
       "Новая способность разблокирована: Преодоление лимита.",
@@ -842,8 +891,49 @@
     ]
   };
 
-  function pickRandomNotice(pool) {
-    return pool[Math.floor(Math.random() * pool.length)];
+  const CODEX_CHAPTERS = {
+    daily_quota: { title: "Дневная Норма", content: "Система назначает Игроку пять ежедневных нормативов: отжимания, приседания, подтягивания, пресс и шаги. Норма растёт вместе с уровнем Игрока — но на первых порах Система снисходительна к слабости: до достижения 10 уровня требования снижены. Выполненный норматив приносит опыт и кредиты." },
+    penalty: { title: "Наказание за Слабость", content: "Невыполнение дневной нормы влечёт немедленное взыскание — часть накопленного опыта аннулируется. Тяжесть наказания снижается с ростом силы и уровня Игрока. Система не прощает бездействия." },
+    chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнена ли норма, применено ли взыскание, или защита отвела его действие." },
+    shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их действие Игрок обнаружит, ознакомившись с содержимым Лавки лично." },
+    limit_break: { title: "Преодоление Предела", content: "Игрок достиг третьего уровня. Система открывает доступ к превышению дневной нормы — до двух раз в сутки Игрок может продолжить сверх нормы, получая удвоенное вознаграждение в кредитах." },
+    artifact_ring_speed: { title: "Кольцо Спешки", content: "Система вручает Кольцо Спешки. Каждый пройденный шаг отныне приносит на десятую часть больше кредитов." },
+    artifact_amulet_will: { title: "Амулет Воли", content: "Система вручает Амулет Воли. Тяжесть любого наказания отныне снижена." },
+    artifact_medal_dev: { title: "Медаль Развития", content: "Система вручает Медаль Развития. Отныне при повышении уровня Игрок получает дополнительные очки характеристик." },
+    title_celeustremlenny: { title: "Целеустремлённый", content: "Семь дней подряд без единого срыва. Система признаёт целеустремлённость Игрока — прибавка к опыту закреплена, покуда серия не прервётся." },
+    title_vechny_strannik: { title: "Вечный странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Вечным странником — шаги отныне приносят больше опыта." },
+    title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел испытан на прочность пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
+    rank_d: { title: "D-Ранг", content: "Слабость Е-ранга позади. Система присваивает Игроку D-ранг." },
+    rank_c: { title: "C-Ранг", content: "Рост не остался незамеченным. Система присваивает Игроку C-ранг." },
+    rank_b: { title: "B-Ранг", content: "Сила Игрока превосходит обычные пределы. Система присваивает B-ранг." },
+    rank_a: { title: "A-Ранг", content: "Немногие достигают этого рубежа. Система присваивает Игроку A-ранг." },
+    rank_s: { title: "S-Ранг", content: "Игрок вошёл в число сильнейших. Система присваивает S-ранг." },
+    rank_national: { title: "National Level", content: "Сила Игрока признана на уровне государства. Система присваивает статус Охотника национального уровня." },
+    rank_sss: { title: "SSS-Ранг", content: "Предел человеческих возможностей пройден. Система присваивает высший ранг — SSS." },
+    rank_monarch: { title: "Shadow Monarch", content: "Тень восстала. Система признаёт в Игроке Монарха Теней." }
+  };
+
+  const RANK_CODEX_MAP = { d:'rank_d', c:'rank_c', b:'rank_b', a:'rank_a', s:'rank_s', national:'rank_national', sss:'rank_sss', monarch:'rank_monarch' };
+  const TITLE_CODEX_MAP = { "Целеустремленный": "title_celeustremlenny", "Вечный странник": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel" };
+
+  function pickRandomNoRepeat(pool, category) {
+    let choice = pool[Math.floor(Math.random() * pool.length)];
+    if (pool.length > 1) {
+      while (choice === data.lastNoticeText[category]) {
+        choice = pool[Math.floor(Math.random() * pool.length)];
+      }
+    }
+    data.lastNoticeText[category] = choice;
+    return choice;
+  }
+
+  // Unlocks a Codex chapter (personal order — never tied to a fixed table of contents,
+  // so there are never gaps even though different players unlock chapters in different order).
+  function unlockCodexChapter(id) {
+    if (data.codexUnlocked.includes(id)) return;
+    data.codexUnlocked.push(id);
+    const chapter = CODEX_CHAPTERS[id];
+    if (chapter) showNotice(`Записано в Кодекс: ${chapter.title}`, 'info');
   }
 
   function saveData() {
@@ -974,19 +1064,54 @@
     if (action) action();
   }
 
-  function showNotice(message, tone) {
-    const offset = activeSystemPopups * 90;
-    activeSystemPopups++;
+  // ===== NOTIFICATION QUEUE =====
+  // Every system message (short banners, title/rank/codex announcements) goes through
+  // this single queue so overlapping events never render on screen at the same time.
+  let notificationQueue = [];
+  let notificationActive = false;
+
+  function enqueueNotification(payload) {
+    notificationQueue.push(payload);
+    processNotificationQueue();
+  }
+
+  function processNotificationQueue() {
+    if (notificationActive) return;
+    if (notificationQueue.length === 0) return;
+    displayNotificationNow(notificationQueue.shift());
+  }
+
+  function displayNotificationNow({ body, sub, tone }) {
+    notificationActive = true;
     const toneClass = tone === 'warn' ? 'tone-warn' : (tone === 'danger' ? 'tone-danger' : '');
     const p = document.createElement('div');
     p.className = 'system-popup hud-frame';
-    p.style.top = `calc(64% + ${offset}px)`;
-    p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body ${toneClass}">${escapeHtml(message)}</div>`;
+    p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body ${toneClass}">${escapeHtml(body)}</div>` +
+      (sub ? `<div class="system-popup-sub">${escapeHtml(sub)}</div>` : '');
     document.body.appendChild(p);
-    setTimeout(() => {
+    logNotification(sub ? `${body} ${sub}` : body);
+
+    let dismissed = false;
+    const dismiss = () => {
+      if (dismissed) return;
+      dismissed = true;
       p.remove();
-      activeSystemPopups = Math.max(0, activeSystemPopups - 1);
-    }, 3000);
+      notificationActive = false;
+      setTimeout(processNotificationQueue, 2000);
+    };
+    p.addEventListener('click', dismiss);
+    setTimeout(dismiss, 10000);
+  }
+
+  function logNotification(text) {
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    data.notificationLog.unshift({ time, text });
+    saveData();
+  }
+
+  function showNotice(message, tone) {
+    enqueueNotification({ body: message, tone });
   }
 
   function showPenaltyBanner(totalLoss, pct, daysCount) {
@@ -1033,7 +1158,9 @@
       data.completed = {};
       data.isGoalMet = false;
       data.limitBreaksToday = 0;
-      data.dailyNotices = { morning: false, urgent: false, complete: false };
+      data.dailyNotices = { morning: false, complete: false };
+      data.remindersFiredHours = [];
+      data.notificationLog = [];
       nextReset += 86400000;
     }
     saveData(); render();
@@ -1041,7 +1168,7 @@
     if (dayRolled && !data.dailyNotices.morning) {
       data.dailyNotices.morning = true;
       saveData();
-      showNotice(pickRandomNotice(SYSTEM_NOTICES.morning), 'info');
+      showNotice(pickRandomNoRepeat(SYSTEM_NOTICES.morning, 'morning'), 'info');
     }
   }
 
@@ -1085,19 +1212,8 @@
     return best;
   }
 
-  let activeSystemPopups = 0;
   function showSystemPopup(title, message) {
-    const offset = activeSystemPopups * 90;
-    activeSystemPopups++;
-    const p = document.createElement('div');
-    p.className = 'system-popup hud-frame';
-    p.style.top = `calc(64% + ${offset}px)`;
-    p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body">${escapeHtml(title)}</div><div class="system-popup-sub">${escapeHtml(message)}</div>`;
-    document.body.appendChild(p);
-    setTimeout(() => {
-      p.remove();
-      activeSystemPopups = Math.max(0, activeSystemPopups - 1);
-    }, 3000);
+    enqueueNotification({ body: title, sub: message });
   }
 
   // Unlocks a title. Only auto-equips it if it outranks the currently active title,
@@ -1108,6 +1224,7 @@
       if (titleRank(name) < titleRank(data.activeTitle)) data.activeTitle = name;
       const t = TITLES_DB[name];
       showSystemPopup(`Новый титул: ${name}`, t ? t.desc : '');
+      if (TITLE_CODEX_MAP[name]) unlockCodexChapter(TITLE_CODEX_MAP[name]);
     }
   }
 
@@ -1145,16 +1262,18 @@
     const h = Math.floor(timeLeft/3600000), m = Math.floor((timeLeft%3600000)/60000), s = Math.floor((timeLeft%60000)/1000);
     document.getElementById('timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     document.getElementById('resetTimerContainer').classList.toggle('warning', h < 1);
-    checkUrgentNotice(timeLeft);
+    checkReminderNotice(timeLeft);
   }
 
-  function checkUrgentNotice(timeLeft) {
-    if (data.dailyNotices.urgent) return;
-    if (timeLeft > 2 * 3600 * 1000) return;
+  function checkReminderNotice(timeLeft) {
     if (allQuestsDone()) return;
-    data.dailyNotices.urgent = true;
+    const hoursLeft = Math.ceil(timeLeft / 3600000);
+    if (hoursLeft < 1 || hoursLeft > 10) return;
+    if (data.remindersFiredHours.includes(hoursLeft)) return;
+    data.remindersFiredHours.push(hoursLeft);
     saveData();
-    showNotice(pickRandomNotice(SYSTEM_NOTICES.urgent), 'warn');
+    const pool = (hoursLeft <= 2) ? SYSTEM_NOTICES.reminderUrgent : SYSTEM_NOTICES.reminder;
+    showNotice(pickRandomNoRepeat(pool, 'reminder'), 'warn');
   }
 
   function getNextResetTime() {
@@ -1163,6 +1282,25 @@
     next.setHours(5, 0, 0, 0);
     if (now.getTime() >= next.getTime()) next.setDate(next.getDate() + 1);
     return next.getTime();
+  }
+
+  function openCodex() {
+    const cont = document.getElementById('codexContent');
+    cont.innerHTML = '';
+    data.codexUnlocked.forEach((id, index) => {
+      const chapter = CODEX_CHAPTERS[id];
+      if (!chapter) return;
+      cont.innerHTML += `
+        <div class="codex-chapter">
+          <div class="codex-chapter-title">Глава ${index + 1}: ${escapeHtml(chapter.title)}</div>
+          <div class="codex-chapter-text">${escapeHtml(chapter.content)}</div>
+        </div>`;
+    });
+    document.getElementById('codexOverlay').style.display = 'flex';
+  }
+
+  function openProgressModal() {
+    document.getElementById('progressOverlay').style.display = 'flex';
   }
 
   function openShop() {
@@ -1282,7 +1420,10 @@
       data.statPoints += (data.inventory.includes("medal_dev") ? 5 : 3);
       leveled = true;
       for (let k in ARTEFACTS) {
-        if (data.level >= ARTEFACTS[k].level && !data.inventory.includes(k)) data.inventory.push(k);
+        if (data.level >= ARTEFACTS[k].level && !data.inventory.includes(k)) {
+          data.inventory.push(k);
+          unlockCodexChapter(`artifact_${k}`);
+        }
       }
     }
     if (leveled) {
@@ -1292,10 +1433,13 @@
       const rankAfter = getRank(data.level).name;
       if (rankAfter !== rankBefore) {
         showSystemPopup(`Новый ранг: ${rankAfter}`, 'Ваши способности признаны Системой');
+        const rankClass = getRank(data.level).class;
+        if (RANK_CODEX_MAP[rankClass]) unlockCodexChapter(RANK_CODEX_MAP[rankClass]);
       }
       if (data.level >= 3 && !data.notifiedLimitBreakUnlock) {
         data.notifiedLimitBreakUnlock = true;
-        showNotice(pickRandomNotice(SYSTEM_NOTICES.limitBreakUnlock), 'info');
+        showNotice(SYSTEM_NOTICES.limitBreakUnlock[Math.floor(Math.random() * SYSTEM_NOTICES.limitBreakUnlock.length)], 'info');
+        unlockCodexChapter('limit_break');
       }
     }
   }
@@ -1356,7 +1500,7 @@
         checkLevelUp();
         if (!data.dailyNotices.complete && allQuestsDone()) {
           data.dailyNotices.complete = true;
-          showNotice(pickRandomNotice(SYSTEM_NOTICES.complete), 'info');
+          showNotice(pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete'), 'info');
         }
       }
       saveData(); render();
@@ -1375,23 +1519,17 @@
     ['btnStr','btnAgi','btnInt'].forEach(id => document.getElementById(id).disabled = (data.statPoints <= 0));
   }
 
-  // ===== CALENDAR TAB =====
+  // ===== ЛЕТОПИСЬ (calendar) =====
   let calViewYear = null, calViewMonth = null; // calViewMonth is 0-indexed
 
-  function switchStatusTab(tab) {
-    document.getElementById('calTooltip').style.display = 'none';
-    document.getElementById('tabStatsBtn').classList.toggle('active', tab === 'stats');
-    document.getElementById('tabCalendarBtn').classList.toggle('active', tab === 'calendar');
-    document.getElementById('statsTabContent').style.display = (tab === 'stats') ? 'block' : 'none';
-    document.getElementById('calendarTabContent').style.display = (tab === 'calendar') ? 'block' : 'none';
-    if (tab === 'calendar') {
-      if (calViewYear === null) {
-        const now = new Date();
-        calViewYear = now.getFullYear();
-        calViewMonth = now.getMonth();
-      }
-      calRenderCalendar();
+  function openChronicle() {
+    if (calViewYear === null) {
+      const now = new Date();
+      calViewYear = now.getFullYear();
+      calViewMonth = now.getMonth();
     }
+    calRenderCalendar();
+    document.getElementById('chronicleOverlay').style.display = 'flex';
   }
 
   function calGoToday() {
@@ -1566,7 +1704,6 @@
 
     const cleanDailyNotices = {
       morning: !!(s.dailyNotices && s.dailyNotices.morning),
-      urgent: !!(s.dailyNotices && s.dailyNotices.urgent),
       complete: !!(s.dailyNotices && s.dailyNotices.complete)
     };
 
@@ -1583,6 +1720,22 @@
         cleanHistory[key] = clean;
       }
     }
+
+    const cleanCodexUnlocked = Array.isArray(s.codexUnlocked)
+      ? s.codexUnlocked.filter(id => typeof id === 'string' && CODEX_CHAPTERS[id])
+      : [];
+    if (cleanCodexUnlocked.length === 0) cleanCodexUnlocked.push("daily_quota", "penalty", "chronicle", "shop");
+
+    const cleanNotificationLog = Array.isArray(s.notificationLog)
+      ? s.notificationLog
+          .filter(e => e && typeof e.text === 'string' && typeof e.time === 'string')
+          .slice(0, 200)
+          .map(e => ({ time: e.time.slice(0, 5), text: e.text.slice(0, 200) }))
+      : [];
+
+    const cleanRemindersFiredHours = Array.isArray(s.remindersFiredHours)
+      ? s.remindersFiredHours.filter(h => Number.isFinite(h) && h >= 1 && h <= 10)
+      : [];
 
     const cleanState = {
       level: Math.max(1, Math.floor(sanitizeNumber(s.level, 1, 1))),
@@ -1609,7 +1762,11 @@
       notifiedLimitBreakUnlock: !!s.notifiedLimitBreakUnlock,
       history: cleanHistory,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
-      pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0)
+      pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
+      codexUnlocked: cleanCodexUnlocked,
+      notificationLog: cleanNotificationLog,
+      remindersFiredHours: cleanRemindersFiredHours,
+      lastNoticeText: (s.lastNoticeText && typeof s.lastNoticeText === 'object') ? s.lastNoticeText : {}
     };
 
     const cleanTotal = {
@@ -1660,6 +1817,7 @@
           <div class="backup-section-title">Игрок</div>
           <div class="backup-summary">Имя: ${escapeHtml(data.playerName || 'Игрок')}</div>
           <button class="backup-action-btn" onclick="startEditNameFlow()">Изменить имя</button>
+          <button class="backup-action-btn" style="margin-top:8px;" onclick="showNotificationLog()">Уведомления системы</button>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Экспорт</div>
@@ -1676,6 +1834,19 @@
         <div class="backup-section danger-zone">
           <div class="backup-section-title danger">Опасная зона</div>
           <button class="reset-all" onclick="startResetFlow()">Сбросить всё</button>
+        </div>`;
+    } else if (backupModalStep === 'notifications') {
+      const entries = data.notificationLog;
+      const rows = entries.length
+        ? entries.map(e => `<div class="notif-log-row"><span class="notif-log-time">${escapeHtml(e.time)}</span><span class="notif-log-text">${escapeHtml(e.text)}</span></div>`).join('')
+        : `<div class="backup-summary">Сегодня уведомлений ещё не было.</div>`;
+      cont.innerHTML = `
+        <div class="backup-section">
+          <div class="backup-section-title">Уведомления сегодня</div>
+          <div class="notif-log-list">${rows}</div>
+        </div>
+        <div class="danger-btn-row">
+          <button class="danger-btn-cancel" onclick="backupModalStep='main'; renderBackupModal();">Назад</button>
         </div>`;
     } else if (backupModalStep === 'editName') {
       cont.innerHTML = `
@@ -1812,6 +1983,7 @@
   function cancelImportFlow() { pendingImport = null; backupModalStep = 'main'; renderBackupModal(); }
 
   function startEditNameFlow() { backupModalStep = 'editName'; renderBackupModal(); }
+  function showNotificationLog() { backupModalStep = 'notifications'; renderBackupModal(); }
   function cancelEditName() { backupModalStep = 'main'; renderBackupModal(); }
   function submitEditName() {
     const field = document.getElementById('editNameInput');
@@ -1880,7 +2052,7 @@
         saveData(); location.reload();
     });
   };
-  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); switchStatusTab('stats'); document.getElementById('statusOverlay').style.display='flex'; };
+  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; };
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
 
   checkMissedDays();
