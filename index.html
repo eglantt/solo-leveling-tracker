@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.6 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -30,6 +30,10 @@
       -webkit-tap-highlight-color: transparent;
     }
     
+    /* CUSTOM SCROLLBAR FIX */
+    .status-window::-webkit-scrollbar { display: none; }
+    .status-window { scrollbar-width: none; -ms-overflow-style: none; }
+
     .system-container {
       min-height: 100vh;
       display: flex;
@@ -173,22 +177,10 @@
     .status-window {
       width: 95%; max-width: 420px; background: #0d1a2d; border: 2px solid #40c0ff;
       background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.035) 0px, rgba(64,192,255,0.035) 1px, transparent 1px, transparent 3px);
-      border-radius: 12px; padding: 25px 25px 40px; box-shadow: 0 0 40px rgba(0,136,255,0.4);
-      max-height: 90vh; max-height: 90dvh; overflow: hidden;
-      display: flex; flex-direction: column;
+      border-radius: 12px; padding: 25px; box-shadow: 0 0 40px rgba(0,136,255,0.4);
+      max-height: 90vh; overflow-y: auto;
     }
-    .status-header { flex-shrink: 0; font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
-    .body-wrap { position: relative; flex: 1 1 auto; min-height: 0; }
-    .status-body {
-      height: 100%; overflow-y: auto;
-      scrollbar-width: none; -ms-overflow-style: none;
-    }
-    .status-body::-webkit-scrollbar { display: none; }
-    .fade-bottom {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 44px;
-      background: linear-gradient(to bottom, rgba(13,26,45,0) 0%, #0d1a2d 88%);
-      pointer-events: none; opacity: 0; transition: opacity 0.25s ease;
-    }
+    .status-header { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
     .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid #00aaff22; }
     .stat-label { font-family: 'Orbitron', sans-serif; color: #88ddff; font-size: 1.1rem; }
     .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
@@ -260,7 +252,6 @@
       display: block; width: 100%; margin-top: 15px; padding: 12px; background: transparent;
       border: 1px solid #40c0ff; color: #40c0ff; font-family: 'Orbitron', sans-serif;
       border-radius: 8px; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
-      flex-shrink: 0;
     }
     .close-status:hover { background: rgba(0,170,255,0.2); box-shadow: 0 0 15px #00aaff; }
     
@@ -494,8 +485,6 @@
 <div class="status-overlay" id="statusOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ХАРАКТЕРИСТИКИ</div>
-    <div class="body-wrap">
-    <div class="status-body" id="statsBody">
     <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
 
     <div class="stat-row">
@@ -519,9 +508,6 @@
         <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
       </div>
     </div>
-    </div>
-    <div class="fade-bottom"></div>
-    </div>
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -529,8 +515,6 @@
 <div class="status-overlay" id="chronicleOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ЛЕТОПИСЬ ДНЕЙ</div>
-    <div class="body-wrap">
-    <div class="status-body" id="chronicleBody">
     <div class="cal-header">
       <span class="cal-arrow" id="calPrevBtn" onclick="calShiftMonth(-1)">&#8592;</span>
       <span class="cal-month-label" id="calMonthLabel">АВГУСТ 2026</span>
@@ -552,9 +536,6 @@
       <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
       <span>⭐ Новый уровень</span>
     </div>
-    </div>
-    <div class="fade-bottom"></div>
-    </div>
     <div id="calTooltip" class="cal-tooltip" style="display:none;">
       <div class="cal-tooltip-header">Система</div>
       <div class="cal-tooltip-body" id="calTooltipText"></div>
@@ -566,7 +547,7 @@
 <div class="status-overlay" id="shopOverlay">
   <div class="status-window hud-frame">
     <div class="status-header" id="shopHeader">МАГАЗИН СИСТЕМЫ</div>
-    <div class="body-wrap"><div class="status-body" id="shopBody"><div id="shopContent"></div></div><div class="fade-bottom"></div></div>
+    <div id="shopContent"></div>
     <button class="close-status" onclick="document.getElementById('shopOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -574,7 +555,7 @@
 <div class="status-overlay" id="invOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ИНВЕНТАРЬ</div>
-    <div class="body-wrap"><div class="status-body" id="invBody"><div id="invContent"></div></div><div class="fade-bottom"></div></div>
+    <div id="invContent"></div>
     <button class="close-status" onclick="document.getElementById('invOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -582,7 +563,7 @@
 <div class="status-overlay" id="backupOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">АРХИВ СИСТЕМЫ</div>
-    <div class="body-wrap"><div class="status-body" id="backupBody"><div id="backupContent"></div></div><div class="fade-bottom"></div></div>
+    <div id="backupContent"></div>
     <button class="close-status" onclick="closeBackupModal()">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -590,7 +571,7 @@
 <div class="status-overlay" id="penaltyOverlay">
   <div class="status-window hud-frame" style="border-color:#ff4444; box-shadow: 0 0 40px rgba(255,68,68,0.4);">
     <div class="status-header" style="color:#ff5555; text-shadow: 0 0 10px rgba(255,68,68,0.6);">ШТРАФ СИСТЕМЫ</div>
-    <div class="body-wrap"><div class="status-body" id="penaltyBody"><div id="penaltyContent"></div></div><div class="fade-bottom"></div></div>
+    <div id="penaltyContent"></div>
     <button class="close-status" onclick="document.getElementById('penaltyOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -598,8 +579,6 @@
 <div class="status-overlay" id="progressOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ПРОГРЕСС</div>
-    <div class="body-wrap">
-    <div class="status-body" id="progressBody">
     <div class="stats-container" id="stats" style="background:transparent; border-top:none; padding:0;">
       <div>Общий прогресс за всё время:</div>
       <div class="stat-line"><span>Отжимания:</span><strong id="totalPushups">0</strong></div>
@@ -611,9 +590,6 @@
       <div class="stat-line"><span>Всего дней:</span><strong class="stats-days" id="totalDays">0</strong></div>
       <div class="stat-line"><span>Всего штрафов:</span><strong class="stats-penalties" id="totalPenalties">0</strong></div>
     </div>
-    </div>
-    <div class="fade-bottom"></div>
-    </div>
     <button class="close-status" onclick="document.getElementById('progressOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -621,7 +597,7 @@
 <div class="status-overlay" id="codexOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">КОДЕКС СИСТЕМЫ</div>
-    <div class="body-wrap"><div class="status-body" id="codexBody"><div id="codexContent"></div></div><div class="fade-bottom"></div></div>
+    <div id="codexContent"></div>
     <button class="close-status" onclick="document.getElementById('codexOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -629,15 +605,13 @@
 <div class="status-overlay" id="confirmOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
     <div class="status-header">СИСТЕМА</div>
-    <div class="body-wrap"><div class="status-body" id="confirmBody"><div id="confirmContent"></div></div><div class="fade-bottom"></div></div>
+    <div id="confirmContent"></div>
   </div>
 </div>
 
 <div class="status-overlay" id="nameOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
     <div class="status-header">СИСТЕМА АКТИВИРОВАНА</div>
-    <div class="body-wrap">
-    <div class="status-body" id="nameBody">
     <div class="danger-warning-step">
       <div class="danger-text" style="color:#a8d8ff;">Назовите себя, Игрок.</div>
       <input type="text" id="playerNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" placeholder="Имя">
@@ -645,9 +619,6 @@
         <button class="danger-btn-cancel" onclick="skipPlayerName()">Пропустить</button>
         <button class="confirm-btn-continue" onclick="submitPlayerName()">Подтвердить</button>
       </div>
-    </div>
-    </div>
-    <div class="fade-bottom"></div>
     </div>
   </div>
 </div>
@@ -960,40 +931,6 @@
     return String(str).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
 
-  // Shows/hides the bottom fade hint depending on whether there's more content
-  // to scroll to. Called on scroll, and manually after any content is rebuilt
-  // (rebuilding innerHTML doesn't fire a scroll event on its own).
-  function refreshFade(bodyId) {
-    const body = document.getElementById(bodyId);
-    if (!body) return;
-    const wrap = body.parentElement;
-    const fade = wrap ? wrap.querySelector('.fade-bottom') : null;
-    if (!fade) return;
-    const scrollable = body.scrollHeight > body.clientHeight + 2;
-    const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 2;
-    fade.style.opacity = (scrollable && !atBottom) ? '1' : '0';
-  }
-
-  const FADE_BODY_IDS = ['statsBody', 'chronicleBody', 'shopBody', 'invBody', 'backupBody', 'penaltyBody', 'progressBody', 'codexBody', 'confirmBody', 'nameBody'];
-  FADE_BODY_IDS.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('scroll', () => refreshFade(id));
-  });
-
-  // Mobile browsers can misjudge vh/dvh while the address bar is animating
-  // in/out. This measures the real visible height directly via JS and caps
-  // every currently-open modal window to it, as a hard safety net.
-  function capOpenModalHeights() {
-    const realHeight = window.innerHeight;
-    document.querySelectorAll('.status-overlay').forEach(overlay => {
-      if (getComputedStyle(overlay).display === 'none') return;
-      const win = overlay.querySelector('.status-window');
-      if (win) win.style.maxHeight = Math.round(realHeight * 0.9) + 'px';
-    });
-  }
-  window.addEventListener('resize', capOpenModalHeights);
-  window.addEventListener('orientationchange', capOpenModalHeights);
-
   const RU_MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const RU_MONTHS_NOM = ["ЯНВАРЬ","ФЕВРАЛЬ","МАРТ","АПРЕЛЬ","МАЙ","ИЮНЬ","ИЮЛЬ","АВГУСТ","СЕНТЯБРЬ","ОКТЯБРЬ","НОЯБРЬ","ДЕКАБРЬ"];
   const RU_WEEKDAYS_MON_FIRST = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
@@ -1017,8 +954,6 @@
 
   function openNameModal() {
     document.getElementById('nameOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('nameBody');
   }
 
   function skipPlayerName() {
@@ -1102,8 +1037,6 @@
         </div>
       </div>`;
     document.getElementById('confirmOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('confirmBody');
   }
 
   function closeConfirmModal() {
@@ -1180,8 +1113,6 @@
         </ul>
       </div>`;
     document.getElementById('penaltyOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('penaltyBody');
   }
 
   function checkMissedDays() {
@@ -1352,14 +1283,10 @@
         </div>`;
     });
     document.getElementById('codexOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('codexBody');
   }
 
   function openProgressModal() {
     document.getElementById('progressOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('progressBody');
   }
 
   function openShop() {
@@ -1379,8 +1306,6 @@
         </div>`;
     }
     document.getElementById('shopOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('shopBody');
   }
 
   function buyItem(id) {
@@ -1426,8 +1351,6 @@
         </div>`;
     });
     document.getElementById('invOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('invBody');
   }
 
   function useItem(index) {
@@ -1593,8 +1516,6 @@
     }
     calRenderCalendar();
     document.getElementById('chronicleOverlay').style.display = 'flex';
-    capOpenModalHeights();
-    refreshFade('chronicleBody');
   }
 
   function calGoToday() {
@@ -1685,8 +1606,6 @@
 
     document.getElementById('calStreakLine').textContent = `Рекорд серии: ${data.bestStreak} дней`;
     document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount}`;
-    capOpenModalHeights();
-    refreshFade('chronicleBody');
   }
 
   function calShowTooltip(cell, text) {
@@ -1866,8 +1785,8 @@
   function openBackupModal() {
     backupModalStep = 'main';
     pendingImport = null;
-    document.getElementById('backupOverlay').style.display = 'flex';
     renderBackupModal();
+    document.getElementById('backupOverlay').style.display = 'flex';
   }
 
   function closeBackupModal() {
@@ -1995,8 +1914,6 @@
           </div>
         </div>`;
     }
-    capOpenModalHeights();
-    refreshFade('backupBody');
   }
 
   function startResetFlow() { backupModalStep = 'warn1'; renderBackupModal(); }
@@ -2125,7 +2042,7 @@
         saveData(); location.reload();
     });
   };
-  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; capOpenModalHeights(); refreshFade('statsBody'); };
+  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; };
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
 
   checkMissedDays();
