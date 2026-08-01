@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.13 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.14 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -777,7 +777,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.13';
+  const APP_VERSION = '5.7.14';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1496,6 +1496,8 @@
       data.pendingLevelUpToday = data.level;
       const p = document.createElement('div'); p.className = 'levelup-popup'; p.textContent = 'LEVEL UP';
       document.body.appendChild(p); setTimeout(() => p.remove(), 3000);
+      const levelReached = data.level;
+      setTimeout(() => showNotice(`Достигнут ${levelReached} уровень.`, 'info'), 4500);
       const rankAfter = getRank(data.level).name;
       if (rankAfter !== rankBefore) {
         setTimeout(() => showSystemPopup(`Новый ранг: ${rankAfter}`, 'Ваши способности признаны Системой'), 4500);
@@ -1564,13 +1566,18 @@
         data.credits += Math.floor(creds);
         const p = document.createElement('div'); p.className='complete-popup'; p.innerHTML=`COMPLETE<br><span style="font-size:0.8rem; color:#40ffaa">+${expGained} EXP</span> <span style="font-size:0.8rem; color:#ffd700">+${Math.floor(creds)} ◈${critMsg}</span>`; item.appendChild(p);
         setTimeout(() => p.remove(), 1800);
-        checkLevelUp();
+        // Snapshot today's completion status BEFORE checkLevelUp() — a level-up
+        // raises target thresholds, which would otherwise retroactively "undo"
+        // progress just counted this same click (e.g. showing "0%" right after
+        // finishing the day, if this exact quest also happened to level you up).
         const donePct = countDoneQuests() * 20;
+        const wasAllDone = allQuestsDone();
+        checkLevelUp();
         if (donePct < 100 && !data.progressNoticesShown.includes(donePct)) {
           data.progressNoticesShown.push(donePct);
           setTimeout(() => showNotice(`Задание дня выполнено на ${donePct}%.`, 'info'), 4500);
         }
-        if (!data.dailyNotices.complete && allQuestsDone()) {
+        if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
           setTimeout(() => showNotice(completeText, 'info'), 4500);
