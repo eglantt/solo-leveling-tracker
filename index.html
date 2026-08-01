@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.11 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.12 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -777,7 +777,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.11';
+  const APP_VERSION = '5.7.12';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -884,18 +884,9 @@
     "potion": { name: "Зелье Стойкости", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800 }
   };
 
+  const STARTUP_NOTICE_TEXT = "Получено задание на день. Невыполнение приведёт к штрафу.";
+
   const SYSTEM_NOTICES = {
-    morning: [
-      "Новый день начался. Задание получено.",
-      "Система: получено новое задание на сегодня.",
-      "Система сформировала дневное задание.",
-      "Отсчёт начат. Задание дня активно.",
-      "Новый цикл открыт. Задание ожидает выполнения.",
-      "Система активна. Задание на сегодня сформировано.",
-      "Задание дня получено.",
-      "Система: сформирована ежедневная задача.",
-      "Новый цикл. Задание сформировано."
-    ],
     reminder: [
       "Задание дня всё ещё не выполнено.",
       "Система напоминает: задание ожидает завершения.",
@@ -1016,7 +1007,7 @@
   function skipPlayerName() {
     document.getElementById('nameOverlay').style.display = 'none';
     render();
-    finishInit();
+    setTimeout(finishInit, 3000);
   }
 
   function submitPlayerName() {
@@ -1025,7 +1016,7 @@
     saveData();
     document.getElementById('nameOverlay').style.display = 'none';
     render();
-    finishInit();
+    setTimeout(finishInit, 3000);
   }
 
   // Removes only this app's own keys (current + all known previous versions),
@@ -1051,8 +1042,17 @@
 
   // Linear EXP curve (was exponential ×1.15/level, which made high levels
   // take literally centuries). Calibrated by simulation: ~1 year to level 100
-  // at 100% daily consistency, ~3 years at roughly a third of days completed.
-  function getExpToNext(lvl) { return Math.floor(150 * lvl); }
+  // at 100% daily consistency, ~3 years at roughly every-other-day consistency
+  // (accounting for the real EXP loss on missed/penalized days).
+  // Levels 1-2 use hand-tuned thresholds instead of the general formula: at
+  // day-1 income, the plain 150×lvl curve would hand out level 3 (and Limit
+  // Break) on the very first day, which felt far too generous for a starting
+  // player. These land level 2 around day 2 and level 3 around day 5 instead.
+  function getExpToNext(lvl) {
+    if (lvl === 1) return 1000;
+    if (lvl === 2) return 1500;
+    return Math.floor(150 * lvl);
+  }
 
   // Beginner ramp: at level 1 targets are half of the normal formula, rising
   // linearly to 100% by level 10. From level 10 onward, no discount at all.
@@ -1202,9 +1202,7 @@
     let penalizedDays = 0;
     let totalLoss = 0;
     let lastPct = 0;
-    let dayRolled = false;
     while (now >= nextReset) {
-      dayRolled = true;
       const dayKey = dateKeyFromTimestamp(data.lastReset);
       let dayStatus;
       if (data.insurance) {
@@ -1233,10 +1231,10 @@
     }
     saveData(); render();
     if (penalizedDays > 0) showPenaltyBanner(totalLoss, lastPct, penalizedDays);
-    if (dayRolled && !data.dailyNotices.morning) {
+    if (!data.dailyNotices.morning) {
       data.dailyNotices.morning = true;
       saveData();
-      showNotice(pickRandomNoRepeat(SYSTEM_NOTICES.morning, 'morning'), 'info');
+      showNotice(STARTUP_NOTICE_TEXT, 'info');
     }
   }
 
