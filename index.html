@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.12 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.13 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -777,7 +777,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.12';
+  const APP_VERSION = '5.7.13';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -967,7 +967,7 @@
     if (data.codexUnlocked.includes(id)) return;
     data.codexUnlocked.push(id);
     const chapter = CODEX_CHAPTERS[id];
-    if (chapter) showNotice(`Записано в Кодекс: ${chapter.title}`, 'info');
+    if (chapter) setTimeout(() => showNotice(`Записано в Кодекс: ${chapter.title}`, 'info'), 4500);
   }
 
   function saveData() {
@@ -1289,7 +1289,7 @@
       data.titlesUnlocked.push(name);
       if (titleRank(name) < titleRank(data.activeTitle)) data.activeTitle = name;
       const t = TITLES_DB[name];
-      showSystemPopup(`Новый титул: ${name}`, t ? t.desc : '');
+      setTimeout(() => showSystemPopup(`Новый титул: ${name}`, t ? t.desc : ''), 4500);
       if (TITLE_CODEX_MAP[name]) unlockCodexChapter(TITLE_CODEX_MAP[name]);
     }
   }
@@ -1498,13 +1498,14 @@
       document.body.appendChild(p); setTimeout(() => p.remove(), 3000);
       const rankAfter = getRank(data.level).name;
       if (rankAfter !== rankBefore) {
-        showSystemPopup(`Новый ранг: ${rankAfter}`, 'Ваши способности признаны Системой');
+        setTimeout(() => showSystemPopup(`Новый ранг: ${rankAfter}`, 'Ваши способности признаны Системой'), 4500);
         const rankClass = getRank(data.level).class;
         if (RANK_CODEX_MAP[rankClass]) unlockCodexChapter(RANK_CODEX_MAP[rankClass]);
       }
       if (data.level >= 3 && !data.notifiedLimitBreakUnlock) {
         data.notifiedLimitBreakUnlock = true;
-        showNotice(SYSTEM_NOTICES.limitBreakUnlock[Math.floor(Math.random() * SYSTEM_NOTICES.limitBreakUnlock.length)], 'info');
+        const unlockText = SYSTEM_NOTICES.limitBreakUnlock[Math.floor(Math.random() * SYSTEM_NOTICES.limitBreakUnlock.length)];
+        setTimeout(() => showNotice(unlockText, 'info'), 4500);
         unlockCodexChapter('limit_break');
       }
     }
@@ -1567,11 +1568,12 @@
         const donePct = countDoneQuests() * 20;
         if (donePct < 100 && !data.progressNoticesShown.includes(donePct)) {
           data.progressNoticesShown.push(donePct);
-          showNotice(`Задание дня выполнено на ${donePct}%.`, 'info');
+          setTimeout(() => showNotice(`Задание дня выполнено на ${donePct}%.`, 'info'), 4500);
         }
         if (!data.dailyNotices.complete && allQuestsDone()) {
           data.dailyNotices.complete = true;
-          showNotice(pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete'), 'info');
+          const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
+          setTimeout(() => showNotice(completeText, 'info'), 4500);
         }
       }
       saveData(); render();
