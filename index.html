@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.9 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.10 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -28,6 +28,9 @@
         radial-gradient(circle at 15% 50%, rgba(0,140,255,0.08) 0%, transparent 40%),
         radial-gradient(circle at 85% 30%, rgba(0,200,255,0.06) 0%, transparent 50%);
       -webkit-tap-highlight-color: transparent;
+    }
+    button {
+      user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
     }
     
     .system-container {
@@ -612,6 +615,44 @@
   </div>
 </div>
 
+<!-- ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — "Длань архитектора" — начало ===== -->
+<div class="status-overlay" id="devPanelOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header" style="color:#ff66ff; text-shadow:0 0 10px rgba(255,102,255,0.5);">ДЛАНЬ АРХИТЕКТОРА</div>
+    <div class="status-body">
+      <div class="backup-section">
+        <div class="backup-section-title">Опыт и уровень</div>
+        <input type="number" id="devExpInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во EXP">
+        <button class="backup-action-btn" onclick="devAddExp()">Добавить EXP</button>
+        <input type="number" id="devLevelInput" class="code-input-area" style="min-height:auto; text-align:center; margin-top:10px;" placeholder="Уровень">
+        <button class="backup-action-btn" onclick="devSetLevel()">Установить уровень</button>
+        <div class="danger-btn-row" style="margin-top:10px;">
+          <button class="confirm-btn-continue" onclick="devQuickLevel()">+1 уровень</button>
+          <button class="confirm-btn-continue" onclick="devQuickExp()">+1000 EXP</button>
+        </div>
+      </div>
+      <div class="backup-section">
+        <div class="backup-section-title">Кредиты</div>
+        <input type="number" id="devCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
+        <button class="backup-action-btn" onclick="devAddCredits()">Добавить кредиты</button>
+      </div>
+      <div class="backup-section">
+        <div class="backup-section-title">Штрафы</div>
+        <button class="backup-action-btn" onclick="devApplyPenalty()">Применить штраф сейчас</button>
+        <button class="backup-action-btn" style="margin-top:10px;" onclick="devResetPenaltyCount()">Обнулить счётчик штрафов</button>
+      </div>
+      <div class="backup-section danger-zone">
+        <div class="backup-section-title danger">Сбросы</div>
+        <button class="reset-all" onclick="devResetDailyProgress()">Сбросить дневной прогресс</button>
+        <button class="reset-all" style="margin-top:10px;" onclick="devForceFullReset()">Принудительный сброс дня</button>
+        <button class="reset-all" style="margin-top:10px;" onclick="devResetChronicle()">Сбросить историю Летописи</button>
+      </div>
+    </div>
+    <button class="close-status" onclick="document.getElementById('devPanelOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+<!-- ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — конец ===== -->
+
 <div class="status-overlay" id="confirmOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
     <div class="status-header">СИСТЕМА</div>
@@ -736,7 +777,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.9';
+  const APP_VERSION = '5.7.10';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -975,6 +1016,7 @@
   function skipPlayerName() {
     document.getElementById('nameOverlay').style.display = 'none';
     render();
+    finishInit();
   }
 
   function submitPlayerName() {
@@ -983,6 +1025,7 @@
     saveData();
     document.getElementById('nameOverlay').style.display = 'none';
     render();
+    finishInit();
   }
 
   // Removes only this app's own keys (current + all known previous versions),
@@ -1837,7 +1880,7 @@
       cont.innerHTML = `
         <div class="backup-section">
           <div class="backup-section-title">Версия</div>
-          <div class="backup-summary" style="opacity:0.6;">v${APP_VERSION}</div>
+          <div class="backup-summary" style="opacity:0.6; cursor:default;" onclick="devTapVersion()">v${APP_VERSION}</div>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Игрок</div>
@@ -2082,13 +2125,131 @@
         saveData(); location.reload();
     });
   };
+  // ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — "Длань архитектора" — начало =====
+  // Секретный вызов: 7 тапов по номеру версии в Архиве за 2 секунды.
+  // Весь блок самодостаточен и не используется никаким другим кодом приложения —
+  // можно целиком удалить (HTML-блок между соответствующими комментариями,
+  // и этот JS-блок) без риска задеть основную логику.
+  let devTapTimes = [];
+  function devTapVersion() {
+    const now = Date.now();
+    devTapTimes.push(now);
+    devTapTimes = devTapTimes.filter(t => now - t <= 2000);
+    if (devTapTimes.length >= 7) {
+      devTapTimes = [];
+      openDevPanel();
+    }
+  }
+
+  function openDevPanel() {
+    document.getElementById('devPanelOverlay').style.display = 'flex';
+  }
+
+  function devAddExp() {
+    const val = parseInt(document.getElementById('devExpInput').value, 10);
+    if (!Number.isFinite(val)) return;
+    data.exp += val;
+    checkLevelUp();
+    saveData(); render();
+  }
+
+  function devQuickExp() {
+    data.exp += 1000;
+    checkLevelUp();
+    saveData(); render();
+  }
+
+  function devSetLevel() {
+    const target = parseInt(document.getElementById('devLevelInput').value, 10);
+    if (!Number.isFinite(target) || target < 1) return;
+    if (target > data.level) {
+      let guard = 0;
+      while (data.level < target && guard < 1000) {
+        data.exp = getExpToNext(data.level);
+        checkLevelUp();
+        guard++;
+      }
+    } else if (target < data.level) {
+      data.level = target;
+      data.exp = 0;
+    }
+    saveData(); render();
+  }
+
+  function devQuickLevel() {
+    data.exp = getExpToNext(data.level);
+    checkLevelUp();
+    saveData(); render();
+  }
+
+  function devAddCredits() {
+    const val = parseInt(document.getElementById('devCreditsInput').value, 10);
+    if (!Number.isFinite(val)) return;
+    data.credits += val;
+    saveData(); render();
+  }
+
+  function devApplyPenalty() {
+    let basePen = 0.15;
+    const lvlReduction = Math.floor(data.level / 10) * 0.03;
+    const bonusStr = Math.max(0, data.stats.str - 10);
+    const strReduction = bonusStr * 0.005;
+    let finalPen = Math.max(0.01, basePen - lvlReduction - strReduction);
+    if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
+    const loss = Math.floor(getExpToNext(data.level) * finalPen);
+    data.exp = Math.max(0, data.exp - loss);
+    data.lastExpLoss = loss;
+    data.totalPenalties++;
+    data.consecutiveDays = 0;
+    updateTitleStatus();
+    saveData(); render();
+    showPenaltyBanner(loss, Math.round(finalPen * 100), 1);
+  }
+
+  function devResetPenaltyCount() {
+    data.totalPenalties = 0;
+    saveData(); render();
+  }
+
+  function devResetDailyProgress() {
+    data.completed = {};
+    data.isGoalMet = false;
+    saveData(); render();
+  }
+
+  function devForceFullReset() {
+    data.lastReset -= 86400000;
+    saveData();
+    checkMissedDays();
+  }
+
+  function devResetChronicle() {
+    data.history = {};
+    saveData(); render();
+    if (calViewYear !== null) calRenderCalendar();
+  }
+  // ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — конец =====
+
   document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; };
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
 
-  checkMissedDays();
-  setInterval(updateTimer, 1000);
-  updateTimer(); render();
-  if (isFreshInstall) openNameModal();
+  // On a fresh install, checkMissedDays()/updateTimer() can immediately queue a
+  // system notice (e.g. the "reminder" category, depending on time of day),
+  // which would visually collide with the name-entry modal. So on first run we
+  // show the name modal alone first, and only start the rest of the app's
+  // clock/notification logic once it's been dismissed.
+  function finishInit() {
+    checkMissedDays();
+    setInterval(updateTimer, 1000);
+    updateTimer();
+  }
+
+  render();
+  if (isFreshInstall) {
+    openNameModal();
+  } else {
+    finishInit();
+  }
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
