@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.9 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -226,9 +226,10 @@
     .cal-tc.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
     .cal-tc.br2 { bottom: -1px; right: -1px; border-left: none; border-top: none; }
     .legend-toggle {
-      margin-top: 14px; font-family: 'Orbitron', sans-serif; font-size: 0.68rem;
+      margin-top: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.68rem;
       letter-spacing: 1px; color: #5599cc; opacity: 0.8; cursor: pointer;
       text-transform: uppercase; user-select: none;
+      padding: 10px 4px; display: inline-block;
     }
     .legend {
       margin-top: 8px; padding-top: 10px; border-top: 1px solid #00aaff22;
@@ -735,7 +736,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.8';
+  const APP_VERSION = '5.7.9';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -774,7 +775,8 @@
         codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop"],
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
-        lastNoticeText: oldData.lastNoticeText || {}
+        lastNoticeText: oldData.lastNoticeText || {},
+        progressNoticesShown: oldData.progressNoticesShown || []
       };
     } else {
       isFreshInstall = true;
@@ -789,7 +791,8 @@
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop"],
-        notificationLog: [], remindersFiredHours: [], lastNoticeText: {}
+        notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
+        progressNoticesShown: []
       };
     }
   }
@@ -807,6 +810,7 @@
   if (!Array.isArray(data.notificationLog)) data.notificationLog = [];
   if (!Array.isArray(data.remindersFiredHours)) data.remindersFiredHours = [];
   if (!data.lastNoticeText || typeof data.lastNoticeText !== 'object') data.lastNoticeText = {};
+  if (!Array.isArray(data.progressNoticesShown)) data.progressNoticesShown = [];
 
   let totalStats = JSON.parse(localStorage.getItem(STATS_KEY)) || null;
   if (!totalStats) {
@@ -1036,6 +1040,15 @@
     return true;
   }
 
+  function countDoneQuests() {
+    const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+    let count = 0;
+    for (let id in targets) {
+      if ((data.completed[id] || 0) >= getDynamicTarget(targets[id], data.level)) count++;
+    }
+    return count;
+  }
+
   let pendingConfirmAction = null;
 
   function showConfirm(message, onConfirm) {
@@ -1159,6 +1172,7 @@
       data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
       data.notificationLog = [];
+      data.progressNoticesShown = [];
       nextReset += 86400000;
     }
     saveData(); render();
@@ -1496,6 +1510,11 @@
         const p = document.createElement('div'); p.className='complete-popup'; p.innerHTML=`COMPLETE<br><span style="font-size:0.8rem; color:#40ffaa">+${expGained} EXP</span> <span style="font-size:0.8rem; color:#ffd700">+${Math.floor(creds)} ◈${critMsg}</span>`; item.appendChild(p);
         setTimeout(() => p.remove(), 1800);
         checkLevelUp();
+        const donePct = countDoneQuests() * 20;
+        if (donePct < 100 && !data.progressNoticesShown.includes(donePct)) {
+          data.progressNoticesShown.push(donePct);
+          showNotice(`Задание дня выполнено на ${donePct}%.`, 'info');
+        }
         if (!data.dailyNotices.complete && allQuestsDone()) {
           data.dailyNotices.complete = true;
           showNotice(pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete'), 'info');
@@ -1735,6 +1754,10 @@
       ? s.remindersFiredHours.filter(h => Number.isFinite(h) && h >= 1 && h <= 10)
       : [];
 
+    const cleanProgressNoticesShown = Array.isArray(s.progressNoticesShown)
+      ? s.progressNoticesShown.filter(p => [20, 40, 60, 80].includes(p))
+      : [];
+
     const cleanState = {
       level: Math.max(1, Math.floor(sanitizeNumber(s.level, 1, 1))),
       exp: sanitizeNumber(s.exp, 0),
@@ -1764,7 +1787,8 @@
       codexUnlocked: cleanCodexUnlocked,
       notificationLog: cleanNotificationLog,
       remindersFiredHours: cleanRemindersFiredHours,
-      lastNoticeText: (s.lastNoticeText && typeof s.lastNoticeText === 'object') ? s.lastNoticeText : {}
+      lastNoticeText: (s.lastNoticeText && typeof s.lastNoticeText === 'object') ? s.lastNoticeText : {},
+      progressNoticesShown: cleanProgressNoticesShown
     };
 
     const cleanTotal = {
