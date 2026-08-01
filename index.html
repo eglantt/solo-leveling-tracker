@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.5 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -174,7 +174,7 @@
       width: 95%; max-width: 420px; background: #0d1a2d; border: 2px solid #40c0ff;
       background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.035) 0px, rgba(64,192,255,0.035) 1px, transparent 1px, transparent 3px);
       border-radius: 12px; padding: 25px 25px 40px; box-shadow: 0 0 40px rgba(0,136,255,0.4);
-      max-height: 90vh; overflow: hidden;
+      max-height: 90vh; max-height: 90dvh; overflow: hidden;
       display: flex; flex-direction: column;
     }
     .status-header { flex-shrink: 0; font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
@@ -980,6 +980,20 @@
     if (el) el.addEventListener('scroll', () => refreshFade(id));
   });
 
+  // Mobile browsers can misjudge vh/dvh while the address bar is animating
+  // in/out. This measures the real visible height directly via JS and caps
+  // every currently-open modal window to it, as a hard safety net.
+  function capOpenModalHeights() {
+    const realHeight = window.innerHeight;
+    document.querySelectorAll('.status-overlay').forEach(overlay => {
+      if (getComputedStyle(overlay).display === 'none') return;
+      const win = overlay.querySelector('.status-window');
+      if (win) win.style.maxHeight = Math.round(realHeight * 0.9) + 'px';
+    });
+  }
+  window.addEventListener('resize', capOpenModalHeights);
+  window.addEventListener('orientationchange', capOpenModalHeights);
+
   const RU_MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const RU_MONTHS_NOM = ["ЯНВАРЬ","ФЕВРАЛЬ","МАРТ","АПРЕЛЬ","МАЙ","ИЮНЬ","ИЮЛЬ","АВГУСТ","СЕНТЯБРЬ","ОКТЯБРЬ","НОЯБРЬ","ДЕКАБРЬ"];
   const RU_WEEKDAYS_MON_FIRST = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
@@ -1003,6 +1017,7 @@
 
   function openNameModal() {
     document.getElementById('nameOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('nameBody');
   }
 
@@ -1087,6 +1102,7 @@
         </div>
       </div>`;
     document.getElementById('confirmOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('confirmBody');
   }
 
@@ -1164,6 +1180,7 @@
         </ul>
       </div>`;
     document.getElementById('penaltyOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('penaltyBody');
   }
 
@@ -1335,11 +1352,13 @@
         </div>`;
     });
     document.getElementById('codexOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('codexBody');
   }
 
   function openProgressModal() {
     document.getElementById('progressOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('progressBody');
   }
 
@@ -1360,6 +1379,7 @@
         </div>`;
     }
     document.getElementById('shopOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('shopBody');
   }
 
@@ -1406,6 +1426,7 @@
         </div>`;
     });
     document.getElementById('invOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('invBody');
   }
 
@@ -1572,6 +1593,7 @@
     }
     calRenderCalendar();
     document.getElementById('chronicleOverlay').style.display = 'flex';
+    capOpenModalHeights();
     refreshFade('chronicleBody');
   }
 
@@ -1663,6 +1685,7 @@
 
     document.getElementById('calStreakLine').textContent = `Рекорд серии: ${data.bestStreak} дней`;
     document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount}`;
+    capOpenModalHeights();
     refreshFade('chronicleBody');
   }
 
@@ -1972,6 +1995,7 @@
           </div>
         </div>`;
     }
+    capOpenModalHeights();
     refreshFade('backupBody');
   }
 
@@ -2101,7 +2125,7 @@
         saveData(); location.reload();
     });
   };
-  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; refreshFade('statsBody'); };
+  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; capOpenModalHeights(); refreshFade('statsBody'); };
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
 
   checkMissedDays();
