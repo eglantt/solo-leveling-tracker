@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.3 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -31,19 +31,19 @@
     }
     
     /* CUSTOM SCROLLBAR FIX */
-    .status-window::-webkit-scrollbar {
+    .status-body::-webkit-scrollbar {
       width: 6px;
     }
-    .status-window::-webkit-scrollbar-track {
+    .status-body::-webkit-scrollbar-track {
       background: rgba(0, 0, 0, 0.2);
       border-radius: 10px;
     }
-    .status-window::-webkit-scrollbar-thumb {
+    .status-body::-webkit-scrollbar-thumb {
       background: rgba(64, 192, 255, 0.4);
       border-radius: 10px;
       border: 1px solid rgba(64, 192, 255, 0.2);
     }
-    .status-window::-webkit-scrollbar-thumb:hover {
+    .status-body::-webkit-scrollbar-thumb:hover {
       background: rgba(64, 192, 255, 0.7);
       box-shadow: 0 0 10px rgba(64, 192, 255, 0.5);
     }
@@ -191,10 +191,12 @@
     .status-window {
       width: 95%; max-width: 420px; background: #0d1a2d; border: 2px solid #40c0ff;
       background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.035) 0px, rgba(64,192,255,0.035) 1px, transparent 1px, transparent 3px);
-      border-radius: 12px; padding: 25px; box-shadow: 0 0 40px rgba(0,136,255,0.4);
-      max-height: 90vh; overflow-y: auto;
+      border-radius: 12px; padding: 25px 25px 40px; box-shadow: 0 0 40px rgba(0,136,255,0.4);
+      max-height: 90vh;
+      display: flex; flex-direction: column;
     }
-    .status-header { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
+    .status-header { flex-shrink: 0; font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
+    .status-body { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
     .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid #00aaff22; }
     .stat-label { font-family: 'Orbitron', sans-serif; color: #88ddff; font-size: 1.1rem; }
     .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
@@ -266,6 +268,7 @@
       display: block; width: 100%; margin-top: 15px; padding: 12px; background: transparent;
       border: 1px solid #40c0ff; color: #40c0ff; font-family: 'Orbitron', sans-serif;
       border-radius: 8px; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
+      flex-shrink: 0;
     }
     .close-status:hover { background: rgba(0,170,255,0.2); box-shadow: 0 0 15px #00aaff; }
     
@@ -499,6 +502,7 @@
 <div class="status-overlay" id="statusOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ХАРАКТЕРИСТИКИ</div>
+    <div class="status-body">
     <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
 
     <div class="stat-row">
@@ -522,6 +526,7 @@
         <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
       </div>
     </div>
+    </div>
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -529,6 +534,7 @@
 <div class="status-overlay" id="chronicleOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ЛЕТОПИСЬ ДНЕЙ</div>
+    <div class="status-body">
     <div class="cal-header">
       <span class="cal-arrow" id="calPrevBtn" onclick="calShiftMonth(-1)">&#8592;</span>
       <span class="cal-month-label" id="calMonthLabel">АВГУСТ 2026</span>
@@ -550,6 +556,7 @@
       <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
       <span>⭐ Новый уровень</span>
     </div>
+    </div>
     <div id="calTooltip" class="cal-tooltip" style="display:none;">
       <div class="cal-tooltip-header">Система</div>
       <div class="cal-tooltip-body" id="calTooltipText"></div>
@@ -561,7 +568,7 @@
 <div class="status-overlay" id="shopOverlay">
   <div class="status-window hud-frame">
     <div class="status-header" id="shopHeader">МАГАЗИН СИСТЕМЫ</div>
-    <div id="shopContent"></div>
+    <div class="status-body"><div id="shopContent"></div></div>
     <button class="close-status" onclick="document.getElementById('shopOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -569,7 +576,7 @@
 <div class="status-overlay" id="invOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ИНВЕНТАРЬ</div>
-    <div id="invContent"></div>
+    <div class="status-body"><div id="invContent"></div></div>
     <button class="close-status" onclick="document.getElementById('invOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -577,7 +584,7 @@
 <div class="status-overlay" id="backupOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">АРХИВ СИСТЕМЫ</div>
-    <div id="backupContent"></div>
+    <div class="status-body"><div id="backupContent"></div></div>
     <button class="close-status" onclick="closeBackupModal()">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -585,7 +592,7 @@
 <div class="status-overlay" id="penaltyOverlay">
   <div class="status-window hud-frame" style="border-color:#ff4444; box-shadow: 0 0 40px rgba(255,68,68,0.4);">
     <div class="status-header" style="color:#ff5555; text-shadow: 0 0 10px rgba(255,68,68,0.6);">ШТРАФ СИСТЕМЫ</div>
-    <div id="penaltyContent"></div>
+    <div class="status-body"><div id="penaltyContent"></div></div>
     <button class="close-status" onclick="document.getElementById('penaltyOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -593,6 +600,7 @@
 <div class="status-overlay" id="progressOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ПРОГРЕСС</div>
+    <div class="status-body">
     <div class="stats-container" id="stats" style="background:transparent; border-top:none; padding:0;">
       <div>Общий прогресс за всё время:</div>
       <div class="stat-line"><span>Отжимания:</span><strong id="totalPushups">0</strong></div>
@@ -604,6 +612,7 @@
       <div class="stat-line"><span>Всего дней:</span><strong class="stats-days" id="totalDays">0</strong></div>
       <div class="stat-line"><span>Всего штрафов:</span><strong class="stats-penalties" id="totalPenalties">0</strong></div>
     </div>
+    </div>
     <button class="close-status" onclick="document.getElementById('progressOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -611,7 +620,7 @@
 <div class="status-overlay" id="codexOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">КОДЕКС СИСТЕМЫ</div>
-    <div id="codexContent"></div>
+    <div class="status-body"><div id="codexContent"></div></div>
     <button class="close-status" onclick="document.getElementById('codexOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
@@ -619,13 +628,14 @@
 <div class="status-overlay" id="confirmOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
     <div class="status-header">СИСТЕМА</div>
-    <div id="confirmContent"></div>
+    <div class="status-body"><div id="confirmContent"></div></div>
   </div>
 </div>
 
 <div class="status-overlay" id="nameOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
     <div class="status-header">СИСТЕМА АКТИВИРОВАНА</div>
+    <div class="status-body">
     <div class="danger-warning-step">
       <div class="danger-text" style="color:#a8d8ff;">Назовите себя, Игрок.</div>
       <input type="text" id="playerNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" placeholder="Имя">
@@ -633,6 +643,7 @@
         <button class="danger-btn-cancel" onclick="skipPlayerName()">Пропустить</button>
         <button class="confirm-btn-continue" onclick="submitPlayerName()">Подтвердить</button>
       </div>
+    </div>
     </div>
   </div>
 </div>
@@ -1817,7 +1828,11 @@
           <div class="backup-section-title">Игрок</div>
           <div class="backup-summary">Имя: ${escapeHtml(data.playerName || 'Игрок')}</div>
           <button class="backup-action-btn" onclick="startEditNameFlow()">Изменить имя</button>
-          <button class="backup-action-btn" style="margin-top:8px;" onclick="showNotificationLog()">Уведомления системы</button>
+        </div>
+        <div class="backup-section">
+          <div class="backup-section-title">Уведомления</div>
+          <div class="backup-summary">Журнал сообщений Системы за сегодняшний день.</div>
+          <button class="backup-action-btn" onclick="showNotificationLog()">Уведомления системы</button>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Экспорт</div>
