@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.14 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.15 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -453,6 +453,12 @@
     .notif-log-time { color: #40c0ff; font-family: 'Roboto Mono', monospace; flex-shrink: 0; opacity: 0.85; }
     .notif-log-text { color: #aaddff; }
     .item-card { background: rgba(0,0,0,0.4); border: 1px solid #00aaff33; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    @keyframes itemFlash {
+      0% { box-shadow: 0 0 0 rgba(64,192,255,0); border-color: #00aaff33; }
+      35% { box-shadow: 0 0 20px rgba(64,192,255,0.7); border-color: #40c0ff; background: rgba(64,192,255,0.12); }
+      100% { box-shadow: 0 0 0 rgba(64,192,255,0); border-color: #00aaff33; }
+    }
+    .item-card.item-flash { animation: itemFlash 0.6s ease; }
     .item-icon { font-size: 1.4rem; min-width: 40px; text-align: center; }
     .item-info { flex: 1; min-width: 0; }
     .item-name { color: #40c0ff; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; }
@@ -777,7 +783,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.14';
+  const APP_VERSION = '5.7.15';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -801,7 +807,8 @@
     if (oldData) {
       data = { 
         ...oldData, 
-        consumables: oldData.consumables || [], 
+        consumables: (oldData.consumables && !Array.isArray(oldData.consumables)) ? oldData.consumables : {}, 
+        boxes: oldData.boxes || {},
         inventory: oldData.inventory || [],
         lastExpLoss: oldData.lastExpLoss || 0,
         limitBreaksCount: oldData.limitBreaksCount || 0,
@@ -817,7 +824,10 @@
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
-        progressNoticesShown: oldData.progressNoticesShown || []
+        progressNoticesShown: oldData.progressNoticesShown || [],
+        targetDiscountToday: !!oldData.targetDiscountToday,
+        expBoostToday: !!oldData.expBoostToday,
+        streakShield: !!oldData.streakShield
       };
     } else {
       isFreshInstall = true;
@@ -825,7 +835,7 @@
         level: 1, exp: 0, lastReset: getLastResetThreshold(Date.now()),
         completed: {}, totalDays: 0, totalPenalties: 0,
         statPoints: 0, stats: { str: 10, agi: 10, int: 10 },
-        isGoalMet: false, credits: 0, inventory: [], consumables: [], 
+        isGoalMet: false, credits: 0, inventory: [], consumables: {}, boxes: {},
         insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
         lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, titlesUnlocked: ["Новичок"],
         playerName: "", dailyNotices: { morning: false, complete: false },
@@ -833,7 +843,8 @@
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop"],
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
-        progressNoticesShown: []
+        progressNoticesShown: [],
+        targetDiscountToday: false, expBoostToday: false, streakShield: false
       };
     }
   }
@@ -852,6 +863,11 @@
   if (!Array.isArray(data.remindersFiredHours)) data.remindersFiredHours = [];
   if (!data.lastNoticeText || typeof data.lastNoticeText !== 'object') data.lastNoticeText = {};
   if (!Array.isArray(data.progressNoticesShown)) data.progressNoticesShown = [];
+  if (!data.consumables || Array.isArray(data.consumables) || typeof data.consumables !== 'object') data.consumables = {};
+  if (!data.boxes || typeof data.boxes !== 'object') data.boxes = {};
+  data.targetDiscountToday = !!data.targetDiscountToday;
+  data.expBoostToday = !!data.expBoostToday;
+  data.streakShield = !!data.streakShield;
 
   let totalStats = JSON.parse(localStorage.getItem(STATS_KEY)) || null;
   if (!totalStats) {
@@ -865,9 +881,9 @@
   }
 
   const ARTEFACTS = {
-    "ring_speed": { name: "Кольцо Спешки", icon: "💍", desc: "Пассивно: +10% Кредитов за шаги", level: 10 },
+    "ring_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "Пассивно: +10% Кредитов за шаги", level: 10 },
     "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "Пассивно: Штрафы снижены на 15%", level: 20 },
-    "medal_dev": { name: "Медаль Развития", icon: "🎖", desc: "Пассивно: +2 очка статов при Lvl Up", level: 30 }
+    "medal_dev": { name: "Печать Развития", icon: "🎖", desc: "Пассивно: +2 очка статов при Lvl Up", level: 30 }
   };
 
   const TITLES_DB = {
@@ -879,10 +895,40 @@
   };
 
   const SHOP_CATALOG = {
-    "elixir": { name: "Эликсир Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500 },
-    "scroll": { name: "Свиток Иммунитета", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000 },
-    "potion": { name: "Зелье Стойкости", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800 }
+    "elixir": { name: "Руна Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500 },
+    "scroll": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000 },
+    "potion": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800 },
+    "freedom_rune": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает требования всех заданий на 25% до конца сегодняшнего дня", price: 700 },
+    "stability_rune": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200 },
+    "growth_potion": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600 }
   };
+
+  const BOX_CATALOG = {
+    "box_basalt": { name: "Базальтовая Шкатулка", icon: "📦", desc: "Содержит 1–3 расходника.", weight: 70, minItems: 1, maxItems: 3 },
+    "box_onyx": { name: "Ониксовая Шкатулка", icon: "🎁", desc: "Содержит 1–3 предмета. Повышенный шанс на более полезные расходники.", weight: 30, minItems: 1, maxItems: 3 }
+  };
+
+  // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
+  const BOX_LOOT_POOLS = {
+    "box_basalt": ["elixir", "elixir", "scroll", "potion", "freedom_rune", "stability_rune", "growth_potion"],
+    "box_onyx": ["elixir", "scroll", "scroll", "potion", "potion", "freedom_rune", "stability_rune", "growth_potion", "growth_potion"]
+  };
+
+  function getAvailableBoxTiers() {
+    // Extensible: gate additional tiers by data.level here in future stages.
+    return ["box_basalt", "box_onyx"];
+  }
+
+  function rollBoxTier() {
+    const tiers = getAvailableBoxTiers();
+    const totalWeight = tiers.reduce((sum, id) => sum + BOX_CATALOG[id].weight, 0);
+    let r = Math.random() * totalWeight;
+    for (const id of tiers) {
+      r -= BOX_CATALOG[id].weight;
+      if (r <= 0) return id;
+    }
+    return tiers[0];
+  }
 
   const STARTUP_NOTICE_TEXT = "Получено задание на день. Невыполнение приведёт к штрафу.";
 
@@ -931,9 +977,9 @@
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их действие Игрок обнаружит, ознакомившись с содержимым Лавки лично." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — до двух раз в сутки Игрок может продолжить сверх плана, получая удвоенное вознаграждение в кредитах." },
-    artifact_ring_speed: { title: "Кольцо Спешки", content: "Получен артефакт: Кольцо Спешки. Каждый пройденный шаг отныне приносит на 10% больше кредитов." },
+    artifact_ring_speed: { title: "Кристалл Ускорения", content: "Получен артефакт: Кристалл Ускорения. Каждый пройденный шаг отныне приносит на 10% больше кредитов." },
     artifact_amulet_will: { title: "Амулет Воли", content: "Получен артефакт: Амулет Воли. Потеря опыта при расчёте штрафа снижена на 15%." },
-    artifact_medal_dev: { title: "Медаль Развития", content: "Получен артефакт: Медаль Развития. При каждом повышении уровня Игрок получает дополнительные очки характеристик." },
+    artifact_medal_dev: { title: "Печать Развития", content: "Получен артефакт: Печать Развития. При каждом повышении уровня Игрок получает дополнительные очки характеристик." },
     title_celeustremlenny: { title: "Целеустремлённый", content: "Семь дней подряд без единого срыва. Система признаёт целеустремлённость Игрока — прибавка к опыту закреплена, покуда серия не прервётся." },
     title_vechny_strannik: { title: "Вечный странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Вечным странником — шаги отныне приносят больше опыта." },
     title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел испытан на прочность пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
@@ -1073,7 +1119,9 @@
   }
 
   function getDynamicTarget(base, lvl) {
-    return Math.floor(base * getTargetGrowthMultiplier(lvl));
+    let val = Math.floor(base * getTargetGrowthMultiplier(lvl));
+    if (data.targetDiscountToday) val = Math.floor(val * 0.75);
+    return val;
   }
   
   function getDynamicExp(base, lvl, id) { 
@@ -1083,6 +1131,7 @@
     mul += (bonusInt * 0.01);
     if (data.activeTitle === "Целеустремленный") mul += 0.05;
     if (data.activeTitle === "Вечный странник" && id === "steps") mul += 0.10;
+    if (data.expBoostToday) mul += 0.20;
     return Math.floor(base * mul);
   }
 
@@ -1227,6 +1276,8 @@
       data.remindersFiredHours = [];
       data.notificationLog = [];
       data.progressNoticesShown = [];
+      data.targetDiscountToday = false;
+      data.expBoostToday = false;
       nextReset += 86400000;
     }
     saveData(); render();
@@ -1251,7 +1302,11 @@
       data.exp = Math.max(0, data.exp - loss);
       data.lastExpLoss = loss;
       data.totalPenalties++;
-      data.consecutiveDays = 0;
+      if (data.streakShield) {
+        data.streakShield = false;
+      } else {
+        data.consecutiveDays = 0;
+      }
       updateTitleStatus();
       return { loss, pct: Math.round(finalPen * 100) };
     } else {
@@ -1392,7 +1447,7 @@
     const item = SHOP_CATALOG[id];
     if (data.credits < item.price) { showNotice("Недостаточно кредитов!", 'warn'); return; }
     data.credits -= item.price;
-    data.consumables.push(id);
+    data.consumables[id] = (data.consumables[id] || 0) + 1;
     saveData(); render(); openShop();
   }
 
@@ -1419,45 +1474,115 @@
       const art = ARTEFACTS[key];
       cont.innerHTML += `<div class="item-card"><div class="item-icon">${art.icon}</div><div class="item-info"><div class="item-name">${art.name}</div><div class="item-desc">${art.desc}</div></div></div>`;
     });
-    cont.innerHTML += `<div class="section-title">Расходники</div>`;
-    if (!data.consumables.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
-    data.consumables.forEach((id, index) => {
-      const item = SHOP_CATALOG[id];
+    cont.innerHTML += `<div class="section-title">Шкатулки</div>`;
+    const boxIds = Object.keys(data.boxes).filter(id => data.boxes[id] > 0);
+    if (!boxIds.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
+    boxIds.forEach(id => {
+      const box = BOX_CATALOG[id];
+      if (!box) return;
+      const count = data.boxes[id];
       cont.innerHTML += `
-        <div class="item-card">
+        <div class="item-card" data-box-id="${id}">
+          <div class="item-icon">${box.icon}</div>
+          <div class="item-info"><div class="item-name">${box.name} ×${count}</div><div class="item-desc">${box.desc}</div></div>
+          <button onclick="openBox('${id}')" class="use-btn">ОТКРЫТЬ</button>
+        </div>`;
+    });
+    cont.innerHTML += `<div class="section-title">Расходники</div>`;
+    const consumableIds = Object.keys(data.consumables).filter(id => data.consumables[id] > 0);
+    if (!consumableIds.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
+    consumableIds.forEach(id => {
+      const item = SHOP_CATALOG[id];
+      if (!item) return;
+      const count = data.consumables[id];
+      cont.innerHTML += `
+        <div class="item-card" data-consumable-id="${id}">
           <div class="item-icon">${item.icon}</div>
-          <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div></div>
-          <button onclick="useItem(${index})" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
+          <div class="item-info"><div class="item-name">${item.name} ×${count}</div><div class="item-desc">${item.desc}</div></div>
+          <button onclick="useItem('${id}')" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
         </div>`;
     });
     document.getElementById('invOverlay').style.display = 'flex';
   }
 
-  function useItem(index) {
-    const id = data.consumables[index];
-    const item = SHOP_CATALOG[id];
-    if (!item) return;
-    showConfirm(`Использовать «${item.name}»?`, () => performUseItem(index));
+  // Plays a brief flash on the item's card, then runs the actual state change
+  // once the flash has had time to register — so using/opening something
+  // visibly *does* something, instead of the list just silently updating.
+  function flashThenRun(selector, callback) {
+    const card = document.querySelector(selector);
+    if (card) {
+      card.classList.add('item-flash');
+      setTimeout(callback, 600);
+    } else {
+      callback();
+    }
   }
 
-  function performUseItem(index) {
-    const id = data.consumables[index];
-    let used = false;
-    if (id === 'elixir') {
-        if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Эликсир использован. Один штраф удалён из истории.", 'info'); }
-        else { showNotice("У вас нет штрафов для удаления.", 'warn'); }
-    } else if (id === 'scroll') {
-        if (!data.insurance) { data.insurance = true; used = true; showNotice("Свиток активирован. Завтра штраф не будет начислен.", 'info'); }
-        else { showNotice("Свиток уже активирован.", 'warn'); }
-    } else if (id === 'potion') {
-        if (data.lastExpLoss > 0) {
-            const recovery = Math.floor(data.lastExpLoss * 0.5);
-            data.exp += recovery; 
-            data.lastExpLoss = 0; checkLevelUp(); used = true;
-            showNotice(`Зелье использовано. Восстановлено ${recovery} EXP.`, 'info');
-        } else { showNotice("Нет доступных потерь опыта для восстановления.", 'warn'); }
-    }
-    if (used) { data.consumables.splice(index, 1); saveData(); render(); openInv(); }
+  function useItem(id) {
+    const item = SHOP_CATALOG[id];
+    if (!item || !(data.consumables[id] > 0)) return;
+    showConfirm(`Использовать «${item.name}»?`, () => performUseItem(id));
+  }
+
+  function performUseItem(id) {
+    flashThenRun(`[data-consumable-id="${id}"]`, () => {
+      let used = false;
+      if (id === 'elixir') {
+          if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
+          else { showNotice("У вас нет штрафов для удаления.", 'warn'); }
+      } else if (id === 'scroll') {
+          if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
+          else { showNotice("Защита уже активирована.", 'warn'); }
+      } else if (id === 'potion') {
+          if (data.lastExpLoss > 0) {
+              const recovery = Math.floor(data.lastExpLoss * 0.5);
+              data.exp += recovery; 
+              data.lastExpLoss = 0; checkLevelUp(); used = true;
+              showNotice(`Зелье использовано. Восстановлено ${recovery} EXP.`, 'info');
+          } else { showNotice("Нет доступных потерь опыта для восстановления.", 'warn'); }
+      } else if (id === 'freedom_rune') {
+          if (!data.targetDiscountToday) { data.targetDiscountToday = true; used = true; showNotice("Руна использована. Требования заданий снижены на сегодня.", 'info'); }
+          else { showNotice("Снижение требований уже действует сегодня.", 'warn'); }
+      } else if (id === 'stability_rune') {
+          if (!data.streakShield) { data.streakShield = true; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
+          else { showNotice("Защита серии уже активна.", 'warn'); }
+      } else if (id === 'growth_potion') {
+          if (!data.expBoostToday) { data.expBoostToday = true; used = true; showNotice("Зелье использовано. Опыт увеличен до конца дня.", 'info'); }
+          else { showNotice("Усиление опыта уже действует сегодня.", 'warn'); }
+      }
+      if (used) {
+        data.consumables[id]--;
+        if (data.consumables[id] <= 0) delete data.consumables[id];
+        saveData(); render(); openInv();
+      }
+    });
+  }
+
+  function openBox(id) {
+    const box = BOX_CATALOG[id];
+    if (!box || !(data.boxes[id] > 0)) return;
+    showConfirm(`Открыть «${box.name}»?`, () => performOpenBox(id));
+  }
+
+  function performOpenBox(id) {
+    flashThenRun(`[data-box-id="${id}"]`, () => {
+      const box = BOX_CATALOG[id];
+      data.boxes[id]--;
+      if (data.boxes[id] <= 0) delete data.boxes[id];
+      const pool = BOX_LOOT_POOLS[id] || [];
+      const count = box.minItems + Math.floor(Math.random() * (box.maxItems - box.minItems + 1));
+      const gained = [];
+      for (let i = 0; i < count && pool.length; i++) {
+        const lootId = pool[Math.floor(Math.random() * pool.length)];
+        data.consumables[lootId] = (data.consumables[lootId] || 0) + 1;
+        gained.push(lootId);
+      }
+      saveData(); render(); openInv();
+      gained.forEach(lootId => {
+        const lootItem = SHOP_CATALOG[lootId];
+        if (lootItem) showNotice(`Получен предмет: ${lootItem.name}`, 'info');
+      });
+    });
   }
 
   function checkLimitBreak() {
@@ -1480,11 +1605,15 @@
   function checkLevelUp() {
     let leveled = false;
     const rankBefore = getRank(data.level).name;
+    const gainedBoxes = [];
     while (data.exp >= getExpToNext(data.level)) {
       data.exp -= getExpToNext(data.level);
       data.level++;
       data.statPoints += (data.inventory.includes("medal_dev") ? 5 : 3);
       leveled = true;
+      const boxId = rollBoxTier();
+      data.boxes[boxId] = (data.boxes[boxId] || 0) + 1;
+      gainedBoxes.push(boxId);
       for (let k in ARTEFACTS) {
         if (data.level >= ARTEFACTS[k].level && !data.inventory.includes(k)) {
           data.inventory.push(k);
@@ -1510,6 +1639,14 @@
         setTimeout(() => showNotice(unlockText, 'info'), 4500);
         unlockCodexChapter('limit_break');
       }
+      const boxCounts = {};
+      gainedBoxes.forEach(id => { boxCounts[id] = (boxCounts[id] || 0) + 1; });
+      Object.keys(boxCounts).forEach(id => {
+        const box = BOX_CATALOG[id];
+        if (!box) return;
+        const suffix = boxCounts[id] > 1 ? ` ×${boxCounts[id]}` : '';
+        setTimeout(() => showNotice(`Получен предмет: ${box.name}${suffix}`, 'info'), 4500);
+      });
     }
   }
 
@@ -1775,7 +1912,24 @@
     };
 
     const cleanInventory = Array.isArray(s.inventory) ? s.inventory.filter(k => ARTEFACTS[k]) : [];
-    const cleanConsumables = Array.isArray(s.consumables) ? s.consumables.filter(k => SHOP_CATALOG[k]) : [];
+    const cleanConsumables = {};
+    if (s.consumables && typeof s.consumables === 'object' && !Array.isArray(s.consumables)) {
+      for (const key in s.consumables) {
+        if (SHOP_CATALOG[key]) {
+          const n = sanitizeNumber(s.consumables[key], 0, 0);
+          if (n > 0) cleanConsumables[key] = Math.floor(n);
+        }
+      }
+    }
+    const cleanBoxes = {};
+    if (s.boxes && typeof s.boxes === 'object' && !Array.isArray(s.boxes)) {
+      for (const key in s.boxes) {
+        if (BOX_CATALOG[key]) {
+          const n = sanitizeNumber(s.boxes[key], 0, 0);
+          if (n > 0) cleanBoxes[key] = Math.floor(n);
+        }
+      }
+    }
     let cleanTitlesUnlocked = Array.isArray(s.titlesUnlocked) ? s.titlesUnlocked.filter(k => TITLES_DB[k]) : [];
     if (cleanTitlesUnlocked.length === 0) cleanTitlesUnlocked = ["Новичок"];
 
@@ -1851,7 +2005,11 @@
       notificationLog: cleanNotificationLog,
       remindersFiredHours: cleanRemindersFiredHours,
       lastNoticeText: (s.lastNoticeText && typeof s.lastNoticeText === 'object') ? s.lastNoticeText : {},
-      progressNoticesShown: cleanProgressNoticesShown
+      progressNoticesShown: cleanProgressNoticesShown,
+      boxes: cleanBoxes,
+      targetDiscountToday: !!s.targetDiscountToday,
+      expBoostToday: !!s.expBoostToday,
+      streakShield: !!s.streakShield
     };
 
     const cleanTotal = {
