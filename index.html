@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.17 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.18 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -465,7 +465,18 @@
       100% { box-shadow: 0 0 0 rgba(255,215,0,0); border-color: #00aaff33; }
     }
     .item-card.item-flash-gold { animation: itemFlashGold 0.6s ease; }
-    .item-icon { font-size: 1.4rem; min-width: 40px; text-align: center; }
+    .item-icon { min-width: 40px; text-align: center; display: flex; align-items: center; justify-content: center; }
+    .item-icon-img { width: 32px; height: 32px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
+    .item-icon-img.title-icon-img { width: 24px; height: 24px; cursor: default; }
+    .item-preview-box {
+      background: rgba(13,26,45,0.96);
+      background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.035) 0px, rgba(64,192,255,0.035) 1px, transparent 1px, transparent 3px);
+      border: 1px solid #40c0ff; border-radius: 14px; padding: 22px;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      box-shadow: 0 0 40px rgba(0,140,255,0.4);
+    }
+    .item-preview-box img { width: 200px; height: 200px; object-fit: contain; }
+    .item-preview-name { font-family: 'Orbitron', sans-serif; color: #40c0ff; font-size: 0.9rem; text-align: center; letter-spacing: 0.5px; }
     .item-info { flex: 1; min-width: 0; }
     .item-name { color: #40c0ff; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; }
     .item-desc { color: #88ddffaa; font-size: 0.75rem; margin-top: 2px; line-height: 1.2; }
@@ -495,7 +506,9 @@
       .reset-timer { width: 100%; max-width: none; }
       .reset-time { font-size: 1.8rem; }
       .item-card { padding: 8px; gap: 6px; }
-      .item-icon { min-width: 30px; font-size: 1.2rem; }
+      .item-icon { min-width: 30px; }
+      .item-icon-img { width: 28px; height: 28px; }
+      .item-icon-img.title-icon-img { width: 22px; height: 22px; }
       .use-btn { padding: 5px 6px; font-size: 0.65rem; }
     }
   </style>
@@ -628,6 +641,13 @@
 </div>
 
 <!-- ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — "Длань архитектора" — начало ===== -->
+<div class="status-overlay" id="itemPreviewOverlay" style="z-index:2500; cursor:pointer;" onclick="document.getElementById('itemPreviewOverlay').style.display='none'">
+  <div class="item-preview-box">
+    <img id="itemPreviewImg" src="" alt="">
+    <div class="item-preview-name" id="itemPreviewName"></div>
+  </div>
+</div>
+
 <div class="status-overlay" id="devPanelOverlay">
   <div class="status-window hud-frame">
     <div class="status-header" style="color:#ff66ff; text-shadow:0 0 10px rgba(255,102,255,0.5);">ДЛАНЬ АРХИТЕКТОРА</div>
@@ -789,7 +809,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.17';
+  const APP_VERSION = '5.7.18';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1438,7 +1458,7 @@
       const item = SHOP_CATALOG[id];
       cont.innerHTML += `
         <div class="item-card" data-shop-id="${id}">
-          <div class="item-icon">${item.icon}</div>
+          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
           <div class="item-info">
             <div class="item-name">${item.name}</div>
             <div class="item-desc">${item.desc}</div>
@@ -1466,9 +1486,11 @@
         const t = TITLES_DB[tName];
         if (!t) return;
         const isActive = data.activeTitle === tName;
+        const iconId = TITLE_ICON_IDS[tName];
+        const iconHtml = iconId ? `<img class="item-icon-img title-icon-img" src="icons/items/${iconId}.png" alt="">` : t.icon;
         cont.innerHTML += `
           <div class="item-card" style="${isActive ? 'border-color:#40ffaa;' : ''} cursor:pointer;" onclick="selectTitle('${tName}')" title="${isActive ? 'Активный титул' : 'Нажмите, чтобы сделать активным'}">
-            <div class="item-icon">${t.icon}</div>
+            <div class="item-icon">${iconHtml}</div>
             <div class="item-info">
               <div class="item-name" style="${isActive ? 'color:#40ffaa;' : ''}">${escapeHtml(tName)}${isActive ? ' 🛡️' : ''}</div>
               <div class="item-desc">${t.desc}</div>
@@ -1480,7 +1502,7 @@
     if (!arts.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
     arts.forEach(key => {
       const art = ARTEFACTS[key];
-      cont.innerHTML += `<div class="item-card"><div class="item-icon">${art.icon}</div><div class="item-info"><div class="item-name">${art.name}</div><div class="item-desc">${art.desc}</div></div></div>`;
+      cont.innerHTML += `<div class="item-card"><div class="item-icon"><img class="item-icon-img" src="icons/items/${key}.png" alt="" onclick="showItemPreview('${key}','${escapeHtml(art.name)}')"></div><div class="item-info"><div class="item-name">${art.name}</div><div class="item-desc">${art.desc}</div></div></div>`;
     });
     cont.innerHTML += `<div class="section-title">Шкатулки</div>`;
     const boxIds = Object.keys(data.boxes).filter(id => data.boxes[id] > 0);
@@ -1491,7 +1513,7 @@
       const count = data.boxes[id];
       cont.innerHTML += `
         <div class="item-card" data-box-id="${id}">
-          <div class="item-icon">${box.icon}</div>
+          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(box.name)}')"></div>
           <div class="item-info"><div class="item-name">${box.name} ×${count}</div><div class="item-desc">${box.desc}</div></div>
           <button onclick="openBox('${id}')" class="use-btn">ОТКРЫТЬ</button>
         </div>`;
@@ -1505,7 +1527,7 @@
       const count = data.consumables[id];
       cont.innerHTML += `
         <div class="item-card" data-consumable-id="${id}">
-          <div class="item-icon">${item.icon}</div>
+          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
           <div class="item-info"><div class="item-name">${item.name} ×${count}</div><div class="item-desc">${item.desc}</div></div>
           <button onclick="useItem('${id}')" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
         </div>`;
@@ -1516,6 +1538,20 @@
   // Plays a brief flash on the item's card, then runs the actual state change
   // once the flash has had time to register — so using/opening something
   // visibly *does* something, instead of the list just silently updating.
+  const TITLE_ICON_IDS = {
+    "Новичок": "title_novice",
+    "Пробужденный": "title_awakened",
+    "Целеустремленный": "title_determined",
+    "Преодолевший предел": "title_limitbreaker",
+    "Вечный странник": "title_wanderer"
+  };
+
+  function showItemPreview(iconId, name) {
+    document.getElementById('itemPreviewImg').src = `icons/items/${iconId}.png`;
+    document.getElementById('itemPreviewName').textContent = name;
+    document.getElementById('itemPreviewOverlay').style.display = 'flex';
+  }
+
   function flashThenRun(selector, callback, flashClass = 'item-flash') {
     const card = document.querySelector(selector);
     if (card) {
