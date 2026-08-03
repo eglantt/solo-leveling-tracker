@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.8.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.8.1 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -453,7 +453,7 @@
     .notif-log-row { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #00aaff15; font-size: 0.72rem; }
     .notif-log-time { color: #40c0ff; font-family: 'Roboto Mono', monospace; flex-shrink: 0; opacity: 0.85; }
     .notif-log-text { color: #aaddff; }
-    .item-card { background: rgba(0,0,0,0.4); border: 1px solid #00aaff33; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .item-card { background: rgba(0,0,0,0.4); border: 1px solid #00aaff33; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
     @keyframes itemFlash {
       0% { box-shadow: 0 0 0 rgba(64,192,255,0); border-color: #00aaff33; }
       35% { box-shadow: 0 0 20px rgba(64,192,255,0.7); border-color: #40c0ff; background: rgba(64,192,255,0.12); }
@@ -809,7 +809,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.8.0';
+  const APP_VERSION = '5.8.1';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -937,18 +937,18 @@
     "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает требования всех заданий на 25% до конца сегодняшнего дня", price: 700 },
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200 },
     "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600 },
-    "rune_restoration_charged": { name: "Руна Восстановления (заряженная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа", price: 2500 },
-    "rune_growth_charged": { name: "Руна Роста (заряженная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня", price: 2500 },
-    "rune_protection_charged": { name: "Руна Защиты (заряженная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф", price: 2500 },
-    "rune_limit_charged": { name: "Руна Предела (заряженная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления лимита сегодня", price: 2500 },
+    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа", price: 2500 },
+    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня", price: 2500 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф", price: 2500 },
+    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления лимита сегодня", price: 2500 },
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления лимита сегодня", price: 1500 },
     "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа", price: 3800 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня", price: 3800 }
   };
 
   const KEY_CATALOG = {
-    "key_scarlet": { name: "Ключ Алой Шкатулки", icon: "🔑" },
-    "key_crimson": { name: "Ключ Багровой Шкатулки", icon: "🔑" }
+    "key_scarlet": { name: "Алый ключ", icon: "🔑" },
+    "key_crimson": { name: "Багровый ключ", icon: "🔑" }
   };
 
   const BOX_CATALOG = {
@@ -1534,7 +1534,7 @@
           <div class="item-card" style="${isActive ? 'border-color:#40ffaa;' : ''} cursor:pointer;" onclick="selectTitle('${tName}')" title="${isActive ? 'Активный титул' : 'Нажмите, чтобы сделать активным'}">
             <div class="item-icon">${iconHtml}</div>
             <div class="item-info">
-              <div class="item-name" style="${isActive ? 'color:#40ffaa;' : ''}">${escapeHtml(tName)}${isActive ? ' 🛡️' : ''}</div>
+              <div class="item-name" style="${isActive ? 'color:#40ffaa;' : ''}">${escapeHtml(tName)}${isActive ? ' ●' : ''}</div>
               <div class="item-desc">${t.desc}</div>
             </div>
           </div>`;
