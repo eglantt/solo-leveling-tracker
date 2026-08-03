@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.15 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.16 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -459,6 +459,12 @@
       100% { box-shadow: 0 0 0 rgba(64,192,255,0); border-color: #00aaff33; }
     }
     .item-card.item-flash { animation: itemFlash 0.6s ease; }
+    @keyframes itemFlashGold {
+      0% { box-shadow: 0 0 0 rgba(255,215,0,0); border-color: #00aaff33; }
+      35% { box-shadow: 0 0 20px rgba(255,215,0,0.7); border-color: #ffd700; background: rgba(255,215,0,0.12); }
+      100% { box-shadow: 0 0 0 rgba(255,215,0,0); border-color: #00aaff33; }
+    }
+    .item-card.item-flash-gold { animation: itemFlashGold 0.6s ease; }
     .item-icon { font-size: 1.4rem; min-width: 40px; text-align: center; }
     .item-info { flex: 1; min-width: 0; }
     .item-name { color: #40c0ff; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; }
@@ -783,7 +789,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.15';
+  const APP_VERSION = '5.7.16';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -881,9 +887,9 @@
   }
 
   const ARTEFACTS = {
-    "ring_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "Пассивно: +10% Кредитов за шаги", level: 10 },
+    "crystal_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "Пассивно: +10% Кредитов за шаги", level: 10 },
     "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "Пассивно: Штрафы снижены на 15%", level: 20 },
-    "medal_dev": { name: "Печать Развития", icon: "🎖", desc: "Пассивно: +2 очка статов при Lvl Up", level: 30 }
+    "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "Пассивно: +2 очка статов при Lvl Up", level: 30 }
   };
 
   const TITLES_DB = {
@@ -895,12 +901,12 @@
   };
 
   const SHOP_CATALOG = {
-    "elixir": { name: "Руна Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500 },
-    "scroll": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000 },
-    "potion": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800 },
-    "freedom_rune": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает требования всех заданий на 25% до конца сегодняшнего дня", price: 700 },
-    "stability_rune": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200 },
-    "growth_potion": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600 }
+    "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500 },
+    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000 },
+    "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает требования всех заданий на 25% до конца сегодняшнего дня", price: 700 },
+    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200 },
+    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600 }
   };
 
   const BOX_CATALOG = {
@@ -910,8 +916,8 @@
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
   const BOX_LOOT_POOLS = {
-    "box_basalt": ["elixir", "elixir", "scroll", "potion", "freedom_rune", "stability_rune", "growth_potion"],
-    "box_onyx": ["elixir", "scroll", "scroll", "potion", "potion", "freedom_rune", "stability_rune", "growth_potion", "growth_potion"]
+    "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth"],
+    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth"]
   };
 
   function getAvailableBoxTiers() {
@@ -977,9 +983,9 @@
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их действие Игрок обнаружит, ознакомившись с содержимым Лавки лично." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — до двух раз в сутки Игрок может продолжить сверх плана, получая удвоенное вознаграждение в кредитах." },
-    artifact_ring_speed: { title: "Кристалл Ускорения", content: "Получен артефакт: Кристалл Ускорения. Каждый пройденный шаг отныне приносит на 10% больше кредитов." },
+    artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Получен артефакт: Кристалл Ускорения. Каждый пройденный шаг отныне приносит на 10% больше кредитов." },
     artifact_amulet_will: { title: "Амулет Воли", content: "Получен артефакт: Амулет Воли. Потеря опыта при расчёте штрафа снижена на 15%." },
-    artifact_medal_dev: { title: "Печать Развития", content: "Получен артефакт: Печать Развития. При каждом повышении уровня Игрок получает дополнительные очки характеристик." },
+    artifact_seal_growth: { title: "Печать Развития", content: "Получен артефакт: Печать Развития. При каждом повышении уровня Игрок получает дополнительные очки характеристик." },
     title_celeustremlenny: { title: "Целеустремлённый", content: "Семь дней подряд без единого срыва. Система признаёт целеустремлённость Игрока — прибавка к опыту закреплена, покуда серия не прервётся." },
     title_vechny_strannik: { title: "Вечный странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Вечным странником — шаги отныне приносят больше опыта." },
     title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел испытан на прочность пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
@@ -1431,7 +1437,7 @@
     for (let id in SHOP_CATALOG) {
       const item = SHOP_CATALOG[id];
       cont.innerHTML += `
-        <div class="item-card">
+        <div class="item-card" data-shop-id="${id}">
           <div class="item-icon">${item.icon}</div>
           <div class="item-info">
             <div class="item-name">${item.name}</div>
@@ -1446,9 +1452,11 @@
   function buyItem(id) {
     const item = SHOP_CATALOG[id];
     if (data.credits < item.price) { showNotice("Недостаточно кредитов!", 'warn'); return; }
-    data.credits -= item.price;
-    data.consumables[id] = (data.consumables[id] || 0) + 1;
-    saveData(); render(); openShop();
+    flashThenRun(`[data-shop-id="${id}"]`, () => {
+      data.credits -= item.price;
+      data.consumables[id] = (data.consumables[id] || 0) + 1;
+      saveData(); render(); openShop();
+    }, 'item-flash-gold');
   }
 
   function openInv() {
@@ -1508,10 +1516,10 @@
   // Plays a brief flash on the item's card, then runs the actual state change
   // once the flash has had time to register — so using/opening something
   // visibly *does* something, instead of the list just silently updating.
-  function flashThenRun(selector, callback) {
+  function flashThenRun(selector, callback, flashClass = 'item-flash') {
     const card = document.querySelector(selector);
     if (card) {
-      card.classList.add('item-flash');
+      card.classList.add(flashClass);
       setTimeout(callback, 600);
     } else {
       callback();
@@ -1527,26 +1535,26 @@
   function performUseItem(id) {
     flashThenRun(`[data-consumable-id="${id}"]`, () => {
       let used = false;
-      if (id === 'elixir') {
+      if (id === 'rune_cleansing') {
           if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
           else { showNotice("У вас нет штрафов для удаления.", 'warn'); }
-      } else if (id === 'scroll') {
+      } else if (id === 'rune_protection') {
           if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
           else { showNotice("Защита уже активирована.", 'warn'); }
-      } else if (id === 'potion') {
+      } else if (id === 'potion_restoration') {
           if (data.lastExpLoss > 0) {
               const recovery = Math.floor(data.lastExpLoss * 0.5);
               data.exp += recovery; 
               data.lastExpLoss = 0; checkLevelUp(); used = true;
               showNotice(`Зелье использовано. Восстановлено ${recovery} EXP.`, 'info');
           } else { showNotice("Нет доступных потерь опыта для восстановления.", 'warn'); }
-      } else if (id === 'freedom_rune') {
+      } else if (id === 'rune_freedom') {
           if (!data.targetDiscountToday) { data.targetDiscountToday = true; used = true; showNotice("Руна использована. Требования заданий снижены на сегодня.", 'info'); }
           else { showNotice("Снижение требований уже действует сегодня.", 'warn'); }
-      } else if (id === 'stability_rune') {
+      } else if (id === 'rune_stability') {
           if (!data.streakShield) { data.streakShield = true; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
           else { showNotice("Защита серии уже активна.", 'warn'); }
-      } else if (id === 'growth_potion') {
+      } else if (id === 'potion_growth') {
           if (!data.expBoostToday) { data.expBoostToday = true; used = true; showNotice("Зелье использовано. Опыт увеличен до конца дня.", 'info'); }
           else { showNotice("Усиление опыта уже действует сегодня.", 'warn'); }
       }
@@ -1609,7 +1617,7 @@
     while (data.exp >= getExpToNext(data.level)) {
       data.exp -= getExpToNext(data.level);
       data.level++;
-      data.statPoints += (data.inventory.includes("medal_dev") ? 5 : 3);
+      data.statPoints += (data.inventory.includes("seal_growth") ? 5 : 3);
       leveled = true;
       const boxId = rollBoxTier();
       data.boxes[boxId] = (data.boxes[boxId] || 0) + 1;
@@ -1697,7 +1705,7 @@
         const critChance = (data.stats.agi - 10) * 0.5;
         let critMsg = "";
         if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " [CRIT!]"; }
-        if (id === "steps" && data.inventory.includes("ring_speed")) creds *= 1.1;
+        if (id === "steps" && data.inventory.includes("crystal_speed")) creds *= 1.1;
         if (data.activeTitle === "Преодолевший предел") creds *= 1.1;
         if (data.isGoalMet) creds *= 2;
         data.credits += Math.floor(creds);
