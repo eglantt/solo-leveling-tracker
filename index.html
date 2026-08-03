@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.1 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -809,7 +809,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.0';
+  const APP_VERSION = '5.9.1';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -846,7 +846,7 @@
         history: oldData.history || {},
         bestStreak: oldData.bestStreak || 0,
         pendingLevelUpToday: oldData.pendingLevelUpToday || 0,
-        codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes"],
+        codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive"],
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
@@ -871,7 +871,7 @@
         playerName: "", dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
-        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes"],
+        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive"],
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
@@ -889,8 +889,9 @@
   if (!data.history || typeof data.history !== 'object') data.history = {};
   if (typeof data.bestStreak !== 'number') data.bestStreak = 0;
   if (typeof data.pendingLevelUpToday !== 'number') data.pendingLevelUpToday = 0;
-  if (!Array.isArray(data.codexUnlocked)) data.codexUnlocked = ["daily_quota", "penalty", "chronicle", "shop", "boxes"];
+  if (!Array.isArray(data.codexUnlocked)) data.codexUnlocked = ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive"];
   if (!data.codexUnlocked.includes('boxes')) data.codexUnlocked.push('boxes');
+  if (!data.codexUnlocked.includes('archive')) data.codexUnlocked.push('archive');
   if (!Array.isArray(data.notificationLog)) data.notificationLog = [];
   if (!Array.isArray(data.remindersFiredHours)) data.remindersFiredHours = [];
   if (!data.lastNoticeText || typeof data.lastNoticeText !== 'object') data.lastNoticeText = {};
@@ -1075,6 +1076,7 @@
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их действие Игрок обнаружит, ознакомившись с содержимым Лавки лично." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри." },
+    archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — до двух раз в сутки Игрок может продолжить сверх плана, получая удвоенное вознаграждение в кредитах." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Получен артефакт: Кристалл Ускорения. Каждый пройденный шаг отныне приносит на 10% больше кредитов." },
     artifact_amulet_will: { title: "Амулет Воли", content: "Получен артефакт: Амулет Воли. Потеря опыта при расчёте штрафа снижена на 15%." },
@@ -1958,6 +1960,7 @@
         const suffix = boxCounts[id] > 1 ? ` ×${boxCounts[id]}` : '';
         setTimeout(() => showNotice(`Получен предмет: ${box.name}${suffix}`, 'info'), 4500);
       });
+      setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'), 4500);
     }
   }
 
@@ -2292,7 +2295,7 @@
     const cleanCodexUnlocked = Array.isArray(s.codexUnlocked)
       ? s.codexUnlocked.filter(id => typeof id === 'string' && CODEX_CHAPTERS[id])
       : [];
-    if (cleanCodexUnlocked.length === 0) cleanCodexUnlocked.push("daily_quota", "penalty", "chronicle", "shop", "boxes");
+    if (cleanCodexUnlocked.length === 0) cleanCodexUnlocked.push("daily_quota", "penalty", "chronicle", "shop", "boxes", "archive");
 
     const cleanNotificationLog = Array.isArray(s.notificationLog)
       ? s.notificationLog
