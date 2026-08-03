@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.16 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.17 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -789,7 +789,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.16';
+  const APP_VERSION = '5.7.17';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1586,10 +1586,16 @@
         gained.push(lootId);
       }
       saveData(); render(); openInv();
-      gained.forEach(lootId => {
-        const lootItem = SHOP_CATALOG[lootId];
-        if (lootItem) showNotice(`Получен предмет: ${lootItem.name}`, 'info');
-      });
+      if (gained.length) {
+        const counts = {};
+        gained.forEach(lootId => { counts[lootId] = (counts[lootId] || 0) + 1; });
+        const names = Object.keys(counts).map(lootId => {
+          const item = SHOP_CATALOG[lootId];
+          if (!item) return null;
+          return counts[lootId] > 1 ? `${item.name} ×${counts[lootId]}` : item.name;
+        }).filter(Boolean);
+        if (names.length) showNotice(`Получен предмет: ${names.join(', ')}`, 'info');
+      }
     });
   }
 
@@ -1614,6 +1620,7 @@
     let leveled = false;
     const rankBefore = getRank(data.level).name;
     const gainedBoxes = [];
+    const gainedArtefacts = [];
     while (data.exp >= getExpToNext(data.level)) {
       data.exp -= getExpToNext(data.level);
       data.level++;
@@ -1625,7 +1632,7 @@
       for (let k in ARTEFACTS) {
         if (data.level >= ARTEFACTS[k].level && !data.inventory.includes(k)) {
           data.inventory.push(k);
-          unlockCodexChapter(`artifact_${k}`);
+          gainedArtefacts.push(k);
         }
       }
     }
@@ -1647,6 +1654,13 @@
         setTimeout(() => showNotice(unlockText, 'info'), 4500);
         unlockCodexChapter('limit_break');
       }
+      // Order per artifact: level notice (above) already queued first, then
+      // "item received", then the Codex-chapter unlock — in that sequence.
+      gainedArtefacts.forEach(k => {
+        const art = ARTEFACTS[k];
+        if (art) setTimeout(() => showNotice(`Получен предмет: ${art.name}`, 'info'), 4500);
+        unlockCodexChapter(`artifact_${k}`);
+      });
       const boxCounts = {};
       gainedBoxes.forEach(id => { boxCounts[id] = (boxCounts[id] || 0) + 1; });
       Object.keys(boxCounts).forEach(id => {
