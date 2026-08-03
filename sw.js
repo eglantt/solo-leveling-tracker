@@ -1,6 +1,6 @@
 // Bump this on every release that changes any cached file, so old
 // clients pick up the new version instead of being stuck on a stale cache.
-const CACHE_VERSION = 'v5-8-1';
+const CACHE_VERSION = 'v5-9-0';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const FONT_CACHE = 'solo-leveling-fonts';
 
@@ -47,7 +47,24 @@ const APP_SHELL = [
   './icons/items/crystal_restoration.png',
   './icons/items/crystal_clarity.png',
   './icons/items/key_scarlet.png',
-  './icons/items/key_crimson.png'
+  './icons/items/key_crimson.png',
+  './icons/items/amulet_continuity.png',
+  './icons/items/crystal_insight.png',
+  './icons/items/crystal_shadow.png',
+  './icons/items/box_purple.png',
+  './icons/items/box_shadow.png',
+  './icons/items/key_purple.png',
+  './icons/items/key_shadow.png',
+  './icons/items/rune_redemption.png',
+  './icons/items/rune_correction.png',
+  './icons/items/rune_fate_cleansing.png',
+  './icons/items/rune_cleansing_full.png',
+  './icons/items/potion_restoration_full.png',
+  './icons/items/shard_limit_double.png',
+  './icons/items/rune_protection_absolute.png',
+  './icons/items/rune_burden_release.png',
+  './icons/items/rune_return.png',
+  './icons/items/crystal_impulse.png'
 ];
 
 self.addEventListener('install', (event) => {
