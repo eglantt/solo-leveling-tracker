@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.7.18 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.7.19 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -181,6 +181,7 @@
       display: flex; flex-direction: column;
     }
     .status-header { flex-shrink: 0; font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
+    .shop-balance { flex-shrink: 0; text-align: center; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ffd700; margin: -12px 0 16px; }
     .status-body {
       flex: 1 1 auto; overflow-y: auto; min-height: 0;
       scrollbar-width: none; -ms-overflow-style: none;
@@ -467,7 +468,6 @@
     .item-card.item-flash-gold { animation: itemFlashGold 0.6s ease; }
     .item-icon { min-width: 40px; text-align: center; display: flex; align-items: center; justify-content: center; }
     .item-icon-img { width: 32px; height: 32px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
-    .item-icon-img.title-icon-img { width: 24px; height: 24px; cursor: default; }
     .item-preview-box {
       background: rgba(13,26,45,0.96);
       background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.035) 0px, rgba(64,192,255,0.035) 1px, transparent 1px, transparent 3px);
@@ -508,7 +508,6 @@
       .item-card { padding: 8px; gap: 6px; }
       .item-icon { min-width: 30px; }
       .item-icon-img { width: 28px; height: 28px; }
-      .item-icon-img.title-icon-img { width: 22px; height: 22px; }
       .use-btn { padding: 5px 6px; font-size: 0.65rem; }
     }
   </style>
@@ -583,6 +582,7 @@
 <div class="status-overlay" id="shopOverlay">
   <div class="status-window hud-frame">
     <div class="status-header" id="shopHeader">МАГАЗИН СИСТЕМЫ</div>
+    <div class="shop-balance" id="shopBalance">Баланс: 0 ◈</div>
     <div class="status-body"><div id="shopContent"></div></div>
     <button class="close-status" onclick="document.getElementById('shopOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
@@ -809,7 +809,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.7.18';
+  const APP_VERSION = '5.7.19';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1451,7 +1451,8 @@
   }
 
   function openShop() {
-    document.getElementById('shopHeader').innerHTML = `МАГАЗИН (Баланс: ${Math.floor(data.credits)} ◈)`;
+    document.getElementById('shopHeader').textContent = 'МАГАЗИН СИСТЕМЫ';
+    document.getElementById('shopBalance').textContent = `Баланс: ${Math.floor(data.credits)} ◈`;
     const cont = document.getElementById('shopContent');
     cont.innerHTML = '';
     for (let id in SHOP_CATALOG) {
@@ -1487,7 +1488,7 @@
         if (!t) return;
         const isActive = data.activeTitle === tName;
         const iconId = TITLE_ICON_IDS[tName];
-        const iconHtml = iconId ? `<img class="item-icon-img title-icon-img" src="icons/items/${iconId}.png" alt="">` : t.icon;
+        const iconHtml = iconId ? `<img class="item-icon-img" src="icons/items/${iconId}.png" alt="" onclick="event.stopPropagation(); showItemPreview('${iconId}','${escapeHtml(tName)}')">` : t.icon;
         cont.innerHTML += `
           <div class="item-card" style="${isActive ? 'border-color:#40ffaa;' : ''} cursor:pointer;" onclick="selectTitle('${tName}')" title="${isActive ? 'Активный титул' : 'Нажмите, чтобы сделать активным'}">
             <div class="item-icon">${iconHtml}</div>
@@ -1718,7 +1719,8 @@
     document.getElementById('exp').textContent = Math.floor(data.exp);
     document.getElementById('expToNext').textContent = getExpToNext(data.level);
     document.getElementById('creditsVal').textContent = Math.floor(data.credits);
-    document.getElementById('titleDisplay').textContent = (TITLES_DB[data.activeTitle]?.icon || "") + " " + data.activeTitle;
+    const headerTitleIconId = TITLE_ICON_IDS[data.activeTitle];
+    document.getElementById('titleDisplay').innerHTML = (headerTitleIconId ? `<img src="icons/items/${headerTitleIconId}.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;margin-right:4px;">` : '') + escapeHtml(data.activeTitle);
     document.querySelectorAll('.quest-item').forEach(item => {
       const id = item.dataset.id;
       const target = getDynamicTarget(parseInt(item.dataset.target), data.level);
