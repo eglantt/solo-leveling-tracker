@@ -1,6 +1,6 @@
 // Bump this on every release that changes any cached file, so old
 // clients pick up the new version instead of being stuck on a stale cache.
-const CACHE_VERSION = 'v5-7-19';
+const CACHE_VERSION = 'v5-8-0';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const FONT_CACHE = 'solo-leveling-fonts';
 
@@ -32,7 +32,22 @@ const APP_SHELL = [
   './icons/items/rune_stability.png',
   './icons/items/potion_growth.png',
   './icons/items/box_basalt.png',
-  './icons/items/box_onyx.png'
+  './icons/items/box_onyx.png',
+  './icons/items/box_obsidian.png',
+  './icons/items/box_dark_quartz.png',
+  './icons/items/box_scarlet.png',
+  './icons/items/box_crimson.png',
+  './icons/items/seal_limit.png',
+  './icons/items/sphere_growth.png',
+  './icons/items/shard_limit.png',
+  './icons/items/rune_restoration_charged.png',
+  './icons/items/rune_growth_charged.png',
+  './icons/items/rune_protection_charged.png',
+  './icons/items/rune_limit_charged.png',
+  './icons/items/crystal_restoration.png',
+  './icons/items/crystal_clarity.png',
+  './icons/items/key_scarlet.png',
+  './icons/items/key_crimson.png'
 ];
 
 self.addEventListener('install', (event) => {
