@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.4 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -608,7 +608,7 @@
   <div class="status-window hud-frame" style="border-color:#ff4444; box-shadow: 0 0 40px rgba(255,68,68,0.4);">
     <div class="status-header" style="color:#ff5555; text-shadow: 0 0 10px rgba(255,68,68,0.6);">ШТРАФ СИСТЕМЫ</div>
     <div class="status-body"><div id="penaltyContent"></div></div>
-    <button class="close-status" onclick="document.getElementById('penaltyOverlay').style.display='none'">ЗАКРЫТЬ</button>
+    <button class="close-status" onclick="closePenaltyOverlay()">ЗАКРЫТЬ</button>
   </div>
 </div>
 
@@ -809,7 +809,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.1';
+  const APP_VERSION = '5.9.4';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -940,19 +940,19 @@
   };
 
   const SHOP_CATALOG = {
-    "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500 },
-    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000 },
-    "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800 },
-    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает требования всех заданий на 25% до конца сегодняшнего дня", price: 700 },
-    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200 },
-    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600 },
-    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа", price: 2500 },
-    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня", price: 2500 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф", price: 2500 },
-    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления лимита сегодня", price: 2500 },
-    "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления лимита сегодня", price: 1500 },
-    "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа", price: 3800 },
-    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня", price: 3800 }
+    "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500, level: 1 },
+    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000, level: 1 },
+    "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800, level: 1 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает требования всех заданий на 25% до конца сегодняшнего дня", price: 700, level: 3 },
+    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200, level: 6 },
+    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600, level: 9 },
+    "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления лимита сегодня", price: 1500, level: 12 },
+    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа", price: 2500, level: 15 },
+    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня", price: 2500, level: 20 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф", price: 2500, level: 25 },
+    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления лимита сегодня", price: 2500, level: 30 },
+    "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа", price: 3800, level: 35 },
+    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня", price: 3800, level: 40 }
   };
 
   const KEY_CATALOG = {
@@ -1074,7 +1074,7 @@
     daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и шаги. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Выполненное задание приносит опыт и кредиты." },
     penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Тяжесть наказания снижается с ростом силы и уровня Игрока. Система не прощает бездействия." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
-    shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их действие Игрок обнаружит, ознакомившись с содержимым Лавки лично." },
+    shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — до двух раз в сутки Игрок может продолжить сверх плана, получая удвоенное вознаграждение в кредитах." },
@@ -1396,11 +1396,29 @@
       nextReset += 86400000;
     }
     saveData(); render();
-    if (penalizedDays > 0) showPenaltyBanner(totalLoss, lastPct, penalizedDays);
+    if (penalizedDays > 0) {
+      setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays), 3000);
+    }
     if (!data.dailyNotices.morning) {
       data.dailyNotices.morning = true;
       saveData();
-      showNotice(STARTUP_NOTICE_TEXT, 'info');
+      if (penalizedDays > 0) {
+        pendingStartupNoticeAfterPenalty = true;
+      } else {
+        setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
+      }
+    }
+  }
+
+  // Set when the day's startup notice is waiting for the penalty banner to be
+  // dismissed (rather than firing on its own fixed delay) — see closePenaltyOverlay().
+  let pendingStartupNoticeAfterPenalty = false;
+
+  function closePenaltyOverlay() {
+    document.getElementById('penaltyOverlay').style.display = 'none';
+    if (pendingStartupNoticeAfterPenalty) {
+      pendingStartupNoticeAfterPenalty = false;
+      setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
     }
   }
 
@@ -1546,6 +1564,7 @@
     cont.innerHTML = '';
     for (let id in SHOP_CATALOG) {
       const item = SHOP_CATALOG[id];
+      if (data.level < (item.level || 1)) continue;
       cont.innerHTML += `
         <div class="item-card" data-shop-id="${id}">
           <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
@@ -1561,6 +1580,7 @@
 
   function buyItem(id) {
     const item = SHOP_CATALOG[id];
+    if (!item || data.level < (item.level || 1)) return;
     if (data.credits < item.price) { showNotice("Недостаточно кредитов!", 'warn'); return; }
     flashThenRun(`[data-shop-id="${id}"]`, () => {
       data.credits -= item.price;
@@ -1908,6 +1928,7 @@
     const rankBefore = getRank(data.level).name;
     const gainedBoxes = [];
     const gainedArtefacts = [];
+    const gainedShopItems = [];
     while (data.exp >= getExpToNext(data.level)) {
       data.exp -= getExpToNext(data.level);
       data.level++;
@@ -1920,6 +1941,9 @@
       const boxId = rollBoxTier();
       data.boxes[boxId] = (data.boxes[boxId] || 0) + 1;
       gainedBoxes.push(boxId);
+      for (let sid in SHOP_CATALOG) {
+        if (SHOP_CATALOG[sid].level === data.level) gainedShopItems.push(sid);
+      }
       for (let k in ARTEFACTS) {
         if (data.level >= ARTEFACTS[k].level && !data.inventory.includes(k)) {
           data.inventory.push(k);
@@ -1959,6 +1983,10 @@
         if (!box) return;
         const suffix = boxCounts[id] > 1 ? ` ×${boxCounts[id]}` : '';
         setTimeout(() => showNotice(`Получен предмет: ${box.name}${suffix}`, 'info'), 4500);
+      });
+      gainedShopItems.forEach(sid => {
+        const item = SHOP_CATALOG[sid];
+        if (item) setTimeout(() => showNotice(`Лавка Системы: доступен новый товар — ${item.name}.`, 'info'), 4500);
       });
       setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'), 4500);
     }
