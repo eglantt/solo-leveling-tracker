@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.5 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -809,7 +809,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.4';
+  const APP_VERSION = '5.9.5';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1041,7 +1041,7 @@
       "Время для завершения задания сокращается.",
       "Задание всё ещё активно.",
       "Система: незавершённое задание требует внимания.",
-      "Статус задания: не выполнено."
+      "Задание не выполнено."
     ],
     reminderUrgent: [
       "Осталось менее двух часов. Задание не выполнено.",
@@ -1055,14 +1055,14 @@
     ],
     complete: [
       "Ежедневное задание полностью выполнено.",
-      "Задание дня закрыто.",
+      "Задание дня выполнено.",
       "Задание выполнено.",
-      "Задание закрыто. Система фиксирует прогресс.",
+      "Задание выполнено. Система фиксирует прогресс.",
       "Задание дня завершено.",
       "Система: задание выполнено полностью.",
-      "Статус задания: выполнено.",
+      "Дневное задание выполнено.",
       "Система фиксирует выполнение задания.",
-      "День закрыт. Задание выполнено."
+      "День завершён. Задание выполнено."
     ],
     limitBreakUnlock: [
       "Новая способность разблокирована: Преодоление лимита.",
@@ -1700,23 +1700,23 @@
           if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
           else { showNotice("Защита уже активирована.", 'warn'); }
       } else if (id === 'potion_restoration') {
-          used = useRecoveryItem(0.5, 'Зелье');
+          used = useRecoveryItem(0.5, 'Зелье использовано');
       } else if (id === 'rune_restoration_charged') {
-          used = useRecoveryItem(0.65, 'Руна');
+          used = useRecoveryItem(0.65, 'Руна использована');
       } else if (id === 'crystal_restoration') {
-          used = useRecoveryItem(0.8, 'Кристалл');
+          used = useRecoveryItem(0.8, 'Кристалл использован');
       } else if (id === 'rune_freedom') {
           if ((data.targetDiscountRate || 0) < 0.25) { data.targetDiscountToday = true; data.targetDiscountRate = 0.25; used = true; showNotice("Руна использована. Требования заданий снижены на сегодня.", 'info'); }
-          else { showNotice("Требования уже снижены не слабее этого.", 'warn'); }
+          else { showNotice("Требования заданий уже снижены достаточно.", 'warn'); }
       } else if (id === 'rune_stability') {
           if (!data.streakShield) { data.streakShield = true; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
           else { showNotice("Защита серии уже активна.", 'warn'); }
       } else if (id === 'potion_growth') {
-          used = useExpBoostItem(0.20, 'Зелье');
+          used = useExpBoostItem(0.20, 'Зелье использовано');
       } else if (id === 'rune_growth_charged') {
-          used = useExpBoostItem(0.35, 'Руна');
+          used = useExpBoostItem(0.35, 'Руна использована');
       } else if (id === 'crystal_clarity') {
-          used = useExpBoostItem(0.55, 'Кристалл');
+          used = useExpBoostItem(0.55, 'Кристалл использован');
       } else if (id === 'rune_protection_charged') {
           let didSomething = false;
           let msgParts = [];
@@ -1727,7 +1727,7 @@
               didSomething = true; msgParts.push(`снят сегодняшний штраф (+${recovery} EXP)`);
           }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
-          else { showNotice("Нечего снимать — штрафа нет, защита уже активна.", 'warn'); }
+          else { showNotice("Снимать нечего: штрафа нет, защита уже активна.", 'warn'); }
       } else if (id === 'shard_limit') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 1;
           used = true; showNotice("Осколок использован. +1 использование Преодоления лимита сегодня.", 'info');
@@ -1735,9 +1735,9 @@
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 2;
           used = true; showNotice("+2 использования Преодоления лимита сегодня.", 'info');
       } else if (id === 'rune_redemption') {
-          used = useRecoveryItem(0.5, 'Руна');
+          used = useRecoveryItem(0.5, 'Руна использована');
       } else if (id === 'potion_restoration_full') {
-          used = useRecoveryItem(1.0, 'Зелье');
+          used = useRecoveryItem(1.0, 'Зелье использовано');
       } else if (id === 'rune_correction') {
           if (data.lastExpLoss > 0) {
               const recovery = data.lastExpLoss;
@@ -1747,7 +1747,7 @@
               if (dayKey) data.history[dayKey].status = 'success';
               used = true;
               showNotice(`Руна использована. Восстановлено ${recovery} EXP, серия и запись в Летописи исправлены.`, 'info');
-          } else { showNotice("Нет доступных потерь опыта для исправления.", 'warn'); }
+          } else { showNotice("Исправлять нечего: потерь опыта нет.", 'warn'); }
       } else if (id === 'rune_fate_cleansing') {
           if (data.totalPenalties > 0 || data.lastExpLoss > 0) {
               const removed = Math.min(3, data.totalPenalties);
@@ -1756,7 +1756,7 @@
               if (recovery > 0) { data.exp += recovery; data.lastExpLoss = 0; checkLevelUp(); }
               used = true;
               showNotice(`Руна использована. Удалено штрафов: ${removed}, восстановлено ${recovery} EXP.`, 'info');
-          } else { showNotice("Нечего очищать — штрафов нет.", 'warn'); }
+          } else { showNotice("Очищать нечего: штрафов нет.", 'warn'); }
       } else if (id === 'rune_cleansing_full') {
           if (data.totalPenalties > 0) {
               const removed = Math.min(5, data.totalPenalties);
@@ -1774,19 +1774,19 @@
           if ((data.targetDiscountRate || 0) < 0.45) {
               data.targetDiscountToday = true; data.targetDiscountRate = 0.45;
               used = true; showNotice("Руна использована. Требования заданий сильно снижены на сегодня.", 'info');
-          } else { showNotice("Требования уже снижены не слабее этого.", 'warn'); }
+          } else { showNotice("Требования заданий уже снижены достаточно.", 'warn'); }
       } else if (id === 'rune_return') {
           if (data.lastExpLoss > 0 || data.expBoostToday < 0.15) {
               if (data.lastExpLoss > 0) { data.exp += data.lastExpLoss; data.lastExpLoss = 0; checkLevelUp(); }
               if (data.expBoostToday < 0.15) data.expBoostToday = 0.15;
               used = true; showNotice("Руна использована. Опыт восстановлен и увеличен на сегодня.", 'info');
-          } else { showNotice("Нечего восстанавливать, усиление опыта уже сильнее.", 'warn'); }
+          } else { showNotice("Восстанавливать нечего: усиление опыта уже повышено.", 'warn'); }
       } else if (id === 'crystal_impulse') {
-          const boosted1 = useExpBoostItem(0.35, 'Кристалл', true);
-          const boosted2 = useCreditBoostItem(0.35, 'Кристалл', true);
+          const boosted1 = useExpBoostItem(0.35, 'Кристалл использован', true);
+          const boosted2 = useCreditBoostItem(0.35, 'Кристалл использован', true);
           used = boosted1 || boosted2;
           if (used) showNotice("Кристалл использован. Опыт и кредиты увеличены на сегодня.", 'info');
-          else showNotice("Усиления опыта и кредитов уже сильнее.", 'warn');
+          else showNotice("Усиление опыта и кредитов уже повышено.", 'warn');
       }
       if (used) {
         data.consumables[id]--;
@@ -1798,41 +1798,41 @@
 
   // Shared handler for the "recover % of last penalty's EXP loss" family
   // (Зелье/Руна/Кристалл Восстановления) — differ only in recovery rate.
-  function useRecoveryItem(rate, label) {
+  function useRecoveryItem(rate, verbPhrase) {
     if (data.lastExpLoss > 0) {
       const recovery = Math.floor(data.lastExpLoss * rate);
       data.exp += recovery;
       data.lastExpLoss = 0;
       checkLevelUp();
-      showNotice(`${label} использован(о). Восстановлено ${recovery} EXP.`, 'info');
+      showNotice(`${verbPhrase}. Восстановлено ${recovery} EXP.`, 'info');
       return true;
     }
-    showNotice("Нет доступных потерь опыта для восстановления.", 'warn');
+    showNotice("Восстанавливать нечего: потерь опыта нет.", 'warn');
     return false;
   }
 
   // Shared handler for the "boost today's EXP by X%" family (Зелье/Руна/
   // Кристалл — Роста/Ясности). Stronger items can upgrade a weaker boost
   // already active today, but a weaker one won't downgrade a stronger one.
-  function useExpBoostItem(rate, label, silent) {
+  function useExpBoostItem(rate, verbPhrase, silent) {
     if (data.expBoostToday >= rate) {
-      if (!silent) showNotice("Сегодня уже действует усиление опыта не слабее этого.", 'warn');
+      if (!silent) showNotice("Более высокое усиление опыта уже действует.", 'warn');
       return false;
     }
     data.expBoostToday = rate;
-    if (!silent) showNotice(`${label} использован(о). Опыт увеличен до конца дня.`, 'info');
+    if (!silent) showNotice(`${verbPhrase}. Опыт увеличен до конца дня.`, 'info');
     return true;
   }
 
   // Same pattern as useExpBoostItem, for the day's credit-earning multiplier
   // (introduced for Кристалл Импульса — the first item to boost credits).
-  function useCreditBoostItem(rate, label, silent) {
+  function useCreditBoostItem(rate, verbPhrase, silent) {
     if (data.creditBoostToday >= rate) {
-      if (!silent) showNotice("Сегодня уже действует усиление кредитов не слабее этого.", 'warn');
+      if (!silent) showNotice("Более высокое усиление кредитов уже действует.", 'warn');
       return false;
     }
     data.creditBoostToday = rate;
-    if (!silent) showNotice(`${label || ''} использован(о). Кредиты увеличены до конца дня.`, 'info');
+    if (!silent) showNotice(`${verbPhrase || 'Использовано'}. Кредиты увеличены до конца дня.`, 'info');
     return true;
   }
 
