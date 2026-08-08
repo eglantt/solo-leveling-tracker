@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.7 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -466,6 +466,12 @@
       100% { box-shadow: 0 0 0 rgba(255,215,0,0); border-color: #00aaff33; }
     }
     .item-card.item-flash-gold { animation: itemFlashGold 0.6s ease; }
+    @keyframes devBtnFlash {
+      0% { filter: brightness(1); transform: scale(1); }
+      35% { filter: brightness(1.8); transform: scale(1.04); }
+      100% { filter: brightness(1); transform: scale(1); }
+    }
+    .dev-btn-flash { animation: devBtnFlash 0.4s ease; }
     .item-icon { min-width: 40px; text-align: center; display: flex; align-items: center; justify-content: center; }
     .item-icon-img { width: 32px; height: 32px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
     .item-preview-box {
@@ -655,29 +661,29 @@
       <div class="backup-section">
         <div class="backup-section-title">Опыт и уровень</div>
         <input type="number" id="devExpInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во EXP">
-        <button class="backup-action-btn" onclick="devAddExp()">Добавить EXP</button>
+        <button class="backup-action-btn" onclick="devFlashThenRun(this, devAddExp)">Добавить EXP</button>
         <input type="number" id="devLevelInput" class="code-input-area" style="min-height:auto; text-align:center; margin-top:10px;" placeholder="Уровень">
-        <button class="backup-action-btn" onclick="devSetLevel()">Установить уровень</button>
+        <button class="backup-action-btn" onclick="devFlashThenRun(this, devSetLevel)">Установить уровень</button>
         <div class="danger-btn-row" style="margin-top:10px;">
-          <button class="confirm-btn-continue" onclick="devQuickLevel()">+1 уровень</button>
-          <button class="confirm-btn-continue" onclick="devQuickExp()">+1000 EXP</button>
+          <button class="confirm-btn-continue" onclick="devFlashThenRun(this, devQuickLevel)">+1 уровень</button>
+          <button class="confirm-btn-continue" onclick="devFlashThenRun(this, devQuickExp)">+1000 EXP</button>
         </div>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Кредиты</div>
         <input type="number" id="devCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
-        <button class="backup-action-btn" onclick="devAddCredits()">Добавить кредиты</button>
+        <button class="backup-action-btn" onclick="devFlashThenRun(this, devAddCredits)">Добавить кредиты</button>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Штрафы</div>
-        <button class="backup-action-btn" onclick="devApplyPenalty()">Применить штраф сейчас</button>
-        <button class="backup-action-btn" style="margin-top:10px;" onclick="devResetPenaltyCount()">Обнулить счётчик штрафов</button>
+        <button class="backup-action-btn" onclick="devFlashThenRun(this, devApplyPenalty)">Применить штраф сейчас</button>
+        <button class="backup-action-btn" style="margin-top:10px;" onclick="devFlashThenRun(this, devResetPenaltyCount)">Обнулить счётчик штрафов</button>
       </div>
       <div class="backup-section danger-zone">
         <div class="backup-section-title danger">Сбросы</div>
-        <button class="reset-all" onclick="devResetDailyProgress()">Сбросить дневной прогресс</button>
-        <button class="reset-all" style="margin-top:10px;" onclick="devForceFullReset()">Принудительный сброс дня</button>
-        <button class="reset-all" style="margin-top:10px;" onclick="devResetChronicle()">Сбросить историю Летописи</button>
+        <button class="reset-all" onclick="devFlashThenRun(this, devResetDailyProgress)">Сбросить дневной прогресс</button>
+        <button class="reset-all" style="margin-top:10px;" onclick="devFlashThenRun(this, devForceFullReset)">Принудительный сброс дня</button>
+        <button class="reset-all" style="margin-top:10px;" onclick="devFlashThenRun(this, devResetChronicle)">Сбросить историю Летописи</button>
       </div>
     </div>
     <button class="close-status" onclick="document.getElementById('devPanelOverlay').style.display='none'">ЗАКРЫТЬ</button>
@@ -711,7 +717,7 @@
 <div class="system-container">
   <div class="quest-panel hud-frame">
     <div class="header">
-      <div class="title">ЕЖЕДНЕВНЫЕ ЗАДАНИЯ</div>
+      <div class="title">ЕЖЕДНЕВНОЕ ЗАДАНИЕ</div>
       <div class="rank-info" id="rankInfoBtn">
         <div class="player-name" id="playerNameDisplay">Игрок</div>
         <div class="title-display" id="titleDisplay">Новичок</div>
@@ -794,7 +800,7 @@
     <div class="limit-break-container" id="limitBreakContainer" style="padding: 0 20px 18px; margin-top: 15px; display: none; border-bottom: 1px solid #00aaff22;">
       <button id="limitBreakBtn">
         ПРЕОДОЛЕНИЕ ЛИМИТА
-        <div id="limitStatus" style="font-size: 0.55rem; margin-top: 2px; opacity: 0.7;">Завершите все текущие задания</div>
+        <div id="limitStatus" style="font-size: 0.55rem; margin-top: 2px; opacity: 0.7;">Завершите дневное задание</div>
       </button>
     </div>
     <div class="sub-menu-grid">
@@ -809,7 +815,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.5';
+  const APP_VERSION = '5.9.7';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -943,7 +949,7 @@
     "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500, level: 1 },
     "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800, level: 1 },
-    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает требования всех заданий на 25% до конца сегодняшнего дня", price: 700, level: 3 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 25% до конца сегодняшнего дня", price: 700, level: 3 },
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200, level: 6 },
     "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600, level: 9 },
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления лимита сегодня", price: 1500, level: 12 },
@@ -973,7 +979,7 @@
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа" },
     "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления лимита сегодня" },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа на завтра и защита серии дней, одновременно" },
-    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает требования всех заданий на 45% до конца сегодняшнего дня" },
+    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Значительно снижает дневную нагрузку до конца сегодняшнего дня" },
     "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до конца дня" },
     "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до конца сегодняшнего дня" }
   };
@@ -983,14 +989,14 @@
   }
 
   const BOX_CATALOG = {
-    "box_basalt": { name: "Базальтовая Шкатулка", icon: "📦", desc: "Содержит 1–3 расходника.", weight: 70, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.06 },
-    "box_onyx": { name: "Ониксовая Шкатулка", icon: "🎁", desc: "Содержит 1–3 предмета. Повышенный шанс на более полезные расходники.", weight: 30, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.08 },
-    "box_obsidian": { name: "Обсидиановая Шкатулка", icon: "📦", desc: "Содержит 1–4 предмета. Сильные расходники, изредка — ключи от цветных шкатулок.", weight: 18, minItems: 1, maxItems: 4, level: 10, keyDropChance: 0.12 },
-    "box_dark_quartz": { name: "Шкатулка Тёмного Кварца", icon: "📦", desc: "Содержит 2–5 предметов. Усиленные версии расходников чаще, ключи — тоже чаще.", weight: 10, minItems: 2, maxItems: 5, level: 20, keyDropChance: 0.22 },
-    "box_scarlet": { name: "Алая Шкатулка", icon: "🎁", desc: "Содержит 1–4 предмета. Для открытия нужен Алый ключ.", weight: 6, minItems: 1, maxItems: 4, level: 30, requiresKey: "key_scarlet" },
-    "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Содержит 2–4 предмета. Для открытия нужен Багровый ключ.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson" },
-    "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Содержит 2–5 предметов. Для открытия нужен Пурпурный ключ.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple" },
-    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Содержит 3–5 предметов. Лучший лут в игре. Для открытия нужен Ключ Теней.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow" }
+    "box_basalt": { name: "Базальтовая Шкатулка", icon: "📦", desc: "Содержит 1–3 расходника.", weight: 70, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.06, creditChance: 0.25, creditAmount: 500 },
+    "box_onyx": { name: "Ониксовая Шкатулка", icon: "🎁", desc: "Содержит 1–3 предмета. Повышенный шанс на более полезные расходники.", weight: 30, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.08, creditChance: 0.22, creditAmount: 750 },
+    "box_obsidian": { name: "Обсидиановая Шкатулка", icon: "📦", desc: "Содержит 1–4 предмета. Сильные расходники, изредка — ключи от цветных шкатулок.", weight: 18, minItems: 1, maxItems: 4, level: 10, keyDropChance: 0.12, creditChance: 0.20, creditAmount: 1000 },
+    "box_dark_quartz": { name: "Шкатулка Тёмного Кварца", icon: "📦", desc: "Содержит 2–5 предметов. Усиленные версии расходников чаще, ключи — тоже чаще.", weight: 10, minItems: 2, maxItems: 5, level: 20, keyDropChance: 0.22, creditChance: 0.18, creditAmount: 1500 },
+    "box_scarlet": { name: "Алая Шкатулка", icon: "🎁", desc: "Содержит 1–4 предмета. Для открытия нужен Алый ключ.", weight: 6, minItems: 1, maxItems: 4, level: 30, requiresKey: "key_scarlet", creditChance: 0.15, creditAmount: 2500 },
+    "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Содержит 2–4 предмета. Для открытия нужен Багровый ключ.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
+    "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Содержит 2–5 предметов. Для открытия нужен Пурпурный ключ.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
+    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Содержит 3–5 предметов. Лучший лут в игре. Для открытия нужен Ключ Теней.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 }
   };
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
@@ -1035,7 +1041,7 @@
     reminder: [
       "Задание дня всё ещё не выполнено.",
       "Система напоминает: задание ожидает завершения.",
-      "Задание пока не закрыто.",
+      "Задание пока не выполнено.",
       "Прогресс дня остановлен. Задание не завершено.",
       "Система фиксирует: задание не выполнено.",
       "Время для завершения задания сокращается.",
@@ -1047,7 +1053,7 @@
       "Осталось менее двух часов. Задание не выполнено.",
       "Система: критически малое время до сброса.",
       "Менее двух часов до сброса. Статус: не выполнено.",
-      "Время почти истекло. Задание не закрыто.",
+      "Время почти истекло. Задание не выполнено.",
       "Система фиксирует: срок задания почти истёк.",
       "Менее двух часов. При бездействии наказание неотвратимо.",
       "Финальное окно для завершения задания.",
@@ -1089,7 +1095,7 @@
     title_celeustremlenny: { title: "Целеустремлённый", content: "Семь дней подряд без единого срыва. Система признаёт целеустремлённость Игрока — прибавка к опыту закреплена, покуда серия не прервётся." },
     title_vechny_strannik: { title: "Вечный странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Вечным странником — шаги отныне приносят больше опыта." },
     title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел испытан на прочность пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
-    rank_d: { title: "D-Ранг", content: "Первый этап эволюции. Игрок преодолел базовую слабость E-ранга — организм адаптировался к минимальным нагрузкам. С этого момента требования к выполнению заданий возрастают." },
+    rank_d: { title: "D-Ранг", content: "Первый этап эволюции. Игрок преодолел базовую слабость E-ранга — организм адаптировался к минимальным нагрузкам. С этого момента дневная нагрузка возрастает." },
     rank_c: { title: "C-Ранг", content: "Зафиксирован устойчивый прогресс. Физическая выносливость и скорость восстановления Игрока после нагрузок значительно превышают показатели обычного человека." },
     rank_b: { title: "B-Ранг", content: "Предел стандартной человеческой формы сломан. Выносливость и показатели силы Игрока выходят за рамки обычных физиологических ограничений. Открывается доступ к более высоким наградам." },
     rank_a: { title: "A-Ранг", content: "Элита. До этого рубежа доходят немногие. Физические возможности Игрока вышли на пиковый уровень, а контроль над телом стал практически полным." },
@@ -1706,8 +1712,8 @@
       } else if (id === 'crystal_restoration') {
           used = useRecoveryItem(0.8, 'Кристалл использован');
       } else if (id === 'rune_freedom') {
-          if ((data.targetDiscountRate || 0) < 0.25) { data.targetDiscountToday = true; data.targetDiscountRate = 0.25; used = true; showNotice("Руна использована. Требования заданий снижены на сегодня.", 'info'); }
-          else { showNotice("Требования заданий уже снижены достаточно.", 'warn'); }
+          if ((data.targetDiscountRate || 0) < 0.25) { data.targetDiscountToday = true; data.targetDiscountRate = 0.25; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
+          else { showNotice("Нагрузка уже снижена достаточно.", 'warn'); }
       } else if (id === 'rune_stability') {
           if (!data.streakShield) { data.streakShield = true; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
           else { showNotice("Защита серии уже активна.", 'warn'); }
@@ -1773,8 +1779,8 @@
       } else if (id === 'rune_burden_release') {
           if ((data.targetDiscountRate || 0) < 0.45) {
               data.targetDiscountToday = true; data.targetDiscountRate = 0.45;
-              used = true; showNotice("Руна использована. Требования заданий сильно снижены на сегодня.", 'info');
-          } else { showNotice("Требования заданий уже снижены достаточно.", 'warn'); }
+              used = true; showNotice("Руна использована. Нагрузка на сегодня значительно снижена.", 'info');
+          } else { showNotice("Нагрузка уже снижена достаточно.", 'warn'); }
       } else if (id === 'rune_return') {
           if (data.lastExpLoss > 0 || data.expBoostToday < 0.15) {
               if (data.lastExpLoss > 0) { data.exp += data.lastExpLoss; data.lastExpLoss = 0; checkLevelUp(); }
@@ -1882,6 +1888,13 @@
           gainedItems.push(lootId);
         }
       }
+      // Independent bonus roll — credits on top of the item lottery above,
+      // never reducing how many items can drop.
+      let gainedCredits = 0;
+      if (box.creditChance && Math.random() < box.creditChance) {
+        gainedCredits = box.creditAmount || 0;
+        data.credits += gainedCredits;
+      }
       saveData(); render(); openInv();
       const counts = {};
       gainedItems.forEach(lootId => { counts[lootId] = (counts[lootId] || 0) + 1; });
@@ -1894,6 +1907,7 @@
         const key = KEY_CATALOG[keyId];
         if (key) names.push(key.name);
       });
+      if (gainedCredits > 0) names.push(`Кредиты ${gainedCredits} ◈`);
       if (names.length) showNotice(`Получен предмет: ${names.join(', ')}`, 'info');
     });
   }
@@ -1917,7 +1931,7 @@
     btn.disabled = !canUse;
     btn.classList.toggle('ready', canUse);
     let statusText;
-    if (!allDone) statusText = "Завершите все текущие задания";
+    if (!allDone) statusText = "Завершите дневное задание";
     else if (usesLeft > 0) statusText = `ЛИМИТ СНЯТ: КРЕДИТЫ x2 · Осталось использований сегодня: ${usesLeft}`;
     else statusText = "Лимит на сегодня исчерпан";
     document.getElementById('limitStatus').textContent = statusText;
@@ -2690,6 +2704,17 @@
 
   function openDevPanel() {
     document.getElementById('devPanelOverlay').style.display = 'flex';
+  }
+
+  // Gives immediate visual feedback on tap (button flashes gold), then runs
+  // the actual action — so it's always clear a press registered, even for
+  // actions whose effect isn't otherwise visible right away.
+  function devFlashThenRun(btn, fn) {
+    btn.classList.add('dev-btn-flash');
+    setTimeout(() => {
+      btn.classList.remove('dev-btn-flash');
+      fn();
+    }, 400);
   }
 
   function devAddExp() {
