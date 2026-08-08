@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.8 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -253,7 +253,7 @@
       font-family: 'Orbitron', sans-serif; font-size: 0.55rem; letter-spacing: 2px;
       color: #40c0ff; opacity: 0.8; margin-bottom: 5px; text-transform: uppercase;
     }
-    .cal-tooltip-body { color: #e0f4ff; line-height: 1.4; }
+    .cal-tooltip-body { color: #e0f4ff; line-height: 1.5; white-space: pre-line; }
 
     .close-status {
       display: block; width: 100%; margin-top: 15px; padding: 12px; background: transparent;
@@ -815,7 +815,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.7';
+  const APP_VERSION = '5.9.8';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -852,7 +852,7 @@
         history: oldData.history || {},
         bestStreak: oldData.bestStreak || 0,
         pendingLevelUpToday: oldData.pendingLevelUpToday || 0,
-        codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive"],
+        codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"],
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
@@ -863,7 +863,8 @@
         creditBoostToday: oldData.creditBoostToday,
         streakShield: !!oldData.streakShield,
         keys: oldData.keys || {},
-        extraLimitBreaksToday: oldData.extraLimitBreaksToday || 0
+        extraLimitBreaksToday: oldData.extraLimitBreaksToday || 0,
+        expGainedToday: oldData.expGainedToday || 0
       };
     } else {
       isFreshInstall = true;
@@ -877,11 +878,11 @@
         playerName: "", dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
-        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive"],
+        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"],
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
-        keys: {}, extraLimitBreaksToday: 0
+        keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0
       };
     }
   }
@@ -895,9 +896,10 @@
   if (!data.history || typeof data.history !== 'object') data.history = {};
   if (typeof data.bestStreak !== 'number') data.bestStreak = 0;
   if (typeof data.pendingLevelUpToday !== 'number') data.pendingLevelUpToday = 0;
-  if (!Array.isArray(data.codexUnlocked)) data.codexUnlocked = ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive"];
+  if (!Array.isArray(data.codexUnlocked)) data.codexUnlocked = ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"];
   if (!data.codexUnlocked.includes('boxes')) data.codexUnlocked.push('boxes');
   if (!data.codexUnlocked.includes('archive')) data.codexUnlocked.push('archive');
+  if (!data.codexUnlocked.includes('stats')) data.codexUnlocked.push('stats');
   if (!Array.isArray(data.notificationLog)) data.notificationLog = [];
   if (!Array.isArray(data.remindersFiredHours)) data.remindersFiredHours = [];
   if (!data.lastNoticeText || typeof data.lastNoticeText !== 'object') data.lastNoticeText = {};
@@ -914,6 +916,7 @@
   data.streakShield = !!data.streakShield;
   if (!data.keys || typeof data.keys !== 'object' || Array.isArray(data.keys)) data.keys = {};
   if (typeof data.extraLimitBreaksToday !== 'number') data.extraLimitBreaksToday = 0;
+  if (typeof data.expGainedToday !== 'number') data.expGainedToday = 0;
 
   let totalStats = JSON.parse(localStorage.getItem(STATS_KEY)) || null;
   if (!totalStats) {
@@ -1078,7 +1081,8 @@
 
   const CODEX_CHAPTERS = {
     daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и шаги. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Выполненное задание приносит опыт и кредиты." },
-    penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Тяжесть наказания снижается с ростом силы и уровня Игрока. Система не прощает бездействия." },
+    penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Система не прощает бездействия. Однако с ростом силы и уровня эта тяжесть снижается." },
+    stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри." },
@@ -1151,6 +1155,37 @@
   function formatDateRu(dateKey) {
     const [y, m, d] = dateKey.split('-').map(Number);
     return `${d} ${RU_MONTHS_GEN[m-1]}`;
+  }
+
+  // Builds the multi-line Летопись tooltip text for one calendar day.
+  // For today (isToday=true, entry=null) figures progress/EXP on the fly from
+  // current live data; for past days it reads the frozen values recorded into
+  // history at the time of that day's rollover (checkMissedDays()). Days
+  // recorded before this field existed simply won't have donePercent/
+  // expGained/expLost — those lines are omitted rather than showing 0/blank.
+  function buildDayDetail(dateKey, entry, isToday) {
+    let statusLine, donePercent, expGained, expLost, level;
+    if (isToday) {
+      statusLine = 'День ещё не завершён.';
+      donePercent = countDoneQuests() * 20;
+      expGained = data.expGainedToday || 0;
+      expLost = 0;
+      level = 0;
+    } else {
+      if (entry.status === 'success') statusLine = 'Задание выполнено.';
+      else if (entry.status === 'penalty') statusLine = 'Задание не выполнено, получен штраф.';
+      else if (entry.status === 'protected') statusLine = 'Задание не выполнено, штраф предотвращён (Руна Защиты).';
+      donePercent = entry.donePercent;
+      expGained = entry.expGained || 0;
+      expLost = entry.expLost || 0;
+      level = entry.level || 0;
+    }
+    const lines = [formatDateRu(dateKey), statusLine];
+    if (typeof donePercent === 'number') lines.push(`Прогресс дня: ${donePercent}%`);
+    if (expGained > 0) lines.push(`Получено опыта: +${expGained} EXP`);
+    if (expLost > 0) lines.push(`Снято штрафом: −${expLost} EXP`);
+    if (level > 0) lines.push(`Получен ${level}-й уровень.`);
+    return lines.join('\n');
   }
 
   function sanitizePlayerName(raw) {
@@ -1371,15 +1406,20 @@
     let lastPct = 0;
     while (now >= nextReset) {
       const dayKey = dateKeyFromTimestamp(data.lastReset);
+      const donePercent = countDoneQuests() * 20;
+      const expGainedThatDay = data.expGainedToday || 0;
       let dayStatus;
+      let expLostThatDay = 0;
       if (data.insurance) {
         dayStatus = 'protected';
       } else {
         const result = applyPenaltyLogic();
-        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; }
+        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; }
         else { dayStatus = 'success'; }
       }
-      const historyEntry = { status: dayStatus };
+      const historyEntry = { status: dayStatus, donePercent };
+      if (expGainedThatDay > 0) historyEntry.expGained = expGainedThatDay;
+      if (expLostThatDay > 0) historyEntry.expLost = expLostThatDay;
       if (data.pendingLevelUpToday) historyEntry.level = data.pendingLevelUpToday;
       data.history[dayKey] = historyEntry;
       data.pendingLevelUpToday = 0;
@@ -1390,6 +1430,7 @@
       data.completed = {};
       data.isGoalMet = false;
       data.limitBreaksToday = 0;
+      data.expGainedToday = 0;
       data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
       data.notificationLog = [];
@@ -2050,6 +2091,7 @@
       if (data.completed[id] >= target) {
         const expGained = getDynamicExp(parseInt(item.dataset.exp), data.level, id);
         data.exp += expGained;
+        data.expGainedToday = (data.expGainedToday || 0) + expGained;
         let creds = Math.floor(parseInt(item.dataset.exp) * 0.5);
         const critChance = (data.stats.agi - 10) * 0.5;
         let critMsg = "";
@@ -2167,13 +2209,13 @@
 
       if (dateKey === todayKey) {
         statusClass = 'today';
-        detail = `${formatDateRu(dateKey)} — День ещё не завершён.`;
+        detail = buildDayDetail(dateKey, null, true);
       } else if (entry) {
         statusClass = entry.status;
-        if (entry.status === 'success') { successCount++; detail = `${formatDateRu(dateKey)} — Задание выполнено.`; }
-        else if (entry.status === 'penalty') { penaltyCount++; detail = `${formatDateRu(dateKey)} — Штраф.`; }
-        else if (entry.status === 'protected') { protectedCount++; detail = `${formatDateRu(dateKey)} — Штраф предотвращён (Свиток).`; }
-        if (entry.level) detail += ` Получен ${entry.level}-й уровень.`;
+        if (entry.status === 'success') successCount++;
+        else if (entry.status === 'penalty') penaltyCount++;
+        else if (entry.status === 'protected') protectedCount++;
+        detail = buildDayDetail(dateKey, entry, false);
       }
 
       cell.className = 'day-cell ' + statusClass + (detail ? ' has-data' : '');
@@ -2330,6 +2372,12 @@
         const clean = { status: entry.status };
         const lvl = sanitizeNumber(entry.level, 0, 1);
         if (lvl > 0) clean.level = Math.floor(lvl);
+        const donePct = sanitizeNumber(entry.donePercent, -1, 0);
+        if (donePct >= 0) clean.donePercent = Math.max(0, Math.min(100, Math.floor(donePct)));
+        const eg = sanitizeNumber(entry.expGained, 0, 0);
+        if (eg > 0) clean.expGained = Math.floor(eg);
+        const el = sanitizeNumber(entry.expLost, 0, 0);
+        if (el > 0) clean.expLost = Math.floor(el);
         cleanHistory[key] = clean;
       }
     }
@@ -2337,7 +2385,7 @@
     const cleanCodexUnlocked = Array.isArray(s.codexUnlocked)
       ? s.codexUnlocked.filter(id => typeof id === 'string' && CODEX_CHAPTERS[id])
       : [];
-    if (cleanCodexUnlocked.length === 0) cleanCodexUnlocked.push("daily_quota", "penalty", "chronicle", "shop", "boxes", "archive");
+    if (cleanCodexUnlocked.length === 0) cleanCodexUnlocked.push("daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats");
 
     const cleanNotificationLog = Array.isArray(s.notificationLog)
       ? s.notificationLog
