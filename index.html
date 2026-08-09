@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.9 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -267,6 +267,16 @@
       width: 32px; height: 32px; padding: 0; min-width: auto;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.2rem; font-weight: bold;
+    }
+    @keyframes statBtnFlash {
+      0% { filter: brightness(1); box-shadow: 0 0 0 rgba(64,255,170,0); }
+      35% { filter: brightness(1.6); box-shadow: 0 0 14px rgba(64,255,170,0.8); }
+      100% { filter: brightness(1); box-shadow: 0 0 0 rgba(64,255,170,0); }
+    }
+    .stat-add-btn.stat-btn-flash { animation: statBtnFlash 0.4s ease; }
+    .stat-add-btn:disabled {
+      opacity: 0.35; filter: grayscale(0.6); cursor: not-allowed;
+      box-shadow: none;
     }
     .quest-list { padding: 16px 18px; }
     .quest-item {
@@ -540,10 +550,24 @@
       </div>
     </div>
     <div class="stat-row">
+      <span class="stat-label">ВЫНОСЛИВОСТЬ (STA)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valSta">10</span>
+        <button onclick="incStat('sta')" class="stat-add-btn" id="btnSta">+</button>
+      </div>
+    </div>
+    <div class="stat-row">
       <span class="stat-label">ИНТЕЛЛЕКТ (INT)</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valInt">10</span>
         <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
+      </div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">ВОСПРИЯТИЕ (PER)</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span class="stat-value" id="valPer">10</span>
+        <button onclick="incStat('per')" class="stat-add-btn" id="btnPer">+</button>
       </div>
     </div>
     </div>
@@ -815,7 +839,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.8';
+  const APP_VERSION = '5.9.9';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -871,7 +895,7 @@
       data = {
         level: 1, exp: 0, lastReset: getLastResetThreshold(Date.now()),
         completed: {}, totalDays: 0, totalPenalties: 0,
-        statPoints: 0, stats: { str: 10, agi: 10, int: 10 },
+        statPoints: 0, stats: { str: 10, agi: 10, sta: 10, int: 10, per: 10 },
         isGoalMet: false, credits: 0, inventory: [], consumables: {}, boxes: {},
         insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
         lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, titlesUnlocked: ["Новичок"],
@@ -917,6 +941,12 @@
   if (!data.keys || typeof data.keys !== 'object' || Array.isArray(data.keys)) data.keys = {};
   if (typeof data.extraLimitBreaksToday !== 'number') data.extraLimitBreaksToday = 0;
   if (typeof data.expGainedToday !== 'number') data.expGainedToday = 0;
+  if (!data.stats || typeof data.stats !== 'object') data.stats = {};
+  if (typeof data.stats.str !== 'number') data.stats.str = 10;
+  if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
+  if (typeof data.stats.sta !== 'number') data.stats.sta = 10;
+  if (typeof data.stats.int !== 'number') data.stats.int = 10;
+  if (typeof data.stats.per !== 'number') data.stats.per = 10;
 
   let totalStats = JSON.parse(localStorage.getItem(STATS_KEY)) || null;
   if (!totalStats) {
@@ -932,12 +962,12 @@
   const ARTEFACTS = {
     "crystal_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "Пассивно: +10% Кредитов за шаги", level: 10 },
     "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "Пассивно: Штрафы снижены на 15%", level: 20 },
-    "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "Пассивно: +2 очка статов при Lvl Up", level: 30 },
+    "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "Пассивно: +3 очка статов при Lvl Up", level: 30 },
     "seal_limit": { name: "Печать Предела", icon: "🎖", desc: "Пассивно: +1 использование Преодоления лимита каждый день", level: 40 },
-    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "Пассивно: ещё +2 очка статов при Lvl Up (складывается с Печатью Развития)", level: 50 },
+    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "Пассивно: ещё +4 очка статов при Lvl Up (складывается с Печатью Развития)", level: 50 },
     "amulet_continuity": { name: "Амулет Непрерывности", icon: "☥", desc: "Пассивно: усиливает бонус титула «Целеустремлённый» на 50%", level: 60 },
     "crystal_insight": { name: "Кристалл Прозрения", icon: "💎", desc: "Пассивно: +8% к получаемому опыту", level: 70 },
-    "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "Пассивно: +15% Кредитов, +5% опыта, +3 очка статов при Lvl Up. Шанс на бонусную шкатулку при полном выполнении дня", level: 80 }
+    "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "Пассивно: +15% Кредитов, +5% опыта, +6 очков статов при Lvl Up. Шанс на бонусную шкатулку при полном выполнении дня", level: 80 }
   };
 
   const TITLES_DB = {
@@ -1029,10 +1059,16 @@
 
   function rollBoxTier() {
     const tiers = getAvailableBoxTiers();
-    const totalWeight = tiers.reduce((sum, id) => sum + BOX_CATALOG[id].weight, 0);
+    // Восприятие boosts every tier above the two most basic ones — shifting
+    // relative odds toward rarer/better boxes without touching Базальтовая/
+    // Ониксовая (kept as the guaranteed "common floor").
+    const bonusPer = Math.max(0, data.stats.per - 10);
+    const rareBoost = bonusPer * 0.003;
+    const getWeight = id => (id === 'box_basalt' || id === 'box_onyx') ? BOX_CATALOG[id].weight : BOX_CATALOG[id].weight * (1 + rareBoost);
+    const totalWeight = tiers.reduce((sum, id) => sum + getWeight(id), 0);
     let r = Math.random() * totalWeight;
     for (const id of tiers) {
-      r -= BOX_CATALOG[id].weight;
+      r -= getWeight(id);
       if (r <= 0) return id;
     }
     return tiers[0];
@@ -1080,9 +1116,9 @@
   };
 
   const CODEX_CHAPTERS = {
-    daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и шаги. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Выполненное задание приносит опыт и кредиты." },
+    daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Выполненное задание приносит опыт и кредиты." },
     penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Система не прощает бездействия. Однако с ростом силы и уровня эта тяжесть снижается." },
-    stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт." },
+    stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость позволяет извлечь больше опыта из Преодоления предела." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри." },
@@ -1284,6 +1320,10 @@
     if (data.activeTitle === "Вечный странник" && id === "steps") mul += 0.10;
     if (data.inventory.includes("crystal_insight")) mul += 0.08;
     if (data.inventory.includes("crystal_shadow")) mul += 0.05;
+    if (data.isGoalMet) {
+      const bonusSta = Math.max(0, data.stats.sta - 10);
+      mul += (bonusSta * 0.02);
+    }
     if (data.expBoostToday > 0) mul += data.expBoostToday;
     return Math.floor(base * mul);
   }
@@ -1916,6 +1956,18 @@
       const count = box.minItems + Math.floor(Math.random() * (box.maxItems - box.minItems + 1));
       const gainedItems = [];
       const gainedKeys = [];
+      // Восприятие: chance to pick from the "stronger" back half of a loot
+      // pool instead of the pool at large (pools are laid out roughly
+      // weakest-to-strongest — see BOX_LOOT_POOLS comments).
+      const bonusPer = Math.max(0, data.stats.per - 10);
+      const rareBoost = bonusPer * 0.003;
+      function pickFromPool(arr) {
+        if (arr.length > 1 && Math.random() < rareBoost) {
+          const half = Math.floor(arr.length / 2);
+          return arr[half + Math.floor(Math.random() * (arr.length - half))];
+        }
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
       for (let i = 0; i < count; i++) {
         if (keyPool.length && box.keyDropChance && Math.random() < box.keyDropChance) {
           const idx = Math.floor(Math.random() * keyPool.length);
@@ -1924,15 +1976,16 @@
           gainedKeys.push(keyId);
           keyPool.splice(idx, 1); // don't grant the same key twice from one opening
         } else if (pool.length) {
-          const lootId = pool[Math.floor(Math.random() * pool.length)];
+          const lootId = pickFromPool(pool);
           data.consumables[lootId] = (data.consumables[lootId] || 0) + 1;
           gainedItems.push(lootId);
         }
       }
       // Independent bonus roll — credits on top of the item lottery above,
-      // never reducing how many items can drop.
+      // never reducing how many items can drop. Восприятие adds to the chance.
       let gainedCredits = 0;
-      if (box.creditChance && Math.random() < box.creditChance) {
+      const effectiveCreditChance = box.creditChance ? (box.creditChance + rareBoost) : 0;
+      if (effectiveCreditChance && Math.random() < effectiveCreditChance) {
         gainedCredits = box.creditAmount || 0;
         data.credits += gainedCredits;
       }
@@ -1987,10 +2040,10 @@
     while (data.exp >= getExpToNext(data.level)) {
       data.exp -= getExpToNext(data.level);
       data.level++;
-      let statGain = 3;
-      if (data.inventory.includes("seal_growth")) statGain += 2;
-      if (data.inventory.includes("sphere_growth")) statGain += 2;
-      if (data.inventory.includes("crystal_shadow")) statGain += 3;
+      let statGain = 5;
+      if (data.inventory.includes("seal_growth")) statGain += 3;
+      if (data.inventory.includes("sphere_growth")) statGain += 4;
+      if (data.inventory.includes("crystal_shadow")) statGain += 6;
       data.statPoints += statGain;
       leveled = true;
       const boxId = rollBoxTier();
@@ -2136,15 +2189,24 @@
   });
 
   function incStat(stat) {
-    if (data.statPoints > 0) { data.stats[stat]++; data.statPoints--; updateStatusUI(); saveData(); }
+    if (data.statPoints > 0) {
+      data.stats[stat]++; data.statPoints--; updateStatusUI(); saveData();
+      const btn = document.getElementById('btn' + stat.charAt(0).toUpperCase() + stat.slice(1));
+      if (btn) {
+        btn.classList.add('stat-btn-flash');
+        setTimeout(() => btn.classList.remove('stat-btn-flash'), 400);
+      }
+    }
   }
 
   function updateStatusUI() {
     document.getElementById('statPoints').textContent = data.statPoints;
     document.getElementById('valStr').textContent = data.stats.str;
     document.getElementById('valAgi').textContent = data.stats.agi;
+    document.getElementById('valSta').textContent = data.stats.sta;
     document.getElementById('valInt').textContent = data.stats.int;
-    ['btnStr','btnAgi','btnInt'].forEach(id => document.getElementById(id).disabled = (data.statPoints <= 0));
+    document.getElementById('valPer').textContent = data.stats.per;
+    ['btnStr','btnAgi','btnSta','btnInt','btnPer'].forEach(id => document.getElementById(id).disabled = (data.statPoints <= 0));
   }
 
   // ===== ЛЕТОПИСЬ (calendar) =====
@@ -2319,7 +2381,9 @@
     const cleanStats = {
       str: sanitizeNumber(s.stats && s.stats.str, 10),
       agi: sanitizeNumber(s.stats && s.stats.agi, 10),
-      int: sanitizeNumber(s.stats && s.stats.int, 10)
+      sta: sanitizeNumber(s.stats && s.stats.sta, 10),
+      int: sanitizeNumber(s.stats && s.stats.int, 10),
+      per: sanitizeNumber(s.stats && s.stats.per, 10)
     };
 
     const cleanInventory = Array.isArray(s.inventory) ? s.inventory.filter(k => ARTEFACTS[k]) : [];
