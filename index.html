@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.11 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.12 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -476,12 +476,14 @@
       100% { box-shadow: 0 0 0 rgba(255,215,0,0); border-color: #00aaff33; }
     }
     .item-card.item-flash-gold { animation: itemFlashGold 0.6s ease; }
-    @keyframes devBtnFlash {
+    /* SL:SYS-TOOLS:START */
+    @keyframes sysToolsBtnFlash {
       0% { filter: brightness(1); transform: scale(1); }
       35% { filter: brightness(1.8); transform: scale(1.04); }
       100% { filter: brightness(1); transform: scale(1); }
     }
-    .dev-btn-flash { animation: devBtnFlash 0.4s ease; }
+    .sys-tools-btn-flash { animation: sysToolsBtnFlash 0.4s ease; }
+    /* SL:SYS-TOOLS:END */
     .item-icon { min-width: 40px; text-align: center; display: flex; align-items: center; justify-content: center; }
     .item-icon-img { width: 32px; height: 32px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
     .item-preview-box {
@@ -670,7 +672,6 @@
   </div>
 </div>
 
-<!-- ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — "Длань архитектора" — начало ===== -->
 <div class="status-overlay" id="itemPreviewOverlay" style="z-index:2500; cursor:pointer;" onclick="document.getElementById('itemPreviewOverlay').style.display='none'">
   <div class="item-preview-box">
     <img id="itemPreviewImg" src="" alt="">
@@ -678,42 +679,43 @@
   </div>
 </div>
 
-<div class="status-overlay" id="devPanelOverlay">
+<!-- SL:SYS-TOOLS:START -->
+<div class="status-overlay" id="sysToolsOverlay">
   <div class="status-window hud-frame">
     <div class="status-header" style="color:#ff66ff; text-shadow:0 0 10px rgba(255,102,255,0.5);">ДЛАНЬ АРХИТЕКТОРА</div>
     <div class="status-body">
       <div class="backup-section">
         <div class="backup-section-title">Опыт и уровень</div>
-        <input type="number" id="devExpInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во EXP">
-        <button class="backup-action-btn" onclick="devFlashThenRun(this, devAddExp)">Добавить EXP</button>
-        <input type="number" id="devLevelInput" class="code-input-area" style="min-height:auto; text-align:center; margin-top:10px;" placeholder="Уровень">
-        <button class="backup-action-btn" onclick="devFlashThenRun(this, devSetLevel)">Установить уровень</button>
+        <input type="number" id="sysExpInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во EXP">
+        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addExpAction)">Добавить EXP</button>
+        <input type="number" id="sysLevelInput" class="code-input-area" style="min-height:auto; text-align:center; margin-top:10px;" placeholder="Уровень">
+        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, setLevelAction)">Установить уровень</button>
         <div class="danger-btn-row" style="margin-top:10px;">
-          <button class="confirm-btn-continue" onclick="devFlashThenRun(this, devQuickLevel)">+1 уровень</button>
-          <button class="confirm-btn-continue" onclick="devFlashThenRun(this, devQuickExp)">+1000 EXP</button>
+          <button class="confirm-btn-continue" onclick="sysToolsFlashThenRun(this, quickLevelAction)">+1 уровень</button>
+          <button class="confirm-btn-continue" onclick="sysToolsFlashThenRun(this, quickExpAction)">+1000 EXP</button>
         </div>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Кредиты</div>
-        <input type="number" id="devCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
-        <button class="backup-action-btn" onclick="devFlashThenRun(this, devAddCredits)">Добавить кредиты</button>
+        <input type="number" id="sysCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
+        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addCreditsAction)">Добавить кредиты</button>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Штрафы</div>
-        <button class="backup-action-btn" onclick="devFlashThenRun(this, devApplyPenalty)">Применить штраф сейчас</button>
-        <button class="backup-action-btn" style="margin-top:10px;" onclick="devFlashThenRun(this, devResetPenaltyCount)">Обнулить счётчик штрафов</button>
+        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, applyPenaltyAction)">Применить штраф сейчас</button>
+        <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyCountAction)">Обнулить счётчик штрафов</button>
       </div>
       <div class="backup-section danger-zone">
         <div class="backup-section-title danger">Сбросы</div>
-        <button class="reset-all" onclick="devFlashThenRun(this, devResetDailyProgress)">Сбросить дневной прогресс</button>
-        <button class="reset-all" style="margin-top:10px;" onclick="devFlashThenRun(this, devForceFullReset)">Принудительный сброс дня</button>
-        <button class="reset-all" style="margin-top:10px;" onclick="devFlashThenRun(this, devResetChronicle)">Сбросить историю Летописи</button>
+        <button class="reset-all" onclick="sysToolsFlashThenRun(this, resetDailyProgressAction)">Сбросить дневной прогресс</button>
+        <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, forceFullResetAction)">Принудительный сброс дня</button>
+        <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetChronicleAction)">Сбросить историю Летописи</button>
       </div>
     </div>
-    <button class="close-status" onclick="document.getElementById('devPanelOverlay').style.display='none'">ЗАКРЫТЬ</button>
+    <button class="close-status" onclick="document.getElementById('sysToolsOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
-<!-- ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — конец ===== -->
+<!-- SL:SYS-TOOLS:END -->
 
 <div class="status-overlay" id="confirmOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
@@ -839,7 +841,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.11';
+  const APP_VERSION = '5.9.12';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2567,7 +2569,7 @@
       cont.innerHTML = `
         <div class="backup-section">
           <div class="backup-section-title">Версия</div>
-          <div class="backup-summary" style="opacity:0.6; cursor:default;" onclick="devTapVersion()">v${APP_VERSION}</div>
+          <div class="backup-summary" id="appVersionTag" style="opacity:0.6; cursor:default;">v${APP_VERSION}</div>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Игрок</div>
@@ -2812,53 +2814,56 @@
         saveData(); location.reload();
     });
   };
-  // ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — "Длань архитектора" — начало =====
-  // Секретный вызов: 7 тапов по номеру версии в Архиве за 2 секунды.
-  // Весь блок самодостаточен и не используется никаким другим кодом приложения —
-  // можно целиком удалить (HTML-блок между соответствующими комментариями,
-  // и этот JS-блок) без риска задеть основную логику.
-  let devTapTimes = [];
-  function devTapVersion() {
+  /* SL:SYS-TOOLS:START */
+  // Secret entry: 7 taps on the version tag in the Archive within 2 seconds.
+  // Bound via delegation on #backupContent (a stable parent) since the
+  // version tag itself is recreated every time the Archive re-renders its
+  // innerHTML — a direct listener on the tag would be lost on each render.
+  let versionPulseTimes = [];
+  function onVersionPulse() {
     const now = Date.now();
-    devTapTimes.push(now);
-    devTapTimes = devTapTimes.filter(t => now - t <= 2000);
-    if (devTapTimes.length >= 7) {
-      devTapTimes = [];
-      openDevPanel();
+    versionPulseTimes.push(now);
+    versionPulseTimes = versionPulseTimes.filter(t => now - t <= 2000);
+    if (versionPulseTimes.length >= 7) {
+      versionPulseTimes = [];
+      openSysTools();
     }
   }
+  document.getElementById('backupContent').addEventListener('click', e => {
+    if (e.target && e.target.id === 'appVersionTag') onVersionPulse();
+  });
 
-  function openDevPanel() {
-    document.getElementById('devPanelOverlay').style.display = 'flex';
+  function openSysTools() {
+    document.getElementById('sysToolsOverlay').style.display = 'flex';
   }
 
   // Gives immediate visual feedback on tap (button flashes gold), then runs
   // the actual action — so it's always clear a press registered, even for
   // actions whose effect isn't otherwise visible right away.
-  function devFlashThenRun(btn, fn) {
-    btn.classList.add('dev-btn-flash');
+  function sysToolsFlashThenRun(btn, fn) {
+    btn.classList.add('sys-tools-btn-flash');
     setTimeout(() => {
-      btn.classList.remove('dev-btn-flash');
+      btn.classList.remove('sys-tools-btn-flash');
       fn();
     }, 400);
   }
 
-  function devAddExp() {
-    const val = parseInt(document.getElementById('devExpInput').value, 10);
+  function addExpAction() {
+    const val = parseInt(document.getElementById('sysExpInput').value, 10);
     if (!Number.isFinite(val)) return;
     data.exp += val;
     checkLevelUp();
     saveData(); render();
   }
 
-  function devQuickExp() {
+  function quickExpAction() {
     data.exp += 1000;
     checkLevelUp();
     saveData(); render();
   }
 
-  function devSetLevel() {
-    const target = parseInt(document.getElementById('devLevelInput').value, 10);
+  function setLevelAction() {
+    const target = parseInt(document.getElementById('sysLevelInput').value, 10);
     if (!Number.isFinite(target) || target < 1) return;
     if (target > data.level) {
       let guard = 0;
@@ -2874,20 +2879,20 @@
     saveData(); render();
   }
 
-  function devQuickLevel() {
+  function quickLevelAction() {
     data.exp = getExpToNext(data.level);
     checkLevelUp();
     saveData(); render();
   }
 
-  function devAddCredits() {
-    const val = parseInt(document.getElementById('devCreditsInput').value, 10);
+  function addCreditsAction() {
+    const val = parseInt(document.getElementById('sysCreditsInput').value, 10);
     if (!Number.isFinite(val)) return;
     data.credits += val;
     saveData(); render();
   }
 
-  function devApplyPenalty() {
+  function applyPenaltyAction() {
     let basePen = 0.15;
     const lvlReduction = Math.floor(data.level / 20) * 0.03;
     const bonusStr = Math.max(0, data.stats.str - 10);
@@ -2904,29 +2909,29 @@
     showPenaltyBanner(loss, Math.round(finalPen * 100), 1);
   }
 
-  function devResetPenaltyCount() {
+  function resetPenaltyCountAction() {
     data.totalPenalties = 0;
     saveData(); render();
   }
 
-  function devResetDailyProgress() {
+  function resetDailyProgressAction() {
     data.completed = {};
     data.isGoalMet = false;
     saveData(); render();
   }
 
-  function devForceFullReset() {
+  function forceFullResetAction() {
     data.lastReset -= 86400000;
     saveData();
     checkMissedDays();
   }
 
-  function devResetChronicle() {
+  function resetChronicleAction() {
     data.history = {};
     saveData(); render();
     if (calViewYear !== null) calRenderCalendar();
   }
-  // ===== ПАНЕЛЬ РАЗРАБОТЧИКА (ВРЕМЕННО) — конец =====
+  /* SL:SYS-TOOLS:END */
 
   document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; };
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
