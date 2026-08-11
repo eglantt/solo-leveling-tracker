@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.16 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.17 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -682,6 +682,22 @@
 </div>
 
 <!-- SL:SYS-TOOLS:START -->
+<div class="status-overlay" id="sysToolsAuthOverlay" style="z-index:1600;">
+  <div class="status-window hud-frame">
+    <div class="status-header">АВТОРИЗАЦИЯ</div>
+    <div class="status-body">
+      <div class="danger-warning-step">
+        <div class="danger-text" style="color:#a8d8ff;">Обнаружен запрос к служебному контуру. Введите ключ Архитектора.</div>
+        <input type="password" id="sysToolsAuthInput" class="code-input-area" style="min-height:auto; text-align:center; margin-top:10px;" placeholder="Ключ" autocomplete="off">
+        <div class="danger-btn-row" style="margin-top:10px;">
+          <button class="danger-btn-cancel" onclick="cancelSysToolsAuth()">Отмена</button>
+          <button class="confirm-btn-continue" onclick="confirmSysToolsAuth()">Подтвердить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="status-overlay" id="sysToolsOverlay">
   <div class="status-window hud-frame">
     <div class="status-header" style="color:#ff66ff; text-shadow:0 0 10px rgba(255,102,255,0.5);">ДЛАНЬ АРХИТЕКТОРА</div>
@@ -844,7 +860,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.16';
+  const APP_VERSION = '5.9.17';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -932,6 +948,13 @@
   if (!data.codexUnlocked.includes('boxes')) data.codexUnlocked.push('boxes');
   if (!data.codexUnlocked.includes('archive')) data.codexUnlocked.push('archive');
   if (!data.codexUnlocked.includes('stats')) data.codexUnlocked.push('stats');
+  // Retroactive fix: unlockCodexChapter() for a title only ever fires the
+  // first time that title is granted (inside unlockTitle()'s "not yet
+  // unlocked" branch). Players who already had "Пробужденный" before this
+  // chapter existed would otherwise never get it.
+  if (Array.isArray(data.titlesUnlocked) && data.titlesUnlocked.includes('Пробужденный') && !data.codexUnlocked.includes('title_probuzhdenny')) {
+    data.codexUnlocked.push('title_probuzhdenny');
+  }
   // One-time spelling fix: "Целеустремленный" (no ё) -> "Целеустремлённый".
   // Needed so players who already have this title stored keep it after the
   // comparison strings throughout the code were unified to use ё.
@@ -2886,11 +2909,57 @@
     versionPulseTimes = versionPulseTimes.filter(t => now - t <= 2000);
     if (versionPulseTimes.length >= 7) {
       versionPulseTimes = [];
-      openSysTools();
+      openSysToolsAuth();
     }
   }
   document.getElementById('backupContent').addEventListener('click', e => {
     if (e.target && e.target.id === 'appVersionTag') onVersionPulse();
+  });
+
+  // Access-key gate in front of the panel — SHA-256(salt + entered key),
+  // compared against a fixed hash. The plaintext key is never stored in the
+  // code, only this hash (see CLAUDE.md for how to regenerate it if the key
+  // ever needs to change).
+  const SYS_TOOLS_SALT = 'SL:ARCH:2026';
+  const SYS_TOOLS_KEY = '50c4d8888c4e32ad394824c8d5d7f46860a2343e3704fc1f921658be1042656a';
+
+  async function sha256Hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function openSysToolsAuth() {
+    const overlay = document.getElementById('sysToolsAuthOverlay');
+    if (overlay.style.display === 'flex') {
+      document.getElementById('sysToolsAuthInput').focus();
+      return;
+    }
+    overlay.style.display = 'flex';
+    document.getElementById('sysToolsAuthInput').focus();
+  }
+
+  function cancelSysToolsAuth() {
+    document.getElementById('sysToolsAuthOverlay').style.display = 'none';
+    document.getElementById('sysToolsAuthInput').value = '';
+  }
+
+  async function confirmSysToolsAuth() {
+    const input = document.getElementById('sysToolsAuthInput');
+    const entered = input.value.trim();
+    const hash = await sha256Hex(SYS_TOOLS_SALT + entered);
+    if (hash === SYS_TOOLS_KEY) {
+      document.getElementById('sysToolsAuthOverlay').style.display = 'none';
+      input.value = '';
+      openSysTools();
+    } else {
+      input.value = '';
+      input.focus();
+      showNotice('Доступ запрещен.', 'danger');
+    }
+  }
+
+  document.getElementById('sysToolsAuthInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmSysToolsAuth();
   });
 
   function openSysTools() {
