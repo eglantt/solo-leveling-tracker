@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.14 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.15 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -844,7 +844,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.14';
+  const APP_VERSION = '5.9.15';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1023,7 +1023,7 @@
   // them for purchase, so they deliberately live in a separate catalog).
   const UNIQUE_CATALOG = {
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 50% опыта от последнего штрафа" },
-    "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, восстанавливает серию и отмечает день в Летописи как выполненный." },
+    "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, продлевает серию на один день и отмечает день в Летописи как выполненный." },
     "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Стирает 3 штрафа из памяти Системы и возвращает 3× последнюю известную потерю опыта." },
     "rune_cleansing_full": { name: "Руна Полного Очищения", icon: "🔮", desc: "Стирает 5 штрафов из памяти Системы." },
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа" },
@@ -1558,28 +1558,37 @@
     if (amount > 0) data.exp += amount;
   }
 
+  // The ONE place the actual penalty math/mutation happens — both the real
+  // daily rollover (applyPenaltyLogic, gated by allQuestsDone/isGoalMet) and
+  // the "Длань архитектора" force-test button (applyPenaltyAction) call this
+  // same function, so there is no second copy of the formula that could ever
+  // drift out of sync again.
+  function computePenaltyAndApply() {
+    let basePen = 0.15;
+    const lvlReduction = Math.floor(data.level / 20) * 0.03;
+    const bonusStr = Math.max(0, data.stats.str - 10);
+    const strReduction = bonusStr * 0.0025;
+    let finalPen = Math.max(0.05, basePen - lvlReduction - strReduction);
+    if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
+    const loss = Math.floor(getExpToNext(data.level) * finalPen);
+    const shortfall = Math.max(0, loss - data.exp);
+    data.exp = Math.max(0, data.exp - loss);
+    if (shortfall > 0) data.expDebt += shortfall;
+    data.lastExpLoss = loss;
+    data.totalPenalties++;
+    if (data.streakShield) {
+      data.streakShield = false;
+    } else {
+      data.consecutiveDays = 0;
+    }
+    updateTitleStatus();
+    return { loss, pct: Math.round(finalPen * 100) };
+  }
+
   function applyPenaltyLogic() {
     if (data.isGoalMet) return null;
     if (!allQuestsDone()) {
-      let basePen = 0.15; 
-      const lvlReduction = Math.floor(data.level / 20) * 0.03;
-      const bonusStr = Math.max(0, data.stats.str - 10);
-      const strReduction = bonusStr * 0.0025;
-      let finalPen = Math.max(0.05, basePen - lvlReduction - strReduction);
-      if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
-      const loss = Math.floor(getExpToNext(data.level) * finalPen);
-      const shortfall = Math.max(0, loss - data.exp);
-      data.exp = Math.max(0, data.exp - loss);
-      if (shortfall > 0) data.expDebt += shortfall;
-      data.lastExpLoss = loss;
-      data.totalPenalties++;
-      if (data.streakShield) {
-        data.streakShield = false;
-      } else {
-        data.consecutiveDays = 0;
-      }
-      updateTitleStatus();
-      return { loss, pct: Math.round(finalPen * 100) };
+      return computePenaltyAndApply();
     } else {
       data.consecutiveDays++;
       if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
@@ -2947,22 +2956,9 @@
   }
 
   function applyPenaltyAction() {
-    let basePen = 0.15;
-    const lvlReduction = Math.floor(data.level / 20) * 0.03;
-    const bonusStr = Math.max(0, data.stats.str - 10);
-    const strReduction = bonusStr * 0.0025;
-    let finalPen = Math.max(0.05, basePen - lvlReduction - strReduction);
-    if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
-    const loss = Math.floor(getExpToNext(data.level) * finalPen);
-    const shortfall = Math.max(0, loss - data.exp);
-    data.exp = Math.max(0, data.exp - loss);
-    if (shortfall > 0) data.expDebt += shortfall;
-    data.lastExpLoss = loss;
-    data.totalPenalties++;
-    data.consecutiveDays = 0;
-    updateTitleStatus();
+    const { loss, pct } = computePenaltyAndApply();
     saveData(); render();
-    showPenaltyBanner(loss, Math.round(finalPen * 100), 1);
+    showPenaltyBanner(loss, pct, 1);
   }
 
   function resetPenaltyCountAction() {
