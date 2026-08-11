@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.13 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.14 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -119,6 +119,8 @@
       50% { text-shadow: 0 0 36px #aa00ff, 0 0 58px #6600aa; }
     }
     .exp { font-size: 0.85rem; color: #88ffcc; }
+    .exp.exp-in-debt { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
+    .exp-debt { font-size: 0.8rem; color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); margin-top: 2px; }
     .credits { font-size: 0.85rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
     .title-display { font-size: 0.75rem; color: #40ffaa; font-style: italic; opacity: 0.9; margin-top: 2px; }
     .player-name {
@@ -748,7 +750,8 @@
         <div class="player-name" id="playerNameDisplay">Игрок</div>
         <div class="title-display" id="titleDisplay">Новичок</div>
         <div class="rank" id="rankDisplay">Ранг: E-Rank (Уровень: 1)</div>
-        <div class="exp">EXP: <span id="exp">0</span> / <span id="expToNext">1000</span></div>
+        <div class="exp" id="expLine">EXP: <span id="exp">0</span> / <span id="expToNext">1000</span></div>
+        <div class="exp-debt" id="expDebtLine" style="display:none;">Долг перед Системой: −<span id="expDebtVal">0</span> EXP</div>
         <div class="credits">Кредиты: <span id="creditsVal">0</span> ◈</div>
       </div>
       <div class="reset-timer" id="resetTimerContainer">
@@ -841,7 +844,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.13';
+  const APP_VERSION = '5.9.14';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -890,7 +893,9 @@
         streakShield: !!oldData.streakShield,
         keys: oldData.keys || {},
         extraLimitBreaksToday: oldData.extraLimitBreaksToday || 0,
-        expGainedToday: oldData.expGainedToday || 0
+        expGainedToday: oldData.expGainedToday || 0,
+        dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
+        expDebt: oldData.expDebt || 0
       };
     } else {
       isFreshInstall = true;
@@ -908,7 +913,8 @@
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
-        keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0
+        keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
+        dailyTargetLevel: 1, expDebt: 0
       };
     }
   }
@@ -950,6 +956,8 @@
   if (!data.keys || typeof data.keys !== 'object' || Array.isArray(data.keys)) data.keys = {};
   if (typeof data.extraLimitBreaksToday !== 'number') data.extraLimitBreaksToday = 0;
   if (typeof data.expGainedToday !== 'number') data.expGainedToday = 0;
+  if (typeof data.dailyTargetLevel !== 'number' || data.dailyTargetLevel < 1) data.dailyTargetLevel = data.level || 1;
+  if (typeof data.expDebt !== 'number' || data.expDebt < 0) data.expDebt = 0;
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -988,7 +996,7 @@
   };
 
   const SHOP_CATALOG = {
-    "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Удаляет 1 штраф из истории", price: 500, level: 1 },
+    "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 500, level: 1 },
     "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800, level: 1 },
     "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 25% до конца сегодняшнего дня", price: 700, level: 3 },
@@ -1016,8 +1024,8 @@
   const UNIQUE_CATALOG = {
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 50% опыта от последнего штрафа" },
     "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, восстанавливает серию и отмечает день в Летописи как выполненный." },
-    "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Удаляет 3 штрафа из истории и возвращает 3× последнюю известную потерю опыта" },
-    "rune_cleansing_full": { name: "Руна Полного Очищения", icon: "🔮", desc: "Удаляет 5 штрафов из истории" },
+    "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Стирает 3 штрафа из памяти Системы и возвращает 3× последнюю известную потерю опыта." },
+    "rune_cleansing_full": { name: "Руна Полного Очищения", icon: "🔮", desc: "Стирает 5 штрафов из памяти Системы." },
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа" },
     "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня" },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа на завтра и защита серии дней, одновременно" },
@@ -1126,7 +1134,7 @@
 
   const CODEX_CHAPTERS = {
     daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Выполненное задание приносит опыт и кредиты." },
-    penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Система не прощает бездействия. Однако с ростом силы и уровня эта тяжесть снижается." },
+    penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Однако с ростом силы и уровня эта тяжесть снижается. Если же накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия." },
     stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку и позволяет извлечь больше опыта из Преодоления предела." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
@@ -1359,7 +1367,7 @@
   function allQuestsDone() {
     const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
     for (let id in targets) {
-      if ((data.completed[id] || 0) < getDynamicTarget(targets[id], data.level)) return false;
+      if ((data.completed[id] || 0) < getDynamicTarget(targets[id], data.dailyTargetLevel)) return false;
     }
     return true;
   }
@@ -1368,7 +1376,7 @@
     const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
     let count = 0;
     for (let id in targets) {
-      if ((data.completed[id] || 0) >= getDynamicTarget(targets[id], data.level)) count++;
+      if ((data.completed[id] || 0) >= getDynamicTarget(targets[id], data.dailyTargetLevel)) count++;
     }
     return count;
   }
@@ -1497,6 +1505,7 @@
       data.isGoalMet = false;
       data.limitBreaksToday = 0;
       data.expGainedToday = 0;
+      data.dailyTargetLevel = data.level;
       data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
       data.notificationLog = [];
@@ -1535,6 +1544,20 @@
     }
   }
 
+  // Any EXP gained (quest rewards, recovery items, dev-panel additions) goes
+  // through this — if there's an outstanding debt (from a penalty that
+  // exceeded available EXP), it's paid off first, and only the remainder (if
+  // any) actually raises data.exp / can trigger a level-up.
+  function gainExp(amount) {
+    if (amount <= 0) return;
+    if (data.expDebt > 0) {
+      const pay = Math.min(data.expDebt, amount);
+      data.expDebt -= pay;
+      amount -= pay;
+    }
+    if (amount > 0) data.exp += amount;
+  }
+
   function applyPenaltyLogic() {
     if (data.isGoalMet) return null;
     if (!allQuestsDone()) {
@@ -1545,7 +1568,9 @@
       let finalPen = Math.max(0.05, basePen - lvlReduction - strReduction);
       if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
       const loss = Math.floor(getExpToNext(data.level) * finalPen);
+      const shortfall = Math.max(0, loss - data.exp);
       data.exp = Math.max(0, data.exp - loss);
+      if (shortfall > 0) data.expDebt += shortfall;
       data.lastExpLoss = loss;
       data.totalPenalties++;
       if (data.streakShield) {
@@ -1836,7 +1861,7 @@
           if (!data.insurance) { data.insurance = true; didSomething = true; msgParts.push('защита на завтра активирована'); }
           if (data.lastExpLoss > 0) {
               const recovery = data.lastExpLoss;
-              data.exp += recovery; data.lastExpLoss = 0; checkLevelUp();
+              gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
               didSomething = true; msgParts.push(`снят сегодняшний штраф (+${recovery} EXP)`);
           }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
@@ -1854,7 +1879,7 @@
       } else if (id === 'rune_correction') {
           if (data.lastExpLoss > 0) {
               const recovery = data.lastExpLoss;
-              data.exp += recovery; data.lastExpLoss = 0; checkLevelUp();
+              gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
               data.consecutiveDays++;
               const dayKey = findMostRecentPenaltyDayKey();
               if (dayKey) data.history[dayKey].status = 'success';
@@ -1866,7 +1891,7 @@
               const removed = Math.min(3, data.totalPenalties);
               data.totalPenalties -= removed;
               const recovery = data.lastExpLoss * 3;
-              if (recovery > 0) { data.exp += recovery; data.lastExpLoss = 0; checkLevelUp(); }
+              if (recovery > 0) { gainExp(recovery); data.lastExpLoss = 0; checkLevelUp(); }
               used = true;
               showNotice(`Руна использована. Удалено штрафов: ${removed}, восстановлено ${recovery} EXP.`, 'info');
           } else { showNotice("Очищать нечего: штрафов нет.", 'warn'); }
@@ -1890,7 +1915,7 @@
           } else { showNotice("Нагрузка уже снижена достаточно.", 'warn'); }
       } else if (id === 'rune_return') {
           if (data.lastExpLoss > 0 || data.expBoostToday < 0.15) {
-              if (data.lastExpLoss > 0) { data.exp += data.lastExpLoss; data.lastExpLoss = 0; checkLevelUp(); }
+              if (data.lastExpLoss > 0) { gainExp(data.lastExpLoss); data.lastExpLoss = 0; checkLevelUp(); }
               if (data.expBoostToday < 0.15) data.expBoostToday = 0.15;
               used = true; showNotice("Руна использована. Опыт восстановлен и увеличен на сегодня.", 'info');
           } else { showNotice("Восстанавливать нечего: усиление опыта уже повышено.", 'warn'); }
@@ -1914,7 +1939,7 @@
   function useRecoveryItem(rate, verbPhrase) {
     if (data.lastExpLoss > 0) {
       const recovery = Math.floor(data.lastExpLoss * rate);
-      data.exp += recovery;
+      gainExp(recovery);
       data.lastExpLoss = 0;
       checkLevelUp();
       showNotice(`${verbPhrase}. Восстановлено ${recovery} EXP.`, 'info');
@@ -2134,13 +2159,23 @@
     rankEl.className = 'rank ' + rank.class;
     document.getElementById('playerNameDisplay').textContent = data.playerName || "Игрок";
     document.getElementById('exp').textContent = Math.floor(data.exp);
+    const expLineEl = document.getElementById('expLine');
+    const expDebtLineEl = document.getElementById('expDebtLine');
+    if (data.expDebt > 0) {
+      expLineEl.classList.add('exp-in-debt');
+      expDebtLineEl.style.display = 'block';
+      document.getElementById('expDebtVal').textContent = Math.floor(data.expDebt);
+    } else {
+      expLineEl.classList.remove('exp-in-debt');
+      expDebtLineEl.style.display = 'none';
+    }
     document.getElementById('expToNext').textContent = getExpToNext(data.level);
     document.getElementById('creditsVal').textContent = Math.floor(data.credits);
     const headerTitleIconId = TITLE_ICON_IDS[data.activeTitle];
     document.getElementById('titleDisplay').innerHTML = (headerTitleIconId ? `<img src="icons/items/${headerTitleIconId}.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;margin-right:4px;">` : '') + escapeHtml(data.activeTitle);
     document.querySelectorAll('.quest-item').forEach(item => {
       const id = item.dataset.id;
-      const target = getDynamicTarget(parseInt(item.dataset.target), data.level);
+      const target = getDynamicTarget(parseInt(item.dataset.target), data.dailyTargetLevel);
       const current = data.completed[id] || 0;
       item.querySelector('.counter').textContent = current;
       item.querySelector('.target').textContent = `/ ${target}`;
@@ -2162,14 +2197,14 @@
       const item = e.target.closest('.quest-item');
       const id = item.dataset.id;
       const val = parseInt(e.target.dataset.value);
-      const target = getDynamicTarget(parseInt(item.dataset.target), data.level);
+      const target = getDynamicTarget(parseInt(item.dataset.target), data.dailyTargetLevel);
       let current = data.completed[id] || 0;
       if (current >= target) return;
       data.completed[id] = current + val;
       totalStats[id] += val;
       if (data.completed[id] >= target) {
         const expGained = getDynamicExp(parseInt(item.dataset.exp), data.level, id);
-        data.exp += expGained;
+        gainExp(expGained);
         data.expGainedToday = (data.expGainedToday || 0) + expGained;
         let creds = Math.floor(parseInt(item.dataset.exp) * 0.5);
         const critChance = (data.stats.agi - 10) * 0.5;
@@ -2533,7 +2568,9 @@
       creditBoostToday: Math.max(0, Math.min(1, sanitizeNumber(s.creditBoostToday, 0))),
       streakShield: !!s.streakShield,
       keys: cleanKeys,
-      extraLimitBreaksToday: Math.max(0, Math.floor(sanitizeNumber(s.extraLimitBreaksToday, 0)))
+      extraLimitBreaksToday: Math.max(0, Math.floor(sanitizeNumber(s.extraLimitBreaksToday, 0))),
+      dailyTargetLevel: Math.max(1, Math.floor(sanitizeNumber(s.dailyTargetLevel, sanitizeNumber(s.level, 1)))),
+      expDebt: Math.max(0, Math.floor(sanitizeNumber(s.expDebt, 0)))
     };
 
     const cleanTotal = {
@@ -2864,14 +2901,16 @@
   function addExpAction() {
     const val = parseInt(document.getElementById('sysExpInput').value, 10);
     if (!Number.isFinite(val)) return;
-    data.exp += val;
+    gainExp(val);
     checkLevelUp();
+    data.dailyTargetLevel = data.level;
     saveData(); render();
   }
 
   function quickExpAction() {
-    data.exp += 1000;
+    gainExp(1000);
     checkLevelUp();
+    data.dailyTargetLevel = data.level;
     saveData(); render();
   }
 
@@ -2889,12 +2928,14 @@
       data.level = target;
       data.exp = 0;
     }
+    data.dailyTargetLevel = data.level;
     saveData(); render();
   }
 
   function quickLevelAction() {
     data.exp = getExpToNext(data.level);
     checkLevelUp();
+    data.dailyTargetLevel = data.level;
     saveData(); render();
   }
 
@@ -2913,7 +2954,9 @@
     let finalPen = Math.max(0.05, basePen - lvlReduction - strReduction);
     if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
     const loss = Math.floor(getExpToNext(data.level) * finalPen);
+    const shortfall = Math.max(0, loss - data.exp);
     data.exp = Math.max(0, data.exp - loss);
+    if (shortfall > 0) data.expDebt += shortfall;
     data.lastExpLoss = loss;
     data.totalPenalties++;
     data.consecutiveDays = 0;
