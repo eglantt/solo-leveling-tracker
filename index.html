@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.19 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.20 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -872,7 +872,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.19';
+  const APP_VERSION = '5.9.20';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -924,6 +924,9 @@
         expGainedToday: oldData.expGainedToday || 0,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
+        pendingCurse: !!oldData.pendingCurse,
+        curseActiveToday: !!oldData.curseActiveToday,
+        pendingAnomalyNotice: !!oldData.pendingAnomalyNotice,
         expDebt: oldData.expDebt || 0
       };
     } else {
@@ -943,7 +946,8 @@
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
-        dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {}
+        dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
+        pendingCurse: false, curseActiveToday: false, pendingAnomalyNotice: false
       };
     }
   }
@@ -995,6 +999,9 @@
   if (typeof data.dailyTargetLevel !== 'number' || data.dailyTargetLevel < 1) data.dailyTargetLevel = data.level || 1;
   if (typeof data.expDebt !== 'number' || data.expDebt < 0) data.expDebt = 0;
   if (!data.dailyExerciseLog || typeof data.dailyExerciseLog !== 'object' || Array.isArray(data.dailyExerciseLog)) data.dailyExerciseLog = {};
+  data.pendingCurse = !!data.pendingCurse;
+  data.curseActiveToday = !!data.curseActiveToday;
+  data.pendingAnomalyNotice = !!data.pendingAnomalyNotice;
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -1083,7 +1090,8 @@
     "box_scarlet": { name: "Алая Шкатулка", icon: "🎁", desc: "Содержит 1–4 предмета. Для открытия нужен Алый ключ.", weight: 6, minItems: 1, maxItems: 4, level: 30, requiresKey: "key_scarlet", creditChance: 0.15, creditAmount: 2500 },
     "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Содержит 2–4 предмета. Для открытия нужен Багровый ключ.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
     "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Содержит 2–5 предметов. Для открытия нужен Пурпурный ключ.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
-    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Содержит 3–5 предметов. Лучший лут в игре. Для открытия нужен Ключ Теней.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 }
+    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Содержит 3–5 предметов. Лучший лут в игре. Для открытия нужен Ключ Теней.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 },
+    "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое нестабильно: ценная награда или временное увеличение нагрузки заданий.", level: 3 }
   };
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
@@ -1108,7 +1116,7 @@
   };
 
   function getAvailableBoxTiers() {
-    return Object.keys(BOX_CATALOG).filter(id => data.level >= (BOX_CATALOG[id].level || 1));
+    return Object.keys(BOX_CATALOG).filter(id => id !== 'box_anomaly' && data.level >= (BOX_CATALOG[id].level || 1));
   }
 
   function rollBoxTier() {
@@ -1175,7 +1183,7 @@
     stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку и позволяет извлечь больше опыта из Преодоления предела." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
-    boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри." },
+    boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки может принести повышение уровня или Преодоление предела." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — до двух раз в сутки Игрок может продолжить сверх плана, получая удвоенное вознаграждение в кредитах." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Получен артефакт: Кристалл Ускорения. Каждый пройденный шаг отныне приносит на 10% больше кредитов." },
@@ -1376,6 +1384,7 @@
     const runeReduction = data.targetDiscountToday ? (data.targetDiscountRate || 0.25) : 0;
     const combinedReduction = Math.min(0.60, staReduction + runeReduction);
     if (combinedReduction > 0) val = Math.floor(val * (1 - combinedReduction));
+    if (data.curseActiveToday) val = Math.ceil(val * 1.40);
     return val;
   }
   
@@ -1544,6 +1553,8 @@
       data.limitBreaksToday = 0;
       data.expGainedToday = 0;
       data.dailyTargetLevel = data.level;
+      data.curseActiveToday = !!data.pendingCurse;
+      data.pendingCurse = false;
       data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
       data.notificationLog = [];
@@ -2092,6 +2103,7 @@
   }
 
   function openBox(id) {
+    if (id === 'box_anomaly') { openAnomalyBox(); return; }
     const box = BOX_CATALOG[id];
     if (!box || !(data.boxes[id] > 0)) return;
     if (box.requiresKey && !(data.keys[box.requiresKey] > 0)) {
@@ -2102,6 +2114,57 @@
     showConfirm(`Открыть «${box.name}»?`, () => performOpenBox(id));
   }
 
+  // Шкатулка Аномалии — deliberately separate from the normal loot-table
+  // system (BOX_LOOT_POOLS/rollBoxTier): a single 50/50 roll between a
+  // curse (tomorrow's targets +40%) and a blessing (one of three reward
+  // categories), not a multi-item loot draw.
+  function openAnomalyBox() {
+    if (!(data.boxes['box_anomaly'] > 0)) return;
+    showConfirm('Открыть «Шкатулку Аномалии»? Результат непредсказуем.', () => performOpenAnomalyBox());
+  }
+
+  function performOpenAnomalyBox() {
+    flashThenRun(`[data-box-id="box_anomaly"]`, () => {
+      data.boxes['box_anomaly']--;
+      if (data.boxes['box_anomaly'] <= 0) delete data.boxes['box_anomaly'];
+
+      if (Math.random() < 0.5) {
+        // Проклятие — applies to tomorrow, not today (see checkMissedDays()).
+        data.pendingCurse = true;
+        saveData(); render(); openInv();
+        showNotice('Шкатулка Аномалии открыта. Система усложняет завтрашнее задание.', 'danger');
+        return;
+      }
+
+      // Благословение — 40% ключ / 30% кредиты / 30% усиленный расходник.
+      const roll = Math.random();
+      let resultText = '';
+      if (roll < 0.40) {
+        const availableKeys = ['key_scarlet', 'key_crimson', 'key_purple', 'key_shadow'].filter(k => !(data.keys[k] > 0));
+        if (availableKeys.length) {
+          const keyId = availableKeys[Math.floor(Math.random() * availableKeys.length)];
+          data.keys[keyId] = 1;
+          resultText = KEY_CATALOG[keyId].name;
+        } else {
+          // All four keys already owned — fall back to credits instead of granting nothing.
+          const amount = Math.min(8000, 500 + 30 * data.level);
+          data.credits += amount;
+          resultText = `Кредиты ${amount} ◈`;
+        }
+      } else if (roll < 0.70) {
+        const amount = Math.min(8000, 500 + 30 * data.level);
+        data.credits += amount;
+        resultText = `Кредиты ${amount} ◈`;
+      } else {
+        const chargedPool = ['rune_restoration_charged', 'rune_growth_charged', 'rune_protection_charged', 'rune_limit_charged', 'crystal_restoration', 'crystal_clarity'];
+        const itemId = chargedPool[Math.floor(Math.random() * chargedPool.length)];
+        data.consumables[itemId] = (data.consumables[itemId] || 0) + 1;
+        resultText = SHOP_CATALOG[itemId].name;
+      }
+      saveData(); render(); openInv();
+      showNotice(`Получен предмет: ${resultText}`, 'info');
+    });
+  }
   function performOpenBox(id) {
     flashThenRun(`[data-box-id="${id}"]`, () => {
       const box = BOX_CATALOG[id];
@@ -2210,6 +2273,10 @@
       const boxId = rollBoxTier();
       data.boxes[boxId] = (data.boxes[boxId] || 0) + 1;
       gainedBoxes.push(boxId);
+      if (data.level >= 3 && Math.random() < 0.08) {
+        data.boxes['box_anomaly'] = (data.boxes['box_anomaly'] || 0) + 1;
+        gainedBoxes.push('box_anomaly');
+      }
       for (let sid in SHOP_CATALOG) {
         if (SHOP_CATALOG[sid].level === data.level) gainedShopItems.push(sid);
       }
@@ -2685,6 +2752,9 @@
       notifiedLimitBreakUnlock: !!s.notifiedLimitBreakUnlock,
       history: cleanHistory,
       dailyExerciseLog: cleanDailyExerciseLog,
+      pendingCurse: !!s.pendingCurse,
+      curseActiveToday: !!s.curseActiveToday,
+      pendingAnomalyNotice: !!s.pendingAnomalyNotice,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
       pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
       codexUnlocked: cleanCodexUnlocked,
@@ -2992,6 +3062,10 @@
         data.limitBreaksCount++;
         data.limitBreaksToday++;
         data.isGoalMet = true; data.completed = {}; 
+        if (Math.random() < 0.05) {
+          data.boxes['box_anomaly'] = (data.boxes['box_anomaly'] || 0) + 1;
+          data.pendingAnomalyNotice = true;
+        }
         saveData(); location.reload();
     });
   };
@@ -3163,6 +3237,11 @@
   // clock/notification logic once it's been dismissed.
   function finishInit() {
     checkMissedDays();
+    if (data.pendingAnomalyNotice) {
+      data.pendingAnomalyNotice = false;
+      saveData();
+      setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_anomaly'].name}`, 'info'), 1000);
+    }
     setInterval(updateTimer, 1000);
     updateTimer();
   }

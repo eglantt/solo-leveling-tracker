@@ -1,6 +1,6 @@
 // Bump this on every release that changes any cached file, so old
 // clients pick up the new version instead of being stuck on a stale cache.
-const CACHE_VERSION = 'v5-9-19';
+const CACHE_VERSION = 'v5-9-20';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const FONT_CACHE = 'solo-leveling-fonts';
 
@@ -64,7 +64,8 @@ const APP_SHELL = [
   './icons/items/rune_protection_absolute.png',
   './icons/items/rune_burden_release.png',
   './icons/items/rune_return.png',
-  './icons/items/crystal_impulse.png'
+  './icons/items/crystal_impulse.png',
+  './icons/items/box_anomaly.png'
 ];
 
 self.addEventListener('install', (event) => {
