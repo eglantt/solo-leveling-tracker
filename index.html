@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.18 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.19 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -660,6 +660,18 @@
       <div style="height: 12px;"></div>
       <div class="stat-line"><span>Всего дней:</span><strong class="stats-days" id="totalDays">0</strong></div>
       <div class="stat-line"><span>Всего штрафов:</span><strong class="stats-penalties" id="totalPenalties">0</strong></div>
+      <div style="height: 16px;"></div>
+      <div class="cal-header">
+        <span class="cal-arrow" id="progPrevBtn" onclick="progShiftMonth(-1)">&#8592;</span>
+        <span class="cal-month-label" id="progMonthLabel">АВГУСТ 2026</span>
+        <span class="cal-arrow" id="progNextBtn" onclick="progShiftMonth(1)">&#8594;</span>
+      </div>
+      <div>Прогресс за месяц:</div>
+      <div class="stat-line"><span>Отжимания:</span><strong id="progPushups">0</strong></div>
+      <div class="stat-line"><span>Приседания:</span><strong id="progSquats">0</strong></div>
+      <div class="stat-line"><span>Подтягивания:</span><strong id="progPullups">0</strong></div>
+      <div class="stat-line"><span>Пресс:</span><strong id="progPress">0</strong></div>
+      <div class="stat-line"><span>Шаги:</span><strong id="progSteps">0</strong></div>
     </div>
     </div>
     <button class="close-status" onclick="document.getElementById('progressOverlay').style.display='none'">ЗАКРЫТЬ</button>
@@ -860,7 +872,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.18';
+  const APP_VERSION = '5.9.19';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -911,6 +923,7 @@
         extraLimitBreaksToday: oldData.extraLimitBreaksToday || 0,
         expGainedToday: oldData.expGainedToday || 0,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
+        dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
         expDebt: oldData.expDebt || 0
       };
     } else {
@@ -930,7 +943,7 @@
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
-        dailyTargetLevel: 1, expDebt: 0
+        dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {}
       };
     }
   }
@@ -981,6 +994,7 @@
   if (typeof data.expGainedToday !== 'number') data.expGainedToday = 0;
   if (typeof data.dailyTargetLevel !== 'number' || data.dailyTargetLevel < 1) data.dailyTargetLevel = data.level || 1;
   if (typeof data.expDebt !== 'number' || data.expDebt < 0) data.expDebt = 0;
+  if (!data.dailyExerciseLog || typeof data.dailyExerciseLog !== 'object' || Array.isArray(data.dailyExerciseLog)) data.dailyExerciseLog = {};
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -1724,7 +1738,70 @@
     document.getElementById('codexOverlay').style.display = 'flex';
   }
 
+  let progViewYear = null, progViewMonth = null;
+
+  function getEarliestExerciseLogMonth() {
+    const keys = Object.keys(data.dailyExerciseLog);
+    if (!keys.length) return null;
+    const sorted = keys.sort();
+    const [y, m] = sorted[0].split('-').map(Number);
+    return { year: y, month: m - 1 };
+  }
+
+  function progShiftMonth(delta) {
+    let y = progViewYear, m = progViewMonth + delta;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    const now = new Date();
+    if (y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth())) return;
+    const earliest = getEarliestExerciseLogMonth();
+    const isCurrent = (y === now.getFullYear() && m === now.getMonth());
+    if (earliest) {
+      if (y < earliest.year || (y === earliest.year && m < earliest.month)) return;
+    } else if (!isCurrent) {
+      return; // no recorded months at all yet — only the current month is browsable
+    }
+    progViewYear = y; progViewMonth = m;
+    progRenderMonth();
+  }
+
+  function progRenderMonth() {
+    document.getElementById('progMonthLabel').textContent = `${RU_MONTHS_NOM[progViewMonth]} ${progViewYear}`;
+    const sums = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
+    const prefix = `${progViewYear}-${String(progViewMonth + 1).padStart(2, '0')}-`;
+    for (const key in data.dailyExerciseLog) {
+      if (key.indexOf(prefix) === 0) {
+        const entry = data.dailyExerciseLog[key];
+        sums.pushups += entry.pushups || 0;
+        sums.squats += entry.squats || 0;
+        sums.pullups += entry.pullups || 0;
+        sums.press += entry.press || 0;
+        sums.steps += entry.steps || 0;
+      }
+    }
+    document.getElementById('progPushups').textContent = sums.pushups;
+    document.getElementById('progSquats').textContent = sums.squats;
+    document.getElementById('progPullups').textContent = sums.pullups;
+    document.getElementById('progPress').textContent = sums.press;
+    document.getElementById('progSteps').textContent = sums.steps;
+
+    const now = new Date();
+    const isCurrentMonth = (progViewYear === now.getFullYear() && progViewMonth === now.getMonth());
+    document.getElementById('progNextBtn').classList.toggle('disabled', isCurrentMonth);
+    const earliest = getEarliestExerciseLogMonth();
+    const atEarliest = earliest
+      ? (progViewYear === earliest.year && progViewMonth === earliest.month)
+      : isCurrentMonth;
+    document.getElementById('progPrevBtn').classList.toggle('disabled', atEarliest);
+  }
+
   function openProgressModal() {
+    if (progViewYear === null) {
+      const now = new Date();
+      progViewYear = now.getFullYear();
+      progViewMonth = now.getMonth();
+    }
+    progRenderMonth();
     document.getElementById('progressOverlay').style.display = 'flex';
   }
 
@@ -2235,6 +2312,9 @@
       if (current >= target) return;
       data.completed[id] = current + val;
       totalStats[id] += val;
+      const progDayKey = dateKeyFromTimestamp(data.lastReset);
+      if (!data.dailyExerciseLog[progDayKey]) data.dailyExerciseLog[progDayKey] = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
+      data.dailyExerciseLog[progDayKey][id] = (data.dailyExerciseLog[progDayKey][id] || 0) + val;
       if (data.completed[id] >= target) {
         const expGained = getDynamicExp(parseInt(item.dataset.exp), data.level, id);
         gainExp(expGained);
@@ -2543,6 +2623,23 @@
       }
     }
 
+    const EXERCISE_IDS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
+    const cleanDailyExerciseLog = {};
+    if (s.dailyExerciseLog && typeof s.dailyExerciseLog === 'object') {
+      for (const key in s.dailyExerciseLog) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) continue;
+        const entry = s.dailyExerciseLog[key];
+        if (!entry || typeof entry !== 'object') continue;
+        const clean = {};
+        let hasAny = false;
+        EXERCISE_IDS.forEach(exId => {
+          const n = sanitizeNumber(entry[exId], 0, 0);
+          if (n > 0) { clean[exId] = Math.floor(n); hasAny = true; }
+        });
+        if (hasAny) cleanDailyExerciseLog[key] = clean;
+      }
+    }
+
     const cleanCodexUnlocked = Array.isArray(s.codexUnlocked)
       ? s.codexUnlocked.filter(id => typeof id === 'string' && CODEX_CHAPTERS[id])
       : [];
@@ -2587,6 +2684,7 @@
       dailyNotices: cleanDailyNotices,
       notifiedLimitBreakUnlock: !!s.notifiedLimitBreakUnlock,
       history: cleanHistory,
+      dailyExerciseLog: cleanDailyExerciseLog,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
       pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
       codexUnlocked: cleanCodexUnlocked,
