@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.20 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.21 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -872,7 +872,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.20';
+  const APP_VERSION = '5.9.21';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -926,7 +926,7 @@
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
         pendingCurse: !!oldData.pendingCurse,
         curseActiveToday: !!oldData.curseActiveToday,
-        pendingAnomalyNotice: !!oldData.pendingAnomalyNotice,
+        limitBreakRoundPending: !!oldData.limitBreakRoundPending,
         expDebt: oldData.expDebt || 0
       };
     } else {
@@ -947,7 +947,7 @@
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
-        pendingCurse: false, curseActiveToday: false, pendingAnomalyNotice: false
+        pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false
       };
     }
   }
@@ -1001,7 +1001,7 @@
   if (!data.dailyExerciseLog || typeof data.dailyExerciseLog !== 'object' || Array.isArray(data.dailyExerciseLog)) data.dailyExerciseLog = {};
   data.pendingCurse = !!data.pendingCurse;
   data.curseActiveToday = !!data.curseActiveToday;
-  data.pendingAnomalyNotice = !!data.pendingAnomalyNotice;
+  data.limitBreakRoundPending = !!data.limitBreakRoundPending;
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -1555,6 +1555,7 @@
       data.dailyTargetLevel = data.level;
       data.curseActiveToday = !!data.pendingCurse;
       data.pendingCurse = false;
+      data.limitBreakRoundPending = false;
       data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
       data.notificationLog = [];
@@ -2404,6 +2405,13 @@
         // finishing the day, if this exact quest also happened to level you up).
         const donePct = countDoneQuests() * 20;
         const wasAllDone = allQuestsDone();
+        if (data.limitBreakRoundPending && wasAllDone) {
+          data.limitBreakRoundPending = false;
+          if (Math.random() < 0.05) {
+            data.boxes['box_anomaly'] = (data.boxes['box_anomaly'] || 0) + 1;
+            setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_anomaly'].name}`, 'info'), 4500);
+          }
+        }
         checkLevelUp();
         if (donePct < 100 && !data.progressNoticesShown.includes(donePct)) {
           data.progressNoticesShown.push(donePct);
@@ -2754,7 +2762,7 @@
       dailyExerciseLog: cleanDailyExerciseLog,
       pendingCurse: !!s.pendingCurse,
       curseActiveToday: !!s.curseActiveToday,
-      pendingAnomalyNotice: !!s.pendingAnomalyNotice,
+      limitBreakRoundPending: !!s.limitBreakRoundPending,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
       pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
       codexUnlocked: cleanCodexUnlocked,
@@ -3062,10 +3070,7 @@
         data.limitBreaksCount++;
         data.limitBreaksToday++;
         data.isGoalMet = true; data.completed = {}; 
-        if (Math.random() < 0.05) {
-          data.boxes['box_anomaly'] = (data.boxes['box_anomaly'] || 0) + 1;
-          data.pendingAnomalyNotice = true;
-        }
+        data.limitBreakRoundPending = true;
         saveData(); location.reload();
     });
   };
@@ -3237,11 +3242,6 @@
   // clock/notification logic once it's been dismissed.
   function finishInit() {
     checkMissedDays();
-    if (data.pendingAnomalyNotice) {
-      data.pendingAnomalyNotice = false;
-      saveData();
-      setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_anomaly'].name}`, 'info'), 1000);
-    }
     setInterval(updateTimer, 1000);
     updateTimer();
   }
