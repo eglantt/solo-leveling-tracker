@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.21 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.22 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -294,6 +294,8 @@
     .quest-progress { text-align: right; min-width: 160px; }
     .counter { font-size: 1.5rem; font-weight: bold; color: #40ffaa; letter-spacing: 1px; }
     .target { font-size: 0.85rem; color: #88ffccaa; }
+    .counter.cursed { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
+    .target.cursed { color: #ff5555aa; }
     .reward { font-size: 0.8rem; color: #ffd700cc; margin-top: 2px; }
     .buttons { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; flex-wrap: wrap; }
     
@@ -540,35 +542,35 @@
     <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
 
     <div class="stat-row">
-      <span class="stat-label">СИЛА (STR)</span>
+      <span class="stat-label">СИЛА</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valStr">10</span>
         <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ЛОВКОСТЬ (AGI)</span>
+      <span class="stat-label">ЛОВКОСТЬ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valAgi">10</span>
         <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ВЫНОСЛИВОСТЬ (STA)</span>
+      <span class="stat-label">ВЫНОСЛИВОСТЬ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valSta">10</span>
         <button onclick="incStat('sta')" class="stat-add-btn" id="btnSta">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ИНТЕЛЛЕКТ (INT)</span>
+      <span class="stat-label">ИНТЕЛЛЕКТ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valInt">10</span>
         <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ВОСПРИЯТИЕ (PER)</span>
+      <span class="stat-label">ВОСПРИЯТИЕ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valPer">10</span>
         <button onclick="incStat('per')" class="stat-add-btn" id="btnPer">+</button>
@@ -872,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.21';
+  const APP_VERSION = '5.9.22';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1578,6 +1580,7 @@
         pendingStartupNoticeAfterPenalty = true;
       } else {
         setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
+        if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирована аномалия. Требования дневного задания повышены.', 'danger'), 3000);
       }
     }
   }
@@ -1591,6 +1594,7 @@
     if (pendingStartupNoticeAfterPenalty) {
       pendingStartupNoticeAfterPenalty = false;
       setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
+      if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирована аномалия. Требования дневного задания повышены.', 'danger'), 3000);
     }
   }
 
@@ -2331,6 +2335,14 @@
 
   function render() {
     updateTitleStatus();
+    ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(qid => {
+      const counterEl = document.getElementById(qid);
+      if (counterEl) {
+        counterEl.classList.toggle('cursed', !!data.curseActiveToday);
+        const targetEl = counterEl.nextElementSibling;
+        if (targetEl && targetEl.classList.contains('target')) targetEl.classList.toggle('cursed', !!data.curseActiveToday);
+      }
+    });
     const rank = getRank(data.level);
     const rankEl = document.getElementById('rankDisplay');
     rankEl.textContent = `Ранг: ${rank.name} (Уровень: ${data.level})`;
