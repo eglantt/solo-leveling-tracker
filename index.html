@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.26 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.27 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -874,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.26';
+  const APP_VERSION = '5.9.27';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1037,10 +1037,10 @@
 
   const TITLES_DB = {
     "Новичок": { icon: "🔰", desc: "Статус начинающего Игрока. Без бонусов." },
-    "Пробужденный": { icon: "✨", desc: "Игрок осознал свою силу. Бонус: +1% к опыту." },
-    "Целеустремлённый": { icon: "🔥", desc: "Семь дней без пропусков. Бонус: +5% к опыту." },
-    "Преодолевший предел": { icon: "⚡", desc: "Активировать Преодоление предела 5 раз. Бонус: +10% к кредитам." },
-    "Вечный странник": { icon: "👣", desc: "Набрать 100 000 шагов суммарно. Бонус: +10% опыта за шаги." }
+    "Пробужденный": { icon: "✨", desc: "Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 1%." },
+    "Целеустремлённый": { icon: "🔥", desc: "Ни один день не был потерян зря — семь дней подряд без единого срыва. Весь получаемый опыт увеличен на 5%." },
+    "Преодолевший предел": { icon: "⚡", desc: "Предел преодолён пять раз. Награда в кредитах увеличена на 10%." },
+    "Вечный странник": { icon: "👣", desc: "Сто тысяч шагов остались позади. Опыт за шаги увеличен на 10%." }
   };
 
   const SHOP_CATALOG = {
@@ -1200,7 +1200,7 @@
     artifact_crystal_shadow: { title: "Кристалл Теней", content: "Получен артефакт: Кристалл Теней. Отныне кредиты и опыт Игрока увеличены, а полное выполнение дневного задания иногда приносит дополнительную находку." },
     title_celeustremlenny: { title: "Целеустремлённый", content: "Семь дней подряд без единого срыва. Система признаёт целеустремлённость Игрока — прибавка к опыту закреплена, покуда серия не прервётся." },
     title_vechny_strannik: { title: "Вечный странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Вечным странником — шаги отныне приносят больше опыта." },
-    title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел испытан на прочность пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
+    title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел преодолён пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
     title_probuzhdenny: { title: "Пробужденный", content: "Десятый уровень достигнут. Система признаёт в Игроке пробуждённый потенциал — отныне и впредь весь получаемый опыт немного увеличен." },
     rank_d: { title: "D-Ранг", content: "Первый этап эволюции. Игрок преодолел базовую слабость E-ранга — организм адаптировался к минимальным нагрузкам. С этого момента дневная нагрузка возрастает." },
     rank_c: { title: "C-Ранг", content: "Зафиксирован устойчивый прогресс. Физическая выносливость и скорость восстановления Игрока после нагрузок значительно превышают показатели обычного человека." },
@@ -1740,6 +1740,9 @@
         data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== "Новичок");
     }
     if (data.consecutiveDays >= 7) unlockTitle("Целеустремлённый");
+    // limitBreaksCount = lifetime COMPLETED Преодоление предела rounds (not
+    // activations — incremented at round completion, not on button press;
+    // see the click handler and the wasAllDone check in the "+" handler).
     if (data.limitBreaksCount >= 5) unlockTitle("Преодолевший предел");
     if (totalStats.steps >= 100000) unlockTitle("Вечный странник");
 
@@ -2465,6 +2468,7 @@
         if (data.limitBreakRoundPending && wasAllDone) {
           data.limitBreakRoundPending = false;
           data.limitBreaksCompletedToday = (data.limitBreaksCompletedToday || 0) + 1;
+          data.limitBreaksCount++;
           if (Math.random() < 0.05) {
             data.boxes['box_anomaly'] = (data.boxes['box_anomaly'] || 0) + 1;
             setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_anomaly'].name}`, 'info'), 4500);
@@ -3135,7 +3139,6 @@
   document.getElementById('limitBreakBtn').onclick = () => {
     if (data.limitBreaksToday >= getDailyLimitBreakCap()) return;
     showConfirm('Активировать «Преодоление предела»? Награды в кредитах будут удвоены.', () => {
-        data.limitBreaksCount++;
         data.limitBreaksToday++;
         data.isGoalMet = true; data.completed = {}; 
         data.limitBreakRoundPending = true;
