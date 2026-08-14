@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.23 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.24 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -874,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.23';
+  const APP_VERSION = '5.9.24';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1087,15 +1087,15 @@
   }
 
   const BOX_CATALOG = {
-    "box_basalt": { name: "Базальтовая Шкатулка", icon: "📦", desc: "Содержит 1–3 расходника.", weight: 70, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.06, creditChance: 0.25, creditAmount: 500 },
-    "box_onyx": { name: "Ониксовая Шкатулка", icon: "🎁", desc: "Содержит 1–3 предмета. Повышенный шанс на более полезные расходники.", weight: 30, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.08, creditChance: 0.22, creditAmount: 750 },
-    "box_obsidian": { name: "Обсидиановая Шкатулка", icon: "📦", desc: "Содержит 1–4 предмета. Сильные расходники, изредка — ключи от цветных шкатулок.", weight: 18, minItems: 1, maxItems: 4, level: 10, keyDropChance: 0.12, creditChance: 0.20, creditAmount: 1000 },
-    "box_dark_quartz": { name: "Шкатулка Тёмного Кварца", icon: "📦", desc: "Содержит 2–5 предметов. Усиленные версии расходников чаще, ключи — тоже чаще.", weight: 10, minItems: 2, maxItems: 5, level: 20, keyDropChance: 0.22, creditChance: 0.18, creditAmount: 1500 },
-    "box_scarlet": { name: "Алая Шкатулка", icon: "🎁", desc: "Содержит 1–4 предмета. Для открытия нужен Алый ключ.", weight: 6, minItems: 1, maxItems: 4, level: 30, requiresKey: "key_scarlet", creditChance: 0.15, creditAmount: 2500 },
-    "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Содержит 2–4 предмета. Для открытия нужен Багровый ключ.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
-    "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Содержит 2–5 предметов. Для открытия нужен Пурпурный ключ.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
-    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Содержит 3–5 предметов. Лучший лут в игре. Для открытия нужен Ключ Теней.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 },
-    "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое нестабильно: ценная награда или временное увеличение нагрузки заданий.", level: 3 }
+    "box_basalt": { name: "Базальтовая Шкатулка", icon: "📦", desc: "Содержит 1–3 предмета базового уровня.", weight: 70, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.06, creditChance: 0.25, creditAmount: 500 },
+    "box_onyx": { name: "Ониксовая Шкатулка", icon: "🎁", desc: "Содержит 1–3 качественных предмета.", weight: 30, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.08, creditChance: 0.22, creditAmount: 750 },
+    "box_obsidian": { name: "Обсидиановая Шкатулка", icon: "📦", desc: "Содержит 1–4 предмета высокого качества. Среди них могут быть ключи от запертых шкатулок.", weight: 18, minItems: 1, maxItems: 4, level: 10, keyDropChance: 0.12, creditChance: 0.20, creditAmount: 1000 },
+    "box_dark_quartz": { name: "Шкатулка Тёмного Кварца", icon: "📦", desc: "Содержит 2–5 предметов высокого качества, включая усиленные версии расходников. Среди них могут быть ключи от запертых шкатулок.", weight: 10, minItems: 2, maxItems: 5, level: 20, keyDropChance: 0.22, creditChance: 0.18, creditAmount: 1500 },
+    "box_scarlet": { name: "Алая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Алый ключ. Содержит 1–4 редких предмета.", weight: 6, minItems: 1, maxItems: 4, level: 30, requiresKey: "key_scarlet", creditChance: 0.15, creditAmount: 2500 },
+    "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Багровый ключ. Содержит 2–4 редких предмета.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
+    "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Пурпурный ключ. Содержит 2–5 особо редких предметов.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
+    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Заперта. Для открытия нужен Ключ Теней. Содержит 3–5 предметов высшей ценности.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 },
+    "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое непредсказуемо: ценная награда либо временное усложнение дневного задания.", level: 3 }
   };
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
@@ -1290,7 +1290,7 @@
   // recorded before this field existed simply won't have donePercent/
   // expGained/expLost — those lines are omitted rather than showing 0/blank.
   function buildDayDetail(dateKey, entry, isToday) {
-    let statusLine, donePercent, expGained, expLost, level, lbActivated, lbCompleted;
+    let statusLine, donePercent, expGained, expLost, level, lbActivated, lbCompleted, lbLastRoundPercent;
     if (isToday) {
       statusLine = 'День ещё не завершён.';
       donePercent = data.dailyNotices.complete ? 100 : (countDoneQuests() * 20);
@@ -1299,6 +1299,7 @@
       level = 0;
       lbActivated = data.limitBreaksToday || 0;
       lbCompleted = data.limitBreaksCompletedToday || 0;
+      lbLastRoundPercent = countDoneQuests() * 20;
     } else {
       if (entry.status === 'success') statusLine = 'Задание выполнено.';
       else if (entry.status === 'penalty') statusLine = 'Задание не выполнено, получен штраф.';
@@ -1309,17 +1310,22 @@
       level = entry.level || 0;
       lbActivated = entry.limitBreaksActivated || 0;
       lbCompleted = entry.limitBreaksCompleted || 0;
+      lbLastRoundPercent = typeof entry.limitBreakLastRoundPercent === 'number' ? entry.limitBreakLastRoundPercent : 0;
     }
     const lines = [formatDateRu(dateKey), statusLine];
     if (typeof donePercent === 'number') lines.push(`Прогресс дня: ${donePercent}%`);
     if (expGained > 0) lines.push(`Получено опыта: +${expGained} EXP`);
     if (expLost > 0) lines.push(`Снято штрафом: −${expLost} EXP`);
     if (lbActivated > 0) {
-      let lbLine = `Преодоление предела: ${lbActivated} ${pluralTimes(lbActivated)}.`;
-      if (lbCompleted < lbActivated) lbLine += ' Последний раунд не завершён.';
-      lines.push(lbLine);
+      if (lbCompleted >= lbActivated) {
+        lines.push(`Преодоление предела: ${lbActivated} ${pluralTimes(lbActivated)}.`);
+      } else if (lbActivated === 1) {
+        lines.push(`Преодоление предела: не завершено, выполнено на ${lbLastRoundPercent}%.`);
+      } else {
+        lines.push(`Преодоление предела: ${lbActivated} ${pluralTimes(lbActivated)}, последний раунд выполнен на ${lbLastRoundPercent}%.`);
+      }
     }
-    if (level > 0) lines.push(`Получен ${level}-й уровень.`);
+    if (level > 0) lines.push(`Достигнут ${level}-й уровень.`);
     return lines.join('\n');
   }
 
@@ -1554,7 +1560,11 @@
       // is now sitting at a lower value because a later Преодоление предела
       // round got reset and never finished — the mandatory requirement was
       // still genuinely met, and the Летопись should reflect that honestly.
-      const donePercent = data.dailyNotices.complete ? 100 : (countDoneQuests() * 20);
+      // rawPercent (un-overridden) is kept separately — when the last round
+      // wasn't finished, data.completed at this exact moment IS that round's
+      // progress, so rawPercent doubles as "how far the last round got".
+      const rawPercent = countDoneQuests() * 20;
+      const donePercent = data.dailyNotices.complete ? 100 : rawPercent;
       const expGainedThatDay = data.expGainedToday || 0;
       const limitBreaksActivatedThatDay = data.limitBreaksToday || 0;
       const limitBreaksCompletedThatDay = data.limitBreaksCompletedToday || 0;
@@ -1573,6 +1583,9 @@
       if (limitBreaksActivatedThatDay > 0) {
         historyEntry.limitBreaksActivated = limitBreaksActivatedThatDay;
         historyEntry.limitBreaksCompleted = limitBreaksCompletedThatDay;
+        if (limitBreaksCompletedThatDay < limitBreaksActivatedThatDay) {
+          historyEntry.limitBreakLastRoundPercent = rawPercent;
+        }
       }
       if (data.pendingLevelUpToday) historyEntry.level = data.pendingLevelUpToday;
       data.history[dayKey] = historyEntry;
@@ -2329,7 +2342,7 @@
       const p = document.createElement('div'); p.className = 'levelup-popup'; p.textContent = 'LEVEL UP';
       document.body.appendChild(p); setTimeout(() => p.remove(), 3000);
       const levelReached = data.level;
-      setTimeout(() => showNotice(`Достигнут ${levelReached} уровень.`, 'info'), 4500);
+      setTimeout(() => showNotice(`Достигнут ${levelReached}-й уровень.`, 'info'), 4500);
       const rankAfter = getRank(data.level).name;
       if (rankAfter !== rankBefore) {
         setTimeout(() => showSystemPopup(`Новый ранг: ${rankAfter}`, 'Способности Игрока признаны Системой'), 4500);
@@ -2739,6 +2752,15 @@
         if (eg > 0) clean.expGained = Math.floor(eg);
         const el = sanitizeNumber(entry.expLost, 0, 0);
         if (el > 0) clean.expLost = Math.floor(el);
+        const lba = sanitizeNumber(entry.limitBreaksActivated, 0, 0);
+        if (lba > 0) {
+          clean.limitBreaksActivated = Math.floor(lba);
+          clean.limitBreaksCompleted = Math.max(0, Math.min(clean.limitBreaksActivated, Math.floor(sanitizeNumber(entry.limitBreaksCompleted, 0, 0))));
+          if (clean.limitBreaksCompleted < clean.limitBreaksActivated) {
+            const lrp = sanitizeNumber(entry.limitBreakLastRoundPercent, -1, 0);
+            if (lrp >= 0) clean.limitBreakLastRoundPercent = Math.max(0, Math.min(100, Math.floor(lrp)));
+          }
+        }
         cleanHistory[key] = clean;
       }
     }
