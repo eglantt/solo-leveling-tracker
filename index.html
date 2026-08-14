@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.22 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.23 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -874,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.22';
+  const APP_VERSION = '5.9.23';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -904,6 +904,7 @@
         lastExpLoss: oldData.lastExpLoss || 0,
         limitBreaksCount: oldData.limitBreaksCount || 0,
         limitBreaksToday: oldData.limitBreaksToday || 0,
+        limitBreaksCompletedToday: oldData.limitBreaksCompletedToday || 0,
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
         dailyNotices: oldData.dailyNotices || { morning: false, complete: false },
@@ -939,7 +940,7 @@
         statPoints: 0, stats: { str: 10, agi: 10, sta: 10, int: 10, per: 10 },
         isGoalMet: false, credits: 0, inventory: [], consumables: {}, boxes: {},
         insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
-        lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, titlesUnlocked: ["Новичок"],
+        lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, limitBreaksCompletedToday: 0, titlesUnlocked: ["Новичок"],
         playerName: "", dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
@@ -955,6 +956,7 @@
   }
   // Defensive: data saved by an earlier build won't have these fields yet.
   if (typeof data.limitBreaksToday !== 'number') data.limitBreaksToday = 0;
+  if (typeof data.limitBreaksCompletedToday !== 'number') data.limitBreaksCompletedToday = 0;
   if (typeof data.playerName !== 'string') data.playerName = "";
   if (!data.dailyNotices || typeof data.dailyNotices !== 'object') data.dailyNotices = {};
   data.dailyNotices.morning = !!data.dailyNotices.morning;
@@ -1266,6 +1268,16 @@
     return 'дней';
   }
 
+  // Same rule, for "раз/раза/раз" (e.g. "Преодоление предела: N раз/раза").
+  function pluralTimes(n) {
+    const abs = Math.abs(n) % 100;
+    const last = abs % 10;
+    if (abs >= 11 && abs <= 14) return 'раз';
+    if (last === 1) return 'раз';
+    if (last >= 2 && last <= 4) return 'раза';
+    return 'раз';
+  }
+
   function formatDateRu(dateKey) {
     const [y, m, d] = dateKey.split('-').map(Number);
     return `${d} ${RU_MONTHS_GEN[m-1]}`;
@@ -1278,13 +1290,15 @@
   // recorded before this field existed simply won't have donePercent/
   // expGained/expLost — those lines are omitted rather than showing 0/blank.
   function buildDayDetail(dateKey, entry, isToday) {
-    let statusLine, donePercent, expGained, expLost, level;
+    let statusLine, donePercent, expGained, expLost, level, lbActivated, lbCompleted;
     if (isToday) {
       statusLine = 'День ещё не завершён.';
-      donePercent = countDoneQuests() * 20;
+      donePercent = data.dailyNotices.complete ? 100 : (countDoneQuests() * 20);
       expGained = data.expGainedToday || 0;
       expLost = 0;
       level = 0;
+      lbActivated = data.limitBreaksToday || 0;
+      lbCompleted = data.limitBreaksCompletedToday || 0;
     } else {
       if (entry.status === 'success') statusLine = 'Задание выполнено.';
       else if (entry.status === 'penalty') statusLine = 'Задание не выполнено, получен штраф.';
@@ -1293,11 +1307,18 @@
       expGained = entry.expGained || 0;
       expLost = entry.expLost || 0;
       level = entry.level || 0;
+      lbActivated = entry.limitBreaksActivated || 0;
+      lbCompleted = entry.limitBreaksCompleted || 0;
     }
     const lines = [formatDateRu(dateKey), statusLine];
     if (typeof donePercent === 'number') lines.push(`Прогресс дня: ${donePercent}%`);
     if (expGained > 0) lines.push(`Получено опыта: +${expGained} EXP`);
     if (expLost > 0) lines.push(`Снято штрафом: −${expLost} EXP`);
+    if (lbActivated > 0) {
+      let lbLine = `Преодоление предела: ${lbActivated} ${pluralTimes(lbActivated)}.`;
+      if (lbCompleted < lbActivated) lbLine += ' Последний раунд не завершён.';
+      lines.push(lbLine);
+    }
     if (level > 0) lines.push(`Получен ${level}-й уровень.`);
     return lines.join('\n');
   }
@@ -1529,8 +1550,14 @@
     let lastPct = 0;
     while (now >= nextReset) {
       const dayKey = dateKeyFromTimestamp(data.lastReset);
-      const donePercent = countDoneQuests() * 20;
+      // If the day was ever fully completed, record 100% even if data.completed
+      // is now sitting at a lower value because a later Преодоление предела
+      // round got reset and never finished — the mandatory requirement was
+      // still genuinely met, and the Летопись should reflect that honestly.
+      const donePercent = data.dailyNotices.complete ? 100 : (countDoneQuests() * 20);
       const expGainedThatDay = data.expGainedToday || 0;
+      const limitBreaksActivatedThatDay = data.limitBreaksToday || 0;
+      const limitBreaksCompletedThatDay = data.limitBreaksCompletedToday || 0;
       let dayStatus;
       let expLostThatDay = 0;
       if (data.insurance) {
@@ -1543,6 +1570,10 @@
       const historyEntry = { status: dayStatus, donePercent };
       if (expGainedThatDay > 0) historyEntry.expGained = expGainedThatDay;
       if (expLostThatDay > 0) historyEntry.expLost = expLostThatDay;
+      if (limitBreaksActivatedThatDay > 0) {
+        historyEntry.limitBreaksActivated = limitBreaksActivatedThatDay;
+        historyEntry.limitBreaksCompleted = limitBreaksCompletedThatDay;
+      }
       if (data.pendingLevelUpToday) historyEntry.level = data.pendingLevelUpToday;
       data.history[dayKey] = historyEntry;
       data.pendingLevelUpToday = 0;
@@ -1553,6 +1584,7 @@
       data.completed = {};
       data.isGoalMet = false;
       data.limitBreaksToday = 0;
+      data.limitBreaksCompletedToday = 0;
       data.expGainedToday = 0;
       data.dailyTargetLevel = data.level;
       data.curseActiveToday = !!data.pendingCurse;
@@ -2419,6 +2451,7 @@
         const wasAllDone = allQuestsDone();
         if (data.limitBreakRoundPending && wasAllDone) {
           data.limitBreakRoundPending = false;
+          data.limitBreaksCompletedToday = (data.limitBreaksCompletedToday || 0) + 1;
           if (Math.random() < 0.05) {
             data.boxes['box_anomaly'] = (data.boxes['box_anomaly'] || 0) + 1;
             setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_anomaly'].name}`, 'info'), 4500);
@@ -2766,6 +2799,7 @@
       lastExpLoss: sanitizeNumber(s.lastExpLoss, 0),
       limitBreaksCount: sanitizeNumber(s.limitBreaksCount, 0),
       limitBreaksToday: Math.min(10, sanitizeNumber(s.limitBreaksToday, 0)),
+      limitBreaksCompletedToday: Math.min(10, sanitizeNumber(s.limitBreaksCompletedToday, 0)),
       titlesUnlocked: cleanTitlesUnlocked,
       playerName: sanitizePlayerName(typeof s.playerName === 'string' ? s.playerName : ''),
       dailyNotices: cleanDailyNotices,
