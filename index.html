@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.24 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.25 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -874,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.24';
+  const APP_VERSION = '5.9.25';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1025,14 +1025,14 @@
   }
 
   const ARTEFACTS = {
-    "crystal_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "Пассивно: +10% Кредитов за шаги", level: 10 },
-    "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "Пассивно: Штрафы снижены на 15%", level: 20 },
-    "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "Пассивно: +3 очка характеристик при повышении уровня", level: 30 },
-    "seal_limit": { name: "Печать Предела", icon: "🎖", desc: "Пассивно: +1 использование Преодоления предела каждый день", level: 40 },
-    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "Пассивно: ещё +4 очка характеристик при повышении уровня (складывается с Печатью Развития)", level: 50 },
-    "amulet_continuity": { name: "Амулет Непрерывности", icon: "☥", desc: "Пассивно: усиливает бонус титула «Целеустремлённый» на 50%", level: 60 },
-    "crystal_insight": { name: "Кристалл Прозрения", icon: "💎", desc: "Пассивно: +8% к получаемому опыту", level: 70 },
-    "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "Пассивно: +15% кредитов, +5% опыта, +6 очков характеристик при повышении уровня. Шанс на бонусную шкатулку при полном выполнении дня", level: 80 }
+    "crystal_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "Пассивно: +10% кредитов за шаги.", level: 10 },
+    "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "Пассивно: Штрафы снижены на 15%.", level: 20 },
+    "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "Пассивно: +3 очка характеристик при повышении уровня.", level: 30 },
+    "seal_limit": { name: "Печать Предела", icon: "🎖", desc: "Пассивно: +1 использование Преодоления предела каждый день.", level: 40 },
+    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "Пассивно: ещё +4 очка характеристик при повышении уровня (складывается с Печатью Развития).", level: 50 },
+    "amulet_continuity": { name: "Амулет Непрерывности", icon: "☥", desc: "Пассивно: усиливает бонус титула «Целеустремлённый» на 50%.", level: 60 },
+    "crystal_insight": { name: "Кристалл Прозрения", icon: "💎", desc: "Пассивно: +8% к получаемому опыту.", level: 70 },
+    "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "Пассивно: +15% кредитов, +5% опыта, +6 очков характеристик при повышении уровня. Шанс на бонусную шкатулку при полном выполнении дня.", level: 80 }
   };
 
   const TITLES_DB = {
@@ -1045,18 +1045,18 @@
 
   const SHOP_CATALOG = {
     "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 500, level: 1 },
-    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра", price: 1000, level: 1 },
-    "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа", price: 800, level: 1 },
-    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 25% до конца сегодняшнего дня", price: 700, level: 3 },
-    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз", price: 1200, level: 6 },
-    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня", price: 600, level: 9 },
-    "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня", price: 1500, level: 12 },
-    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа", price: 2500, level: 15 },
-    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня", price: 2500, level: 20 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф", price: 2500, level: 25 },
-    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня", price: 2500, level: 30 },
-    "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа", price: 3800, level: 35 },
-    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня", price: 3800, level: 40 }
+    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра.", price: 1000, level: 1 },
+    "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 800, level: 1 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 25% до конца сегодняшнего дня.", price: 700, level: 3 },
+    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 1200, level: 6 },
+    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня.", price: 600, level: 9 },
+    "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 1500, level: 12 },
+    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
+    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня.", price: 2500, level: 20 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф.", price: 2500, level: 25 },
+    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
+    "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа.", price: 3800, level: 35 },
+    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня.", price: 3800, level: 40 }
   };
 
   const KEY_CATALOG = {
@@ -1070,16 +1070,16 @@
   // Shop (SHOP_CATALOG's generic for-loop in openShop() would otherwise list
   // them for purchase, so they deliberately live in a separate catalog).
   const UNIQUE_CATALOG = {
-    "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 50% опыта от последнего штрафа" },
+    "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 50% опыта от последнего штрафа." },
     "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, продлевает серию на один день и отмечает день в Летописи как выполненный." },
     "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Стирает 3 штрафа из памяти Системы и возвращает 3× последнюю известную потерю опыта." },
     "rune_cleansing_full": { name: "Руна Полного Очищения", icon: "🔮", desc: "Стирает 5 штрафов из памяти Системы." },
-    "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа" },
-    "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня" },
-    "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа на завтра и защита серии дней, одновременно" },
-    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Значительно снижает дневную нагрузку до конца сегодняшнего дня" },
-    "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до конца дня" },
-    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до конца сегодняшнего дня" }
+    "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа." },
+    "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
+    "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа на завтра и защита серии дней, одновременно." },
+    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Значительно снижает дневную нагрузку до конца сегодняшнего дня." },
+    "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до конца дня." },
+    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до конца сегодняшнего дня." }
   };
 
   function getConsumableInfo(id) {
