@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.27 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.28 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -874,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.27';
+  const APP_VERSION = '5.9.28';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1246,6 +1246,10 @@
 
   const RU_MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const RU_MONTHS_NOM = ["ЯНВАРЬ","ФЕВРАЛЬ","МАРТ","АПРЕЛЬ","МАЙ","ИЮНЬ","ИЮЛЬ","АВГУСТ","СЕНТЯБРЬ","ОКТЯБРЬ","НОЯБРЬ","ДЕКАБРЬ"];
+
+  // Same wording as the quest cards themselves (.quest-name divs) — used when
+  // listing which exercises were fully completed on a given day.
+  const QUEST_DISPLAY_NAMES = { pushups: 'Отжимания', squats: 'Приседания', pullups: 'Подтягивания', press: 'Пресс', steps: 'Пробежка / шаги' };
   const RU_WEEKDAYS_MON_FIRST = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
 
   // Date key uses the calendar date, independent of the 5am quest-reset boundary —
@@ -1290,7 +1294,7 @@
   // recorded before this field existed simply won't have donePercent/
   // expGained/expLost — those lines are omitted rather than showing 0/blank.
   function buildDayDetail(dateKey, entry, isToday) {
-    let statusLine, donePercent, expGained, expLost, level, lbActivated, lbCompleted, lbLastRoundPercent;
+    let statusLine, donePercent, expGained, expLost, level, lbActivated, lbCompleted, lbLastRoundPercent, completedExercises;
     if (isToday) {
       statusLine = 'День ещё не завершён.';
       donePercent = data.dailyNotices.complete ? 100 : (countDoneQuests() * 20);
@@ -1300,6 +1304,15 @@
       lbActivated = data.limitBreaksToday || 0;
       lbCompleted = data.limitBreaksCompletedToday || 0;
       lbLastRoundPercent = countDoneQuests() * 20;
+      completedExercises = [];
+      if (donePercent < 100) {
+        const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+        for (const id in targets) {
+          if ((data.completed[id] || 0) >= getDynamicTarget(targets[id], data.dailyTargetLevel)) {
+            completedExercises.push(QUEST_DISPLAY_NAMES[id]);
+          }
+        }
+      }
     } else {
       if (entry.status === 'success') statusLine = 'Задание выполнено.';
       else if (entry.status === 'penalty') statusLine = 'Задание не выполнено, получен штраф.';
@@ -1311,9 +1324,11 @@
       lbActivated = entry.limitBreaksActivated || 0;
       lbCompleted = entry.limitBreaksCompleted || 0;
       lbLastRoundPercent = typeof entry.limitBreakLastRoundPercent === 'number' ? entry.limitBreakLastRoundPercent : 0;
+      completedExercises = Array.isArray(entry.completedExercises) ? entry.completedExercises : [];
     }
     const lines = [formatDateRu(dateKey), statusLine];
     if (typeof donePercent === 'number') lines.push(`Прогресс дня: ${donePercent}%`);
+    if (donePercent < 100 && completedExercises.length > 0) lines.push(`Выполнено полностью: ${completedExercises.join(', ')}.`);
     if (expGained > 0) lines.push(`Получено опыта: +${expGained} EXP`);
     if (expLost > 0) lines.push(`Снято штрафом: −${expLost} EXP`);
     if (lbActivated > 0) {
@@ -1570,16 +1585,20 @@
       const limitBreaksCompletedThatDay = data.limitBreaksCompletedToday || 0;
       let dayStatus;
       let expLostThatDay = 0;
+      let completedExercisesThatDay = null;
       if (data.insurance) {
         dayStatus = 'protected';
       } else {
         const result = applyPenaltyLogic();
-        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; }
+        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; }
         else { dayStatus = 'success'; }
       }
       const historyEntry = { status: dayStatus, donePercent };
       if (expGainedThatDay > 0) historyEntry.expGained = expGainedThatDay;
       if (expLostThatDay > 0) historyEntry.expLost = expLostThatDay;
+      if (completedExercisesThatDay && completedExercisesThatDay.length > 0) {
+        historyEntry.completedExercises = completedExercisesThatDay;
+      }
       if (limitBreaksActivatedThatDay > 0) {
         historyEntry.limitBreaksActivated = limitBreaksActivatedThatDay;
         historyEntry.limitBreaksCompleted = limitBreaksCompletedThatDay;
@@ -1681,7 +1700,19 @@
       data.consecutiveDays = 0;
     }
     updateTitleStatus();
-    return { loss, pct: Math.round(finalPen * 100) };
+    // Safe to read data.completed directly here (not via the Limit-Break-
+    // aware dailyNotices.complete trick used for success days) — a penalty
+    // day means allQuestsDone() was false, so Преодоление предела could
+    // never have been activated (button requires full completion first),
+    // so data.completed genuinely reflects today's real, undisturbed state.
+    const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+    const completedExercises = [];
+    for (const id in targets) {
+      if ((data.completed[id] || 0) >= getDynamicTarget(targets[id], data.dailyTargetLevel)) {
+        completedExercises.push(QUEST_DISPLAY_NAMES[id]);
+      }
+    }
+    return { loss, pct: Math.round(finalPen * 100), completedExercises };
   }
 
   function applyPenaltyLogic() {
@@ -2756,6 +2787,11 @@
         if (eg > 0) clean.expGained = Math.floor(eg);
         const el = sanitizeNumber(entry.expLost, 0, 0);
         if (el > 0) clean.expLost = Math.floor(el);
+        if (Array.isArray(entry.completedExercises)) {
+          const validNames = Object.values(QUEST_DISPLAY_NAMES);
+          const cleanExercises = entry.completedExercises.filter(n => typeof n === 'string' && validNames.includes(n)).slice(0, 5);
+          if (cleanExercises.length > 0) clean.completedExercises = cleanExercises;
+        }
         const lba = sanitizeNumber(entry.limitBreaksActivated, 0, 0);
         if (lba > 0) {
           clean.limitBreaksActivated = Math.floor(lba);
