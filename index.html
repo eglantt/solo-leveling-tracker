@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.28 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.29 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -874,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.28';
+  const APP_VERSION = '5.9.29';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2479,9 +2479,9 @@
         gainExp(expGained);
         data.expGainedToday = (data.expGainedToday || 0) + expGained;
         let creds = Math.floor(parseInt(item.dataset.exp) * 0.5);
-        const critChance = (data.stats.agi - 10) * 0.5;
+        const critChance = Math.max(0, data.stats.agi - 10) * 0.5;
         let critMsg = "";
-        if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " [CRIT!]"; }
+        if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " BONUS!"; }
         if (id === "steps" && data.inventory.includes("crystal_speed")) creds *= 1.1;
         if (data.inventory.includes("crystal_shadow")) creds *= 1.15;
         if (data.creditBoostToday > 0) creds *= (1 + data.creditBoostToday);
@@ -3365,6 +3365,17 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
   }
+
+  // Mobile browsers throttle/suspend setInterval while the screen is off or
+  // the app is backgrounded — the regular per-second updateTimer() tick can't
+  // be relied on to catch the exact moment of a daily reset in that case.
+  // Force a catch-up check the moment the page becomes visible again.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      checkMissedDays();
+      updateTimer();
+    }
+  });
 </script>
 </body>
 </html>
