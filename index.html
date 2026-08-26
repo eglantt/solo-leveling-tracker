@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.31 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.32 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -874,7 +874,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.31';
+  const APP_VERSION = '5.9.32';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -905,6 +905,8 @@
         limitBreaksCount: oldData.limitBreaksCount || 0,
         limitBreaksToday: oldData.limitBreaksToday || 0,
         limitBreaksCompletedToday: oldData.limitBreaksCompletedToday || 0,
+        soundEnabled: (typeof oldData.soundEnabled === 'boolean') ? oldData.soundEnabled : true,
+        pendingLimitBreakSound: !!oldData.pendingLimitBreakSound,
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
         dailyNotices: oldData.dailyNotices || { morning: false, complete: false },
@@ -950,7 +952,8 @@
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
-        pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false
+        pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false, pendingLimitBreakSound: false,
+        soundEnabled: true
       };
     }
   }
@@ -1006,6 +1009,8 @@
   data.pendingCurse = !!data.pendingCurse;
   data.curseActiveToday = !!data.curseActiveToday;
   data.limitBreakRoundPending = !!data.limitBreakRoundPending;
+  if (typeof data.soundEnabled !== 'boolean') data.soundEnabled = true;
+  data.pendingLimitBreakSound = !!data.pendingLimitBreakSound;
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -1232,7 +1237,10 @@
     if (data.codexUnlocked.includes(id)) return;
     data.codexUnlocked.push(id);
     const chapter = CODEX_CHAPTERS[id];
-    if (chapter) setTimeout(() => showNotice(`Записано в Кодекс: ${chapter.title}`, 'info'), 4500);
+    if (chapter) {
+      playSound('titleCodex');
+      setTimeout(() => showNotice(`Записано в Кодекс: ${chapter.title}`, 'info'), 4500);
+    }
   }
 
   function saveData() {
@@ -1246,6 +1254,56 @@
 
   const RU_MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const RU_MONTHS_NOM = ["ЯНВАРЬ","ФЕВРАЛЬ","МАРТ","АПРЕЛЬ","МАЙ","ИЮНЬ","ИЮЛЬ","АВГУСТ","СЕНТЯБРЬ","ОКТЯБРЬ","НОЯБРЬ","ДЕКАБРЬ"];
+
+  // ===== Звук (Стиль Б — мелодичный, синтезирован кодом, без файлов) =====
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let audioUnlocked = false;
+  function unlockAudioOnce() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  document.addEventListener('click', unlockAudioOnce, { once: true });
+  document.addEventListener('touchstart', unlockAudioOnce, { once: true });
+
+  function tone(freq, start, duration, type, gainPeak) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
+    gain.gain.setValueAtTime(0, audioCtx.currentTime + start);
+    gain.gain.linearRampToValueAtTime(gainPeak || 0.25, audioCtx.currentTime + start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + start + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime + start);
+    osc.stop(audioCtx.currentTime + start + duration + 0.02);
+  }
+  function chord(freqs, start, duration, type, gainPeak) {
+    freqs.forEach(f => tone(f, start, duration, type, (gainPeak || 0.2) / Math.sqrt(freqs.length)));
+  }
+
+  const SOUNDS = {
+    tap:          () => tone(880, 0, 0.08, 'sine', 0.1),
+    questDone:    () => chord([659,880], 0, 0.18, 'sine', 0.2),
+    dayComplete:  () => { chord([523,659,784], 0, 0.05, 'sine', 0.18); chord([659,784,988], 0.12, 0.3, 'sine', 0.22); },
+    levelUp:      () => { chord([523,659,784],0,0.06,'sine',0.15); chord([587,740,880],0.1,0.06,'sine',0.17); chord([659,830,988],0.2,0.5,'sine',0.28); },
+    bonus:        () => { chord([988,1245],0,0.15,'sine',0.22); },
+    penalty:      () => { chord([392,466],0,0.35,'sine',0.2); chord([330,392],0.2,0.45,'sine',0.18); },
+    boxOpen:      () => { [523,659,784,1046].forEach((f,i)=>tone(f, i*0.05, 0.2, 'sine', 0.15)); },
+    anomalyBless: () => { [587,740,880,1174].forEach((f,i)=>tone(f, i*0.05, 0.25, 'sine', 0.17)); chord([740,1174],0.3,0.4,'sine',0.15); },
+    anomalyCurse: () => { chord([466,554],0,0.3,'sine',0.18); chord([415,494],0.2,0.35,'sine',0.16); chord([349,415],0.4,0.5,'sine',0.15); },
+    limitBreak:   () => { chord([392,494,587],0,0.12,'sine',0.22); chord([440,554,659],0.14,0.35,'sine',0.24); },
+    denied:       () => { tone(330,0,0.1,'sine',0.12); tone(294,0.08,0.12,'sine',0.1); },
+    titleCodex:   () => { [523,659,784,988,1318].forEach((f,i)=>tone(f, i*0.11, 0.4, 'sine', 0.2)); chord([659,988,1318],0.55,0.6,'sine',0.2); },
+  };
+
+  function playSound(name) {
+    if (!data.soundEnabled) return;
+    const fn = SOUNDS[name];
+    if (fn) fn();
+  }
+
 
   // Same wording as the quest cards themselves (.quest-name divs) — used when
   // listing which exercises were fully completed on a given day.
@@ -1517,6 +1575,7 @@
   function displayNotificationNow({ body, sub, tone, skipLog }) {
     notificationActive = true;
     const toneClass = tone === 'warn' ? 'tone-warn' : (tone === 'danger' ? 'tone-danger' : '');
+    if (tone === 'warn' || tone === 'danger') playSound('denied');
     const p = document.createElement('div');
     p.className = 'system-popup hud-frame';
     p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body ${toneClass}">${escapeHtml(body)}</div>` +
@@ -1681,6 +1740,7 @@
   // same function, so there is no second copy of the formula that could ever
   // drift out of sync again.
   function computePenaltyAndApply() {
+    playSound('penalty');
     let basePen = 0.15;
     const lvlReduction = Math.floor(data.level / 20) * 0.03;
     const bonusStr = Math.max(0, data.stats.str - 10);
@@ -2213,6 +2273,7 @@
 
       if (Math.random() < 0.5) {
         // Проклятие — applies to tomorrow, not today (see checkMissedDays()).
+        playSound('anomalyCurse');
         data.pendingCurse = true;
         saveData(); render(); openInv();
         showNotice('Шкатулка Аномалии открыта. Система усложняет завтрашнее задание.', 'danger');
@@ -2220,6 +2281,7 @@
       }
 
       // Благословение — 40% ключ / 30% кредиты / 30% усиленный расходник.
+      playSound('anomalyBless');
       const roll = Math.random();
       let resultText = '';
       if (roll < 0.40) {
@@ -2250,6 +2312,7 @@
   }
   function performOpenBox(id) {
     flashThenRun(`[data-box-id="${id}"]`, () => {
+      playSound('boxOpen');
       const box = BOX_CATALOG[id];
       data.boxes[id]--;
       if (data.boxes[id] <= 0) delete data.boxes[id];
@@ -2347,6 +2410,7 @@
     while (data.exp >= getExpToNext(data.level)) {
       data.exp -= getExpToNext(data.level);
       data.level++;
+      playSound('levelUp');
       let statGain = 5;
       if (data.inventory.includes("seal_growth")) statGain += 3;
       if (data.inventory.includes("sphere_growth")) statGain += 4;
@@ -2468,19 +2532,21 @@
       const target = getDynamicTarget(parseInt(item.dataset.target), data.dailyTargetLevel);
       let current = data.completed[id] || 0;
       if (current >= target) return;
+      playSound('tap');
       data.completed[id] = current + val;
       totalStats[id] += val;
       const progDayKey = dateKeyFromTimestamp(data.lastReset);
       if (!data.dailyExerciseLog[progDayKey]) data.dailyExerciseLog[progDayKey] = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
       data.dailyExerciseLog[progDayKey][id] = (data.dailyExerciseLog[progDayKey][id] || 0) + val;
       if (data.completed[id] >= target) {
+        playSound('questDone');
         const expGained = getDynamicExp(parseInt(item.dataset.exp), data.level, id);
         gainExp(expGained);
         data.expGainedToday = (data.expGainedToday || 0) + expGained;
         let creds = Math.floor(parseInt(item.dataset.exp) * 0.5);
         const critChance = Math.max(0, data.stats.agi - 10) * 0.5;
         let critMsg = "";
-        if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " BONUS!"; }
+        if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " BONUS!"; playSound('bonus'); }
         if (id === "steps" && data.inventory.includes("crystal_speed")) creds *= 1.1;
         if (data.inventory.includes("crystal_shadow")) creds *= 1.15;
         if (data.creditBoostToday > 0) creds *= (1 + data.creditBoostToday);
@@ -2511,6 +2577,7 @@
         }
         if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
+          playSound('dayComplete');
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
           setTimeout(() => showNotice(completeText, 'info'), 4500);
           if (data.inventory.includes('crystal_shadow')) {
@@ -2870,6 +2937,7 @@
       pendingCurse: !!s.pendingCurse,
       curseActiveToday: !!s.curseActiveToday,
       limitBreakRoundPending: !!s.limitBreakRoundPending,
+      soundEnabled: (typeof s.soundEnabled === 'boolean') ? s.soundEnabled : true,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
       pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
       codexUnlocked: cleanCodexUnlocked,
@@ -2929,6 +2997,13 @@
     pendingImport = null;
   }
 
+  function toggleSound() {
+    data.soundEnabled = !data.soundEnabled;
+    saveData();
+    if (data.soundEnabled) { unlockAudioOnce(); playSound('tap'); }
+    renderBackupModal();
+  }
+
   function renderBackupModal() {
     const cont = document.getElementById('backupContent');
     if (backupModalStep === 'main') {
@@ -2946,6 +3021,11 @@
           <div class="backup-section-title">Уведомления</div>
           <div class="backup-summary">Журнал сообщений Системы за сегодняшний день.</div>
           <button class="backup-action-btn" onclick="showNotificationLog()">Уведомления системы</button>
+        </div>
+        <div class="backup-section">
+          <div class="backup-section-title">Звук</div>
+          <div class="backup-summary">Звуковые сигналы Системы: ${data.soundEnabled ? 'включены' : 'выключены'}.</div>
+          <button class="backup-action-btn" onclick="toggleSound()">${data.soundEnabled ? 'Выключить звук' : 'Включить звук'}</button>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Экспорт</div>
@@ -3177,6 +3257,7 @@
         data.limitBreaksToday++;
         data.isGoalMet = true; data.completed = {}; 
         data.limitBreakRoundPending = true;
+        data.pendingLimitBreakSound = true;
         saveData(); location.reload();
     });
   };
@@ -3348,6 +3429,17 @@
   // clock/notification logic once it's been dismissed.
   function finishInit() {
     checkMissedDays();
+    if (data.pendingLimitBreakSound) {
+      data.pendingLimitBreakSound = false;
+      saveData();
+      // Best-effort: a fresh page load resets the AudioContext to 'suspended'
+      // and browsers generally require a NEW user gesture per document to
+      // resume it, so this may silently not play right after the reload
+      // triggered by activating Преодоление предела. Harmless either way —
+      // no error, just no sound in stricter browsers.
+      audioCtx.resume().catch(() => {});
+      playSound('limitBreak');
+    }
     setInterval(updateTimer, 1000);
     updateTimer();
   }
