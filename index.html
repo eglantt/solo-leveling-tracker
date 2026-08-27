@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.33 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.34 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -296,6 +296,27 @@
     .target { font-size: 0.85rem; color: #88ffccaa; }
     .counter.cursed { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
     .target.cursed { color: #ff5555aa; }
+    .sound-toggle {
+      width: 60px; height: 26px;
+      background: #12233a;
+      border: 1px solid #40c0ff55;
+      border-radius: 4px;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .sound-toggle .track { position: absolute; inset: 2px; border-radius: 2px; display: flex; }
+    .sound-toggle .knob {
+      width: 28px; height: 100%;
+      background: linear-gradient(180deg, #40c0ff, #2288cc);
+      box-shadow: 0 0 8px rgba(64,192,255,0.7);
+      transition: all 0.2s ease;
+      border-radius: 2px;
+    }
+    .sound-toggle.on .knob { margin-left: 28px; background: linear-gradient(180deg, #40ffaa, #22cc88); box-shadow: 0 0 8px rgba(64,255,170,0.7); }
+    .sound-toggle.on { border-color: #40ffaa77; }
     .reward { font-size: 0.8rem; color: #ffd700cc; margin-top: 2px; }
     .buttons { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; flex-wrap: wrap; }
     
@@ -874,7 +895,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.33';
+  const APP_VERSION = '5.9.34';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1147,20 +1168,20 @@
 
   const SYSTEM_NOTICES = {
     reminder: [
-      "Задание дня всё ещё не выполнено.",
+      "Задание дня остаётся невыполненным.",
       "Система напоминает: задание ожидает завершения.",
       "Задание пока не выполнено.",
-      "Прогресс дня остановлен. Задание не завершено.",
+      "Прогресс дня неполон.",
       "Система фиксирует: задание не выполнено.",
-      "Время для завершения задания сокращается.",
-      "Задание всё ещё активно.",
+      "Время до сброса сокращается.",
+      "Задание остаётся открытым.",
       "Система: незавершённое задание требует внимания.",
-      "Задание не выполнено."
+      "Система отмечает бездействие Игрока."
     ],
     reminderUrgent: [
       "Осталось менее двух часов. Задание не выполнено.",
       "Система: критически малое время до сброса.",
-      "Менее двух часов до сброса. Задание не выполнено.",
+      "Меньше двух часов остаётся до применения штрафа.",
       "Время почти истекло. Задание не выполнено.",
       "Система фиксирует: срок задания почти истёк.",
       "Менее двух часов. При бездействии наказание неотвратимо.",
@@ -3012,6 +3033,13 @@
           <div class="backup-summary" id="appVersionTag" style="opacity:0.6; cursor:default;">v${APP_VERSION}</div>
         </div>
         <div class="backup-section">
+          <div class="backup-section-title">Звук</div>
+          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <span>Звуковые сигналы Системы: ${data.soundEnabled ? 'включены' : 'выключены'}.</span>
+            <div class="sound-toggle ${data.soundEnabled ? 'on' : ''}" onclick="toggleSound()"><div class="track"><div class="knob"></div></div></div>
+          </div>
+        </div>
+        <div class="backup-section">
           <div class="backup-section-title">Игрок</div>
           <div class="backup-summary">Имя: ${escapeHtml(data.playerName || 'Игрок')}</div>
           <button class="backup-action-btn" onclick="startEditNameFlow()">Изменить имя</button>
@@ -3020,11 +3048,6 @@
           <div class="backup-section-title">Уведомления</div>
           <div class="backup-summary">Журнал сообщений Системы за сегодняшний день.</div>
           <button class="backup-action-btn" onclick="showNotificationLog()">Уведомления системы</button>
-        </div>
-        <div class="backup-section">
-          <div class="backup-section-title">Звук</div>
-          <div class="backup-summary">Звуковые сигналы Системы: ${data.soundEnabled ? 'включены' : 'выключены'}.</div>
-          <button class="backup-action-btn" onclick="toggleSound()">${data.soundEnabled ? 'Выключить звук' : 'Включить звук'}</button>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Экспорт</div>
@@ -3332,6 +3355,7 @@
   // the actual action — so it's always clear a press registered, even for
   // actions whose effect isn't otherwise visible right away.
   function sysToolsFlashThenRun(btn, fn) {
+    playSound('tap');
     btn.classList.add('sys-tools-btn-flash');
     setTimeout(() => {
       btn.classList.remove('sys-tools-btn-flash');
