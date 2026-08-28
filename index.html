@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.34 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.35 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -190,7 +190,7 @@
     }
     .status-body::-webkit-scrollbar { display: none; }
     .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid #00aaff22; }
-    .stat-label { font-family: 'Orbitron', sans-serif; color: #88ddff; font-size: 1.1rem; }
+    .stat-label { font-family: 'Orbitron', sans-serif; color: #88ddff; font-size: 1.1rem; cursor: pointer; }
     .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
     .stat-points-info { text-align: center; color: #ffd700; margin-bottom: 20px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; }
 
@@ -296,28 +296,36 @@
     .target { font-size: 0.85rem; color: #88ffccaa; }
     .counter.cursed { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
     .target.cursed { color: #ff5555aa; }
-    .sound-toggle {
-      width: 60px; height: 26px;
-      background: #12233a;
-      border: 1px solid #40c0ff55;
-      border-radius: 4px;
-      position: relative;
+    .sound-checkbox-zone {
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
       cursor: pointer;
-      display: flex;
-      align-items: center;
       flex-shrink: 0;
     }
-    .sound-toggle .track { position: absolute; inset: 2px; border-radius: 2px; display: flex; }
-    .sound-toggle .knob {
-      width: 28px; height: 100%;
-      background: linear-gradient(180deg, #40c0ff, #2288cc);
-      box-shadow: 0 0 8px rgba(64,192,255,0.7);
+    .sound-checkbox {
+      width: 26px; height: 26px;
+      border: 1px solid #40c0ff55;
+      background: #12233a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      color: transparent;
       transition: all 0.2s ease;
-      border-radius: 2px;
     }
-    .sound-toggle.on .knob { margin-left: 28px; background: linear-gradient(180deg, #40ffaa, #22cc88); box-shadow: 0 0 8px rgba(64,255,170,0.7); }
-    .sound-toggle.on { border-color: #40ffaa77; }
+    .sound-checkbox.on {
+      border-color: #40c0ff; background: #0d2a45; color: #40c0ff;
+      text-shadow: 0 0 8px rgba(64,192,255,0.8); box-shadow: 0 0 10px rgba(64,192,255,0.3);
+    }
     .reward { font-size: 0.8rem; color: #ffd700cc; margin-top: 2px; }
+    .stat-lore-box {
+      width: 85%; max-width: 320px; background: #0d1a2d; border: 1px solid #40c0ff;
+      border-radius: 10px; padding: 18px 20px; box-shadow: 0 0 30px rgba(0,140,255,0.4);
+    }
+    .stat-lore-header {
+      font-family: 'Orbitron', sans-serif; color: #40c0ff; font-size: 0.9rem;
+      letter-spacing: 1px; margin-bottom: 10px; text-shadow: 0 0 8px rgba(64,192,255,0.5);
+    }
+    .stat-lore-text { font-size: 0.85rem; color: #e0f4ff; line-height: 1.55; }
     .buttons { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; flex-wrap: wrap; }
     
     button {
@@ -563,35 +571,35 @@
     <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
 
     <div class="stat-row">
-      <span class="stat-label">СИЛА</span>
+      <span class="stat-label" onclick="showStatLore('str')">СИЛА</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valStr">10</span>
         <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ЛОВКОСТЬ</span>
+      <span class="stat-label" onclick="showStatLore('agi')">ЛОВКОСТЬ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valAgi">10</span>
         <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ВЫНОСЛИВОСТЬ</span>
+      <span class="stat-label" onclick="showStatLore('sta')">ВЫНОСЛИВОСТЬ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valSta">10</span>
         <button onclick="incStat('sta')" class="stat-add-btn" id="btnSta">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ИНТЕЛЛЕКТ</span>
+      <span class="stat-label" onclick="showStatLore('int')">ИНТЕЛЛЕКТ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valInt">10</span>
         <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
       </div>
     </div>
     <div class="stat-row">
-      <span class="stat-label">ВОСПРИЯТИЕ</span>
+      <span class="stat-label" onclick="showStatLore('per')">ВОСПРИЯТИЕ</span>
       <div style="display: flex; align-items: center; gap: 15px;">
         <span class="stat-value" id="valPer">10</span>
         <button onclick="incStat('per')" class="stat-add-btn" id="btnPer">+</button>
@@ -599,6 +607,13 @@
     </div>
     </div>
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="statLoreOverlay" style="z-index:1600;" onclick="if(event.target.id==='statLoreOverlay') closeStatLore()">
+  <div class="stat-lore-box">
+    <div class="stat-lore-header" id="statLoreHeader"></div>
+    <div class="stat-lore-text" id="statLoreText"></div>
   </div>
 </div>
 
@@ -895,7 +910,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.34';
+  const APP_VERSION = '5.9.35';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1326,6 +1341,26 @@
   // Same wording as the quest cards themselves (.quest-name divs) — used when
   // listing which exercises were fully completed on a given day.
   const QUEST_DISPLAY_NAMES = { pushups: 'Отжимания', squats: 'Приседания', pullups: 'Подтягивания', press: 'Пресс', steps: 'Пробежка / шаги' };
+
+  const STAT_LORE = {
+    str: { title: 'СИЛА', text: 'Тело Игрока крепнет с каждой тренировкой, и вместе с ним — способность переносить последствия неудач. Чем выше Сила, тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание.' },
+    agi: { title: 'ЛОВКОСТЬ', text: 'Не всякое усилие равноценно — иногда одно и то же движение приносит больше, чем ожидалось. С ростом Ловкости растёт и шанс, что выполненное упражнение принесёт больше кредитов, чем обычно.' },
+    sta: { title: 'ВЫНОСЛИВОСТЬ', text: 'Запас сил редко замечают, пока он не понадобится по-настоящему. Выносливость снижает повседневную нагрузку заданий и заметно увеличивает опыт, если Игрок решается преодолеть предел.' },
+    int: { title: 'ИНТЕЛЛЕКТ', text: 'Опыт набирается быстрее, если разум готов его усвоить. Каждое очко, вложенное в Интеллект, увеличивает опыт, получаемый за любое выполненное задание.' },
+    per: { title: 'ВОСПРИЯТИЕ', text: 'Там, где другие видят обычную находку, внимательный взгляд замечает нечто большее. Восприятие повышает шанс на получение редких шкатулок, на бонусные кредиты из них и на более ценное содержимое внутри.' },
+  };
+
+  function showStatLore(id) {
+    const lore = STAT_LORE[id];
+    if (!lore) return;
+    document.getElementById('statLoreHeader').textContent = lore.title;
+    document.getElementById('statLoreText').textContent = lore.text;
+    document.getElementById('statLoreOverlay').style.display = 'flex';
+  }
+
+  function closeStatLore() {
+    document.getElementById('statLoreOverlay').style.display = 'none';
+  }
   const RU_WEEKDAYS_MON_FIRST = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
 
   // Date key uses the calendar date, independent of the 5am quest-reset boundary —
@@ -3036,7 +3071,7 @@
           <div class="backup-section-title">Звук</div>
           <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
             <span>Звуковые сигналы Системы: ${data.soundEnabled ? 'включены' : 'выключены'}.</span>
-            <div class="sound-toggle ${data.soundEnabled ? 'on' : ''}" onclick="toggleSound()"><div class="track"><div class="knob"></div></div></div>
+            <div class="sound-checkbox-zone" onclick="toggleSound()"><div class="sound-checkbox ${data.soundEnabled ? 'on' : ''}">✓</div></div>
           </div>
         </div>
         <div class="backup-section">
