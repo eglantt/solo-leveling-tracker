@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.35 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.36 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -910,7 +910,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.35';
+  const APP_VERSION = '5.9.36';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1092,6 +1092,7 @@
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 1500, level: 12 },
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня.", price: 2500, level: 20 },
+    "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Использована для пересмотра пройденного пути: полностью сбрасывает вложенные очки характеристик, возвращая их в свободный пул для нового распределения.", price: 3700, level: 20 },
     "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф.", price: 2500, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
     "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа.", price: 3800, level: 35 },
@@ -1139,10 +1140,10 @@
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
   const BOX_LOOT_POOLS = {
-    "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth"],
-    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth"],
-    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit"],
-    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity"],
+    "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "tablet_of_reassessment"],
+    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth", "tablet_of_reassessment"],
+    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit", "tablet_of_reassessment"],
+    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity", "tablet_of_reassessment"],
     "box_scarlet": ["rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "rune_redemption", "rune_fate_cleansing", "rune_cleansing_full", "shard_limit_double"],
     "box_crimson": ["rune_redemption", "rune_fate_cleansing", "rune_cleansing_full", "potion_restoration_full", "rune_protection_absolute", "shard_limit_double"],
     "box_purple": ["potion_restoration_full", "rune_protection_absolute", "rune_burden_release", "rune_return", "crystal_impulse"],
@@ -2171,6 +2172,16 @@
           used = useExpBoostItem(0.20, 'Зелье использовано');
       } else if (id === 'rune_growth_charged') {
           used = useExpBoostItem(0.35, 'Руна использована');
+      } else if (id === 'tablet_of_reassessment') {
+          const refunded = Object.values(data.stats).reduce((sum, v) => sum + Math.max(0, v - 10), 0);
+          if (refunded > 0) {
+            data.stats = { str: 10, agi: 10, sta: 10, int: 10, per: 10 };
+            data.statPoints += refunded;
+            used = true;
+            showNotice(`Скрижаль использована. Возвращено очков характеристик: ${refunded}.`, 'info');
+          } else {
+            showNotice("Пересматривать нечего: очки характеристик ещё не вложены.", 'warn');
+          }
       } else if (id === 'crystal_clarity') {
           used = useExpBoostItem(0.55, 'Кристалл использован');
       } else if (id === 'rune_protection_charged') {
