@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.37 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.38 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -808,6 +808,25 @@
   </div>
 </div>
 
+<div class="status-overlay" id="rulesOverlay" style="z-index: 1550;">
+  <div class="status-window hud-frame">
+    <div class="status-header">ПРАВИЛА</div>
+    <div class="status-body">
+    <div class="danger-warning-step">
+      <div class="danger-text" id="rulesText" style="color:#a8d8ff; text-align:left; line-height:1.5;"></div>
+      <div id="rulesCheckboxRow" style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+        <div class="sound-checkbox-zone" onclick="toggleRulesCheckbox()"><div class="sound-checkbox" id="rulesCheckbox">✓</div></div>
+        <span style="font-size:0.8rem; color:#9fc4e6;">Ознакомлен с правилами.</span>
+      </div>
+      <div class="danger-btn-row">
+        <button class="confirm-btn-continue" id="rulesAcceptBtn" onclick="acknowledgeRules()" disabled>Принять</button>
+        <button class="confirm-btn-continue" id="rulesCloseBtn" onclick="closeRulesOverlay()" style="display:none;">Закрыть</button>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
 <div class="system-container">
   <div class="quest-panel hud-frame">
     <div class="header">
@@ -910,7 +929,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.37';
+  const APP_VERSION = '5.9.38';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -942,6 +961,7 @@
         limitBreaksToday: oldData.limitBreaksToday || 0,
         limitBreaksCompletedToday: oldData.limitBreaksCompletedToday || 0,
         soundEnabled: (typeof oldData.soundEnabled === 'boolean') ? oldData.soundEnabled : true,
+        rulesAcknowledged: (typeof oldData.rulesAcknowledged === 'boolean') ? oldData.rulesAcknowledged : true,
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
         dailyNotices: oldData.dailyNotices || { morning: false, complete: false },
@@ -988,7 +1008,7 @@
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
-        soundEnabled: true
+        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false
       };
     }
   }
@@ -1045,6 +1065,8 @@
   data.curseActiveToday = !!data.curseActiveToday;
   data.limitBreakRoundPending = !!data.limitBreakRoundPending;
   if (typeof data.soundEnabled !== 'boolean') data.soundEnabled = true;
+  if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
+  if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -1196,13 +1218,15 @@
     ],
     reminderUrgent: [
       "Осталось менее двух часов. Задание не выполнено.",
-      "Система: критически малое время до сброса.",
       "Меньше двух часов остаётся до применения штрафа.",
+      "Менее двух часов. При бездействии наказание неотвратимо.",
+      "Меньше двух часов до сброса задания."
+    ],
+    reminderFinal: [
+      "Система: критически малое время до сброса.",
       "Время почти истекло. Задание не выполнено.",
       "Система фиксирует: срок задания почти истёк.",
-      "Менее двух часов. При бездействии наказание неотвратимо.",
-      "Финальное окно для завершения задания.",
-      "Меньше двух часов до сброса задания."
+      "Финальное окно для завершения задания."
     ],
     complete: [
       "Ежедневное задание полностью выполнено.",
@@ -1222,11 +1246,11 @@
   };
 
   const CODEX_CHAPTERS = {
-    daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Выполненное задание приносит опыт и кредиты." },
+    daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Задание исполнено только при закрытии всех пяти пунктов — частичное выполнение приравнивается к неисполнению. Смена цикла отслеживается обратным отсчётом на экране — по его истечении начинается новый цикл. Выполненное задание приносит опыт и кредиты." },
     penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Однако с ростом силы и уровня эта тяжесть снижается. Если же накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия." },
     stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку и увеличивает опыт при превышении задания." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
-    shop: { title: "Лавка Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
+    shop: { title: "Магазин Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
@@ -1342,6 +1366,41 @@
   // Same wording as the quest cards themselves (.quest-name divs) — used when
   // listing which exercises were fully completed on a given day.
   const QUEST_DISPLAY_NAMES = { pushups: 'Отжимания', squats: 'Приседания', pullups: 'Подтягивания', press: 'Пресс', steps: 'Пробежка / шаги' };
+
+  const RULES_TEXT_ONBOARDING = "Обнаружен новый Игрок. Активирован протокол ежедневного задания — с этого момента Игрок обязан исполнять его каждые сутки. Слабость определяется недостатком дисциплины — Система устраняет эту недостачу через ежедневное испытание. Протокол задания включает пять частей; засчитывается только полное исполнение всех пяти — частичное расценивается как неисполнение. Время до завершения цикла отображается обратным отсчётом на экране. Неисполнение влечёт штраф: часть накопленного опыта аннулируется, а при нехватке опыта для покрытия образуется долг перед Системой. Подробности изложены в Кодексе.";
+  const RULES_TEXT_ARCHIVE = "Слабость определяется недостатком дисциплины — Система устраняет эту недостачу через ежедневное испытание. Протокол задания включает пять частей; засчитывается только полное исполнение всех пяти — частичное расценивается как неисполнение. Время до завершения цикла отображается обратным отсчётом на экране. Неисполнение влечёт штраф: часть накопленного опыта аннулируется, а при нехватке опыта для покрытия образуется долг перед Системой. Подробности изложены в Кодексе.";
+
+  function showRulesOverlay(mode) {
+    document.getElementById('rulesText').textContent = (mode === 'onboarding') ? RULES_TEXT_ONBOARDING : RULES_TEXT_ARCHIVE;
+    document.getElementById('rulesCheckboxRow').style.display = (mode === 'onboarding') ? 'flex' : 'none';
+    document.getElementById('rulesAcceptBtn').style.display = (mode === 'onboarding') ? 'block' : 'none';
+    document.getElementById('rulesCloseBtn').style.display = (mode === 'onboarding') ? 'none' : 'block';
+    if (mode === 'onboarding') {
+      rulesCheckboxChecked = false;
+      document.getElementById('rulesCheckbox').classList.remove('on');
+      document.getElementById('rulesAcceptBtn').disabled = true;
+    }
+    document.getElementById('rulesOverlay').style.display = 'flex';
+  }
+
+  let rulesCheckboxChecked = false;
+  function toggleRulesCheckbox() {
+    rulesCheckboxChecked = !rulesCheckboxChecked;
+    document.getElementById('rulesCheckbox').classList.toggle('on', rulesCheckboxChecked);
+    document.getElementById('rulesAcceptBtn').disabled = !rulesCheckboxChecked;
+  }
+
+  function acknowledgeRules() {
+    if (!rulesCheckboxChecked) return;
+    data.rulesAcknowledged = true;
+    saveData();
+    document.getElementById('rulesOverlay').style.display = 'none';
+    openNameModal();
+  }
+
+  function closeRulesOverlay() {
+    document.getElementById('rulesOverlay').style.display = 'none';
+  }
 
   const STAT_LORE = {
     str: { title: 'СИЛА', text: 'Тело Игрока крепнет с каждой тренировкой, и вместе с ним — способность переносить последствия неудач. Чем выше Сила, тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание.' },
@@ -1660,7 +1719,7 @@
     enqueueNotification({ body: message, tone, skipLog });
   }
 
-  function showPenaltyBanner(totalLoss, pct, daysCount) {
+  function showPenaltyBanner(totalLoss, pct, daysCount, completedCount) {
     const cont = document.getElementById('penaltyContent');
     const daysLine = daysCount > 1 ? `<li>Пропущено дней: ${daysCount}</li>` : '';
     cont.innerHTML = `
@@ -1668,6 +1727,7 @@
         <div class="danger-icon">⚠</div>
         <div class="danger-text">Система зафиксировала невыполнение задания.</div>
         <ul class="danger-list">
+          <li>Закрыто упражнений: ${completedCount} из 5</li>
           <li>Потеряно опыта: ${totalLoss} (-${pct}%)</li>
           ${daysLine}
         </ul>
@@ -1681,6 +1741,7 @@
     let penalizedDays = 0;
     let totalLoss = 0;
     let lastPct = 0;
+    let lastCompletedCount = 0;
     while (now >= nextReset) {
       const dayKey = dateKeyFromTimestamp(data.lastReset);
       // If the day was ever fully completed, record 100% even if data.completed
@@ -1702,7 +1763,7 @@
         dayStatus = 'protected';
       } else {
         const result = applyPenaltyLogic();
-        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; }
+        if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
         else { dayStatus = 'success'; }
       }
       const historyEntry = { status: dayStatus, donePercent };
@@ -1725,6 +1786,10 @@
       data.insurance = false;
       data.lastReset = nextReset;
       data.totalDays++;
+      if (data.totalDays === 1 && !data.earlySaveNoticeShown) {
+        data.earlySaveNoticeShown = true;
+        setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'), 5500);
+      }
       data.completed = {};
       data.isGoalMet = false;
       data.limitBreaksToday = 0;
@@ -1747,7 +1812,7 @@
     }
     saveData(); render();
     if (penalizedDays > 0) {
-      setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays), 3000);
+      setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount), 3000);
     }
     if (!data.dailyNotices.morning) {
       data.dailyNotices.morning = true;
@@ -1919,7 +1984,9 @@
     if (data.remindersFiredHours.includes(hoursLeft)) return;
     data.remindersFiredHours.push(hoursLeft);
     saveData();
-    const pool = (hoursLeft <= 2) ? SYSTEM_NOTICES.reminderUrgent : SYSTEM_NOTICES.reminder;
+    const pool = (hoursLeft === 2) ? SYSTEM_NOTICES.reminderUrgent
+               : (hoursLeft === 1) ? SYSTEM_NOTICES.reminderFinal
+               : SYSTEM_NOTICES.reminder;
     showNotice(pickRandomNoRepeat(pool, 'reminder'), 'warn');
   }
 
@@ -2037,7 +2104,7 @@
   function buyItem(id) {
     const item = SHOP_CATALOG[id];
     if (!item || data.level < (item.level || 1)) return;
-    if (data.credits < item.price) { showNotice("Недостаточно кредитов.", 'warn'); return; }
+    if (data.credits < item.price) { showNotice("Недостаточно кредитов.", 'warn', true); return; }
     flashThenRun(`[data-shop-id="${id}"]`, () => {
       playSound('boxOpen');
       data.credits -= item.price;
@@ -2152,10 +2219,10 @@
       let used = false;
       if (id === 'rune_cleansing') {
           if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
-          else { showNotice("Штрафов для удаления нет.", 'warn'); }
+          else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection') {
           if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
-          else { showNotice("Защита уже активирована.", 'warn'); }
+          else { showNotice("Защита уже активирована.", 'warn', true); }
       } else if (id === 'potion_restoration') {
           used = useRecoveryItem(0.5, 'Зелье использовано');
       } else if (id === 'rune_restoration_charged') {
@@ -2164,10 +2231,10 @@
           used = useRecoveryItem(0.8, 'Кристалл использован');
       } else if (id === 'rune_freedom') {
           if ((data.targetDiscountRate || 0) < 0.25) { data.targetDiscountToday = true; data.targetDiscountRate = 0.25; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
-          else { showNotice("Нагрузка уже снижена достаточно.", 'warn'); }
+          else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_stability') {
           if (!data.streakShield) { data.streakShield = true; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
-          else { showNotice("Защита серии уже активна.", 'warn'); }
+          else { showNotice("Защита серии уже активна.", 'warn', true); }
       } else if (id === 'potion_growth') {
           used = useExpBoostItem(0.20, 'Зелье использовано');
       } else if (id === 'rune_growth_charged') {
@@ -2180,7 +2247,7 @@
             used = true;
             showNotice(`Скрижаль использована. Возвращено очков характеристик: ${refunded}.`, 'info');
           } else {
-            showNotice("Пересматривать нечего: очки характеристик ещё не вложены.", 'warn');
+            showNotice("Пересматривать нечего: очки характеристик ещё не вложены.", 'warn', true);
           }
       } else if (id === 'crystal_clarity') {
           used = useExpBoostItem(0.55, 'Кристалл использован');
@@ -2194,7 +2261,7 @@
               didSomething = true; msgParts.push(`снят сегодняшний штраф (+${recovery} EXP)`);
           }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
-          else { showNotice("Снимать нечего: штрафа нет, защита уже активна.", 'warn'); }
+          else { showNotice("Снимать нечего: штрафа нет, защита уже активна.", 'warn', true); }
       } else if (id === 'shard_limit') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 1;
           used = true; showNotice("Осколок использован. +1 использование Преодоления предела сегодня.", 'info');
@@ -2214,7 +2281,7 @@
               if (dayKey) data.history[dayKey].status = 'success';
               used = true;
               showNotice(`Руна использована. Восстановлено ${recovery} EXP, серия и запись в Летописи исправлены.`, 'info');
-          } else { showNotice("Исправлять нечего: потерь опыта нет.", 'warn'); }
+          } else { showNotice("Исправлять нечего: потерь опыта нет.", 'warn', true); }
       } else if (id === 'rune_fate_cleansing') {
           if (data.totalPenalties > 0 || data.lastExpLoss > 0) {
               const removed = Math.min(3, data.totalPenalties);
@@ -2223,37 +2290,37 @@
               if (recovery > 0) { gainExp(recovery); data.lastExpLoss = 0; checkLevelUp(); }
               used = true;
               showNotice(`Руна использована. Удалено штрафов: ${removed}, восстановлено ${recovery} EXP.`, 'info');
-          } else { showNotice("Очищать нечего: штрафов нет.", 'warn'); }
+          } else { showNotice("Очищать нечего: штрафов нет.", 'warn', true); }
       } else if (id === 'rune_cleansing_full') {
           if (data.totalPenalties > 0) {
               const removed = Math.min(5, data.totalPenalties);
               data.totalPenalties -= removed;
               used = true; showNotice(`Руна использована. Удалено штрафов: ${removed}.`, 'info');
-          } else { showNotice("Штрафов для удаления нет.", 'warn'); }
+          } else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection_absolute') {
           let didSomething = false;
           let msgParts = [];
           if (!data.insurance) { data.insurance = true; didSomething = true; msgParts.push('защита на завтра активирована'); }
           if (!data.streakShield) { data.streakShield = true; didSomething = true; msgParts.push('серия защищена от срыва'); }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
-          else { showNotice("Обе защиты уже активны.", 'warn'); }
+          else { showNotice("Обе защиты уже активны.", 'warn', true); }
       } else if (id === 'rune_burden_release') {
           if ((data.targetDiscountRate || 0) < 0.45) {
               data.targetDiscountToday = true; data.targetDiscountRate = 0.45;
               used = true; showNotice("Руна использована. Нагрузка на сегодня значительно снижена.", 'info');
-          } else { showNotice("Нагрузка уже снижена достаточно.", 'warn'); }
+          } else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_return') {
           if (data.lastExpLoss > 0 || data.expBoostToday < 0.15) {
               if (data.lastExpLoss > 0) { gainExp(data.lastExpLoss); data.lastExpLoss = 0; checkLevelUp(); }
               if (data.expBoostToday < 0.15) data.expBoostToday = 0.15;
               used = true; showNotice("Руна использована. Опыт восстановлен и увеличен на сегодня.", 'info');
-          } else { showNotice("Восстанавливать нечего: усиление опыта уже повышено.", 'warn'); }
+          } else { showNotice("Восстанавливать нечего: усиление опыта уже повышено.", 'warn', true); }
       } else if (id === 'crystal_impulse') {
           const boosted1 = useExpBoostItem(0.35, 'Кристалл использован', true);
           const boosted2 = useCreditBoostItem(0.35, 'Кристалл использован', true);
           used = boosted1 || boosted2;
           if (used) showNotice("Кристалл использован. Опыт и кредиты увеличены на сегодня.", 'info');
-          else showNotice("Усиление опыта и кредитов уже повышено.", 'warn');
+          else showNotice("Усиление опыта и кредитов уже повышено.", 'warn', true);
       }
       if (used) {
         playSound('questDone');
@@ -2275,7 +2342,7 @@
       showNotice(`${verbPhrase}. Восстановлено ${recovery} EXP.`, 'info');
       return true;
     }
-    showNotice("Восстанавливать нечего: потерь опыта нет.", 'warn');
+    showNotice("Восстанавливать нечего: потерь опыта нет.", 'warn', true);
     return false;
   }
 
@@ -2284,7 +2351,7 @@
   // already active today, but a weaker one won't downgrade a stronger one.
   function useExpBoostItem(rate, verbPhrase, silent) {
     if (data.expBoostToday >= rate) {
-      if (!silent) showNotice("Более высокое усиление опыта уже действует.", 'warn');
+      if (!silent) showNotice("Более высокое усиление опыта уже действует.", 'warn', true);
       return false;
     }
     data.expBoostToday = rate;
@@ -2296,7 +2363,7 @@
   // (introduced for Кристалл Импульса — the first item to boost credits).
   function useCreditBoostItem(rate, verbPhrase, silent) {
     if (data.creditBoostToday >= rate) {
-      if (!silent) showNotice("Более высокое усиление кредитов уже действует.", 'warn');
+      if (!silent) showNotice("Более высокое усиление кредитов уже действует.", 'warn', true);
       return false;
     }
     data.creditBoostToday = rate;
@@ -2317,7 +2384,7 @@
     if (!box || !(data.boxes[id] > 0)) return;
     if (box.requiresKey && !(data.keys[box.requiresKey] > 0)) {
       const keyName = KEY_CATALOG[box.requiresKey] ? KEY_CATALOG[box.requiresKey].name : 'ключ';
-      showNotice(`Нужен предмет: ${keyName}.`, 'warn');
+      showNotice(`Нужен предмет: ${keyName}.`, 'warn', true);
       return;
     }
     showConfirm(`Открыть «${box.name}»?`, () => performOpenBox(id));
@@ -2535,7 +2602,7 @@
       });
       gainedShopItems.forEach(sid => {
         const item = SHOP_CATALOG[sid];
-        if (item) setTimeout(() => showNotice(`Лавка Системы: доступен новый товар — ${item.name}.`, 'info'), 4500);
+        if (item) setTimeout(() => showNotice(`Магазин Системы: доступен новый товар — ${item.name}.`, 'info'), 4500);
       });
       setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'), 4500);
     }
@@ -3004,6 +3071,8 @@
       curseActiveToday: !!s.curseActiveToday,
       limitBreakRoundPending: !!s.limitBreakRoundPending,
       soundEnabled: (typeof s.soundEnabled === 'boolean') ? s.soundEnabled : true,
+      rulesAcknowledged: (typeof s.rulesAcknowledged === 'boolean') ? s.rulesAcknowledged : true,
+      earlySaveNoticeShown: (typeof s.earlySaveNoticeShown === 'boolean') ? s.earlySaveNoticeShown : false,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
       pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
       codexUnlocked: cleanCodexUnlocked,
@@ -3077,6 +3146,12 @@
         <div class="backup-section">
           <div class="backup-section-title">Версия</div>
           <div class="backup-summary" id="appVersionTag" style="opacity:0.6; cursor:default;">v${APP_VERSION}</div>
+        </div>
+        <div class="backup-section">
+          <div class="backup-section-title">Правила</div>
+          <div class="backup-summary">Условия ежедневного задания.</div>
+          <button class="backup-action-btn" onclick="showRulesOverlay('archive')">Показать правила</button>
+          <div class="backup-summary" style="margin-top:8px;">Данные хранятся локально. Резервная копия доступна в разделе «Экспорт».</div>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Звук</div>
@@ -3458,9 +3533,9 @@
   }
 
   function applyPenaltyAction() {
-    const { loss, pct } = computePenaltyAndApply();
+    const { loss, pct, completedExercises } = computePenaltyAndApply();
     saveData(); render();
-    showPenaltyBanner(loss, pct, 1);
+    showPenaltyBanner(loss, pct, 1, (completedExercises || []).length);
   }
 
   function resetPenaltyCountAction() {
@@ -3503,7 +3578,7 @@
 
   render();
   if (isFreshInstall) {
-    openNameModal();
+    showRulesOverlay('onboarding');
   } else {
     finishInit();
   }
