@@ -1,6 +1,6 @@
 // Bump this on every release that changes any cached file, so old
 // clients pick up the new version instead of being stuck on a stale cache.
-const CACHE_VERSION = 'v5-9-43';
+const CACHE_VERSION = 'v5-9-44';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const FONT_CACHE = 'solo-leveling-fonts';
 
