@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.50 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.53 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -521,6 +521,7 @@
     .item-icon { min-width: 40px; text-align: center; display: flex; align-items: center; justify-content: center; }
     .item-icon-img { width: 32px; height: 32px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
     .item-preview-box {
+      width: 90%; max-width: 380px;
       background: rgba(13,26,45,0.96);
       background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.035) 0px, rgba(64,192,255,0.035) 1px, transparent 1px, transparent 3px);
       border: 1px solid #40c0ff; border-radius: 14px; padding: 22px;
@@ -932,7 +933,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.50';
+  const APP_VERSION = '5.9.53';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1739,10 +1740,11 @@
     displayNotificationNow(notificationQueue.shift());
   }
 
-  function displayNotificationNow({ body, sub, tone, skipLog }) {
+  function displayNotificationNow({ body, sub, tone, skipLog, sound }) {
     notificationActive = true;
     const toneClass = tone === 'warn' ? 'tone-warn' : (tone === 'danger' ? 'tone-danger' : '');
-    if (tone === 'warn' || tone === 'danger') playSound('denied');
+    if (sound) playSound(sound);
+    else if (tone === 'warn' || tone === 'danger') playSound('denied');
     const p = document.createElement('div');
     p.className = 'system-popup hud-frame';
     p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body ${toneClass}">${escapeHtml(body)}</div>` +
@@ -1769,8 +1771,8 @@
     saveData();
   }
 
-  function showNotice(message, tone, skipLog) {
-    enqueueNotification({ body: message, tone, skipLog });
+  function showNotice(message, tone, skipLog, sound) {
+    enqueueNotification({ body: message, tone, skipLog, sound });
   }
 
   function showPenaltyBanner(totalLoss, pct, daysCount, completedCount) {
@@ -1842,7 +1844,7 @@
       data.totalDays++;
       if (data.totalDays === 1 && !data.earlySaveNoticeShown) {
         data.earlySaveNoticeShown = true;
-        setTimeout(() => { playSound('saveReminder'); showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'); }, 5500);
+        setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger', false, 'saveReminder'), 5500);
       }
       data.completed = {};
       data.isGoalMet = false;
@@ -2682,7 +2684,7 @@
         const item = SHOP_CATALOG[sid];
         if (item) setTimeout(() => showNotice(`Магазин Системы: доступен новый товар — ${item.name}.`, 'info'), 4500);
       });
-      setTimeout(() => { playSound('saveReminder'); showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'); }, 4500);
+      setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger', false, 'saveReminder'), 4500);
     }
   }
 
