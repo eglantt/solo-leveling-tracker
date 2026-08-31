@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.48 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.50 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -932,7 +932,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.48';
+  const APP_VERSION = '5.9.50';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1041,8 +1041,10 @@
   // Needed so players who already have this title stored keep it after the
   // comparison strings throughout the code were unified to use ё.
   if (data.activeTitle === 'Целеустремленный') data.activeTitle = 'Целеустремлённый';
+  if (data.activeTitle === 'Вечный странник') data.activeTitle = 'Странник';
   if (Array.isArray(data.titlesUnlocked)) {
     data.titlesUnlocked = data.titlesUnlocked.map(t => t === 'Целеустремленный' ? 'Целеустремлённый' : t);
+    data.titlesUnlocked = data.titlesUnlocked.map(t => t === 'Вечный странник' ? 'Странник' : t);
   }
   if (!Array.isArray(data.notificationLog)) data.notificationLog = [];
   if (!Array.isArray(data.remindersFiredHours)) data.remindersFiredHours = [];
@@ -1104,7 +1106,7 @@
     "Пробужденный": { icon: "✨", desc: "Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 1%." },
     "Целеустремлённый": { icon: "🔥", desc: "Ни один день не был потерян зря — семь дней подряд без единого срыва. Весь получаемый опыт увеличен на 5%." },
     "Преодолевший предел": { icon: "⚡", desc: "Предел преодолён пять раз. Награда в кредитах увеличена на 10%." },
-    "Вечный странник": { icon: "👣", desc: "Сто тысяч шагов остались позади. Опыт за шаги увеличен на 10%." }
+    "Странник": { icon: "👣", desc: "Сто тысяч шагов остались позади. Опыт за шаги увеличен на 10%." }
   };
 
   const SHOP_CATALOG = {
@@ -1118,7 +1120,7 @@
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня.", price: 2500, level: 20 },
     "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Сбрасывает все вложенные очки характеристик, освобождая их для нового распределения.", price: 3700, level: 20 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает уже наложенный сегодня штраф.", price: 2500, level: 25 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 2500, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
     "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа.", price: 3800, level: 35 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня.", price: 3800, level: 40 }
@@ -1160,7 +1162,7 @@
     "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Багровый ключ. Содержит 2–4 редких предмета.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
     "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Пурпурный ключ. Содержит 2–5 особо редких предметов.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
     "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Заперта. Для открытия нужен Ключ Теней. Содержит 3–5 предметов высшей ценности.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 },
-    "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое непредсказуемо: ценная награда либо временное усложнение дневного задания.", level: 3 }
+    "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое непредсказуемо — ценная награда либо временное усложнение дневного задания.", level: 3 }
   };
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
@@ -1266,7 +1268,7 @@
     artifact_crystal_insight: { title: "Кристалл Прозрения", content: "Получен артефакт: Кристалл Прозрения. Отныне весь получаемый опыт увеличен." },
     artifact_crystal_shadow: { title: "Кристалл Теней", content: "Получен артефакт: Кристалл Теней. Отныне кредиты и опыт Игрока увеличены, а полное выполнение дневного задания иногда приносит дополнительную находку." },
     title_celeustremlenny: { title: "Целеустремлённый", content: "Семь дней подряд без единого срыва. Система признаёт целеустремлённость Игрока — прибавка к опыту закреплена, покуда серия не прервётся." },
-    title_vechny_strannik: { title: "Вечный странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Вечным странником — шаги отныне приносят больше опыта." },
+    title_vechny_strannik: { title: "Странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Странником — шаги отныне приносят больше опыта." },
     title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел преодолён пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
     title_probuzhdenny: { title: "Пробужденный", content: "Десятый уровень достигнут. Система признаёт в Игроке пробуждённый потенциал — отныне и впредь весь получаемый опыт немного увеличен." },
     rank_d: { title: "D-Ранг", content: "Первый этап эволюции. Игрок преодолел базовую слабость E-ранга — организм адаптировался к минимальным нагрузкам. С этого момента дневная нагрузка возрастает." },
@@ -1280,7 +1282,7 @@
   };
 
   const RANK_CODEX_MAP = { d:'rank_d', c:'rank_c', b:'rank_b', a:'rank_a', s:'rank_s', national:'rank_national', sss:'rank_sss', monarch:'rank_monarch' };
-  const TITLE_CODEX_MAP = { "Целеустремлённый": "title_celeustremlenny", "Вечный странник": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel", "Пробужденный": "title_probuzhdenny" };
+  const TITLE_CODEX_MAP = { "Целеустремлённый": "title_celeustremlenny", "Странник": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel", "Пробужденный": "title_probuzhdenny" };
 
   function pickRandomNoRepeat(pool, category) {
     let choice = pool[Math.floor(Math.random() * pool.length)];
@@ -1357,6 +1359,7 @@
     anomalyCurse: () => { chord([466,554],0,0.3,'sine',0.18); chord([415,494],0.2,0.35,'sine',0.16); chord([349,415],0.4,0.5,'sine',0.15); },
     denied:       () => { tone(330,0,0.1,'sine',0.12); tone(294,0.08,0.12,'sine',0.1); },
     titleCodex:   () => { [523,659,784,988,1318].forEach((f,i)=>tone(f, i*0.11, 0.4, 'sine', 0.2)); chord([659,988,1318],0.55,0.6,'sine',0.2); },
+    saveReminder: () => { tone(523, 0, 0.1, 'sine', 0.13); tone(523, 0.18, 0.14, 'sine', 0.13); },
   };
 
   function playSound(name) {
@@ -1406,14 +1409,14 @@
   }
 
   const ITEM_META = {
-    "crystal_speed": { rank: "D", type: "Артефакт скорости", usage: "Постоянный пассивный эффект" },
-    "amulet_will": { rank: "C", type: "Артефакт стойкости", usage: "Постоянный пассивный эффект" },
-    "seal_growth": { rank: "B", type: "Артефакт роста", usage: "Постоянный пассивный эффект" },
-    "seal_limit": { rank: "A", type: "Артефакт предела", usage: "Постоянный пассивный эффект" },
-    "sphere_growth": { rank: "A", type: "Артефакт восхождения", usage: "Постоянный пассивный эффект" },
-    "amulet_continuity": { rank: "S", type: "Артефакт постоянства", usage: "Постоянный пассивный эффект" },
-    "crystal_insight": { rank: "S", type: "Артефакт мудрости", usage: "Постоянный пассивный эффект" },
-    "crystal_shadow": { rank: "S", type: "Артефакт превосходства", usage: "Постоянный пассивный эффект" },
+    "crystal_speed": { rank: "D", type: "Артефакт скорости", usage: "Пассивно" },
+    "amulet_will": { rank: "C", type: "Артефакт стойкости", usage: "Пассивно" },
+    "seal_growth": { rank: "B", type: "Артефакт роста", usage: "Пассивно" },
+    "seal_limit": { rank: "A", type: "Артефакт предела", usage: "Пассивно" },
+    "sphere_growth": { rank: "A", type: "Артефакт восхождения", usage: "Пассивно" },
+    "amulet_continuity": { rank: "S", type: "Артефакт постоянства", usage: "Пассивно" },
+    "crystal_insight": { rank: "S", type: "Артефакт мудрости", usage: "Пассивно" },
+    "crystal_shadow": { rank: "S", type: "Артефакт превосходства", usage: "Пассивно" },
     "rune_cleansing": { rank: "E", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_protection": { rank: "E", type: "Расходный предмет", usage: "Одноразовое использование" },
     "potion_restoration": { rank: "E", type: "Расходный предмет", usage: "Одноразовое использование" },
@@ -1663,7 +1666,7 @@
       if (data.inventory.includes("amulet_continuity")) determinedBonus *= 1.5;
       mul += determinedBonus;
     }
-    if (data.activeTitle === "Вечный странник" && id === "steps") mul += 0.10;
+    if (data.activeTitle === "Странник" && id === "steps") mul += 0.10;
     if (data.inventory.includes("crystal_insight")) mul += 0.08;
     if (data.inventory.includes("crystal_shadow")) mul += 0.05;
     if (data.isGoalMet) {
@@ -1839,7 +1842,7 @@
       data.totalDays++;
       if (data.totalDays === 1 && !data.earlySaveNoticeShown) {
         data.earlySaveNoticeShown = true;
-        setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'), 5500);
+        setTimeout(() => { playSound('saveReminder'); showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'); }, 5500);
       }
       data.completed = {};
       data.isGoalMet = false;
@@ -1957,7 +1960,7 @@
   }
 
   // Order matters: index 0 = most significant title. Unknown/default title = least significant.
-  const TITLE_PRIORITY = ["Преодолевший предел", "Вечный странник", "Целеустремлённый", "Пробужденный", "Новичок"];
+  const TITLE_PRIORITY = ["Преодолевший предел", "Странник", "Целеустремлённый", "Пробужденный", "Новичок"];
 
   function titleRank(name) {
     const idx = TITLE_PRIORITY.indexOf(name);
@@ -2004,7 +2007,7 @@
     // activations — incremented at round completion, not on button press;
     // see the click handler and the wasAllDone check in the "+" handler).
     if (data.limitBreaksCount >= 5) unlockTitle("Преодолевший предел");
-    if (totalStats.steps >= 100000) unlockTitle("Вечный странник");
+    if (totalStats.steps >= 100000) unlockTitle("Странник");
 
     // "Целеустремлённый" requires an unbroken streak — losing it removes the title entirely.
     if (data.consecutiveDays < 7 && data.titlesUnlocked.includes("Целеустремлённый")) {
@@ -2240,16 +2243,27 @@
     "Пробужденный": "title_awakened",
     "Целеустремлённый": "title_determined",
     "Преодолевший предел": "title_limitbreaker",
-    "Вечный странник": "title_wanderer"
+    "Странник": "title_wanderer"
   };
+
+  function getItemDesc(id) {
+    if (ARTEFACTS[id]) return ARTEFACTS[id].desc;
+    if (SHOP_CATALOG[id]) return SHOP_CATALOG[id].desc;
+    if (BOX_CATALOG[id]) return BOX_CATALOG[id].desc;
+    if (UNIQUE_CATALOG[id]) return UNIQUE_CATALOG[id].desc;
+    return null;
+  }
 
   function showItemPreview(iconId, name) {
     document.getElementById('itemPreviewImg').src = `icons/items/${iconId}.png`;
     document.getElementById('itemPreviewName').textContent = name;
     const meta = ITEM_META[iconId];
-    document.getElementById('itemPreviewMeta').textContent = meta
-      ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}`
-      : '';
+    let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
+    const desc = getItemDesc(iconId);
+    if (desc) {
+      text += ARTEFACTS[iconId] ? `\n${desc}` : `\nЭффект: ${desc}`;
+    }
+    document.getElementById('itemPreviewMeta').textContent = text;
     document.getElementById('itemPreviewOverlay').style.display = 'flex';
   }
 
@@ -2276,7 +2290,8 @@
           if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
           else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection') {
-          if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
+          if (allQuestsDone()) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
+          else if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
           else { showNotice("Защита уже активирована.", 'warn', true); }
       } else if (id === 'potion_restoration') {
           used = useRecoveryItem(0.5, 'Зелье использовано');
@@ -2307,16 +2322,19 @@
       } else if (id === 'crystal_clarity') {
           used = useExpBoostItem(0.55, 'Кристалл использован');
       } else if (id === 'rune_protection_charged') {
+          if (allQuestsDone()) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
+          else {
           let didSomething = false;
           let msgParts = [];
           if (!data.insurance) { data.insurance = true; didSomething = true; msgParts.push('защита на завтра активирована'); }
           if (data.lastExpLoss > 0) {
               const recovery = data.lastExpLoss;
               gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
-              didSomething = true; msgParts.push(`снят сегодняшний штраф (+${recovery} EXP)`);
+              didSomething = true; msgParts.push(`снят последний полученный штраф (+${recovery} EXP)`);
           }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
           else { showNotice("Снимать нечего: штрафа нет, защита уже активна.", 'warn', true); }
+          }
       } else if (id === 'shard_limit') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 1;
           used = true; showNotice("Осколок использован. +1 использование Преодоления предела сегодня.", 'info');
@@ -2353,12 +2371,15 @@
               used = true; showNotice(`Руна использована. Удалено штрафов: ${removed}.`, 'info');
           } else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection_absolute') {
+          if (allQuestsDone()) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
+          else {
           let didSomething = false;
           let msgParts = [];
           if (!data.insurance) { data.insurance = true; didSomething = true; msgParts.push('защита на завтра активирована'); }
           if (!data.streakShield) { data.streakShield = true; didSomething = true; msgParts.push('серия защищена от срыва'); }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
           else { showNotice("Обе защиты уже активны.", 'warn', true); }
+          }
       } else if (id === 'rune_burden_release') {
           if ((data.targetDiscountRate || 0) < 0.45) {
               data.targetDiscountToday = true; data.targetDiscountRate = 0.45;
@@ -2621,6 +2642,10 @@
           gainedArtefacts.push(k);
         }
       }
+      const rankNow = getRank(data.level).class;
+      if (RANK_CODEX_MAP[rankNow] && !data.codexUnlocked.includes(RANK_CODEX_MAP[rankNow])) {
+        unlockCodexChapter(RANK_CODEX_MAP[rankNow]);
+      }
     }
     if (leveled) {
       data.pendingLevelUpToday = data.level;
@@ -2631,8 +2656,6 @@
       const rankAfter = getRank(data.level).name;
       if (rankAfter !== rankBefore) {
         setTimeout(() => showSystemPopup(`Новый ранг: ${rankAfter}`, 'Способности Игрока признаны Системой'), 4500);
-        const rankClass = getRank(data.level).class;
-        if (RANK_CODEX_MAP[rankClass]) unlockCodexChapter(RANK_CODEX_MAP[rankClass]);
       }
       if (data.level >= 3 && !data.notifiedLimitBreakUnlock) {
         data.notifiedLimitBreakUnlock = true;
@@ -2659,7 +2682,7 @@
         const item = SHOP_CATALOG[sid];
         if (item) setTimeout(() => showNotice(`Магазин Системы: доступен новый товар — ${item.name}.`, 'info'), 4500);
       });
-      setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'), 4500);
+      setTimeout(() => { playSound('saveReminder'); showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger'); }, 4500);
     }
   }
 
@@ -3012,7 +3035,11 @@
       }
     }
     // Same one-time spelling fix as on load, applied to imported backups too.
-    const fixTitleSpelling = t => t === 'Целеустремленный' ? 'Целеустремлённый' : t;
+    const fixTitleSpelling = t => {
+      if (t === 'Целеустремленный') return 'Целеустремлённый';
+      if (t === 'Вечный странник') return 'Странник';
+      return t;
+    };
     let cleanTitlesUnlocked = Array.isArray(s.titlesUnlocked) ? s.titlesUnlocked.map(fixTitleSpelling).filter(k => TITLES_DB[k]) : [];
     if (cleanTitlesUnlocked.length === 0) cleanTitlesUnlocked = ["Новичок"];
 
