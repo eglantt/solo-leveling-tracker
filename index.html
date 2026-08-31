@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.53 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.55 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -540,6 +540,10 @@
       min-width: auto; padding: 6px 8px; text-transform: uppercase; border-radius: 6px; flex-shrink: 0; white-space: nowrap;
     }
     .use-btn:hover { background: #006633; border-color: #00ff88; }
+    .item-btn-stack { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .item-btn-stack .use-btn { width: 100%; box-sizing: border-box; }
+    .sell-btn { background: #3a2a12; border-color: #ffaa4088; color: #ffaa40; }
+    .sell-btn:hover { background: #4a3618; border-color: #ffaa40; }
 
     #limitBreakBtn {
       width: 100%; padding: 12px; background: rgba(100, 100, 100, 0.1); border: 1px solid #444; color: #666; font-family: 'Orbitron', sans-serif; cursor: not-allowed; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease; border-radius: 12px; font-size: 0.85rem;
@@ -933,7 +937,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.53';
+  const APP_VERSION = '5.9.55';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1120,7 +1124,6 @@
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 1500, level: 12 },
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня.", price: 2500, level: 20 },
-    "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Сбрасывает все вложенные очки характеристик, освобождая их для нового распределения.", price: 3700, level: 20 },
     "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 2500, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
     "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа.", price: 3800, level: 35 },
@@ -1138,6 +1141,7 @@
   // Shop (SHOP_CATALOG's generic for-loop in openShop() would otherwise list
   // them for purchase, so they deliberately live in a separate catalog).
   const UNIQUE_CATALOG = {
+    "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Сбрасывает все вложенные очки характеристик, освобождая их для нового распределения." },
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 50% опыта от последнего штрафа." },
     "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, продлевает серию на один день и отмечает день в Летописи как выполненный." },
     "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Стирает 3 штрафа из памяти Системы и возвращает 3× последнюю известную потерю опыта." },
@@ -1168,10 +1172,10 @@
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
   const BOX_LOOT_POOLS = {
-    "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "tablet_of_reassessment"],
-    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth", "tablet_of_reassessment"],
-    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit", "tablet_of_reassessment"],
-    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity", "tablet_of_reassessment"],
+    "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth"],
+    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth"],
+    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit"],
+    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity"],
     "box_scarlet": ["rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "rune_redemption", "rune_fate_cleansing", "rune_cleansing_full", "shard_limit_double"],
     "box_crimson": ["rune_redemption", "rune_fate_cleansing", "rune_cleansing_full", "potion_restoration_full", "rune_protection_absolute", "shard_limit_double"],
     "box_purple": ["potion_restoration_full", "rune_protection_absolute", "rune_burden_release", "rune_return", "crystal_impulse"],
@@ -1427,7 +1431,7 @@
     "shard_limit": { rank: "D", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_restoration_charged": { rank: "D", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_growth_charged": { rank: "C", type: "Расходный предмет", usage: "Одноразовое использование" },
-    "tablet_of_reassessment": { rank: "C", type: "Расходный предмет", usage: "Одноразовое использование" },
+    "tablet_of_reassessment": { rank: "C", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_protection_charged": { rank: "C", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_limit_charged": { rank: "B", type: "Расходный предмет", usage: "Одноразовое использование" },
     "crystal_restoration": { rank: "B", type: "Расходный предмет", usage: "Одноразовое использование" },
@@ -2231,7 +2235,10 @@
         <div class="item-card" data-consumable-id="${id}">
           <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
           <div class="item-info"><div class="item-name">${item.name} ×${count}</div><div class="item-desc">${item.desc}</div></div>
-          <button onclick="useItem('${id}')" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
+          <div class="item-btn-stack">
+            ${SHOP_CATALOG[id] ? `<button onclick="sellItem('${id}')" class="use-btn sell-btn">ПРОДАТЬ</button>` : ''}
+            <button onclick="useItem('${id}')" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
+          </div>
         </div>`;
     });
     document.getElementById('invOverlay').style.display = 'flex';
@@ -2283,6 +2290,24 @@
     const item = getConsumableInfo(id);
     if (!item || !(data.consumables[id] > 0)) return;
     showConfirm(`Использовать «${item.name}»?`, () => performUseItem(id));
+  }
+
+  function sellItem(id) {
+    const shopItem = SHOP_CATALOG[id];
+    if (!shopItem || !(data.consumables[id] > 0)) return;
+    const sellPrice = Math.floor(shopItem.price / 2);
+    showConfirm(`Продать «${shopItem.name}» за ${sellPrice} кредитов?`, () => performSellItem(id));
+  }
+
+  function performSellItem(id) {
+    const shopItem = SHOP_CATALOG[id];
+    if (!shopItem || !(data.consumables[id] > 0)) return;
+    const sellPrice = Math.floor(shopItem.price / 2);
+    data.consumables[id]--;
+    if (data.consumables[id] <= 0) delete data.consumables[id];
+    data.credits += sellPrice;
+    showNotice(`Продано: ${shopItem.name}. +${sellPrice} кредитов.`, 'info');
+    saveData(); render(); openInv();
   }
 
   function performUseItem(id) {
@@ -2561,6 +2586,13 @@
           data.consumables[lootId] = (data.consumables[lootId] || 0) + 1;
           gainedItems.push(lootId);
         }
+      }
+      // Independent bonus roll — Скрижаль Пересмотра, only from these four
+      // box tiers, on top of the item lottery above (never reduces normal drops).
+      const TABLET_ELIGIBLE_BOXES = ['box_basalt', 'box_onyx', 'box_obsidian', 'box_dark_quartz'];
+      if (TABLET_ELIGIBLE_BOXES.includes(id) && Math.random() < 0.03) {
+        data.consumables['tablet_of_reassessment'] = (data.consumables['tablet_of_reassessment'] || 0) + 1;
+        gainedItems.push('tablet_of_reassessment');
       }
       // Independent bonus roll — credits on top of the item lottery above,
       // never reducing how many items can drop. Восприятие adds to the chance.
