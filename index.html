@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.55 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.56 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -937,7 +937,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.55';
+  const APP_VERSION = '5.9.56';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -989,6 +989,7 @@
         streakShield: !!oldData.streakShield,
         keys: oldData.keys || {},
         extraLimitBreaksToday: oldData.extraLimitBreaksToday || 0,
+        totalItemsSold: oldData.totalItemsSold || 0,
         expGainedToday: oldData.expGainedToday || 0,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
@@ -1016,7 +1017,7 @@
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
-        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false
+        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0
       };
     }
   }
@@ -1077,6 +1078,7 @@
   if (typeof data.soundEnabled !== 'boolean') data.soundEnabled = true;
   if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
   if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
+  if (typeof data.totalItemsSold !== 'number' || data.totalItemsSold < 0) data.totalItemsSold = 0;
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -1111,7 +1113,15 @@
     "Пробужденный": { icon: "✨", desc: "Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 1%." },
     "Целеустремлённый": { icon: "🔥", desc: "Ни один день не был потерян зря — семь дней подряд без единого срыва. Весь получаемый опыт увеличен на 5%." },
     "Преодолевший предел": { icon: "⚡", desc: "Предел преодолён пять раз. Награда в кредитах увеличена на 10%." },
-    "Странник": { icon: "👣", desc: "Сто тысяч шагов остались позади. Опыт за шаги увеличен на 10%." }
+    "Странник": { icon: "👣", desc: "Сто тысяч шагов остались позади. Опыт за шаги увеличен на 10%." },
+    "Марафонец": { icon: "🏃", desc: "Полмиллиона шагов закалили вашу выносливость. Опыт за упражнение «Пробежка / шаги» увеличен на 20%, а награда в кредитах — на 10%." },
+    "Покоритель горизонта": { icon: "🌅", desc: "Дистанция в миллион шагов подчинилась вам. Опыт за упражнение «Пробежка / шаги» увеличен на 30%, а награда в кредитах — на 20%." },
+    "Неутомимый": { icon: "👊", desc: "Две тысячи отжиманий позади. Опыт за отжимания увеличен на 10%." },
+    "Несокрушимый": { icon: "🛡️", desc: "Пять тысяч отжиманий не сломили вас. Опыт за отжимания увеличен на 20%, а награда в кредитах — на 10%." },
+    "Сокрушитель": { icon: "💥", desc: "Десять тысяч отжиманий — путь силы пройден. Опыт за отжимания увеличен на 30%, а награда в кредитах — на 20%." },
+    "Непреклонный": { icon: "⛓️", desc: "Тридцать дней подряд без единого срыва. Дисциплина стала второй природой — награда в кредитах за любое упражнение увеличена на 10%." },
+    "Покоритель предела": { icon: "🌀", desc: "Предел преодолён двадцать пять раз. Награда в кредитах, заработанная во время самого превышения нормы, увеличена на 20%." },
+    "Торговец Врат": { icon: "⚖️", desc: "Пятьдесят проданных предметов — вы знаете цену излишкам. Продажа расходников приносит не 50%, а 60% от их стоимости в Магазине." }
   };
 
   const SHOP_CATALOG = {
@@ -1276,6 +1286,14 @@
     title_vechny_strannik: { title: "Странник", content: "Сто тысяч шагов пройдено. Система нарекает Игрока Странником — шаги отныне приносят больше опыта." },
     title_preodolevshy_predel: { title: "Преодолевший предел", content: "Предел преодолён пять раз. Система признаёт эту дерзость — прибавка к кредитам закреплена за этим титулом." },
     title_probuzhdenny: { title: "Пробужденный", content: "Десятый уровень достигнут. Система признаёт в Игроке пробуждённый потенциал — отныне и впредь весь получаемый опыт немного увеличен." },
+    title_marathoner: { title: "Марафонец", content: "Полмиллиона шагов пройдено. Система признаёт закалённую выносливость Игрока — награда за шаги ощутимо возрастает." },
+    title_horizon_conqueror: { title: "Покоритель горизонта", content: "Миллион шагов позади. Дистанция, покорённая Игроком, впечатляет саму Систему — награда за шаги достигает нового предела." },
+    title_tireless: { title: "Неутомимый", content: "Две тысячи отжиманий выполнено. Система отмечает неослабевающее усилие Игрока — награда за отжимания возрастает." },
+    title_unbreakable: { title: "Несокрушимый", content: "Пять тысяч отжиманий позади. Тело Игрока выдержало нагрузку, которая многих сломила бы — награда за отжимания ощутимо возрастает." },
+    title_breaker: { title: "Сокрушитель", content: "Десять тысяч отжиманий пройдено. Система признаёт путь силы завершённым — награда за отжимания достигает нового предела." },
+    title_unyielding: { title: "Непреклонный", content: "Тридцать дней подряд без единого срыва. Дисциплина Игрока стала его второй природой — награда в кредитах за любое упражнение возрастает." },
+    title_limit_conqueror: { title: "Покоритель предела", content: "Предел преодолён двадцать пять раз. Система признаёт в Игроке того, для кого предел — лишь точка отсчёта — награда в кредитах за превышение нормы возрастает." },
+    title_gate_trader: { title: "Торговец Врат", content: "Пятьдесят предметов продано. Система признаёт в Игроке того, кто умеет извлекать выгоду из излишков снабжения — выручка при продаже возрастает." },
     rank_d: { title: "D-Ранг", content: "Первый этап эволюции. Игрок преодолел базовую слабость E-ранга — организм адаптировался к минимальным нагрузкам. С этого момента дневная нагрузка возрастает." },
     rank_c: { title: "C-Ранг", content: "Зафиксирован устойчивый прогресс. Физическая выносливость и скорость восстановления Игрока после нагрузок значительно превышают показатели обычного человека." },
     rank_b: { title: "B-Ранг", content: "Предел стандартной человеческой формы сломан. Выносливость и показатели силы Игрока выходят за рамки обычных физиологических ограничений. Открывается доступ к более высоким наградам." },
@@ -1287,7 +1305,7 @@
   };
 
   const RANK_CODEX_MAP = { d:'rank_d', c:'rank_c', b:'rank_b', a:'rank_a', s:'rank_s', national:'rank_national', sss:'rank_sss', monarch:'rank_monarch' };
-  const TITLE_CODEX_MAP = { "Целеустремлённый": "title_celeustremlenny", "Странник": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel", "Пробужденный": "title_probuzhdenny" };
+  const TITLE_CODEX_MAP = { "Целеустремлённый": "title_celeustremlenny", "Странник": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel", "Пробужденный": "title_probuzhdenny", "Марафонец": "title_marathoner", "Покоритель горизонта": "title_horizon_conqueror", "Неутомимый": "title_tireless", "Несокрушимый": "title_unbreakable", "Сокрушитель": "title_breaker", "Непреклонный": "title_unyielding", "Покоритель предела": "title_limit_conqueror", "Торговец Врат": "title_gate_trader" };
 
   function pickRandomNoRepeat(pool, category) {
     let choice = pool[Math.floor(Math.random() * pool.length)];
@@ -1672,6 +1690,11 @@
       mul += determinedBonus;
     }
     if (data.activeTitle === "Странник" && id === "steps") mul += 0.10;
+    if (data.activeTitle === "Марафонец" && id === "steps") mul += 0.20;
+    if (data.activeTitle === "Покоритель горизонта" && id === "steps") mul += 0.30;
+    if (data.activeTitle === "Неутомимый" && id === "pushups") mul += 0.10;
+    if (data.activeTitle === "Несокрушимый" && id === "pushups") mul += 0.20;
+    if (data.activeTitle === "Сокрушитель" && id === "pushups") mul += 0.30;
     if (data.inventory.includes("crystal_insight")) mul += 0.08;
     if (data.inventory.includes("crystal_shadow")) mul += 0.05;
     if (data.isGoalMet) {
@@ -1966,7 +1989,7 @@
   }
 
   // Order matters: index 0 = most significant title. Unknown/default title = least significant.
-  const TITLE_PRIORITY = ["Преодолевший предел", "Странник", "Целеустремлённый", "Пробужденный", "Новичок"];
+  const TITLE_PRIORITY = ["Покоритель горизонта", "Сокрушитель", "Покоритель предела", "Марафонец", "Несокрушимый", "Непреклонный", "Неутомимый", "Странник", "Преодолевший предел", "Целеустремлённый", "Торговец Врат", "Пробужденный", "Новичок"];
 
   function titleRank(name) {
     const idx = TITLE_PRIORITY.indexOf(name);
@@ -2009,11 +2032,19 @@
         data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== "Новичок");
     }
     if (data.consecutiveDays >= 7) unlockTitle("Целеустремлённый");
+    if (data.consecutiveDays >= 30) unlockTitle("Непреклонный");
     // limitBreaksCount = lifetime COMPLETED Преодоление предела rounds (not
     // activations — incremented at round completion, not on button press;
     // see the click handler and the wasAllDone check in the "+" handler).
     if (data.limitBreaksCount >= 5) unlockTitle("Преодолевший предел");
+    if (data.limitBreaksCount >= 25) unlockTitle("Покоритель предела");
     if (totalStats.steps >= 100000) unlockTitle("Странник");
+    if (totalStats.steps >= 500000) unlockTitle("Марафонец");
+    if (totalStats.steps >= 1000000) unlockTitle("Покоритель горизонта");
+    if (totalStats.pushups >= 2000) unlockTitle("Неутомимый");
+    if (totalStats.pushups >= 5000) unlockTitle("Несокрушимый");
+    if (totalStats.pushups >= 10000) unlockTitle("Сокрушитель");
+    if ((data.totalItemsSold || 0) >= 50) unlockTitle("Торговец Врат");
 
     // "Целеустремлённый" requires an unbroken streak — losing it removes the title entirely.
     if (data.consecutiveDays < 7 && data.titlesUnlocked.includes("Целеустремлённый")) {
@@ -2252,7 +2283,15 @@
     "Пробужденный": "title_awakened",
     "Целеустремлённый": "title_determined",
     "Преодолевший предел": "title_limitbreaker",
-    "Странник": "title_wanderer"
+    "Странник": "title_wanderer",
+    "Марафонец": "title_marathoner",
+    "Покоритель горизонта": "title_horizon_conqueror",
+    "Неутомимый": "title_tireless",
+    "Несокрушимый": "title_unbreakable",
+    "Сокрушитель": "title_breaker",
+    "Непреклонный": "title_unyielding",
+    "Покоритель предела": "title_limit_conqueror",
+    "Торговец Врат": "title_gate_trader"
   };
 
   function getItemDesc(id) {
@@ -2292,20 +2331,25 @@
     showConfirm(`Использовать «${item.name}»?`, () => performUseItem(id));
   }
 
+  function getSellRate() {
+    return data.activeTitle === "Торговец Врат" ? 0.6 : 0.5;
+  }
+
   function sellItem(id) {
     const shopItem = SHOP_CATALOG[id];
     if (!shopItem || !(data.consumables[id] > 0)) return;
-    const sellPrice = Math.floor(shopItem.price / 2);
+    const sellPrice = Math.floor(shopItem.price * getSellRate());
     showConfirm(`Продать «${shopItem.name}» за ${sellPrice} кредитов?`, () => performSellItem(id));
   }
 
   function performSellItem(id) {
     const shopItem = SHOP_CATALOG[id];
     if (!shopItem || !(data.consumables[id] > 0)) return;
-    const sellPrice = Math.floor(shopItem.price / 2);
+    const sellPrice = Math.floor(shopItem.price * getSellRate());
     data.consumables[id]--;
     if (data.consumables[id] <= 0) delete data.consumables[id];
     data.credits += sellPrice;
+    data.totalItemsSold = (data.totalItemsSold || 0) + 1;
     showNotice(`Продано: ${shopItem.name}. +${sellPrice} кредитов.`, 'info');
     saveData(); render(); openInv();
   }
@@ -2796,6 +2840,12 @@
         if (data.inventory.includes("crystal_shadow")) creds *= 1.15;
         if (data.creditBoostToday > 0) creds *= (1 + data.creditBoostToday);
         if (data.activeTitle === "Преодолевший предел") creds *= 1.1;
+        if (data.activeTitle === "Марафонец" && id === "steps") creds *= 1.1;
+        if (data.activeTitle === "Покоритель горизонта" && id === "steps") creds *= 1.2;
+        if (data.activeTitle === "Несокрушимый" && id === "pushups") creds *= 1.1;
+        if (data.activeTitle === "Сокрушитель" && id === "pushups") creds *= 1.2;
+        if (data.activeTitle === "Непреклонный") creds *= 1.1;
+        if (data.activeTitle === "Покоритель предела" && data.isGoalMet) creds *= 1.2;
         if (data.isGoalMet) creds *= 2;
         data.credits += Math.floor(creds);
         const p = document.createElement('div'); p.className='complete-popup'; p.innerHTML=`COMPLETE<br><span style="font-size:0.8rem; color:#40ffaa">+${expGained} EXP</span> <span style="font-size:0.8rem; color:#ffd700">+${Math.floor(creds)} ◈${critMsg}</span>`; item.appendChild(p);
@@ -3189,6 +3239,7 @@
       soundEnabled: (typeof s.soundEnabled === 'boolean') ? s.soundEnabled : true,
       rulesAcknowledged: (typeof s.rulesAcknowledged === 'boolean') ? s.rulesAcknowledged : true,
       earlySaveNoticeShown: (typeof s.earlySaveNoticeShown === 'boolean') ? s.earlySaveNoticeShown : false,
+      totalItemsSold: Math.max(0, Math.floor(sanitizeNumber(s.totalItemsSold, 0))),
       bestStreak: sanitizeNumber(s.bestStreak, 0),
       pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
       codexUnlocked: cleanCodexUnlocked,
