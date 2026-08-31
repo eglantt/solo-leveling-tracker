@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.44 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.45 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -529,6 +529,7 @@
     }
     .item-preview-box img { width: 200px; height: 200px; object-fit: contain; }
     .item-preview-name { font-family: 'Orbitron', sans-serif; color: #40c0ff; font-size: 0.9rem; text-align: center; letter-spacing: 0.5px; }
+    .item-preview-meta { color: #9fc4e6; font-size: 0.78rem; text-align: center; white-space: pre-line; line-height: 1.6; margin-top: 10px; }
     .item-info { flex: 1; min-width: 0; }
     .item-name { color: #40c0ff; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; }
     .item-desc { color: #88ddffaa; font-size: 0.75rem; margin-top: 2px; line-height: 1.2; }
@@ -729,6 +730,7 @@
   <div class="item-preview-box">
     <img id="itemPreviewImg" src="" alt="">
     <div class="item-preview-name" id="itemPreviewName"></div>
+    <div class="item-preview-meta" id="itemPreviewMeta"></div>
   </div>
 </div>
 
@@ -841,7 +843,7 @@
         <div class="credits">Кредиты: <span id="creditsVal">0</span> ◈</div>
       </div>
       <div class="reset-timer" id="resetTimerContainer">
-        <div class="reset-label">Сброс заданий через</div>
+        <div class="reset-label">Сброс задания через</div>
         <div class="reset-time" id="timer">00:00:00</div>
       </div>
     </div>
@@ -930,7 +932,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.44';
+  const APP_VERSION = '5.9.45';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1402,6 +1404,54 @@
   function closeRulesOverlay() {
     document.getElementById('rulesOverlay').style.display = 'none';
   }
+
+  const ITEM_META = {
+    "crystal_speed": { rank: "D", type: "Артефакт скорости", effect: "Постоянный эффект" },
+    "amulet_will": { rank: "C", type: "Артефакт стойкости", effect: "Постоянный эффект" },
+    "seal_growth": { rank: "B", type: "Артефакт роста", effect: "Постоянный эффект" },
+    "seal_limit": { rank: "A", type: "Артефакт предела", effect: "Постоянный эффект" },
+    "sphere_growth": { rank: "A", type: "Артефакт восхождения", effect: "Постоянный эффект" },
+    "amulet_continuity": { rank: "S", type: "Артефакт постоянства", effect: "Постоянный эффект" },
+    "crystal_insight": { rank: "S", type: "Артефакт мудрости", effect: "Постоянный эффект" },
+    "crystal_shadow": { rank: "S", type: "Артефакт превосходства", effect: "Постоянный эффект" },
+    "rune_cleansing": { rank: "E", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "rune_protection": { rank: "E", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "potion_restoration": { rank: "E", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "rune_freedom": { rank: "E", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "rune_stability": { rank: "E", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "potion_growth": { rank: "E", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "shard_limit": { rank: "D", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "rune_restoration_charged": { rank: "D", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "rune_growth_charged": { rank: "C", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "tablet_of_reassessment": { rank: "C", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "rune_protection_charged": { rank: "C", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "rune_limit_charged": { rank: "B", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "crystal_restoration": { rank: "B", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "crystal_clarity": { rank: "A", type: "Расходный предмет", effect: "Одноразовое использование" },
+    "box_basalt": { rank: "E", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "box_onyx": { rank: "E", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "box_anomaly": { rank: "E", type: "Аномальная шкатулка", effect: "Награда или перегрузка задания, расходуется при открытии" },
+    "box_obsidian": { rank: "D", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "box_dark_quartz": { rank: "C", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "box_scarlet": { rank: "B", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "box_crimson": { rank: "A", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "box_purple": { rank: "A", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "box_shadow": { rank: "S", type: "Шкатулка", effect: "Приносит награду, расходуется при открытии" },
+    "key_scarlet": { rank: "B", type: "Ключ", effect: "Расходуется при открытии" },
+    "key_crimson": { rank: "A", type: "Ключ", effect: "Расходуется при открытии" },
+    "key_purple": { rank: "A", type: "Ключ", effect: "Расходуется при открытии" },
+    "key_shadow": { rank: "S", type: "Ключ", effect: "Расходуется при открытии" },
+    "rune_redemption": { rank: "B", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "rune_fate_cleansing": { rank: "B", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "rune_cleansing_full": { rank: "B", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "shard_limit_double": { rank: "B", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "potion_restoration_full": { rank: "A", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "rune_protection_absolute": { rank: "A", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "rune_burden_release": { rank: "A", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "rune_return": { rank: "A", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "crystal_impulse": { rank: "A", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+    "rune_correction": { rank: "S", type: "Редкий расходный предмет", effect: "Одноразовое использование" },
+  };
 
   const STAT_LORE = {
     str: { title: 'СИЛА', text: 'Тело Игрока крепнет с каждой тренировкой, и вместе с ним — способность переносить последствия неудач. Чем выше Сила, тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание.' },
@@ -2196,6 +2246,10 @@
   function showItemPreview(iconId, name) {
     document.getElementById('itemPreviewImg').src = `icons/items/${iconId}.png`;
     document.getElementById('itemPreviewName').textContent = name;
+    const meta = ITEM_META[iconId];
+    document.getElementById('itemPreviewMeta').textContent = meta
+      ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nЭффект: ${meta.effect}`
+      : '';
     document.getElementById('itemPreviewOverlay').style.display = 'flex';
   }
 
