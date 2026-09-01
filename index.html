@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.59 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.60 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -937,7 +937,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.59';
+  const APP_VERSION = '5.9.60';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -969,6 +969,7 @@
         limitBreaksToday: oldData.limitBreaksToday || 0,
         limitBreaksCompletedToday: oldData.limitBreaksCompletedToday || 0,
         soundEnabled: (typeof oldData.soundEnabled === 'boolean') ? oldData.soundEnabled : true,
+        notificationsEnabled: (typeof oldData.notificationsEnabled === 'boolean') ? oldData.notificationsEnabled : true,
         rulesAcknowledged: (typeof oldData.rulesAcknowledged === 'boolean') ? oldData.rulesAcknowledged : true,
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
@@ -1017,7 +1018,7 @@
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
-        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0
+        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true
       };
     }
   }
@@ -1076,6 +1077,7 @@
   data.curseActiveToday = !!data.curseActiveToday;
   data.limitBreakRoundPending = !!data.limitBreakRoundPending;
   if (typeof data.soundEnabled !== 'boolean') data.soundEnabled = true;
+  if (typeof data.notificationsEnabled !== 'boolean') data.notificationsEnabled = true;
   if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
   if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
   if (typeof data.totalItemsSold !== 'number' || data.totalItemsSold < 0) data.totalItemsSold = 0;
@@ -1768,6 +1770,13 @@
   }
 
   function displayNotificationNow({ body, sub, tone, skipLog, sound }) {
+    if (!skipLog) logNotification(sub ? `${body} ${sub}` : body);
+
+    if (!data.notificationsEnabled) {
+      setTimeout(processNotificationQueue, 100);
+      return;
+    }
+
     notificationActive = true;
     const toneClass = tone === 'warn' ? 'tone-warn' : (tone === 'danger' ? 'tone-danger' : '');
     if (sound) playSound(sound);
@@ -1777,7 +1786,6 @@
     p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body ${toneClass}">${escapeHtml(body)}</div>` +
       (sub ? `<div class="system-popup-sub">${escapeHtml(sub)}</div>` : '');
     document.body.appendChild(p);
-    if (!skipLog) logNotification(sub ? `${body} ${sub}` : body);
 
     let dismissed = false;
     const dismiss = () => {
@@ -3237,6 +3245,7 @@
       curseActiveToday: !!s.curseActiveToday,
       limitBreakRoundPending: !!s.limitBreakRoundPending,
       soundEnabled: (typeof s.soundEnabled === 'boolean') ? s.soundEnabled : true,
+      notificationsEnabled: (typeof s.notificationsEnabled === 'boolean') ? s.notificationsEnabled : true,
       rulesAcknowledged: (typeof s.rulesAcknowledged === 'boolean') ? s.rulesAcknowledged : true,
       earlySaveNoticeShown: (typeof s.earlySaveNoticeShown === 'boolean') ? s.earlySaveNoticeShown : false,
       totalItemsSold: Math.max(0, Math.floor(sanitizeNumber(s.totalItemsSold, 0))),
@@ -3306,6 +3315,12 @@
     renderBackupModal();
   }
 
+  function toggleNotifications() {
+    data.notificationsEnabled = !data.notificationsEnabled;
+    saveData();
+    renderBackupModal();
+  }
+
   function renderBackupModal() {
     const cont = document.getElementById('backupContent');
     if (backupModalStep === 'main') {
@@ -3321,10 +3336,14 @@
           <div class="backup-summary" style="margin-top:8px;">Данные хранятся локально. Резервная копия доступна в разделе «Экспорт».</div>
         </div>
         <div class="backup-section">
-          <div class="backup-section-title">Звук</div>
+          <div class="backup-section-title">Настройки</div>
           <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
             <span>Звуковые сигналы Системы: ${data.soundEnabled ? 'включены' : 'выключены'}.</span>
             <div class="sound-checkbox-zone" onclick="toggleSound()"><div class="sound-checkbox ${data.soundEnabled ? 'on' : ''}">✓</div></div>
+          </div>
+          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
+            <span>Уведомления Системы: ${data.notificationsEnabled ? 'включены' : 'выключены'}.</span>
+            <div class="sound-checkbox-zone" onclick="toggleNotifications()"><div class="sound-checkbox ${data.notificationsEnabled ? 'on' : ''}">✓</div></div>
           </div>
         </div>
         <div class="backup-section">
