@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.67 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.68 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -955,7 +955,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.67';
+  const APP_VERSION = '5.9.68';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2351,12 +2351,23 @@
     }, 'item-flash-orange');
   }
 
+  const CATALOG_ORDER = {};
+  (function buildCatalogOrder() {
+    let idx = 0;
+    for (let id in ARTEFACTS) CATALOG_ORDER[id] = idx++;
+    for (let id in SHOP_CATALOG) CATALOG_ORDER[id] = idx++;
+    for (let id in UNIQUE_CATALOG) CATALOG_ORDER[id] = idx++;
+    for (let id in BOX_CATALOG) CATALOG_ORDER[id] = idx++;
+    for (let id in KEY_CATALOG) CATALOG_ORDER[id] = idx++;
+  })();
+
   const RANK_ORDER = { E: 0, D: 1, C: 2, B: 3, A: 4, S: 5 };
   function sortByRank(ids) {
     return ids.slice().sort((a, b) => {
       const ra = ITEM_META[a] ? RANK_ORDER[ITEM_META[a].rank] : 99;
       const rb = ITEM_META[b] ? RANK_ORDER[ITEM_META[b].rank] : 99;
-      return ra - rb;
+      if (ra !== rb) return ra - rb;
+      return (CATALOG_ORDER[a] ?? 999) - (CATALOG_ORDER[b] ?? 999);
     });
   }
 
