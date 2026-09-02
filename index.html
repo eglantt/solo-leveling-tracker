@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.61 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.62 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -667,6 +667,14 @@
   </div>
 </div>
 
+<div class="status-overlay" id="fullCatalogOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">ПОЛНЫЙ КАТАЛОГ</div>
+    <div class="status-body"><div id="fullCatalogContent"></div></div>
+    <button class="close-status" onclick="document.getElementById('fullCatalogOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
 <div class="status-overlay" id="invOverlay">
   <div class="status-window hud-frame">
     <div class="status-header">ИНВЕНТАРЬ</div>
@@ -775,6 +783,10 @@
         <div class="backup-section-title">Кредиты</div>
         <input type="number" id="sysCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addCreditsAction)">Добавить кредиты</button>
+      </div>
+      <div class="backup-section">
+        <div class="backup-section-title">Предметы и расходники</div>
+        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, openFullCatalog)">Полный каталог</button>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Штрафы</div>
@@ -937,7 +949,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.61';
+  const APP_VERSION = '5.9.62';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2222,6 +2234,57 @@
       data.consumables[id] = (data.consumables[id] || 0) + 1;
       saveData(); render(); openShop();
     }, 'item-flash-gold');
+  }
+
+  // Длань архитектора — полный каталог всех предметов/расходников для
+  // тестирования, бесплатно, без учёта уровня. Артефакты показываются
+  // только для просмотра (постоянный пассивный эффект, выдаются
+  // автоматически по уровню) — намеренно без кнопки добавления.
+  function catalogCard(id, item, buttonHtml) {
+    return `
+      <div class="item-card">
+        <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
+        <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc || ''}</div></div>
+        ${buttonHtml}
+      </div>`;
+  }
+
+  function openFullCatalog() {
+    const cont = document.getElementById('fullCatalogContent');
+    let html = '<div class="section-title">Шкатулки</div>';
+    for (let id in BOX_CATALOG) {
+      html += catalogCard(id, BOX_CATALOG[id], `<button onclick="devAddItem('${id}')" class="use-btn">+1</button>`);
+    }
+    html += '<div class="section-title">Расходники</div>';
+    for (let id in SHOP_CATALOG) {
+      html += catalogCard(id, SHOP_CATALOG[id], `<button onclick="devAddItem('${id}')" class="use-btn">+1</button>`);
+    }
+    html += '<div class="section-title">Редкие расходники</div>';
+    for (let id in UNIQUE_CATALOG) {
+      html += catalogCard(id, UNIQUE_CATALOG[id], `<button onclick="devAddItem('${id}')" class="use-btn">+1</button>`);
+    }
+    html += '<div class="section-title">Ключи</div>';
+    for (let id in KEY_CATALOG) {
+      const has = data.keys[id] > 0;
+      html += catalogCard(id, KEY_CATALOG[id], `<button onclick="devAddKey('${id}')" class="use-btn" ${has ? 'disabled' : ''}>+1</button>`);
+    }
+    html += '<div class="section-title">Артефакты</div>';
+    for (let id in ARTEFACTS) {
+      html += catalogCard(id, ARTEFACTS[id], '');
+    }
+    cont.innerHTML = html;
+    document.getElementById('fullCatalogOverlay').style.display = 'flex';
+  }
+
+  function devAddItem(id) {
+    data.consumables[id] = (data.consumables[id] || 0) + 1;
+    saveData(); render(); openFullCatalog();
+  }
+
+  function devAddKey(id) {
+    if (data.keys[id] > 0) return;
+    data.keys[id] = 1;
+    saveData(); render(); openFullCatalog();
   }
 
   function openInv() {
