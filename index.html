@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.63 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.64 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -949,7 +949,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.63';
+  const APP_VERSION = '5.9.64';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1154,15 +1154,15 @@
     "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 500, level: 1 },
     "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра.", price: 1000, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 800, level: 1 },
-    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 25% до конца сегодняшнего дня.", price: 700, level: 3 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до конца сегодняшнего дня.", price: 1500, level: 5 },
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 1200, level: 6 },
     "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня.", price: 600, level: 9 },
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 1500, level: 12 },
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня.", price: 2500, level: 20 },
+    "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, исправляет запись в Летописи и статистику штрафов.", price: 2800, level: 20 },
     "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 2500, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
-    "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 80% опыта от последнего штрафа.", price: 3800, level: 35 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня.", price: 3800, level: 40 }
   };
 
@@ -1177,15 +1177,15 @@
   // Shop (SHOP_CATALOG's generic for-loop in openShop() would otherwise list
   // them for purchase, so they deliberately live in a separate catalog).
   const UNIQUE_CATALOG = {
+    "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 70% опыта от последнего штрафа." },
     "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Сбрасывает все вложенные очки характеристик, освобождая их для нового распределения." },
-    "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 50% опыта от последнего штрафа." },
     "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, продлевает серию на один день и отмечает день в Летописи как выполненный." },
     "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Стирает 3 штрафа из памяти Системы и возвращает 3× последнюю известную потерю опыта." },
     "rune_cleansing_full": { name: "Руна Полного Очищения", icon: "🔮", desc: "Стирает 5 штрафов из памяти Системы." },
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа." },
     "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа на завтра и защита серии дней, одновременно." },
-    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Значительно снижает дневную нагрузку до конца сегодняшнего дня." },
+    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до конца сегодняшнего дня." },
     "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до конца дня." },
     "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до конца сегодняшнего дня." }
   };
@@ -1208,12 +1208,12 @@
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
   const BOX_LOOT_POOLS = {
-    "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth"],
+    "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_stability", "potion_growth"],
     "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth"],
     "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit"],
     "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity"],
-    "box_scarlet": ["rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "rune_redemption", "rune_fate_cleansing", "rune_cleansing_full", "shard_limit_double"],
-    "box_crimson": ["rune_redemption", "rune_fate_cleansing", "rune_cleansing_full", "potion_restoration_full", "rune_protection_absolute", "shard_limit_double"],
+    "box_scarlet": ["rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "rune_fate_cleansing", "rune_cleansing_full", "shard_limit_double"],
+    "box_crimson": ["rune_fate_cleansing", "rune_cleansing_full", "potion_restoration_full", "rune_protection_absolute", "shard_limit_double"],
     "box_purple": ["potion_restoration_full", "rune_protection_absolute", "rune_burden_release", "rune_return", "crystal_impulse"],
     "box_shadow": ["rune_return", "crystal_impulse", "crystal_impulse", "rune_burden_release", "rune_correction"]
   };
@@ -1478,7 +1478,7 @@
     "tablet_of_reassessment": { rank: "C", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_protection_charged": { rank: "C", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_limit_charged": { rank: "B", type: "Расходный предмет", usage: "Одноразовое использование" },
-    "crystal_restoration": { rank: "B", type: "Расходный предмет", usage: "Одноразовое использование" },
+    "crystal_restoration": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "crystal_clarity": { rank: "A", type: "Расходный предмет", usage: "Одноразовое использование" },
     "box_basalt": { rank: "E", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
     "box_onyx": { rank: "E", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
@@ -1493,7 +1493,7 @@
     "key_crimson": { rank: "A", type: "Ключ", usage: "Расходуется при открытии" },
     "key_purple": { rank: "A", type: "Ключ", usage: "Расходуется при открытии" },
     "key_shadow": { rank: "S", type: "Ключ", usage: "Расходуется при открытии" },
-    "rune_redemption": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
+    "rune_redemption": { rank: "C", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_fate_cleansing": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_cleansing_full": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "shard_limit_double": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
@@ -2458,9 +2458,9 @@
       } else if (id === 'rune_restoration_charged') {
           used = useRecoveryItem(0.65, 'Руна использована');
       } else if (id === 'crystal_restoration') {
-          used = useRecoveryItem(0.8, 'Кристалл использован');
+          used = useRecoveryItem(0.7, 'Кристалл использован');
       } else if (id === 'rune_freedom') {
-          if ((data.targetDiscountRate || 0) < 0.25) { data.targetDiscountToday = true; data.targetDiscountRate = 0.25; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
+          if ((data.targetDiscountRate || 0) < 0.1) { data.targetDiscountToday = true; data.targetDiscountRate = 0.1; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
           else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_stability') {
           if (!data.streakShield) { data.streakShield = true; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
@@ -2502,7 +2502,15 @@
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 2;
           used = true; showNotice("+2 использования Преодоления предела сегодня.", 'info');
       } else if (id === 'rune_redemption') {
-          used = useRecoveryItem(0.5, 'Руна использована');
+          if (data.totalPenalties > 0 && data.lastExpLoss > 0) {
+              const recovery = Math.floor(data.lastExpLoss * 0.55);
+              gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
+              data.totalPenalties--;
+              const dayKey = findMostRecentPenaltyDayKey();
+              if (dayKey) data.history[dayKey].status = 'success';
+              used = true;
+              showNotice(`Руна использована. Восстановлено ${recovery} EXP, запись в Летописи и статистика штрафов исправлены.`, 'info');
+          } else { showNotice("Исправлять нечего: штрафов нет.", 'warn', true); }
       } else if (id === 'potion_restoration_full') {
           used = useRecoveryItem(1.0, 'Зелье использовано');
       } else if (id === 'rune_correction') {
@@ -2541,8 +2549,8 @@
           else { showNotice("Обе защиты уже активны.", 'warn', true); }
           }
       } else if (id === 'rune_burden_release') {
-          if ((data.targetDiscountRate || 0) < 0.45) {
-              data.targetDiscountToday = true; data.targetDiscountRate = 0.45;
+          if ((data.targetDiscountRate || 0) < 0.25) {
+              data.targetDiscountToday = true; data.targetDiscountRate = 0.25;
               used = true; showNotice("Руна использована. Нагрузка на сегодня значительно снижена.", 'info');
           } else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_return') {
@@ -2670,7 +2678,7 @@
         data.credits += amount;
         resultText = `Кредиты ${amount} ◈`;
       } else {
-        const chargedPool = ['rune_restoration_charged', 'rune_growth_charged', 'rune_protection_charged', 'rune_limit_charged', 'crystal_restoration', 'crystal_clarity'];
+        const chargedPool = ['rune_restoration_charged', 'rune_growth_charged', 'rune_protection_charged', 'rune_limit_charged', 'crystal_clarity'];
         const itemId = chargedPool[Math.floor(Math.random() * chargedPool.length)];
         data.consumables[itemId] = (data.consumables[itemId] || 0) + 1;
         resultText = SHOP_CATALOG[itemId].name;
