@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.65 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.66 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -955,7 +955,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.65';
+  const APP_VERSION = '5.9.66';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2252,8 +2252,8 @@
         <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
         <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc || ''}</div></div>
         <div class="item-btn-stack">
-          <button onclick="${addFn}('${id}')" class="use-btn">+1</button>
           <button onclick="${removeFn}('${id}')" class="use-btn sell-btn" ${hasNone ? 'disabled' : ''}>-1</button>
+          <button onclick="${addFn}('${id}')" class="use-btn">+1</button>
         </div>
       </div>`;
   }
@@ -2280,8 +2280,8 @@
           <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(KEY_CATALOG[id].name)}')"></div>
           <div class="item-info"><div class="item-name">${KEY_CATALOG[id].name}</div><div class="item-desc">${KEY_CATALOG[id].desc || ''}</div></div>
           <div class="item-btn-stack">
-            <button onclick="devAddKey('${id}')" class="use-btn" ${has ? 'disabled' : ''}>+1</button>
             <button onclick="devRemoveKey('${id}')" class="use-btn sell-btn" ${has ? '' : 'disabled'}>-1</button>
+            <button onclick="devAddKey('${id}')" class="use-btn" ${has ? 'disabled' : ''}>+1</button>
           </div>
         </div>`;
     }
