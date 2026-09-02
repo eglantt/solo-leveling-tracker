@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.64 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.65 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -510,6 +510,12 @@
       100% { box-shadow: 0 0 0 rgba(255,215,0,0); border-color: #00aaff33; }
     }
     .item-card.item-flash-gold { animation: itemFlashGold 0.6s ease; }
+    @keyframes itemFlashOrange {
+      0% { box-shadow: 0 0 0 rgba(255,170,64,0); border-color: #00aaff33; }
+      35% { box-shadow: 0 0 20px rgba(255,170,64,0.7); border-color: #ffaa40; background: rgba(255,170,64,0.12); }
+      100% { box-shadow: 0 0 0 rgba(255,170,64,0); border-color: #00aaff33; }
+    }
+    .item-card.item-flash-orange { animation: itemFlashOrange 0.6s ease; }
     /* SL:SYS-TOOLS:START */
     @keyframes sysToolsBtnFlash {
       0% { filter: brightness(1); transform: scale(1); }
@@ -949,7 +955,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.64';
+  const APP_VERSION = '5.9.65';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2240,12 +2246,15 @@
   // тестирования, бесплатно, без учёта уровня. Артефакты показываются
   // только для просмотра (постоянный пассивный эффект, выдаются
   // автоматически по уровню) — намеренно без кнопки добавления.
-  function catalogCard(id, item, buttonHtml) {
+  function catalogCard(id, item, addFn, removeFn, hasNone) {
     return `
       <div class="item-card" data-cat-id="${id}">
         <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
         <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc || ''}</div></div>
-        ${buttonHtml}
+        <div class="item-btn-stack">
+          <button onclick="${addFn}('${id}')" class="use-btn">+1</button>
+          <button onclick="${removeFn}('${id}')" class="use-btn sell-btn" ${hasNone ? 'disabled' : ''}>-1</button>
+        </div>
       </div>`;
   }
 
@@ -2253,24 +2262,36 @@
     const cont = document.getElementById('fullCatalogContent');
     let html = '<div class="section-title">Шкатулки</div>';
     for (let id in BOX_CATALOG) {
-      html += catalogCard(id, BOX_CATALOG[id], `<button onclick="devAddItem('${id}')" class="use-btn">+1</button>`);
+      html += catalogCard(id, BOX_CATALOG[id], 'devAddBox', 'devRemoveBox', !(data.boxes[id] > 0));
     }
     html += '<div class="section-title">Расходники</div>';
     for (let id in SHOP_CATALOG) {
-      html += catalogCard(id, SHOP_CATALOG[id], `<button onclick="devAddItem('${id}')" class="use-btn">+1</button>`);
+      html += catalogCard(id, SHOP_CATALOG[id], 'devAddItem', 'devRemoveItem', !(data.consumables[id] > 0));
     }
     html += '<div class="section-title">Редкие расходники</div>';
     for (let id in UNIQUE_CATALOG) {
-      html += catalogCard(id, UNIQUE_CATALOG[id], `<button onclick="devAddItem('${id}')" class="use-btn">+1</button>`);
+      html += catalogCard(id, UNIQUE_CATALOG[id], 'devAddItem', 'devRemoveItem', !(data.consumables[id] > 0));
     }
     html += '<div class="section-title">Ключи</div>';
     for (let id in KEY_CATALOG) {
       const has = data.keys[id] > 0;
-      html += catalogCard(id, KEY_CATALOG[id], `<button onclick="devAddKey('${id}')" class="use-btn" ${has ? 'disabled' : ''}>+1</button>`);
+      html += `
+        <div class="item-card" data-cat-id="${id}">
+          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(KEY_CATALOG[id].name)}')"></div>
+          <div class="item-info"><div class="item-name">${KEY_CATALOG[id].name}</div><div class="item-desc">${KEY_CATALOG[id].desc || ''}</div></div>
+          <div class="item-btn-stack">
+            <button onclick="devAddKey('${id}')" class="use-btn" ${has ? 'disabled' : ''}>+1</button>
+            <button onclick="devRemoveKey('${id}')" class="use-btn sell-btn" ${has ? '' : 'disabled'}>-1</button>
+          </div>
+        </div>`;
     }
     html += '<div class="section-title">Артефакты</div>';
     for (let id in ARTEFACTS) {
-      html += catalogCard(id, ARTEFACTS[id], '');
+      html += `
+        <div class="item-card" data-cat-id="${id}">
+          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(ARTEFACTS[id].name)}')"></div>
+          <div class="item-info"><div class="item-name">${ARTEFACTS[id].name}</div><div class="item-desc">${ARTEFACTS[id].desc || ''}</div></div>
+        </div>`;
     }
     cont.innerHTML = html;
     document.getElementById('fullCatalogOverlay').style.display = 'flex';
@@ -2284,6 +2305,34 @@
     }, 'item-flash-gold');
   }
 
+  function devRemoveItem(id) {
+    if (!(data.consumables[id] > 0)) return;
+    flashThenRun(`[data-cat-id="${id}"]`, () => {
+      playSound('tap');
+      data.consumables[id]--;
+      if (data.consumables[id] <= 0) delete data.consumables[id];
+      saveData(); render(); openFullCatalog();
+    }, 'item-flash-orange');
+  }
+
+  function devAddBox(id) {
+    flashThenRun(`[data-cat-id="${id}"]`, () => {
+      playSound('boxOpen');
+      data.boxes[id] = (data.boxes[id] || 0) + 1;
+      saveData(); render(); openFullCatalog();
+    }, 'item-flash-gold');
+  }
+
+  function devRemoveBox(id) {
+    if (!(data.boxes[id] > 0)) return;
+    flashThenRun(`[data-cat-id="${id}"]`, () => {
+      playSound('tap');
+      data.boxes[id]--;
+      if (data.boxes[id] <= 0) delete data.boxes[id];
+      saveData(); render(); openFullCatalog();
+    }, 'item-flash-orange');
+  }
+
   function devAddKey(id) {
     if (data.keys[id] > 0) return;
     flashThenRun(`[data-cat-id="${id}"]`, () => {
@@ -2291,6 +2340,15 @@
       data.keys[id] = 1;
       saveData(); render(); openFullCatalog();
     }, 'item-flash-gold');
+  }
+
+  function devRemoveKey(id) {
+    if (!(data.keys[id] > 0)) return;
+    flashThenRun(`[data-cat-id="${id}"]`, () => {
+      playSound('tap');
+      delete data.keys[id];
+      saveData(); render(); openFullCatalog();
+    }, 'item-flash-orange');
   }
 
   function openInv() {
@@ -2435,12 +2493,15 @@
     const shopItem = SHOP_CATALOG[id];
     if (!shopItem || !(data.consumables[id] > 0)) return;
     const sellPrice = Math.floor(shopItem.price * getSellRate());
-    data.consumables[id]--;
-    if (data.consumables[id] <= 0) delete data.consumables[id];
-    data.credits += sellPrice;
-    data.totalItemsSold = (data.totalItemsSold || 0) + 1;
-    showNotice(`Продано: ${shopItem.name}. +${sellPrice} кредитов.`, 'info');
-    saveData(); render(); openInv();
+    flashThenRun(`[data-consumable-id="${id}"]`, () => {
+      playSound('tap');
+      data.consumables[id]--;
+      if (data.consumables[id] <= 0) delete data.consumables[id];
+      data.credits += sellPrice;
+      data.totalItemsSold = (data.totalItemsSold || 0) + 1;
+      showNotice(`Продано: ${shopItem.name}. +${sellPrice} кредитов.`, 'info');
+      saveData(); render(); openInv();
+    }, 'item-flash-orange');
   }
 
   function performUseItem(id) {
