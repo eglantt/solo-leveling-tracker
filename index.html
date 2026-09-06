@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.84 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.85 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -1014,7 +1014,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.84';
+  const APP_VERSION = '5.9.85';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1246,7 +1246,7 @@
     "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра.", price: 1000, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 800, level: 1 },
     "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до конца сегодняшнего дня.", price: 1500, level: 5 },
-    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 1200, level: 6 },
+    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 4500, level: 6 },
     "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня.", price: 1400, level: 9 },
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 1500, level: 12 },
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
@@ -3067,7 +3067,8 @@
     btn.disabled = !canUse;
     btn.classList.toggle('ready', canUse);
     let statusText;
-    if (!allDone) statusText = "Завершите дневное задание";
+    if (!allDone && !data.isGoalMet) statusText = "Завершите дневное задание";
+    else if (!allDone && data.isGoalMet) statusText = "Завершите текущий раунд Преодоления предела";
     else if (usesLeft > 0) statusText = `ПРЕДЕЛ СНЯТ: КРЕДИТЫ x2 · Осталось использований сегодня: ${usesLeft}`;
     else statusText = "Сегодня больше недоступно";
     document.getElementById('limitStatus').textContent = statusText;
