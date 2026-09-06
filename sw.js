@@ -1,6 +1,6 @@
 // Bump this on every release that changes any cached file, so old
 // clients pick up the new version instead of being stuck on a stale cache.
-const CACHE_VERSION = 'v5-9-80';
+const CACHE_VERSION = 'v5-9-84';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const FONT_CACHE = 'solo-leveling-fonts';
 
@@ -74,7 +74,9 @@ const APP_SHELL = [
   './icons/items/title_breaker.png',
   './icons/items/title_unyielding.png',
   './icons/items/title_limit_conqueror.png',
-  './icons/items/title_gate_trader.png'
+  './icons/items/title_gate_trader.png',
+  './icons/items/effect_anomaly_burden.png',
+  './icons/items/effect_limit_break.png'
 ];
 
 self.addEventListener('install', (event) => {

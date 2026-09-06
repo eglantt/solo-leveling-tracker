@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.80 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.84 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -521,6 +521,50 @@
       50% { filter: drop-shadow(0 0 10px var(--glow)) drop-shadow(0 0 22px var(--glow)); }
     }
     .pulse-glow-special { animation: pulseGlowSpecial var(--dur, 2.4s) ease-in-out infinite; animation-delay: var(--delay, 0s); }
+    .effects-container { background: rgba(0,0,0,0.3); border: 1px solid #1a3550; border-radius: 8px; padding: 10px 12px; margin: 15px 20px; }
+    .effects-header { font-size: 0.8rem; color: #40c0ff; font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
+    .effects-row { display: flex; flex-wrap: wrap; gap: 16px; }
+    .effect-icon-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; position: relative; }
+    .effect-icon-btn img { width: 32px; height: 32px; object-fit: contain; }
+    .effect-icon-btn.active img { filter: drop-shadow(0 0 4px #40c0ff) drop-shadow(0 0 8px #40c0ff); }
+    .effect-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+    .effect-detail.open { max-height: 120px; }
+    .effect-detail-inner { padding-top: 10px; border-top: 1px solid #1a3550; margin-top: 10px; }
+    .effect-detail-name { color: #40c0ff; font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; }
+    .effect-detail-name.anomaly-pulse { color: #ff5555; animation: auraPulseAnomaly 2.4s ease-in-out infinite; }
+    @keyframes auraPulseAnomaly {
+      0%, 100% { text-shadow: 0 0 8px #ff5555; }
+      50% { text-shadow: 0 0 16px #ff5555, 0 0 6px #ff8888; }
+    }
+    /* Искры-кометы, обозначающие "ожидающий" эффект — впервые перенесены из
+       demo_14 в реальный код. Направление шлейфа (голова в конце сегмента,
+       угасание назад) проверено и исправлено ещё в самом демо. */
+    .spark-ring-wrap {
+      position: absolute; width: 40px; height: 40px; top: 50%; left: 50%;
+      animation: sparkSpin 0.84s linear infinite;
+    }
+    @keyframes sparkSpin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .spark-ring-wrap .trail {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: conic-gradient(from 0deg,
+        transparent 0deg, #40c0ff 90deg, transparent 120deg,
+        transparent 120deg, #40c0ff 210deg, transparent 240deg,
+        transparent 240deg, #40c0ff 330deg, transparent 360deg);
+      -webkit-mask-image: radial-gradient(circle, transparent 62%, black 64%);
+              mask-image: radial-gradient(circle, transparent 62%, black 64%);
+      opacity: 0.8;
+    }
+    .spark-ring-wrap .head {
+      position: absolute; width: 5px; height: 5px; background: #40c0ff; border-radius: 50%;
+      box-shadow: 0 0 4px #40c0ff, 0 0 8px #40c0ff; top: 50%; left: 50%;
+    }
+    .spark-ring-wrap .head:nth-child(2) { transform: translate(-50%,-50%) rotate(90deg) translateY(-19px); }
+    .spark-ring-wrap .head:nth-child(3) { transform: translate(-50%,-50%) rotate(210deg) translateY(-19px); }
+    .spark-ring-wrap .head:nth-child(4) { transform: translate(-50%,-50%) rotate(330deg) translateY(-19px); }
+    .effect-detail-text { color: #88ddffaa; font-size: 0.75rem; line-height: 1.2; }
     /* SL:SYS-TOOLS:START */
     @keyframes sysToolsBtnFlash {
       0% { filter: brightness(1); transform: scale(1); }
@@ -875,6 +919,16 @@
         <div class="reset-time" id="timer">00:00:00</div>
       </div>
     </div>
+    <div class="effects-container" id="effectsContainer" style="display:none;">
+      <div class="effects-header">АКТИВНЫЕ ЭФФЕКТЫ</div>
+      <div class="effects-row" id="effectsRow"></div>
+      <div class="effect-detail" id="effectDetail">
+        <div class="effect-detail-inner">
+          <div class="effect-detail-name" id="effectDetailName"></div>
+          <div class="effect-detail-text" id="effectDetailText"></div>
+        </div>
+      </div>
+    </div>
     <div class="quest-list">
       <div class="quest-item" data-id="pushups" data-target="100" data-exp="80">
         <div class="quest-name">Отжимания</div>
@@ -960,7 +1014,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.80';
+  const APP_VERSION = '5.9.84';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1038,6 +1092,9 @@
         targetDiscountToday: !!oldData.targetDiscountToday,
         targetDiscountRate: oldData.targetDiscountRate,
         expBoostToday: oldData.expBoostToday,
+        expBoostSourceId: oldData.expBoostSourceId || null,
+        creditBoostSourceId: oldData.creditBoostSourceId || null,
+        targetDiscountSourceId: oldData.targetDiscountSourceId || null,
         creditBoostToday: oldData.creditBoostToday,
         streakShield: !!oldData.streakShield,
         keys: oldData.keys || {},
@@ -1067,6 +1124,7 @@
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
+        expBoostSourceId: null, creditBoostSourceId: null, targetDiscountSourceId: null,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
@@ -1134,6 +1192,9 @@
   if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
   if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
   if (typeof data.totalItemsSold !== 'number' || data.totalItemsSold < 0) data.totalItemsSold = 0;
+  if (typeof data.expBoostSourceId !== 'string') data.expBoostSourceId = null;
+  if (typeof data.creditBoostSourceId !== 'string') data.creditBoostSourceId = null;
+  if (typeof data.targetDiscountSourceId !== 'string') data.targetDiscountSourceId = null;
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
@@ -1222,6 +1283,92 @@
 
   function getConsumableInfo(id) {
     return SHOP_CATALOG[id] || UNIQUE_CATALOG[id];
+  }
+
+  // Собирает список эффектов, активных прямо сейчас, для контейнера
+  // "АКТИВНЫЕ ЭФФЕКТЫ" — переиспользует уже существующие desc-поля предметов
+  // и титулов (там уже есть точные проценты), не пишет текст заново.
+  function getActiveEffects() {
+    const effects = [];
+    if (data.targetDiscountToday && data.targetDiscountSourceId) {
+      const item = getConsumableInfo(data.targetDiscountSourceId);
+      if (item) effects.push({ icon: `icons/items/${data.targetDiscountSourceId}.png`, name: item.name, text: item.desc });
+    }
+    if (data.expBoostToday > 0 && data.expBoostSourceId) {
+      const item = getConsumableInfo(data.expBoostSourceId);
+      if (item) effects.push({ icon: `icons/items/${data.expBoostSourceId}.png`, name: item.name, text: item.desc });
+    }
+    if (data.creditBoostToday > 0 && data.creditBoostSourceId) {
+      const item = getConsumableInfo(data.creditBoostSourceId);
+      if (item) effects.push({ icon: `icons/items/${data.creditBoostSourceId}.png`, name: item.name, text: item.desc });
+    }
+    if (data.insurance) {
+      effects.push({ icon: 'icons/items/rune_protection.png', name: 'Руна Защиты', text: 'Завтрашний штраф не будет начислен, если задание не будет выполнено.' });
+    }
+    if (data.streakShield) {
+      effects.push({ icon: 'icons/items/rune_stability.png', name: 'Руна Стабильности', text: 'Серия дней защищена — следующий срыв не обнулит счётчик.' });
+    }
+    if (data.curseActiveToday) {
+      effects.push({
+        icon: 'icons/items/effect_anomaly_burden.png',
+        name: 'Бремя Аномалии',
+        text: 'Дневная нагрузка задания увеличена на 40%. Штраф за невыполнение увеличен в 3 раза.',
+        isAnomaly: true
+      });
+    }
+    if (data.pendingCurse) {
+      effects.push({
+        icon: 'icons/items/effect_anomaly_burden.png',
+        name: 'Бремя Аномалии (ожидает)',
+        text: 'Эффект вступит в силу завтра — дневная нагрузка задания будет увеличена, а штраф за невыполнение утроен.',
+        isAnomaly: true,
+        isPending: true
+      });
+    }
+    if (data.isGoalMet) {
+      effects.push({ icon: 'icons/items/effect_limit_break.png', name: 'Преодоление предела', text: 'Кредиты за упражнения удвоены, пока активен режим.' });
+    }
+    if (data.activeTitle !== 'Новичок' && TITLE_ICON_IDS[data.activeTitle]) {
+      effects.push({ icon: `icons/items/${TITLE_ICON_IDS[data.activeTitle]}.png`, name: data.activeTitle, text: TITLES_DB[data.activeTitle].desc });
+    }
+    return effects;
+  }
+
+  let openEffectIndex = null;
+  function renderActiveEffects() {
+    const effects = getActiveEffects();
+    const container = document.getElementById('effectsContainer');
+    if (!effects.length) {
+      container.style.display = 'none';
+      window.__activeEffectsCache = effects;
+      window.__activeEffectsSignature = '';
+      return;
+    }
+    container.style.display = 'block';
+    window.__activeEffectsCache = effects;
+    const signature = effects.map(e => e.name + '|' + !!e.isPending).join(',');
+    if (signature === window.__activeEffectsSignature) return;
+    window.__activeEffectsSignature = signature;
+    document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
+      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? '<div class="spark-ring-wrap"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>' : ''}<img src="${e.icon}" alt=""></div>`
+    ).join('');
+    document.getElementById('effectDetail').classList.remove('open');
+    openEffectIndex = null;
+  }
+
+  function toggleActiveEffect(i) {
+    const effects = window.__activeEffectsCache;
+    const detail = document.getElementById('effectDetail');
+    document.querySelectorAll('.effect-icon-btn').forEach(b => b.classList.remove('active'));
+    if (openEffectIndex === i) { detail.classList.remove('open'); openEffectIndex = null; return; }
+    const nameEl = document.getElementById('effectDetailName');
+    const textEl = document.getElementById('effectDetailText');
+    nameEl.textContent = effects[i].name;
+    textEl.textContent = effects[i].text;
+    nameEl.classList.toggle('anomaly-pulse', !!effects[i].isAnomaly);
+    detail.classList.add('open');
+    document.querySelectorAll('.effect-icon-btn')[i].classList.add('active');
+    openEffectIndex = i;
   }
 
   const BOX_CATALOG = {
@@ -1906,13 +2053,17 @@
       let dayStatus;
       let expLostThatDay = 0;
       let completedExercisesThatDay = null;
-      if (data.insurance) {
+      if (data.isGoalMet || allQuestsDone()) {
+        applyPenaltyLogic();
+        dayStatus = 'success';
+      } else if (data.insurance) {
         dayStatus = 'protected';
       } else {
         const result = applyPenaltyLogic();
         if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
         else { dayStatus = 'success'; }
       }
+      data.insurance = false;
       const historyEntry = { status: dayStatus, donePercent };
       if (expGainedThatDay > 0) historyEntry.expGained = expGainedThatDay;
       if (expLostThatDay > 0) historyEntry.expLost = expLostThatDay;
@@ -1930,7 +2081,6 @@
       data.history[dayKey] = historyEntry;
       data.pendingLevelUpToday = 0;
 
-      data.insurance = false;
       data.lastReset = nextReset;
       data.totalDays++;
       if (data.totalDays === 1 && !data.earlySaveNoticeShown) {
@@ -1952,8 +2102,11 @@
       data.progressNoticesShown = [];
       data.targetDiscountToday = false;
       data.targetDiscountRate = 0;
+      data.targetDiscountSourceId = null;
       data.expBoostToday = 0;
+      data.expBoostSourceId = null;
       data.creditBoostToday = 0;
+      data.creditBoostSourceId = null;
       data.extraLimitBreaksToday = 0;
       nextReset = getNextCleanReset(data.lastReset);
     }
@@ -2580,7 +2733,7 @@
           if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
           else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection') {
-          if (allQuestsDone()) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
+          if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
           else if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
           else { showNotice("Защита уже активирована.", 'warn', true); }
       } else if (id === 'potion_restoration') {
@@ -2590,15 +2743,15 @@
       } else if (id === 'crystal_restoration') {
           used = useRecoveryItem(0.7, 'Кристалл использован');
       } else if (id === 'rune_freedom') {
-          if ((data.targetDiscountRate || 0) < 0.1) { data.targetDiscountToday = true; data.targetDiscountRate = 0.1; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
+          if ((data.targetDiscountRate || 0) < 0.1) { data.targetDiscountToday = true; data.targetDiscountRate = 0.1; data.targetDiscountSourceId = id; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
           else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_stability') {
           if (!data.streakShield) { data.streakShield = true; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
           else { showNotice("Защита серии уже активна.", 'warn', true); }
       } else if (id === 'potion_growth') {
-          used = useExpBoostItem(0.20, 'Зелье использовано');
+          used = useExpBoostItem(0.20, 'Зелье использовано', false, id);
       } else if (id === 'rune_growth_charged') {
-          used = useExpBoostItem(0.35, 'Руна использована');
+          used = useExpBoostItem(0.35, 'Руна использована', false, id);
       } else if (id === 'tablet_of_reassessment') {
           const refunded = Object.values(data.stats).reduce((sum, v) => sum + Math.max(0, v - 10), 0);
           if (refunded > 0) {
@@ -2610,9 +2763,9 @@
             showNotice("Пересматривать нечего: очки характеристик ещё не вложены.", 'warn', true);
           }
       } else if (id === 'crystal_clarity') {
-          used = useExpBoostItem(0.55, 'Кристалл использован');
+          used = useExpBoostItem(0.55, 'Кристалл использован', false, id);
       } else if (id === 'rune_protection_charged') {
-          if (allQuestsDone()) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
+          if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
           else {
           let didSomething = false;
           let msgParts = [];
@@ -2670,7 +2823,7 @@
               used = true; showNotice(`Руна использована. Удалено штрафов: ${removed}.`, 'info');
           } else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection_absolute') {
-          if (allQuestsDone()) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
+          if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
           else {
           let didSomething = false;
           let msgParts = [];
@@ -2682,17 +2835,18 @@
       } else if (id === 'rune_burden_release') {
           if ((data.targetDiscountRate || 0) < 0.25) {
               data.targetDiscountToday = true; data.targetDiscountRate = 0.25;
+              data.targetDiscountSourceId = id;
               used = true; showNotice("Руна использована. Нагрузка на сегодня значительно снижена.", 'info');
           } else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_return') {
           if (data.lastExpLoss > 0 || data.expBoostToday < 0.15) {
               if (data.lastExpLoss > 0) { gainExp(data.lastExpLoss); data.lastExpLoss = 0; checkLevelUp(); }
-              if (data.expBoostToday < 0.15) data.expBoostToday = 0.15;
+              if (data.expBoostToday < 0.15) { data.expBoostToday = 0.15; data.expBoostSourceId = id; }
               used = true; showNotice("Руна использована. Опыт восстановлен и увеличен на сегодня.", 'info');
           } else { showNotice("Восстанавливать нечего: усиление опыта уже повышено.", 'warn', true); }
       } else if (id === 'crystal_impulse') {
-          const boosted1 = useExpBoostItem(0.35, 'Кристалл использован', true);
-          const boosted2 = useCreditBoostItem(0.35, 'Кристалл использован', true);
+          const boosted1 = useExpBoostItem(0.35, 'Кристалл использован', true, id);
+          const boosted2 = useCreditBoostItem(0.35, 'Кристалл использован', true, id);
           used = boosted1 || boosted2;
           if (used) showNotice("Кристалл использован. Опыт и кредиты увеличены на сегодня.", 'info');
           else showNotice("Усиление опыта и кредитов уже повышено.", 'warn', true);
@@ -2724,24 +2878,26 @@
   // Shared handler for the "boost today's EXP by X%" family (Зелье/Руна/
   // Кристалл — Роста/Ясности). Stronger items can upgrade a weaker boost
   // already active today, but a weaker one won't downgrade a stronger one.
-  function useExpBoostItem(rate, verbPhrase, silent) {
+  function useExpBoostItem(rate, verbPhrase, silent, sourceId) {
     if (data.expBoostToday >= rate) {
       if (!silent) showNotice("Более высокое усиление опыта уже действует.", 'warn', true);
       return false;
     }
     data.expBoostToday = rate;
+    data.expBoostSourceId = sourceId || null;
     if (!silent) showNotice(`${verbPhrase}. Опыт увеличен до конца дня.`, 'info');
     return true;
   }
 
   // Same pattern as useExpBoostItem, for the day's credit-earning multiplier
   // (introduced for Кристалл Импульса — the first item to boost credits).
-  function useCreditBoostItem(rate, verbPhrase, silent) {
+  function useCreditBoostItem(rate, verbPhrase, silent, sourceId) {
     if (data.creditBoostToday >= rate) {
       if (!silent) showNotice("Более высокое усиление кредитов уже действует.", 'warn', true);
       return false;
     }
     data.creditBoostToday = rate;
+    data.creditBoostSourceId = sourceId || null;
     if (!silent) showNotice(`${verbPhrase || 'Использовано'}. Кредиты увеличены до конца дня.`, 'info');
     return true;
   }
@@ -2995,6 +3151,7 @@
 
   function render() {
     updateTitleStatus();
+    renderActiveEffects();
     ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(qid => {
       const counterEl = document.getElementById(qid);
       if (counterEl) {
@@ -3101,6 +3258,7 @@
         }
         if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
+          if (data.insurance) data.insurance = false;
           playSound('dayComplete');
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
           setTimeout(() => showNotice(completeText, 'info'), 4500);
@@ -3471,6 +3629,9 @@
       rulesAcknowledged: (typeof s.rulesAcknowledged === 'boolean') ? s.rulesAcknowledged : true,
       earlySaveNoticeShown: (typeof s.earlySaveNoticeShown === 'boolean') ? s.earlySaveNoticeShown : false,
       totalItemsSold: Math.max(0, Math.floor(sanitizeNumber(s.totalItemsSold, 0))),
+      expBoostSourceId: (typeof s.expBoostSourceId === 'string') ? s.expBoostSourceId : null,
+      creditBoostSourceId: (typeof s.creditBoostSourceId === 'string') ? s.creditBoostSourceId : null,
+      targetDiscountSourceId: (typeof s.targetDiscountSourceId === 'string') ? s.targetDiscountSourceId : null,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
       pendingLevelUpToday: sanitizeNumber(s.pendingLevelUpToday, 0),
       codexUnlocked: cleanCodexUnlocked,
