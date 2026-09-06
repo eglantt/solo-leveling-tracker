@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.77 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.78 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -960,7 +960,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.77';
+  const APP_VERSION = '5.9.78';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1063,7 +1063,7 @@
         playerName: "", dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
-        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"],
+        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats"],
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
@@ -1133,6 +1133,7 @@
   if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
   if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
   if (typeof data.totalItemsSold !== 'number' || data.totalItemsSold < 0) data.totalItemsSold = 0;
+  if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
   if (typeof data.stats.agi !== 'number') data.stats.agi = 10;
@@ -1326,6 +1327,7 @@
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Магазин Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания." },
+    titles: { title: "Титулы", content: "Достижения Игрока разблокируют титулы — каждый со своим условием и своей наградой. Одновременно может быть открыто сразу несколько, но действует только один — тот, что выбран активным в данный момент. Остальные разблокированные титулы ждут своего часа, не оказывая никакого эффекта, пока не выбраны. Сменить активный титул можно свободно, в любой момент, среди уже открытых." },
     anomaly_burden: { title: "Бремя Аномалии", content: "Один из двух возможных исходов при открытии Шкатулки Аномалии — резонанс, искажающий расчёты Системы, определяемый случайно в момент самого открытия. При неудачном исходе следующее дневное задание заметно усложняется, и это сразу бросается в глаза. Цена провала в такой день тоже иная — штраф ощутимо суровее, чем обычно." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
