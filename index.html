@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.78 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.79 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -960,7 +960,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.78';
+  const APP_VERSION = '5.9.79';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1084,6 +1084,7 @@
   if (typeof data.notifiedLimitBreakUnlock !== 'boolean') data.notifiedLimitBreakUnlock = data.level >= 3;
   if (!data.history || typeof data.history !== 'object') data.history = {};
   if (typeof data.bestStreak !== 'number') data.bestStreak = 0;
+  if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
   if (typeof data.pendingLevelUpToday !== 'number') data.pendingLevelUpToday = 0;
   if (!Array.isArray(data.codexUnlocked)) data.codexUnlocked = ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"];
   if (!data.codexUnlocked.includes('boxes')) data.codexUnlocked.push('boxes');
@@ -2649,6 +2650,7 @@
               const recovery = data.lastExpLoss;
               gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
               data.consecutiveDays++;
+              if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
               const dayKey = findMostRecentPenaltyDayKey();
               if (dayKey) data.history[dayKey].status = 'success';
               used = true;
