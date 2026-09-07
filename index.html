@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.87 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.88 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -79,6 +79,11 @@
       background: linear-gradient(180deg, #001833 0%, #001122 100%);
       padding: 16px 20px;
       border-bottom: 1px solid #00aaff33;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .header-bottom-row {
       display: flex;
       flex-direction: row;
       flex-wrap: wrap;
@@ -624,6 +629,7 @@
     @media (max-width: 600px) {
       .system-container { padding: 16px 10px 60px; }
       .header { flex-direction: column; align-items: stretch; text-align: center; gap: 12px; }
+      .header-bottom-row { flex-direction: column; align-items: stretch; gap: 12px; }
       .title { font-size: 1.5rem; }
       .rank-info { text-align: center; min-width: auto; font-size: 1rem; }
       .reset-timer { width: 100%; max-width: none; }
@@ -915,19 +921,23 @@
 <div class="system-container">
   <div class="quest-panel hud-frame">
     <div class="header">
-      <div class="title">ЕЖЕДНЕВНОЕ ЗАДАНИЕ</div>
-      <div class="rank-info" id="rankInfoBtn">
-        <div class="player-name" id="playerNameDisplay">Игрок</div>
-        <div class="level-display" id="levelDisplay">Уровень: 1</div>
-        <div class="rank" id="rankDisplay">Ранг: E-Rank</div>
-        <div class="title-display" id="titleDisplay">Новичок</div>
-        <div class="exp" id="expLine">EXP: <span id="exp">0</span> / <span id="expToNext">1000</span></div>
-        <div class="exp-debt" id="expDebtLine" style="display:none;">Долг перед Системой: −<span id="expDebtVal">0</span> EXP</div>
-        <div class="credits">Кредиты: <span id="creditsVal">0</span> ◈</div>
+      <div class="header-top-row">
+        <div class="title">ЕЖЕДНЕВНОЕ ЗАДАНИЕ</div>
       </div>
-      <div class="reset-timer" id="resetTimerContainer">
-        <div class="reset-label">Сброс задания через</div>
-        <div class="reset-time" id="timer">00:00:00</div>
+      <div class="header-bottom-row">
+        <div class="rank-info" id="rankInfoBtn">
+          <div class="player-name" id="playerNameDisplay">Игрок</div>
+          <div class="level-display" id="levelDisplay">Уровень: 1</div>
+          <div class="rank" id="rankDisplay">Ранг: E-Rank</div>
+          <div class="title-display" id="titleDisplay">Новичок</div>
+          <div class="exp" id="expLine">EXP: <span id="exp">0</span> / <span id="expToNext">1000</span></div>
+          <div class="exp-debt" id="expDebtLine" style="display:none;">Долг перед Системой: −<span id="expDebtVal">0</span> EXP</div>
+          <div class="credits">Кредиты: <span id="creditsVal">0</span> ◈</div>
+        </div>
+        <div class="reset-timer" id="resetTimerContainer">
+          <div class="reset-label">Сброс задания через</div>
+          <div class="reset-time" id="timer">00:00:00</div>
+        </div>
       </div>
     </div>
     <div class="effects-container" id="effectsContainer" style="display:none;">
@@ -1025,7 +1035,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.87';
+  const APP_VERSION = '5.9.88';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
