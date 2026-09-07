@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.85 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.87 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -83,7 +83,7 @@
       flex-direction: row;
       flex-wrap: wrap;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
     }
     .title {
@@ -100,6 +100,7 @@
       min-width: 180px;
       cursor: pointer;
     }
+    .level-display { font-weight: bold; }
     .rank { font-weight: bold; text-shadow: 0 0 10px currentColor; }
     .rank.e { color: #aaaaaa; text-shadow: 0 0 8px #aaaaaa; }
     .rank.d { color: #88ffcc; }
@@ -110,13 +111,22 @@
     .rank.national { color: #ffaa00; text-shadow: 0 0 16px #ffaa00; }
     .rank.sss { color: #cc00ff; text-shadow: 0 0 20px #cc00ff; animation: auraPulseSss 2.4s ease-in-out infinite; }
     .rank.monarch { color: #aa00ff; text-shadow: 0 0 24px #aa00ff, 0 0 40px #6600aa; animation: auraPulseMonarch 2.2s ease-in-out infinite; }
+    .level-display.e { color: #aaaaaa; }
+    .level-display.d { color: #88ffcc; }
+    .level-display.c { color: #40ffaa; }
+    .level-display.b { color: #00ff88; }
+    .level-display.a { color: #00ddff; }
+    .level-display.s { color: #0088ff; }
+    .level-display.national { color: #ffaa00; }
+    .level-display.sss { color: #cc00ff; }
+    .level-display.monarch { color: #aa00ff; }
     @keyframes auraPulseSss {
       0%, 100% { text-shadow: 0 0 16px #cc00ff; }
       50% { text-shadow: 0 0 28px #cc00ff, 0 0 12px #ff66ff; }
     }
     @keyframes auraPulseMonarch {
       0%, 100% { text-shadow: 0 0 24px #aa00ff, 0 0 40px #6600aa; }
-      50% { text-shadow: 0 0 36px #aa00ff, 0 0 58px #6600aa; }
+      50% { text-shadow: 0 0 36px #aa00ff, 0 0 58px #6600aa, 0 0 16px #ff44ff; }
     }
     .exp { font-size: 0.85rem; color: #88ffcc; }
     .exp.exp-in-debt { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
@@ -908,8 +918,9 @@
       <div class="title">ЕЖЕДНЕВНОЕ ЗАДАНИЕ</div>
       <div class="rank-info" id="rankInfoBtn">
         <div class="player-name" id="playerNameDisplay">Игрок</div>
+        <div class="level-display" id="levelDisplay">Уровень: 1</div>
+        <div class="rank" id="rankDisplay">Ранг: E-Rank</div>
         <div class="title-display" id="titleDisplay">Новичок</div>
-        <div class="rank" id="rankDisplay">Ранг: E-Rank (Уровень: 1)</div>
         <div class="exp" id="expLine">EXP: <span id="exp">0</span> / <span id="expToNext">1000</span></div>
         <div class="exp-debt" id="expDebtLine" style="display:none;">Долг перед Системой: −<span id="expDebtVal">0</span> EXP</div>
         <div class="credits">Кредиты: <span id="creditsVal">0</span> ◈</div>
@@ -1014,7 +1025,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.85';
+  const APP_VERSION = '5.9.87';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1290,18 +1301,14 @@
   // и титулов (там уже есть точные проценты), не пишет текст заново.
   function getActiveEffects() {
     const effects = [];
-    if (data.targetDiscountToday && data.targetDiscountSourceId) {
-      const item = getConsumableInfo(data.targetDiscountSourceId);
-      if (item) effects.push({ icon: `icons/items/${data.targetDiscountSourceId}.png`, name: item.name, text: item.desc });
-    }
-    if (data.expBoostToday > 0 && data.expBoostSourceId) {
-      const item = getConsumableInfo(data.expBoostSourceId);
-      if (item) effects.push({ icon: `icons/items/${data.expBoostSourceId}.png`, name: item.name, text: item.desc });
-    }
-    if (data.creditBoostToday > 0 && data.creditBoostSourceId) {
-      const item = getConsumableInfo(data.creditBoostSourceId);
-      if (item) effects.push({ icon: `icons/items/${data.creditBoostSourceId}.png`, name: item.name, text: item.desc });
-    }
+    const boostSourceIds = new Set();
+    if (data.targetDiscountToday && data.targetDiscountSourceId) boostSourceIds.add(data.targetDiscountSourceId);
+    if (data.expBoostToday > 0 && data.expBoostSourceId) boostSourceIds.add(data.expBoostSourceId);
+    if (data.creditBoostToday > 0 && data.creditBoostSourceId) boostSourceIds.add(data.creditBoostSourceId);
+    boostSourceIds.forEach(id => {
+      const item = getConsumableInfo(id);
+      if (item) effects.push({ icon: `icons/items/${id}.png`, name: item.name, text: item.desc });
+    });
     if (data.insurance) {
       effects.push({ icon: 'icons/items/rune_protection.png', name: 'Руна Защиты', text: 'Завтрашний штраф не будет начислен, если задание не будет выполнено.' });
     }
@@ -3163,7 +3170,10 @@
     });
     const rank = getRank(data.level);
     const rankEl = document.getElementById('rankDisplay');
-    rankEl.textContent = `Ранг: ${rank.name} (Уровень: ${data.level})`;
+    const levelEl = document.getElementById('levelDisplay');
+    levelEl.textContent = `Уровень: ${data.level}`;
+    levelEl.className = 'level-display ' + rank.class;
+    rankEl.textContent = `Ранг: ${rank.name}`;
     rankEl.className = 'rank ' + rank.class;
     document.getElementById('playerNameDisplay').textContent = data.playerName ? `Имя: ${data.playerName}` : "Игрок";
     document.getElementById('exp').textContent = Math.floor(data.exp);
