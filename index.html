@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.93 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.94 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -1035,7 +1035,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.93';
+  const APP_VERSION = '5.9.94';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1114,6 +1114,8 @@
         targetDiscountRate: oldData.targetDiscountRate,
         expBoostToday: oldData.expBoostToday,
         expBoostSourceId: oldData.expBoostSourceId || null,
+        insuranceSourceId: oldData.insuranceSourceId || null,
+        streakShieldSourceId: oldData.streakShieldSourceId || null,
         creditBoostSourceId: oldData.creditBoostSourceId || null,
         targetDiscountSourceId: oldData.targetDiscountSourceId || null,
         creditBoostToday: oldData.creditBoostToday,
@@ -1146,6 +1148,7 @@
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
         expBoostSourceId: null, creditBoostSourceId: null, targetDiscountSourceId: null,
+        insuranceSourceId: null, streakShieldSourceId: null,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
@@ -1216,6 +1219,8 @@
   if (typeof data.expBoostSourceId !== 'string') data.expBoostSourceId = null;
   if (typeof data.creditBoostSourceId !== 'string') data.creditBoostSourceId = null;
   if (typeof data.targetDiscountSourceId !== 'string') data.targetDiscountSourceId = null;
+  if (typeof data.insuranceSourceId !== 'string') data.insuranceSourceId = null;
+  if (typeof data.streakShieldSourceId !== 'string') data.streakShieldSourceId = null;
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
@@ -1319,17 +1324,24 @@
       const item = getConsumableInfo(id);
       if (item) effects.push({ icon: `icons/items/${id}.png`, name: item.name, text: item.desc });
     });
-    if (data.insurance) {
-      effects.push({ icon: 'icons/items/rune_protection.png', name: 'Руна Защиты', text: 'Завтрашний штраф не будет начислен, если задание не будет выполнено.' });
-    }
-    if (data.streakShield) {
-      effects.push({ icon: 'icons/items/rune_stability.png', name: 'Руна Стабильности', text: 'Серия дней защищена — следующий срыв не обнулит счётчик.' });
+    if (data.insurance && data.streakShield && data.insuranceSourceId && data.insuranceSourceId === data.streakShieldSourceId) {
+      const item = getConsumableInfo(data.insuranceSourceId);
+      if (item) effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.desc });
+    } else {
+      if (data.insurance && data.insuranceSourceId) {
+        const item = getConsumableInfo(data.insuranceSourceId);
+        if (item) effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.desc });
+      }
+      if (data.streakShield && data.streakShieldSourceId) {
+        const item = getConsumableInfo(data.streakShieldSourceId);
+        if (item) effects.push({ icon: `icons/items/${data.streakShieldSourceId}.png`, name: item.name, text: item.desc });
+      }
     }
     if (data.curseActiveToday) {
       effects.push({
         icon: 'icons/items/effect_anomaly_burden.png',
         name: 'Бремя Аномалии',
-        text: 'Дневная нагрузка задания увеличена на 40%. Штраф за невыполнение увеличен в 3 раза.',
+        text: 'Дневная нагрузка задания увеличена на 40%. Штраф за невыполнение увеличен в 3 раза. Обычная защита от штрафа не действует — снять его способна только Руна Абсолютной Защиты.',
         isAnomaly: true
       });
     }
@@ -1337,7 +1349,7 @@
       effects.push({
         icon: 'icons/items/effect_anomaly_burden.png',
         name: 'Бремя Аномалии (ожидает)',
-        text: 'Эффект вступит в силу завтра — дневная нагрузка задания будет увеличена, а штраф за невыполнение утроен.',
+        text: 'Эффект вступит в силу завтра — дневная нагрузка задания будет увеличена, а штраф за невыполнение утроен. Обычная защита от штрафа не поможет — сработает только Руна Абсолютной Защиты.',
         isAnomaly: true,
         isPending: true
       });
@@ -1493,7 +1505,7 @@
     shop: { title: "Магазин Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания." },
     titles: { title: "Титулы", content: "Достижения Игрока разблокируют титулы — каждый со своим условием и своей наградой. Одновременно может быть открыто сразу несколько, но действует только один — тот, что выбран активным в данный момент. Остальные разблокированные титулы ждут своего часа, не оказывая никакого эффекта, пока не выбраны. Сменить активный титул можно свободно, в любой момент, среди уже открытых." },
-    anomaly_burden: { title: "Бремя Аномалии", content: "Один из двух возможных исходов при открытии Шкатулки Аномалии — резонанс, искажающий расчёты Системы, определяемый случайно в момент самого открытия. При неудачном исходе следующее дневное задание заметно усложняется, и это сразу бросается в глаза. Цена провала в такой день тоже иная — штраф ощутимо суровее, чем обычно." },
+    anomaly_burden: { title: "Бремя Аномалии", content: "Один из двух возможных исходов при открытии Шкатулки Аномалии — резонанс, искажающий расчёты Системы, определяемый случайно в момент самого открытия. При неудачном исходе следующее дневное задание заметно усложняется, и это сразу бросается в глаза. Цена провала в такой день тоже иная — штраф ощутимо суровее, чем обычно. Обычная защита от штрафа в такой день бессильна — совладать с ним способна лишь Абсолютная защита." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Артефакт D-ранга — кристалл, отзывающийся на сам ритм движения, а не на его цель. Каждый пройденный шаг приносит заметно больше кредитов, чем без него." },
@@ -2073,7 +2085,7 @@
       if (data.isGoalMet || allQuestsDone()) {
         applyPenaltyLogic();
         dayStatus = 'success';
-      } else if (data.insurance) {
+      } else if (data.insurance && (!data.curseActiveToday || data.insuranceSourceId === 'rune_protection_absolute')) {
         dayStatus = 'protected';
       } else {
         const result = applyPenaltyLogic();
@@ -2750,8 +2762,8 @@
           if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
           else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection') {
-          if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
-          else if (!data.insurance) { data.insurance = true; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
+          if (allQuestsDone() || data.isGoalMet || data.curseActiveToday) { showNotice("Защита недоступна.", 'warn', true); }
+          else if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
           else { showNotice("Защита уже активирована.", 'warn', true); }
       } else if (id === 'potion_restoration') {
           used = useRecoveryItem(0.5, 'Зелье использовано');
@@ -2782,11 +2794,11 @@
       } else if (id === 'crystal_clarity') {
           used = useExpBoostItem(0.55, 'Кристалл использован', false, id);
       } else if (id === 'rune_protection_charged') {
-          if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
+          if (allQuestsDone() || data.isGoalMet || data.curseActiveToday) { showNotice("Защита недоступна.", 'warn', true); }
           else {
           let didSomething = false;
           let msgParts = [];
-          if (!data.insurance) { data.insurance = true; didSomething = true; msgParts.push('защита на завтра активирована'); }
+          if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; didSomething = true; msgParts.push('защита на завтра активирована'); }
           if (data.lastExpLoss > 0) {
               const recovery = data.lastExpLoss;
               gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
@@ -2844,8 +2856,8 @@
           else {
           let didSomething = false;
           let msgParts = [];
-          if (!data.insurance) { data.insurance = true; didSomething = true; msgParts.push('защита на завтра активирована'); }
-          if (!data.streakShield) { data.streakShield = true; didSomething = true; msgParts.push('серия защищена от срыва'); }
+          if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; didSomething = true; msgParts.push('защита на завтра активирована'); }
+          if (!data.streakShield) { data.streakShield = true; data.streakShieldSourceId = id; didSomething = true; msgParts.push('серия защищена от срыва'); }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
           else { showNotice("Обе защиты уже активны.", 'warn', true); }
           }
@@ -3651,6 +3663,8 @@
       earlySaveNoticeShown: (typeof s.earlySaveNoticeShown === 'boolean') ? s.earlySaveNoticeShown : false,
       totalItemsSold: Math.max(0, Math.floor(sanitizeNumber(s.totalItemsSold, 0))),
       expBoostSourceId: (typeof s.expBoostSourceId === 'string') ? s.expBoostSourceId : null,
+      insuranceSourceId: (typeof s.insuranceSourceId === 'string') ? s.insuranceSourceId : null,
+      streakShieldSourceId: (typeof s.streakShieldSourceId === 'string') ? s.streakShieldSourceId : null,
       creditBoostSourceId: (typeof s.creditBoostSourceId === 'string') ? s.creditBoostSourceId : null,
       targetDiscountSourceId: (typeof s.targetDiscountSourceId === 'string') ? s.targetDiscountSourceId : null,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
