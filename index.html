@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.98 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.100 (System Codex)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -1035,7 +1035,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.98';
+  const APP_VERSION = '5.9.100';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1324,17 +1324,18 @@
       const item = getConsumableInfo(id);
       if (item) effects.push({ icon: `icons/items/${id}.png`, name: item.name, text: item.desc });
     });
-    if (data.insurance && data.streakShield && data.insuranceSourceId && data.insuranceSourceId === data.streakShieldSourceId) {
-      const item = getConsumableInfo(data.insuranceSourceId);
-      if (item) effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.desc });
+    const absoluteActive = (data.insurance && data.insuranceSourceId === 'rune_protection_absolute')
+                         || (data.streakShield && data.streakShieldSourceId === 'rune_protection_absolute');
+    if (absoluteActive) {
+      const item = getConsumableInfo('rune_protection_absolute');
+      if (item) effects.push({ icon: 'icons/items/rune_protection_absolute.png', name: item.name, text: item.desc });
     } else {
       if (data.insurance && data.insuranceSourceId) {
         const item = getConsumableInfo(data.insuranceSourceId);
         if (item) effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.desc });
       }
-      if (data.streakShield && data.streakShieldSourceId) {
-        const item = getConsumableInfo(data.streakShieldSourceId);
-        if (item) effects.push({ icon: `icons/items/${data.streakShieldSourceId}.png`, name: item.name, text: item.desc });
+      if (data.streakShield) {
+        effects.push({ icon: 'icons/items/rune_stability.png', name: 'Руна Стабильности', text: 'Серия дней защищена — следующий срыв не обнулит счётчик.' });
       }
     }
     if (data.curseActiveToday) {
@@ -2087,12 +2088,17 @@
         dayStatus = 'success';
       } else if (data.insurance && (!data.curseActiveToday || data.insuranceSourceId === 'rune_protection_absolute')) {
         dayStatus = 'protected';
+        if (data.insuranceSourceId === 'rune_protection_absolute' && data.streakShieldSourceId === 'rune_protection_absolute') {
+          data.streakShield = false;
+          data.streakShieldSourceId = null;
+        }
       } else {
         const result = applyPenaltyLogic();
         if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
         else { dayStatus = 'success'; }
       }
       data.insurance = false;
+      data.insuranceSourceId = null;
       const historyEntry = { status: dayStatus, donePercent };
       if (expGainedThatDay > 0) historyEntry.expGained = expGainedThatDay;
       if (expLostThatDay > 0) historyEntry.expLost = expLostThatDay;
@@ -2205,6 +2211,7 @@
     data.totalPenalties++;
     if (data.streakShield) {
       data.streakShield = false;
+      data.streakShieldSourceId = null;
     } else {
       data.consecutiveDays = 0;
     }
