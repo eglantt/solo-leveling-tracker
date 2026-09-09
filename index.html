@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.108 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v5.9.109 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -42,6 +42,22 @@
       font-weight: 700;
       font-style: normal;
       font-display: swap;
+    }
+    @font-face {
+      font-family: 'Exo 2';
+      src: url('fonts/exo-2-cyrillic-500-normal.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+      unicode-range: U+0400-04FF;
+    }
+    @font-face {
+      font-family: 'Exo 2';
+      src: url('fonts/exo-2-cyrillic-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+      unicode-range: U+0400-04FF;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -117,7 +133,7 @@
       gap: 110px;
     }
     .title {
-      font-family: 'Orbitron', sans-serif;
+      font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 1.7rem;
       color: #40c0ff;
       text-shadow: 0 0 12px #00aaffaa;
@@ -164,7 +180,7 @@
     .credits { font-size: 0.85rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
     .title-display { font-size: 0.75rem; color: #40ffaa; font-style: italic; opacity: 0.9; margin-top: 2px; }
     .player-name {
-      font-family: 'Orbitron', sans-serif;
+      font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 0.85rem;
       font-weight: bold;
       color: #88ddff;
@@ -186,7 +202,7 @@
     }
     .reset-label { font-size: 0.9rem; color: #88ddff; margin-bottom: 4px; }
     .reset-time {
-      font-family: 'Orbitron', sans-serif;
+      font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 1.9rem;
       font-weight: 700;
       color: #40c0ff;
@@ -222,32 +238,32 @@
       max-height: 90vh;
       display: flex; flex-direction: column;
     }
-    .status-header { flex-shrink: 0; font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
-    .shop-balance { flex-shrink: 0; text-align: center; font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ffd700; margin: -12px 0 16px; }
+    .status-header { flex-shrink: 0; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
+    .shop-balance { flex-shrink: 0; text-align: center; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.8rem; color: #ffd700; margin: -12px 0 16px; }
     .status-body {
       flex: 1 1 auto; overflow-y: auto; min-height: 0;
       scrollbar-width: none; -ms-overflow-style: none;
     }
     .status-body::-webkit-scrollbar { display: none; }
     .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid #00aaff22; }
-    .stat-label { font-family: 'Orbitron', sans-serif; color: #88ddff; font-size: 1.1rem; cursor: pointer; }
+    .stat-label { font-family: 'Orbitron', 'Exo 2', sans-serif; color: #88ddff; font-size: 1.1rem; cursor: pointer; }
     .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
-    .stat-points-info { text-align: center; color: #ffd700; margin-bottom: 20px; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 1.1rem; }
+    .stat-points-info { text-align: center; color: #ffd700; margin-bottom: 20px; font-weight: bold; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.1rem; }
 
     /* Calendar (Летопись) */
     .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .cal-arrow { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #40c0ff; cursor: pointer; opacity: 0.85; padding: 4px 8px; }
+    .cal-arrow { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.9rem; color: #40c0ff; cursor: pointer; opacity: 0.85; padding: 4px 8px; }
     .cal-arrow.disabled { color: #444; opacity: 0.4; cursor: default; }
-    .cal-month-label { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: #88ddff; letter-spacing: 1px; }
+    .cal-month-label { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.9rem; color: #88ddff; letter-spacing: 1px; }
     .cal-today-row { text-align: center; margin-bottom: 10px; }
     .today-btn {
       background: rgba(0,140,255,0.12); border: 1px solid #40c0ff; color: #40c0ff;
-      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 1px;
+      font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.65rem; letter-spacing: 1px;
       padding: 5px 14px; border-radius: 6px; text-transform: uppercase; cursor: pointer;
     }
     .today-btn:hover { background: rgba(0,140,255,0.25); }
     .cal-streak-line {
-      text-align: center; font-family: 'Orbitron', sans-serif; font-size: 0.75rem;
+      text-align: center; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.75rem;
       color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.5); margin-bottom: 4px;
     }
     .cal-month-summary { text-align: center; font-size: 0.65rem; color: #88ccff; opacity: 0.85; margin-bottom: 14px; }
@@ -256,7 +272,7 @@
     .weekday-row div { text-align: center; font-size: 0.6rem; color: #5599cc; opacity: 0.7; }
     .day-cell {
       position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-      border-radius: 4px; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: bold;
+      border-radius: 4px; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.75rem; font-weight: bold;
       background: rgba(255,255,255,0.02); border: 2px solid transparent;
     }
     .day-cell.has-data { cursor: pointer; }
@@ -272,7 +288,7 @@
     .cal-tc.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
     .cal-tc.br2 { bottom: -1px; right: -1px; border-left: none; border-top: none; }
     .legend-toggle {
-      margin-top: 8px; font-family: 'Orbitron', sans-serif; font-size: 0.68rem;
+      margin-top: 8px; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.68rem;
       letter-spacing: 1px; color: #5599cc; opacity: 0.8; cursor: pointer;
       text-transform: uppercase; user-select: none;
       padding: 10px 4px; display: inline-block;
@@ -292,14 +308,14 @@
       box-shadow: 0 0 20px rgba(0,140,255,0.35); font-size: 0.68rem;
     }
     .cal-tooltip-header {
-      font-family: 'Orbitron', sans-serif; font-size: 0.55rem; letter-spacing: 2px;
+      font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.55rem; letter-spacing: 2px;
       color: #40c0ff; opacity: 0.8; margin-bottom: 5px; text-transform: uppercase;
     }
     .cal-tooltip-body { color: #e0f4ff; line-height: 1.5; white-space: pre-line; }
 
     .close-status {
       display: block; width: 100%; margin-top: 15px; padding: 12px; background: transparent;
-      border: 1px solid #40c0ff; color: #40c0ff; font-family: 'Orbitron', sans-serif;
+      border: 1px solid #40c0ff; color: #40c0ff; font-family: 'Orbitron', 'Exo 2', sans-serif;
       border-radius: 8px; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
       flex-shrink: 0;
     }
@@ -347,7 +363,7 @@
       border: 1px solid #40c0ff55;
       background: #12233a;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Orbitron', sans-serif;
+      font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 0.9rem;
       color: transparent;
       transition: all 0.2s ease;
@@ -362,7 +378,7 @@
       border-radius: 10px; padding: 18px 20px; box-shadow: 0 0 30px rgba(0,140,255,0.4);
     }
     .stat-lore-header {
-      font-family: 'Orbitron', sans-serif; color: #40c0ff; font-size: 0.9rem;
+      font-family: 'Orbitron', 'Exo 2', sans-serif; color: #40c0ff; font-size: 0.9rem;
       letter-spacing: 1px; margin-bottom: 10px; text-shadow: 0 0 8px rgba(64,192,255,0.5);
     }
     .stat-lore-text { font-size: 0.85rem; color: #e0f4ff; line-height: 1.55; }
@@ -401,7 +417,7 @@
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; padding: 0 20px 30px;
     }
     .sub-menu-grid button {
-      font-family: 'Orbitron', sans-serif; font-size: 0.75rem; 
+      font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.75rem; 
       background: rgba(0, 136, 255, 0.05); border: 1px solid #0088ff44;
       letter-spacing: 1px; padding: 10px 5px;
     }
@@ -438,12 +454,12 @@
     .backup-section { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #00aaff22; }
     .backup-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .backup-section.danger-zone { padding-bottom: 20px; }
-    .backup-section-title { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #40c0ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .backup-section-title { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.8rem; color: #40c0ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
     .backup-section-title.danger { color: #ff7777; }
     .backup-summary { font-size: 0.75rem; color: #88ccff; opacity: 0.85; margin-bottom: 10px; line-height: 1.5; }
     .backup-action-btn {
       width: 100%; padding: 10px; background: rgba(0,140,255,0.15); border: 1px solid #40c0ff;
-      color: #40c0ff; font-family: 'Orbitron', sans-serif; font-size: 0.75rem; letter-spacing: 1px;
+      color: #40c0ff; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.75rem; letter-spacing: 1px;
       border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s;
     }
     .backup-action-btn:hover { background: rgba(0,140,255,0.3); box-shadow: 0 0 15px rgba(0,140,255,0.3); }
@@ -458,7 +474,7 @@
     .danger-list li::before { content: '—'; position: absolute; left: 0; color: #ff5555; }
     .danger-btn-row { display: flex; gap: 10px; }
     .danger-btn-cancel, .danger-btn-continue, .danger-btn-confirm, .confirm-btn-continue {
-      flex: 1; padding: 10px; border-radius: 8px; font-family: 'Orbitron', sans-serif;
+      flex: 1; padding: 10px; border-radius: 8px; font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 0.72rem; letter-spacing: 1px; cursor: pointer; text-transform: uppercase;
     }
     .danger-btn-cancel { background: rgba(255,255,255,0.05); border: 1px solid #444; color: #aaa; }
@@ -471,7 +487,7 @@
     .confirm-btn-continue { background: rgba(0,140,255,0.15); border: 1px solid #40c0ff; color: #40c0ff; }
     .confirm-btn-continue:hover { background: rgba(0,140,255,0.3); box-shadow: 0 0 15px rgba(0,140,255,0.3); }
     .danger-input {
-      width: 100%; padding: 10px; margin-bottom: 14px; text-align: center; font-family: 'Orbitron', sans-serif;
+      width: 100%; padding: 10px; margin-bottom: 14px; text-align: center; font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 1rem; letter-spacing: 3px; background: rgba(0,0,0,0.4); border: 1px solid #ff4444;
       border-radius: 8px; color: #ff8888; text-transform: uppercase; box-sizing: border-box;
     }
@@ -516,11 +532,11 @@
       box-shadow: 0 0 25px rgba(0,140,255,0.35), inset 0 0 15px rgba(0,80,200,0.15);
     }
     .system-popup-header {
-      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; letter-spacing: 4px;
+      font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.65rem; letter-spacing: 4px;
       color: #40c0ff; opacity: 0.85; margin-bottom: 8px; text-transform: uppercase;
     }
     .system-popup-body {
-      font-family: 'Orbitron', sans-serif; font-size: 1.05rem; color: #ffd700;
+      font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.05rem; color: #ffd700;
       text-shadow: 0 0 12px rgba(255,215,0,0.5); margin-bottom: 4px; white-space: pre-line;
     }
     .system-popup-body.tone-warn { color: #ffaa44; text-shadow: 0 0 12px rgba(255,170,68,0.5); }
@@ -528,10 +544,10 @@
     .system-popup-sub { font-size: 0.75rem; color: #88ddff; opacity: 0.85; }
 
     /* SHOP/INV SPECIFIC */
-    .section-title { font-size: 0.8rem; color: #40c0ff; margin: 15px 0 10px; font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid #40c0ff; padding-left: 8px; }
+    .section-title { font-size: 0.8rem; color: #40c0ff; margin: 15px 0 10px; font-family: 'Orbitron', 'Exo 2', sans-serif; text-transform: uppercase; letter-spacing: 1px; border-left: 3px solid #40c0ff; padding-left: 8px; }
     .codex-chapter { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #00aaff22; }
     .codex-chapter:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    .codex-chapter-title { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); margin-bottom: 6px; letter-spacing: 0.5px; }
+    .codex-chapter-title { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.8rem; color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); margin-bottom: 6px; letter-spacing: 0.5px; }
     .codex-chapter-text { font-size: 0.8rem; color: #aaddff; line-height: 1.5; }
     .notif-log-list { max-height: 320px; overflow-y: auto; }
     .notif-log-row { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #00aaff15; font-size: 0.72rem; }
@@ -562,7 +578,7 @@
     }
     .pulse-glow-special { animation: pulseGlowSpecial var(--dur, 2.4s) ease-in-out infinite; animation-delay: var(--delay, 0s); }
     .effects-container { background: rgba(0,0,0,0.3); border: 1px solid #1a3550; border-radius: 8px; padding: 10px 12px; margin: 15px 20px; }
-    .effects-header { font-size: 0.8rem; color: #40c0ff; font-family: 'Orbitron', sans-serif; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
+    .effects-header { font-size: 0.8rem; color: #40c0ff; font-family: 'Orbitron', 'Exo 2', sans-serif; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
     .effects-row { display: flex; flex-wrap: wrap; gap: 16px; }
     .effect-icon-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; position: relative; }
     .effect-icon-btn img { width: 32px; height: 32px; object-fit: contain; }
@@ -624,14 +640,14 @@
       box-shadow: 0 0 40px rgba(0,140,255,0.4);
     }
     .item-preview-box img { width: 200px; height: 200px; object-fit: contain; }
-    .item-preview-name { font-family: 'Orbitron', sans-serif; color: #40c0ff; font-size: 0.9rem; text-align: center; letter-spacing: 0.5px; }
+    .item-preview-name { font-family: 'Orbitron', 'Exo 2', sans-serif; color: #40c0ff; font-size: 0.9rem; text-align: center; letter-spacing: 0.5px; }
     .item-preview-meta { color: #9fc4e6; font-size: 0.78rem; text-align: left; white-space: pre-line; line-height: 1.6; margin-top: 10px; }
     .item-info { flex: 1; min-width: 0; }
     .item-name { color: #40c0ff; font-weight: bold; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; }
     .item-desc { color: #88ddffaa; font-size: 0.75rem; margin-top: 2px; line-height: 1.2; }
-    .item-price { color: #ffd700; font-weight: bold; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; border: 1px solid #ffd70044; padding: 5px 8px; border-radius: 4px; background: rgba(255,215,0,0.05); flex-shrink: 0; }
+    .item-price { color: #ffd700; font-weight: bold; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.85rem; border: 1px solid #ffd70044; padding: 5px 8px; border-radius: 4px; background: rgba(255,215,0,0.05); flex-shrink: 0; }
     .use-btn { 
-      background: #004422; border: 1px solid #00ff8866; color: #00ff88; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; 
+      background: #004422; border: 1px solid #00ff8866; color: #00ff88; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.7rem; 
       min-width: auto; padding: 6px 8px; text-transform: uppercase; border-radius: 6px; flex-shrink: 0; white-space: nowrap;
     }
     .use-btn:hover { background: #006633; border-color: #00ff88; }
@@ -641,7 +657,7 @@
     .sell-btn:hover { background: #4a3618; border-color: #ffaa40; }
 
     #limitBreakBtn {
-      width: 100%; padding: 12px; background: rgba(100, 100, 100, 0.1); border: 1px solid #444; color: #666; font-family: 'Orbitron', sans-serif; cursor: not-allowed; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease; border-radius: 12px; font-size: 0.85rem;
+      width: 100%; padding: 12px; background: rgba(100, 100, 100, 0.1); border: 1px solid #444; color: #666; font-family: 'Orbitron', 'Exo 2', sans-serif; cursor: not-allowed; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease; border-radius: 12px; font-size: 0.85rem;
     }
     #limitBreakBtn.ready {
       background: rgba(0,140,255,0.2);
@@ -914,7 +930,7 @@
     <div class="status-body">
     <div class="danger-warning-step">
       <div class="danger-text" style="color:#a8d8ff;">Назовите себя, Игрок.</div>
-      <input type="text" id="playerNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" placeholder="Имя">
+      <input type="text" id="playerNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', 'Exo 2', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" placeholder="Имя">
       <div class="danger-btn-row">
         <button class="danger-btn-cancel" onclick="skipPlayerName()">Пропустить</button>
         <button class="confirm-btn-continue" onclick="submitPlayerName()">Подтвердить</button>
@@ -1060,7 +1076,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.108';
+  const APP_VERSION = '5.9.109';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1296,16 +1312,16 @@
     "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 500, level: 1 },
     "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра.", price: 1000, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 800, level: 1 },
-    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до конца сегодняшнего дня.", price: 1500, level: 5 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до следующего сброса.", price: 1500, level: 5 },
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 4500, level: 6 },
-    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до конца сегодняшнего дня.", price: 1400, level: 9 },
+    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до следующего сброса.", price: 1400, level: 9 },
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 1500, level: 12 },
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
-    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до конца сегодняшнего дня.", price: 2500, level: 20 },
+    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 2500, level: 20 },
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 2800, level: 20 },
     "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 2500, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
-    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до конца сегодняшнего дня.", price: 5000, level: 40 }
+    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 5000, level: 40 }
   };
 
   const KEY_CATALOG = {
@@ -1327,9 +1343,9 @@
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа." },
     "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа и защита серии дней, одновременно — действует до первого провала, сколько бы дней до этого ни прошло." },
-    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до конца сегодняшнего дня." },
-    "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до конца дня." },
-    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до конца сегодняшнего дня." }
+    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса." },
+    "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до следующего сброса." },
+    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до следующего сброса." }
   };
 
   function getConsumableInfo(id) {
@@ -2965,7 +2981,7 @@
     }
     data.expBoostToday = rate;
     data.expBoostSourceId = sourceId || null;
-    if (!silent) showNotice(`${verbPhrase}. Опыт увеличен до конца дня.`, 'info');
+    if (!silent) showNotice(`${verbPhrase}. Опыт увеличен до следующего сброса.`, 'info');
     return true;
   }
 
@@ -2978,7 +2994,7 @@
     }
     data.creditBoostToday = rate;
     data.creditBoostSourceId = sourceId || null;
-    if (!silent) showNotice(`${verbPhrase || 'Использовано'}. Кредиты увеличены до конца дня.`, 'info');
+    if (!silent) showNotice(`${verbPhrase || 'Использовано'}. Кредиты увеличены до следующего сброса.`, 'info');
     return true;
   }
 
@@ -3874,7 +3890,7 @@
       cont.innerHTML = `
         <div class="backup-section">
           <div class="backup-section-title">Изменить имя</div>
-          <input type="text" id="editNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" value="${escapeHtml(data.playerName || '')}" placeholder="Имя">
+          <input type="text" id="editNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', 'Exo 2', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" value="${escapeHtml(data.playerName || '')}" placeholder="Имя">
           <div class="danger-btn-row">
             <button class="danger-btn-cancel" onclick="cancelEditName()">Отмена</button>
             <button class="confirm-btn-continue" onclick="submitEditName()">Сохранить</button>
