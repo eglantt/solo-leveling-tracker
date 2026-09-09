@@ -13,11 +13,36 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.107 (System Codex)</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <title>Solo Leveling — Тренировочный счётчик v5.9.108 (System Codex)</title>
   <style>
+    @font-face {
+      font-family: 'Orbitron';
+      src: url('fonts/orbitron-latin-500-normal.woff2') format('woff2');
+      font-weight: 500;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Orbitron';
+      src: url('fonts/orbitron-latin-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto Mono';
+      src: url('fonts/roboto-mono-latin-400-normal.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Roboto Mono';
+      src: url('fonts/roboto-mono-latin-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       min-height: 100vh;
@@ -1035,7 +1060,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.107';
+  const APP_VERSION = '5.9.108';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2060,6 +2085,13 @@
   }
 
   function checkMissedDays() {
+    try {
+      checkMissedDaysInner();
+    } catch (e) {
+      console.error('checkMissedDays failed:', e);
+    }
+  }
+  function checkMissedDaysInner() {
     let now = Date.now();
     let nextReset = getNextCleanReset(data.lastReset);
     let penalizedDays = 0;
@@ -2317,6 +2349,13 @@
   }
 
   function updateTimer() {
+    try {
+      updateTimerInner();
+    } catch (e) {
+      console.error('updateTimer failed:', e);
+    }
+  }
+  function updateTimerInner() {
     const nextReset = getNextResetTime();
     const timeLeft = nextReset - Date.now();
     if (timeLeft <= 0) { checkMissedDays(); return; }
@@ -3192,6 +3231,22 @@
   }
 
   function render() {
+    try {
+      renderInner();
+    } catch (e) {
+      console.error('Render failed:', e);
+      const container = document.querySelector('.system-container');
+      if (container) {
+        container.innerHTML = `
+          <div style="padding:40px;text-align:center;color:#ff7777;">
+            <h2>⚠ Ошибка отображения</h2>
+            <p>Данные могут быть повреждены. Рекомендуется сохранить резервную копию.</p>
+            <button onclick="openBackupModal()" style="margin:10px;padding:10px 16px;">Экспортировать бэкап</button>
+          </div>`;
+      }
+    }
+  }
+  function renderInner() {
     updateTitleStatus();
     renderActiveEffects();
     ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(qid => {
@@ -3971,17 +4026,23 @@
   }
 
   // Legacy fallback: clipboard code, kept for devices where file download/picking misbehaves.
-  function exportDataCode() {
+  async function exportDataCode() {
     const fullData = { state: data, total: totalStats };
     try {
         const jsonString = JSON.stringify(fullData);
         const base64Code = bytesToBase64(jsonString);
-        const el = document.createElement('textarea');
-        el.value = base64Code;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(base64Code);
+        } else {
+          const el = document.createElement('textarea');
+          el.value = base64Code;
+          el.style.position = 'fixed';
+          el.style.left = '-9999px';
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+        }
         showNotice("Код бэкапа скопирован в буфер обмена!", 'info');
     } catch(e) {
         showNotice("Ошибка при экспорте данных.", 'danger');
