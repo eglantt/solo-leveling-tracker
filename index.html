@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.1.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.2.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1114,7 +1114,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.1.1';
+  const APP_VERSION = '6.2.0';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1207,6 +1207,7 @@
         extraLimitBreaksToday: oldData.extraLimitBreaksToday || 0,
         totalItemsSold: oldData.totalItemsSold || 0,
         expGainedToday: oldData.expGainedToday || 0,
+        creditsGainedToday: oldData.creditsGainedToday || 0,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
         pendingCurse: !!oldData.pendingCurse,
@@ -1233,7 +1234,7 @@
         expBoostSourceId: null, creditBoostSourceId: null, targetDiscountSourceId: null,
         insuranceSourceId: null, streakShieldSourceId: null,
         activeScroll: null, pendingScroll: null, transferExerciseId: null, transferStreakDays: 0,
-        keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
+        keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0, creditsGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true
@@ -1261,13 +1262,15 @@
   // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
   // достижения нужного уровня (внутри checkLevelUp()) или находки — игроки, уже
   // прошедшие нужный уровень до появления этого свитка в игре, иначе никогда не
-  // получили бы главу. При добавлении Договора (8 ур.) в будущей сборке сюда
-  // нужно добавить точно такие же две строки под него.
+  // получили бы главу. Все три свитка учтены ниже.
   if (data.level >= 12 && !data.codexUnlocked.includes('scroll_renunciation')) {
     data.codexUnlocked.push('scroll_renunciation');
   }
   if (data.level >= 4 && !data.codexUnlocked.includes('scroll_transfer')) {
     data.codexUnlocked.push('scroll_transfer');
+  }
+  if (data.level >= 8 && !data.codexUnlocked.includes('scroll_contract')) {
+    data.codexUnlocked.push('scroll_contract');
   }
   // Retroactive fix: unlockCodexChapter() for a title only ever fires the
   // first time that title is granted (inside unlockTitle()'s "not yet
@@ -1302,6 +1305,7 @@
   if (!data.keys || typeof data.keys !== 'object' || Array.isArray(data.keys)) data.keys = {};
   if (typeof data.extraLimitBreaksToday !== 'number') data.extraLimitBreaksToday = 0;
   if (typeof data.expGainedToday !== 'number') data.expGainedToday = 0;
+  if (typeof data.creditsGainedToday !== 'number') data.creditsGainedToday = 0;
   if (typeof data.dailyTargetLevel !== 'number' || data.dailyTargetLevel < 1) data.dailyTargetLevel = data.level || 1;
   if (typeof data.expDebt !== 'number' || data.expDebt < 0) data.expDebt = 0;
   if (!data.dailyExerciseLog || typeof data.dailyExerciseLog !== 'object' || Array.isArray(data.dailyExerciseLog)) data.dailyExerciseLog = {};
@@ -1384,6 +1388,7 @@
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 5000, level: 40 },
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
     "scroll_transfer": { name: "Свиток Переноса", icon: "📜", desc: "Снимает одно выбранное упражнение дневного задания — без цели, без награды. Оставшиеся четыре получают +30% к цели, а при использовании подряд эта надбавка растёт ещё на 10% за каждый день.", price: 2000, level: 4 },
+    "scroll_contract": { name: "Свиток Договора", icon: "📜", desc: "Поднимает все пять целей дневного задания на 25%. За полное исполнение — доплата +50% к заработанным опыту и кредитам. При срыве — обычный штраф, без бонуса.", price: 2800, level: 8 },
   };
 
   const KEY_CATALOG = {
@@ -1483,6 +1488,23 @@
         spinning: true
       });
     }
+    if (data.activeScroll === 'contract') {
+      effects.push({
+        icon: 'icons/items/mag_seal_contract.png',
+        name: 'Свиток Договора',
+        text: 'Цели этого дневного задания повышены на 25%. За полное исполнение — доплата +50% к заработанным опыту и кредитам.',
+        spinning: true
+      });
+    }
+    if (data.pendingScroll === 'contract') {
+      effects.push({
+        icon: 'icons/items/mag_seal_contract.png',
+        name: 'Свиток Договора (ожидает)',
+        text: 'Вступит в силу со следующим дневным заданием — цели вырастут, а за полное исполнение будет доплата.',
+        isPending: true,
+        sparkCount: 1
+      });
+    }
     if (data.isGoalMet) {
       effects.push({ icon: 'icons/items/effect_limit_break.png', name: 'Преодоление предела', text: 'Кредиты за упражнения удвоены, пока активен режим.' });
     }
@@ -1544,9 +1566,9 @@
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
   const BOX_LOOT_POOLS = {
     "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_stability", "potion_growth"],
-    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth", "scroll_renunciation", "scroll_transfer"],
-    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit", "scroll_renunciation", "scroll_transfer"],
-    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity", "scroll_renunciation", "scroll_transfer"],
+    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth", "scroll_renunciation", "scroll_transfer", "scroll_contract"],
+    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit", "scroll_renunciation", "scroll_transfer", "scroll_contract"],
+    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity", "scroll_renunciation", "scroll_transfer", "scroll_contract"],
     "box_scarlet": ["rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "rune_fate_cleansing", "rune_cleansing_full", "shard_limit_double"],
     "box_crimson": ["rune_fate_cleansing", "rune_cleansing_full", "potion_restoration_full", "rune_protection_absolute", "shard_limit_double"],
     "box_purple": ["potion_restoration_full", "rune_protection_absolute", "rune_burden_release", "rune_return", "crystal_impulse"],
@@ -1638,6 +1660,7 @@
     scrolls: { title: "Свитки", content: "Свитки — особый тип расходников, каждый из которых целиком меняет условия дневного задания, а не просто усиливает уже существующее. Действовать может только один свиток за раз, а начатый эффект нельзя отменить раньше срока — только дождаться его завершения, каким бы ни был исход дня." },
     scroll_renunciation: { title: "Свиток Отречения", content: "При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания. Характеристики, титул и часть артефактов молчат, пока действует эффект. Обычно сегодняшнее усилие и всё, что накоплено прежде, складываются в один результат, неразличимо друг от друга. Свиток на время убирает второе — испытание для самого себя, без «брони», накопленной со временем." },
     scroll_transfer: { title: "Свиток Переноса", content: "Свиток Переноса снимает одно упражнение дневного задания — ни цель, ни награда по нему в этот день не учитываются. Освобождённый вес не исчезает: он ложится на оставшиеся четыре, соразмерно увеличивая их цель. При частом использовании подряд эта компенсация становится заметнее — нагрузка на оставшиеся четыре упражнения растёт с каждым днём непрерывного применения." },
+    scroll_contract: { title: "Свиток Договора", content: "Свиток Договора — игрок сам поднимает цели предстоящего дневного задания, зная заранее: полное исполнение будет вознаграждено сверх обычного. Условие названо прежде, чем сделан первый шаг." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Артефакт D-ранга — кристалл, отзывающийся на сам ритм движения, а не на его цель. Каждый пройденный шаг приносит заметно больше кредитов, чем без него." },
@@ -1841,6 +1864,7 @@
     "rune_protection_absolute": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "scroll_renunciation": { rank: "D", type: "Свиток", usage: "Одноразовое использование" },
     "scroll_transfer": { rank: "E", type: "Свиток", usage: "Одноразовое использование" },
+    "scroll_contract": { rank: "C", type: "Свиток", usage: "Одноразовое использование" },
     "rune_burden_release": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_return": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "crystal_impulse": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
@@ -2044,6 +2068,7 @@
     const combinedReduction = Math.min(0.60, staReduction + runeReduction);
     if (combinedReduction > 0) val = Math.floor(val * (1 - combinedReduction));
     if (data.curseActiveToday) val = Math.ceil(val * 1.40);
+    if (data.activeScroll === 'contract') val = Math.floor(val * 1.25);
     if (data.activeScroll === 'transfer' && id !== undefined && id !== data.transferExerciseId) {
       const transferTax = 1.3 + (Math.max(1, data.transferStreakDays) - 1) * 0.1;
       val = Math.floor(val * transferTax);
@@ -2306,6 +2331,7 @@
       data.limitBreaksToday = 0;
       data.limitBreaksCompletedToday = 0;
       data.expGainedToday = 0;
+      data.creditsGainedToday = 0;
       data.dailyTargetLevel = data.level;
       data.curseActiveToday = !!data.pendingCurse;
       data.pendingCurse = false;
@@ -3074,6 +3100,22 @@
                   });
               }
           }
+      } else if (id === 'scroll_contract') {
+          if (data.activeScroll || data.pendingScroll) {
+              showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
+          } else {
+              const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+              const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
+              if (!hasAnyClosed && !data.isGoalMet) {
+                  data.activeScroll = 'contract';
+                  showNotice("Цели повышены. Награда — за полное исполнение.", 'info');
+              } else {
+                  data.pendingScroll = 'contract';
+                  showNotice("Свиток вступит в силу со следующим дневным заданием.", 'info');
+              }
+              used = true;
+              showFullscreenSeal('contract', '#ff3333');
+          }
       } else if (id === 'potion_growth') {
           used = useExpBoostItem(0.20, 'Зелье использовано', false, id);
       } else if (id === 'rune_growth_charged') {
@@ -3585,6 +3627,7 @@
         }
         if (data.isGoalMet) creds *= 2;
         data.credits += Math.floor(creds);
+        data.creditsGainedToday = (data.creditsGainedToday || 0) + Math.floor(creds);
         const p = document.createElement('div'); p.className='complete-popup'; p.innerHTML=`COMPLETE<br><span style="font-size:0.8rem; color:#40ffaa">+${expGained} EXP</span> <span style="font-size:0.8rem; color:#ffd700">+${Math.floor(creds)} ◈${critMsg}</span>`; item.appendChild(p);
         setTimeout(() => p.remove(), 1800);
         // Snapshot today's completion status BEFORE checkLevelUp() — a level-up
@@ -3611,6 +3654,14 @@
           data.dailyNotices.complete = true;
           if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute') { data.insurance = false; data.insuranceSourceId = null; }
           if (data.activeScroll === 'renunciation') { data.activeScroll = null; }
+          if (data.activeScroll === 'contract') {
+            const bonusExp = Math.floor(data.expGainedToday * 0.5);
+            const bonusCredits = Math.floor(data.creditsGainedToday * 0.5);
+            gainExp(bonusExp); checkLevelUp();
+            data.credits += bonusCredits;
+            data.activeScroll = null;
+            showNotice(`Договор исполнен. Система начисляет дополнительное вознаграждение: +${bonusExp} EXP и +${bonusCredits} ◈.`, 'info');
+          }
           playSound('dayComplete');
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
           setTimeout(() => showNotice(completeText, 'info'), 4500);
