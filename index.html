@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v5.9.110 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.0.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -620,6 +620,31 @@
     .spark-ring-wrap .head:nth-child(2) { transform: translate(-50%,-50%) rotate(90deg) translateY(-19px); }
     .spark-ring-wrap .head:nth-child(3) { transform: translate(-50%,-50%) rotate(210deg) translateY(-19px); }
     .spark-ring-wrap .head:nth-child(4) { transform: translate(-50%,-50%) rotate(330deg) translateY(-19px); }
+    /* Одна искра — для свитков, чей ожидающий эффект решено показывать
+       менее заметно, чем трёхискровой эталон у Бремени Аномалии. */
+    .spark-ring-wrap.spark-count-1 .trail {
+      background: conic-gradient(from 0deg, transparent 0deg, #40c0ff 90deg, transparent 120deg, transparent 360deg);
+    }
+    .spark-ring-wrap.spark-count-1 .head:nth-child(3),
+    .spark-ring-wrap.spark-count-1 .head:nth-child(4) { display: none; }
+    /* Медленное вращение самой иконки активного (не ожидающего) эффекта —
+       используется печатями свитков, не рунами. */
+    @keyframes effectIconSlowSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .effect-icon-btn img.spinning { animation: effectIconSlowSpin 7.2s linear infinite; }
+    .fullscreen-seal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 3000; pointer-events: none;
+      transition: background 0.4s ease;
+    }
+    .fullscreen-seal-overlay.show { background: rgba(0,0,0,0.75); }
+    .fullscreen-seal-overlay img {
+      width: min(80vw, 420px); height: min(80vw, 420px); opacity: 0; transform: scale(0.6);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .fullscreen-seal-overlay.show img { opacity: 1; transform: scale(1); }
+    .fullscreen-seal-overlay img.spin { animation: sealSlowSpin 7.2s linear infinite; }
+    @keyframes sealSlowSpin { from { transform: scale(1) rotate(0deg); } to { transform: scale(1) rotate(360deg); } }
     .effect-detail-text { color: #88ddffaa; font-size: 0.75rem; line-height: 1.2; }
     /* SL:SYS-TOOLS:START */
     @keyframes sysToolsBtnFlash {
@@ -851,7 +876,12 @@
   </div>
 </div>
 
+<div class="fullscreen-seal-overlay" id="fullscreenSealOverlay">
+  <img id="fullscreenSealImg" src="" alt="">
+</div>
+
 <div class="status-overlay" id="itemPreviewOverlay" style="z-index:2500; cursor:pointer;" onclick="document.getElementById('itemPreviewOverlay').style.display='none'">
+
   <div class="item-preview-box">
     <img id="itemPreviewImg" src="" alt="">
     <div class="item-preview-name" id="itemPreviewName"></div>
@@ -1076,7 +1106,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '5.9.110';
+  const APP_VERSION = '6.0.1';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1157,6 +1187,8 @@
         expBoostSourceId: oldData.expBoostSourceId || null,
         insuranceSourceId: oldData.insuranceSourceId || null,
         streakShieldSourceId: oldData.streakShieldSourceId || null,
+        activeScroll: oldData.activeScroll || null,
+        pendingScroll: oldData.pendingScroll || null,
         creditBoostSourceId: oldData.creditBoostSourceId || null,
         targetDiscountSourceId: oldData.targetDiscountSourceId || null,
         creditBoostToday: oldData.creditBoostToday,
@@ -1190,6 +1222,7 @@
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
         expBoostSourceId: null, creditBoostSourceId: null, targetDiscountSourceId: null,
         insuranceSourceId: null, streakShieldSourceId: null,
+        activeScroll: null, pendingScroll: null,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
@@ -1213,6 +1246,16 @@
   if (!data.codexUnlocked.includes('boxes')) data.codexUnlocked.push('boxes');
   if (!data.codexUnlocked.includes('archive')) data.codexUnlocked.push('archive');
   if (!data.codexUnlocked.includes('stats')) data.codexUnlocked.push('stats');
+  if (!data.codexUnlocked.includes('scrolls')) data.codexUnlocked.push('scrolls');
+  // Догоняющая проверка — та же логика, что уже применена выше к title_probuzhdenny.
+  // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
+  // достижения нужного уровня (внутри checkLevelUp()) или находки — игроки, уже
+  // прошедшие нужный уровень до появления этого свитка в игре, иначе никогда не
+  // получили бы главу. При добавлении Переноса (4 ур.) и Договора (8 ур.) в
+  // будущих сборках сюда нужно добавить точно такие же две строки под них.
+  if (data.level >= 12 && !data.codexUnlocked.includes('scroll_renunciation')) {
+    data.codexUnlocked.push('scroll_renunciation');
+  }
   // Retroactive fix: unlockCodexChapter() for a title only ever fires the
   // first time that title is granted (inside unlockTitle()'s "not yet
   // unlocked" branch). Players who already had "Пробужденный" before this
@@ -1262,6 +1305,8 @@
   if (typeof data.targetDiscountSourceId !== 'string') data.targetDiscountSourceId = null;
   if (typeof data.insuranceSourceId !== 'string') data.insuranceSourceId = null;
   if (typeof data.streakShieldSourceId !== 'string') data.streakShieldSourceId = null;
+  if (typeof data.activeScroll !== 'string') data.activeScroll = null;
+  if (typeof data.pendingScroll !== 'string') data.pendingScroll = null;
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
@@ -1321,7 +1366,8 @@
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 2800, level: 20 },
     "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 2500, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
-    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 5000, level: 40 }
+    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 5000, level: 40 },
+    "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
   };
 
   const KEY_CATALOG = {
@@ -1396,6 +1442,23 @@
         isPending: true
       });
     }
+    if (data.activeScroll === 'renunciation') {
+      effects.push({
+        icon: 'icons/items/mag_seal_renunciation.png',
+        name: 'Свиток Отречения',
+        text: 'Накопленные сборкой преимущества не учитываются до завершения дневного задания: Выносливость, Интеллект, Ловкость, бонус титула и артефактов молчат.',
+        spinning: true
+      });
+    }
+    if (data.pendingScroll === 'renunciation') {
+      effects.push({
+        icon: 'icons/items/mag_seal_renunciation.png',
+        name: 'Свиток Отречения (ожидает)',
+        text: 'Вступит в силу со следующим дневным заданием — сборка преимуществ временно замолчит.',
+        isPending: true,
+        sparkCount: 1
+      });
+    }
     if (data.isGoalMet) {
       effects.push({ icon: 'icons/items/effect_limit_break.png', name: 'Преодоление предела', text: 'Кредиты за упражнения удвоены, пока активен режим.' });
     }
@@ -1421,7 +1484,7 @@
     if (signature === window.__activeEffectsSignature) return;
     window.__activeEffectsSignature = signature;
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? '<div class="spark-ring-wrap"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>' : ''}<img src="${e.icon}" alt=""></div>`
+      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}" src="${e.icon}" alt=""></div>`
     ).join('');
     document.getElementById('effectDetail').classList.remove('open');
     openEffectIndex = null;
@@ -1457,9 +1520,9 @@
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
   const BOX_LOOT_POOLS = {
     "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_stability", "potion_growth"],
-    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth"],
-    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit"],
-    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity"],
+    "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth", "scroll_renunciation"],
+    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit", "scroll_renunciation"],
+    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity", "scroll_renunciation"],
     "box_scarlet": ["rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "rune_fate_cleansing", "rune_cleansing_full", "shard_limit_double"],
     "box_crimson": ["rune_fate_cleansing", "rune_cleansing_full", "potion_restoration_full", "rune_protection_absolute", "shard_limit_double"],
     "box_purple": ["potion_restoration_full", "rune_protection_absolute", "rune_burden_release", "rune_return", "crystal_impulse"],
@@ -1548,6 +1611,8 @@
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания." },
     titles: { title: "Титулы", content: "Достижения Игрока разблокируют титулы — каждый со своим условием и своей наградой. Одновременно может быть открыто сразу несколько, но действует только один — тот, что выбран активным в данный момент. Остальные разблокированные титулы ждут своего часа, не оказывая никакого эффекта, пока не выбраны. Сменить активный титул можно свободно, в любой момент, среди уже открытых." },
     anomaly_burden: { title: "Бремя Аномалии", content: "Один из двух возможных исходов при открытии Шкатулки Аномалии — резонанс, искажающий расчёты Системы, определяемый случайно в момент самого открытия. При неудачном исходе следующее дневное задание заметно усложняется, и это сразу бросается в глаза. Цена провала в такой день тоже иная — штраф ощутимо возрастает. Обычная защита от штрафа в такой день бессильна — предотвратить его способна лишь Абсолютная защита." },
+    scrolls: { title: "Свитки", content: "Свитки — особый тип расходников, каждый из которых целиком меняет условия дневного задания, а не просто усиливает уже существующее. Действовать может только один свиток за раз, а начатый эффект нельзя отменить раньше срока — только дождаться его завершения, каким бы ни был исход дня." },
+    scroll_renunciation: { title: "Свиток Отречения", content: "При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания. Характеристики, титул и часть артефактов молчат, пока действует эффект. Обычно сегодняшнее усилие и всё, что накоплено прежде, складываются в один результат, неразличимо друг от друга. Свиток на время убирает второе — испытание для самого себя, без «брони», накопленной со временем." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Артефакт D-ранга — кристалл, отзывающийся на сам ритм движения, а не на его цель. Каждый пройденный шаг приносит заметно больше кредитов, чем без него." },
@@ -1749,6 +1814,7 @@
     "shard_limit_double": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "potion_restoration_full": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_protection_absolute": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
+    "scroll_renunciation": { rank: "D", type: "Свиток", usage: "Одноразовое использование" },
     "rune_burden_release": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_return": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "crystal_impulse": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
@@ -1947,7 +2013,7 @@
   function getDynamicTarget(base, lvl) {
     let val = Math.floor(base * getTargetGrowthMultiplier(lvl));
     const bonusSta = Math.max(0, data.stats.sta - 10);
-    const staReduction = Math.min(0.20, bonusSta * 0.001);
+    const staReduction = data.activeScroll === 'renunciation' ? 0 : Math.min(0.20, bonusSta * 0.001);
     const runeReduction = data.targetDiscountToday ? (data.targetDiscountRate || 0.25) : 0;
     const combinedReduction = Math.min(0.60, staReduction + runeReduction);
     if (combinedReduction > 0) val = Math.floor(val * (1 - combinedReduction));
@@ -1957,23 +2023,25 @@
   
   function getDynamicExp(base, lvl, id) { 
     let mul = 1 + (lvl - 1) * 0.05;
-    if (data.activeTitle === "Пробужденный") mul += 0.01; 
-    const bonusInt = Math.max(0, data.stats.int - 10);
-    mul += (bonusInt * 0.01);
-    if (data.activeTitle === "Целеустремлённый") {
-      let determinedBonus = 0.05;
-      if (data.inventory.includes("amulet_continuity")) determinedBonus *= 1.5;
-      mul += determinedBonus;
+    if (data.activeScroll !== 'renunciation') {
+      if (data.activeTitle === "Пробужденный") mul += 0.01; 
+      const bonusInt = Math.max(0, data.stats.int - 10);
+      mul += (bonusInt * 0.01);
+      if (data.activeTitle === "Целеустремлённый") {
+        let determinedBonus = 0.05;
+        if (data.inventory.includes("amulet_continuity")) determinedBonus *= 1.5;
+        mul += determinedBonus;
+      }
+      if (data.activeTitle === "Странник" && id === "steps") mul += 0.10;
+      if (data.activeTitle === "Марафонец" && id === "steps") mul += 0.20;
+      if (data.activeTitle === "Покоритель горизонта" && id === "steps") mul += 0.30;
+      if (data.activeTitle === "Неутомимый" && id === "pushups") mul += 0.10;
+      if (data.activeTitle === "Несокрушимый" && id === "pushups") mul += 0.20;
+      if (data.activeTitle === "Сокрушитель" && id === "pushups") mul += 0.30;
+      if (data.inventory.includes("crystal_insight")) mul += 0.08;
     }
-    if (data.activeTitle === "Странник" && id === "steps") mul += 0.10;
-    if (data.activeTitle === "Марафонец" && id === "steps") mul += 0.20;
-    if (data.activeTitle === "Покоритель горизонта" && id === "steps") mul += 0.30;
-    if (data.activeTitle === "Неутомимый" && id === "pushups") mul += 0.10;
-    if (data.activeTitle === "Несокрушимый" && id === "pushups") mul += 0.20;
-    if (data.activeTitle === "Сокрушитель" && id === "pushups") mul += 0.30;
-    if (data.inventory.includes("crystal_insight")) mul += 0.08;
     if (data.inventory.includes("crystal_shadow")) mul += 0.05;
-    if (data.isGoalMet) {
+    if (data.activeScroll !== 'renunciation' && data.isGoalMet) {
       const bonusSta = Math.max(0, data.stats.sta - 10);
       mul += (bonusSta * 0.02);
     }
@@ -2175,6 +2243,8 @@
       data.dailyTargetLevel = data.level;
       data.curseActiveToday = !!data.pendingCurse;
       data.pendingCurse = false;
+      data.activeScroll = data.pendingScroll;
+      data.pendingScroll = null;
       data.limitBreakRoundPending = false;
       data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
@@ -2720,8 +2790,25 @@
           <div class="item-info"><div class="item-name">${key.name}</div></div>
         </div>`;
     });
+    cont.innerHTML += `<div class="section-title">Свитки</div>`;
+    const scrollIds = sortByRank(Object.keys(data.consumables).filter(id => data.consumables[id] > 0 && ITEM_META[id] && ITEM_META[id].type === 'Свиток'));
+    if (!scrollIds.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
+    scrollIds.forEach(id => {
+      const item = getConsumableInfo(id);
+      if (!item) return;
+      const count = data.consumables[id];
+      cont.innerHTML += `
+        <div class="item-card" data-consumable-id="${id}">
+          <div class="item-icon"><img${glowAttrs(id)} src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
+          <div class="item-info"><div class="item-name">${item.name} ×${count}</div><div class="item-desc">${item.desc}</div></div>
+          <div class="item-btn-stack">
+            ${SHOP_CATALOG[id] ? `<button onclick="sellItem('${id}')" class="use-btn sell-btn">ПРОДАТЬ</button>` : ''}
+            <button onclick="useItem('${id}')" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
+          </div>
+        </div>`;
+    });
     cont.innerHTML += `<div class="section-title">Расходники</div>`;
-    const consumableIds = sortByRank(Object.keys(data.consumables).filter(id => data.consumables[id] > 0));
+    const consumableIds = sortByRank(Object.keys(data.consumables).filter(id => data.consumables[id] > 0 && !(ITEM_META[id] && ITEM_META[id].type === 'Свиток')));
     if (!consumableIds.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
     consumableIds.forEach(id => {
       const item = getConsumableInfo(id);
@@ -2778,6 +2865,18 @@
     }
     document.getElementById('itemPreviewMeta').textContent = text;
     document.getElementById('itemPreviewOverlay').style.display = 'flex';
+  }
+
+  function showFullscreenSeal(id) {
+    const overlay = document.getElementById('fullscreenSealOverlay');
+    const img = document.getElementById('fullscreenSealImg');
+    img.src = `icons/items/mag_seal_${id}.png`;
+    img.classList.add('spin');
+    overlay.classList.add('show');
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      setTimeout(() => { img.classList.remove('spin'); }, 500);
+    }, 2000);
   }
 
   function flashThenRun(selector, callback, flashClass = 'item-flash') {
@@ -2846,6 +2945,22 @@
           if (data.insuranceSourceId === 'rune_protection_absolute') { showNotice("Серия дней уже защищена Руной Абсолютной Защиты.", 'warn', true); }
           else if (!data.streakShield) { data.streakShield = true; data.streakShieldSourceId = id; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
           else { showNotice("Защита серии уже активна.", 'warn', true); }
+      } else if (id === 'scroll_renunciation') {
+          if (data.activeScroll || data.pendingScroll) {
+              showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
+          } else {
+              const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+              const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel));
+              if (!hasAnyClosed && !data.isGoalMet) {
+                  data.activeScroll = 'renunciation';
+                  showNotice("При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания.", 'info');
+              } else {
+                  data.pendingScroll = 'renunciation';
+                  showNotice("Свиток вступит в силу со следующего дневного задания.", 'info');
+              }
+              used = true;
+              showFullscreenSeal('renunciation');
+          }
       } else if (id === 'potion_growth') {
           used = useExpBoostItem(0.20, 'Зелье использовано', false, id);
       } else if (id === 'rune_growth_charged') {
@@ -3335,19 +3450,23 @@
         gainExp(expGained);
         data.expGainedToday = (data.expGainedToday || 0) + expGained;
         let creds = Math.floor(parseInt(item.dataset.exp) * 0.5);
-        const critChance = Math.max(0, data.stats.agi - 10) * 0.5;
         let critMsg = "";
-        if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " BONUS!"; playSound('bonus'); }
-        if (id === "steps" && data.inventory.includes("crystal_speed")) creds *= 1.1;
+        if (data.activeScroll !== 'renunciation') {
+          const critChance = Math.max(0, data.stats.agi - 10) * 0.5;
+          if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " BONUS!"; playSound('bonus'); }
+          if (id === "steps" && data.inventory.includes("crystal_speed")) creds *= 1.1;
+        }
         if (data.inventory.includes("crystal_shadow")) creds *= 1.15;
         if (data.creditBoostToday > 0) creds *= (1 + data.creditBoostToday);
-        if (data.activeTitle === "Преодолевший предел" && data.isGoalMet) creds *= 1.05;
-        if (data.activeTitle === "Марафонец" && id === "steps") creds *= 1.1;
-        if (data.activeTitle === "Покоритель горизонта" && id === "steps") creds *= 1.2;
-        if (data.activeTitle === "Несокрушимый" && id === "pushups") creds *= 1.1;
-        if (data.activeTitle === "Сокрушитель" && id === "pushups") creds *= 1.2;
-        if (data.activeTitle === "Непреклонный") creds *= 1.1;
-        if (data.activeTitle === "Покоритель предела" && data.isGoalMet) creds *= 1.2;
+        if (data.activeScroll !== 'renunciation') {
+          if (data.activeTitle === "Преодолевший предел" && data.isGoalMet) creds *= 1.05;
+          if (data.activeTitle === "Марафонец" && id === "steps") creds *= 1.1;
+          if (data.activeTitle === "Покоритель горизонта" && id === "steps") creds *= 1.2;
+          if (data.activeTitle === "Несокрушимый" && id === "pushups") creds *= 1.1;
+          if (data.activeTitle === "Сокрушитель" && id === "pushups") creds *= 1.2;
+          if (data.activeTitle === "Непреклонный") creds *= 1.1;
+          if (data.activeTitle === "Покоритель предела" && data.isGoalMet) creds *= 1.2;
+        }
         if (data.isGoalMet) creds *= 2;
         data.credits += Math.floor(creds);
         const p = document.createElement('div'); p.className='complete-popup'; p.innerHTML=`COMPLETE<br><span style="font-size:0.8rem; color:#40ffaa">+${expGained} EXP</span> <span style="font-size:0.8rem; color:#ffd700">+${Math.floor(creds)} ◈${critMsg}</span>`; item.appendChild(p);
@@ -3375,6 +3494,7 @@
         if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
           if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute') { data.insurance = false; data.insuranceSourceId = null; }
+          if (data.activeScroll === 'renunciation') { data.activeScroll = null; }
           playSound('dayComplete');
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
           setTimeout(() => showNotice(completeText, 'info'), 4500);
@@ -3748,6 +3868,8 @@
       expBoostSourceId: (typeof s.expBoostSourceId === 'string') ? s.expBoostSourceId : null,
       insuranceSourceId: (typeof s.insuranceSourceId === 'string') ? s.insuranceSourceId : null,
       streakShieldSourceId: (typeof s.streakShieldSourceId === 'string') ? s.streakShieldSourceId : null,
+      activeScroll: (typeof s.activeScroll === 'string') ? s.activeScroll : null,
+      pendingScroll: (typeof s.pendingScroll === 'string') ? s.pendingScroll : null,
       creditBoostSourceId: (typeof s.creditBoostSourceId === 'string') ? s.creditBoostSourceId : null,
       targetDiscountSourceId: (typeof s.targetDiscountSourceId === 'string') ? s.targetDiscountSourceId : null,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
