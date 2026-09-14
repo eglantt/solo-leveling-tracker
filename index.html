@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.2.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.3.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1114,7 +1114,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.2.1';
+  const APP_VERSION = '6.3.0';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1208,6 +1208,7 @@
         totalItemsSold: oldData.totalItemsSold || 0,
         expGainedToday: oldData.expGainedToday || 0,
         creditsGainedToday: oldData.creditsGainedToday || 0,
+        playerId: oldData.playerId || null,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
         pendingCurse: !!oldData.pendingCurse,
@@ -1234,7 +1235,7 @@
         expBoostSourceId: null, creditBoostSourceId: null, targetDiscountSourceId: null,
         insuranceSourceId: null, streakShieldSourceId: null,
         activeScroll: null, pendingScroll: null, transferExerciseId: null, transferStreakDays: 0,
-        keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0, creditsGainedToday: 0,
+        keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0, creditsGainedToday: 0, playerId: null,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true
@@ -1326,6 +1327,7 @@
   if (typeof data.pendingScroll !== 'string') data.pendingScroll = null;
   if (typeof data.transferExerciseId !== 'string') data.transferExerciseId = null;
   if (typeof data.transferStreakDays !== 'number') data.transferStreakDays = 0;
+  if (typeof data.playerId !== 'string' || !data.playerId) data.playerId = crypto.randomUUID();
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
@@ -4039,6 +4041,7 @@
       pendingScroll: (typeof s.pendingScroll === 'string') ? s.pendingScroll : null,
       transferExerciseId: (typeof s.transferExerciseId === 'string') ? s.transferExerciseId : null,
       transferStreakDays: sanitizeNumber(s.transferStreakDays, 0),
+      playerId: (typeof s.playerId === 'string' && s.playerId) ? s.playerId : null,
       creditBoostSourceId: (typeof s.creditBoostSourceId === 'string') ? s.creditBoostSourceId : null,
       targetDiscountSourceId: (typeof s.targetDiscountSourceId === 'string') ? s.targetDiscountSourceId : null,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
