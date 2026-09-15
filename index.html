@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.3.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.4.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -863,9 +863,21 @@
       <div class="stat-line"><span>Подтягивания:</span><strong id="progPullups">0</strong></div>
       <div class="stat-line"><span>Пресс:</span><strong id="progPress">0</strong></div>
       <div class="stat-line"><span>Шаги:</span><strong id="progSteps">0</strong></div>
+      <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #00aaff22; text-align: center;">
+        <div style="opacity: 0.75; font-size: 0.85rem; margin-bottom: 8px; text-align: left;">Ваше место в общем Реестре Игроков</div>
+        <button onclick="openLeaderboard()">РЕЕСТР ИГРОКОВ</button>
+      </div>
     </div>
     </div>
     <button class="close-status" onclick="document.getElementById('progressOverlay').style.display='none'">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div class="status-overlay" id="leaderboardOverlay">
+  <div class="status-window hud-frame">
+    <div class="status-header">РЕЕСТР ИГРОКОВ</div>
+    <div class="status-body"><div id="leaderboardContent"></div></div>
+    <button class="close-status" onclick="document.getElementById('leaderboardOverlay').style.display='none'">ЗАКРЫТЬ</button>
   </div>
 </div>
 
@@ -935,6 +947,10 @@
         <div class="backup-section-title">Штрафы</div>
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, applyPenaltyAction)">Применить штраф сейчас</button>
         <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyCountAction)">Обнулить счётчик штрафов</button>
+      </div>
+      <div class="backup-section">
+        <div class="backup-section-title">Реестр Игроков</div>
+        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, () => { syncToLeaderboard(); showNotice('Синхронизация с реестром запущена вручную.', 'info'); })">Отправить данные в реестр</button>
       </div>
       <div class="backup-section danger-zone">
         <div class="backup-section-title danger">Сбросы</div>
@@ -1114,7 +1130,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.3.0';
+  const APP_VERSION = '6.4.4';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1132,6 +1148,17 @@
   // calendar date each time — any drift that crept into a stored timestamp
   // self-corrects on the very next call, instead of being carried forward
   // forever by pure millisecond arithmetic.
+  // Определяет, к какому из двух суточных периодов синхронизации относится
+  // текущий момент — "утро" (05:00–17:00) или "вечер" (17:00–05:00
+  // следующего дня). Переиспользует уже существующий, проверенный порог
+  // суточного сброса (05:00), не вводит отдельную логику часовых поясов.
+  function getCurrentSyncPeriodKey() {
+    const thresholdMs = getLastResetThreshold(Date.now());
+    const dayKey = dateKeyFromTimestamp(thresholdMs);
+    const isEvening = Date.now() >= thresholdMs + (12 * 60 * 60 * 1000);
+    return dayKey + (isEvening ? '-evening' : '-morning');
+  }
+
   function getNextCleanReset(afterTimestamp) {
     const d = new Date(afterTimestamp);
     d.setHours(5, 0, 0, 0);
@@ -1209,6 +1236,11 @@
         expGainedToday: oldData.expGainedToday || 0,
         creditsGainedToday: oldData.creditsGainedToday || 0,
         playerId: oldData.playerId || null,
+        opensToday: oldData.opensToday || 0,
+        totalOpens: oldData.totalOpens || 0,
+        opensYesterday: oldData.opensYesterday || 0,
+        lastSyncPeriod: oldData.lastSyncPeriod || null,
+        syncNoticeShown: oldData.syncNoticeShown || false,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
         pendingCurse: !!oldData.pendingCurse,
@@ -1236,6 +1268,7 @@
         insuranceSourceId: null, streakShieldSourceId: null,
         activeScroll: null, pendingScroll: null, transferExerciseId: null, transferStreakDays: 0,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0, creditsGainedToday: 0, playerId: null,
+        opensToday: 0, totalOpens: 0, opensYesterday: 0, lastSyncPeriod: null, syncNoticeShown: false,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true
@@ -1328,6 +1361,11 @@
   if (typeof data.transferExerciseId !== 'string') data.transferExerciseId = null;
   if (typeof data.transferStreakDays !== 'number') data.transferStreakDays = 0;
   if (typeof data.playerId !== 'string' || !data.playerId) data.playerId = crypto.randomUUID();
+  if (typeof data.opensToday !== 'number') data.opensToday = 0;
+  if (typeof data.totalOpens !== 'number') data.totalOpens = 0;
+  if (typeof data.opensYesterday !== 'number') data.opensYesterday = 0;
+  if (typeof data.lastSyncPeriod !== 'string') data.lastSyncPeriod = null;
+  if (typeof data.syncNoticeShown !== 'boolean') data.syncNoticeShown = false;
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
@@ -2334,6 +2372,8 @@
       data.limitBreaksCompletedToday = 0;
       data.expGainedToday = 0;
       data.creditsGainedToday = 0;
+      data.opensYesterday = data.opensToday || 0;
+      data.opensToday = 0;
       data.dailyTargetLevel = data.level;
       data.curseActiveToday = !!data.pendingCurse;
       data.pendingCurse = false;
@@ -4042,6 +4082,11 @@
       transferExerciseId: (typeof s.transferExerciseId === 'string') ? s.transferExerciseId : null,
       transferStreakDays: sanitizeNumber(s.transferStreakDays, 0),
       playerId: (typeof s.playerId === 'string' && s.playerId) ? s.playerId : null,
+      opensToday: sanitizeNumber(s.opensToday, 0),
+      totalOpens: sanitizeNumber(s.totalOpens, 0),
+      opensYesterday: sanitizeNumber(s.opensYesterday, 0),
+      lastSyncPeriod: (typeof s.lastSyncPeriod === 'string') ? s.lastSyncPeriod : null,
+      syncNoticeShown: (typeof s.syncNoticeShown === 'boolean') ? s.syncNoticeShown : false,
       creditBoostSourceId: (typeof s.creditBoostSourceId === 'string') ? s.creditBoostSourceId : null,
       targetDiscountSourceId: (typeof s.targetDiscountSourceId === 'string') ? s.targetDiscountSourceId : null,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
@@ -4561,8 +4606,90 @@
   // which would visually collide with the name-entry modal. So on first run we
   // show the name modal alone first, and only start the rest of the app's
   // clock/notification logic once it's been dismissed.
+  const LEADERBOARD_URL = 'https://script.google.com/macros/s/AKfycbymFqWiroKkKlxeBEf9EEK2rfrFjidT24IZXUDmAvRWDPilsSDpdlX48W9vXmHFkJ8i/exec';
+  const LEADERBOARD_TOKEN = 'sldt_players_rating_1332';
+
+  function openLeaderboard() {
+    const overlay = document.getElementById('leaderboardOverlay');
+    const content = document.getElementById('leaderboardContent');
+    content.innerHTML = `<div style="text-align:center; padding:30px 0; opacity:0.7;">Загрузка...</div>`;
+    overlay.style.display = 'flex';
+
+    const url = `${LEADERBOARD_URL}?token=${encodeURIComponent(LEADERBOARD_TOKEN)}&id=${encodeURIComponent(data.playerId)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(res => {
+        if (!res || !res.ok) throw new Error('bad response');
+        renderLeaderboard(res.top || [], res.you || null);
+      })
+      .catch(() => {
+        content.innerHTML = `<div style="text-align:center; padding:30px 0; opacity:0.7;">Реестр сейчас недоступен.</div>`;
+      });
+  }
+
+  function leaderboardCard(entry, isYou) {
+    const rank = getRank(entry.level);
+    const borderStyle = isYou ? 'border: 1px solid #40c0ff;' : '';
+    return `
+      <div class="item-card" style="${borderStyle}">
+        <div class="item-info">
+          <div class="item-name">#${entry.rank}&nbsp;&nbsp;${escapeHtml(entry.name)}&nbsp;&nbsp;<span style="float:right;">${entry.level} ур.</span></div>
+          <div class="item-desc rank ${rank.class}">${rank.name}</div>
+          <div class="item-desc">Серия дней: ${entry.bestStreak || 0}</div>
+        </div>
+      </div>`;
+  }
+
+  function renderLeaderboard(top, you) {
+    const content = document.getElementById('leaderboardContent');
+    if (!top.length) {
+      content.innerHTML = `<div style="text-align:center; padding:30px 0; opacity:0.7;">Реестр пока пуст.</div>`;
+      return;
+    }
+    let html = top.map(entry => leaderboardCard(entry, false)).join('');
+    if (you && you.rank > 10) {
+      html += `<div style="height:10px;"></div>` + leaderboardCard(you, true);
+    }
+    content.innerHTML = html;
+  }
+
+  function syncToLeaderboard() {
+    try {
+      const payload = {
+        token: LEADERBOARD_TOKEN,
+        id: data.playerId,
+        name: data.playerName || 'Игрок',
+        level: data.level,
+        totals: totalStats,
+        opensYesterday: data.opensYesterday || 0,
+        totalOpens: data.totalOpens || 0,
+        bestStreak: data.bestStreak || 0
+      };
+      fetch(LEADERBOARD_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain' },
+        keepalive: true
+      }).catch(err => console.error('Синхронизация с реестром не удалась:', err));
+      if (!data.syncNoticeShown) {
+        data.syncNoticeShown = true;
+        showNotice('Данные Игрока передаются в общий реестр Системы.', 'info');
+      }
+    } catch (err) {
+      console.error('Синхронизация с реестром не удалась:', err);
+    }
+  }
+
   function finishInit() {
     checkMissedDays();
+    data.opensToday = (data.opensToday || 0) + 1;
+    data.totalOpens = (data.totalOpens || 0) + 1;
+    const currentPeriod = getCurrentSyncPeriodKey();
+    if (data.lastSyncPeriod !== currentPeriod) {
+      data.lastSyncPeriod = currentPeriod;
+      syncToLeaderboard();
+    }
+    saveData();
     setInterval(updateTimer, 1000);
     schedulePreciseResetCheck();
     updateTimer();
