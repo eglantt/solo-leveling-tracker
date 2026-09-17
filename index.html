@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1145,7 +1145,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.4';
+  const APP_VERSION = '6.5.5';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -3672,6 +3672,8 @@
 
   // Свиток Заморозки — визуал на главном экране: слой льда поверх карточек
   // и прозрачный слой для досрочного снятия по тапу.
+  let freezeMeltInProgress = false;
+
   function updateFreezeVisual() {
     const overlay = document.getElementById('freezeIceOverlay');
     const catcher = document.getElementById('freezeTapCatcher');
@@ -3687,10 +3689,14 @@
       // невидимым здесь; запуск явно происходит только из closeInv(),
       // в момент, когда игрок реально возвращается на главный экран.
     } else {
-      overlay.classList.remove('active');
       catcher.classList.remove('active');
-      overlay.style.maskImage = '';
-      overlay.style.webkitMaskImage = '';
+      if (!freezeMeltInProgress) {
+        // Пока идёт анимация схода льда — не трогаем слой здесь, она
+        // сама аккуратно уберёт его по завершении своих 6 секунд.
+        overlay.classList.remove('active');
+        overlay.style.maskImage = '';
+        overlay.style.webkitMaskImage = '';
+      }
     }
   }
 
@@ -3719,12 +3725,42 @@
     requestAnimationFrame(step);
   }
 
+  // Обратная анимация — сход льда при досрочном снятии заморозки. Та же
+  // формула, что и у наступления, но направление развёрнуто: скрытый
+  // радиус растёт от 0% (весь лёд ещё на месте) до 100% (весь растаял),
+  // с той же размытой границей и той же длительностью.
+  function playFreezeIceMeltAnimation() {
+    const overlay = document.getElementById('freezeIceOverlay');
+    if (!overlay) return;
+    freezeMeltInProgress = true;
+    const DURATION = 6000;
+    const EDGE = 18;
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / DURATION);
+      if (t >= 1) {
+        overlay.classList.remove('active');
+        overlay.style.maskImage = '';
+        overlay.style.webkitMaskImage = '';
+        freezeMeltInProgress = false;
+        return;
+      }
+      const meltR = 100 * t;
+      const outer = Math.min(100, meltR + EDGE);
+      const mask = `radial-gradient(circle at center, transparent ${meltR}%, black ${outer}%)`;
+      overlay.style.maskImage = mask; overlay.style.webkitMaskImage = mask;
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
   function onFreezeTapCatcherClick() {
     if (data.activeScroll !== 'freeze') return;
     showConfirm('Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия Свитка. Завершить эффект заморозки досрочно?', () => {
       data.activeScroll = null;
       data.freezeEndTimestamp = null;
       data.freezeAnimPlayed = false;
+      playFreezeIceMeltAnimation();
       saveData();
       render();
       showNotice('Заморозка снята раньше срока.', 'info');
