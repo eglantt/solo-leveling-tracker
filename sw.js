@@ -1,6 +1,6 @@
 // Bump this on every release that changes any cached file, so old
 // clients pick up the new version instead of being stuck on a stale cache.
-const CACHE_VERSION = 'v6-4-5';
+const CACHE_VERSION = 'v6-5-4';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -77,9 +77,12 @@ const APP_SHELL = [
   './icons/items/scroll_transfer.png',
   './icons/items/scroll_renunciation.png',
   './icons/items/scroll_contract.png',
+  './icons/items/scroll_freeze.png',
   './icons/items/mag_seal_transfer.png',
   './icons/items/mag_seal_renunciation.png',
   './icons/items/mag_seal_contract.png',
+  './icons/items/mag_seal_freeze.png',
+  './icons/items/ice_layer_freeze.png',
   './fonts/orbitron-latin-500-normal.woff2',
   './fonts/orbitron-latin-700-normal.woff2',
   './fonts/roboto-mono-latin-400-normal.woff2',

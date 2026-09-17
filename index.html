@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.4.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -215,6 +215,7 @@
       position: relative;
       left: 2px;
     }
+    .reset-time.freeze-width { width: 185px; }
     .reset-timer.warning {
       background: rgba(80,20,20,0.6);
       border-color: #ff4444aa;
@@ -279,6 +280,7 @@
     .day-cell.success { border-color: #40ffaa; color: #40ffaa; text-shadow: 0 0 6px rgba(64,255,170,0.5); box-shadow: 0 0 8px rgba(64,255,170,0.35); }
     .day-cell.penalty { border-color: #ff4444; color: #ff4444; text-shadow: 0 0 6px rgba(255,68,68,0.5); box-shadow: 0 0 8px rgba(255,68,68,0.35); }
     .day-cell.protected { border-color: #40c0ff; color: #40c0ff; text-shadow: 0 0 6px rgba(64,192,255,0.5); box-shadow: 0 0 8px rgba(64,192,255,0.35); }
+    .day-cell.frozen { border-color: #c8f5ff; color: #c8f5ff; text-shadow: 0 0 6px rgba(200,245,255,0.5); box-shadow: 0 0 8px rgba(200,245,255,0.35); }
     .day-cell.today { color: #40c0ff; box-shadow: 0 0 6px rgba(64,192,255,0.2); }
     .day-cell.none { border-color: #2a2f3a; color: #445; }
     .day-cell .cal-star { position: absolute; top: -6px; right: -4px; font-size: 0.65rem; filter: drop-shadow(0 0 3px rgba(255,215,0,0.8)); }
@@ -336,7 +338,18 @@
       opacity: 0.35; filter: grayscale(0.6); cursor: not-allowed;
       box-shadow: none;
     }
-    .quest-list { padding: 16px 18px; }
+    .quest-list { padding: 16px 18px; position: relative; }
+    .freeze-ice-overlay {
+      position: absolute; inset: 0; pointer-events: none; z-index: 5;
+      background-image: url('icons/items/ice_layer_freeze.png');
+      background-size: 200px 200px; background-repeat: repeat;
+      opacity: 0; display: none;
+    }
+    .freeze-ice-overlay.active { opacity: 0.4; display: block; }
+    .freeze-tap-catcher {
+      position: absolute; inset: 0; z-index: 6; display: none; cursor: pointer;
+    }
+    .freeze-tap-catcher.active { display: block; }
     .quest-item {
       background: rgba(0,0,0,0.3);
       border: 1px solid #00448855;
@@ -817,7 +830,7 @@
   <div class="status-window hud-frame">
     <div class="status-header">ИНВЕНТАРЬ</div>
     <div class="status-body"><div id="invContent"></div></div>
-    <button class="close-status" onclick="document.getElementById('invOverlay').style.display='none'">ЗАКРЫТЬ</button>
+    <button class="close-status" onclick="closeInv()">ЗАКРЫТЬ</button>
   </div>
 </div>
 
@@ -1046,6 +1059,8 @@
       </div>
     </div>
     <div class="quest-list">
+      <div class="freeze-ice-overlay" id="freezeIceOverlay"></div>
+      <div class="freeze-tap-catcher" id="freezeTapCatcher" onclick="onFreezeTapCatcherClick()"></div>
       <div class="quest-item" data-id="pushups" data-target="100" data-exp="80">
         <div class="quest-name">Отжимания</div>
         <div class="quest-progress">
@@ -1130,7 +1145,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.4.5';
+  const APP_VERSION = '6.5.4';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1241,6 +1256,9 @@
         opensYesterday: oldData.opensYesterday || 0,
         lastSyncPeriod: oldData.lastSyncPeriod || null,
         syncNoticeShown: oldData.syncNoticeShown || false,
+        freezeEndTimestamp: oldData.freezeEndTimestamp || null,
+        freezeAnimPlayed: oldData.freezeAnimPlayed || false,
+        freezeJustEndedWithCurse: oldData.freezeJustEndedWithCurse || false,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
         pendingCurse: !!oldData.pendingCurse,
@@ -1269,6 +1287,7 @@
         activeScroll: null, pendingScroll: null, transferExerciseId: null, transferStreakDays: 0,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0, creditsGainedToday: 0, playerId: null,
         opensToday: 0, totalOpens: 0, opensYesterday: 0, lastSyncPeriod: null, syncNoticeShown: false,
+        freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true
@@ -1303,6 +1322,9 @@
   }
   if (data.level >= 4 && !data.codexUnlocked.includes('scroll_transfer')) {
     data.codexUnlocked.push('scroll_transfer');
+  }
+  if (data.level >= 2 && !data.codexUnlocked.includes('scroll_freeze')) {
+    data.codexUnlocked.push('scroll_freeze');
   }
   if (data.level >= 8 && !data.codexUnlocked.includes('scroll_contract')) {
     data.codexUnlocked.push('scroll_contract');
@@ -1367,6 +1389,9 @@
   if (typeof data.opensYesterday !== 'number') data.opensYesterday = 0;
   if (typeof data.lastSyncPeriod !== 'string') data.lastSyncPeriod = null;
   if (typeof data.syncNoticeShown !== 'boolean') data.syncNoticeShown = false;
+  if (typeof data.freezeEndTimestamp !== 'number') data.freezeEndTimestamp = null;
+  if (typeof data.freezeAnimPlayed !== 'boolean') data.freezeAnimPlayed = false;
+  if (typeof data.freezeJustEndedWithCurse !== 'boolean') data.freezeJustEndedWithCurse = false;
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
@@ -1430,6 +1455,7 @@
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
     "scroll_transfer": { name: "Свиток Переноса", icon: "📜", desc: "Снимает одно выбранное упражнение дневного задания — без цели, без награды. Оставшиеся четыре получают +30% к цели, а при использовании подряд эта надбавка растёт ещё на 10% за каждый день.", price: 2000, level: 4 },
     "scroll_contract": { name: "Свиток Договора", icon: "📜", desc: "Поднимает все пять целей дневного задания на 25%. За полное исполнение — доплата +50% к заработанным опыту и кредитам. При срыве — обычный штраф, без бонуса.", price: 2800, level: 8 },
+    "scroll_freeze": { name: "Свиток Заморозки", icon: "📜", desc: "Приостанавливает дневное задание на 7 циклов — без исхода, без награды, без штрафа. Уже сделанное сегодня сохраняется до конца срока.", price: 5000, level: 2 },
   };
 
   const KEY_CATALOG = {
@@ -1546,6 +1572,23 @@
         sparkCount: 1
       });
     }
+    if (data.activeScroll === 'freeze') {
+      effects.push({
+        icon: 'icons/items/mag_seal_freeze.png',
+        name: 'Свиток Заморозки',
+        text: 'Дневное задание заморожено — исход, награда и штраф не засчитываются, пока не истечёт срок или заморозка не будет снята досрочно.',
+        spinning: true
+      });
+    }
+    if (data.pendingScroll === 'freeze') {
+      effects.push({
+        icon: 'icons/items/mag_seal_freeze.png',
+        name: 'Свиток Заморозки (ожидает)',
+        text: 'Вступит в силу со следующего цикла.',
+        isPending: true,
+        sparkCount: 1
+      });
+    }
     if (data.isGoalMet) {
       effects.push({ icon: 'icons/items/effect_limit_break.png', name: 'Преодоление предела', text: 'Кредиты за упражнения удвоены, пока активен режим.' });
     }
@@ -1608,8 +1651,8 @@
   const BOX_LOOT_POOLS = {
     "box_basalt": ["rune_cleansing", "rune_cleansing", "rune_protection", "potion_restoration", "rune_stability", "potion_growth"],
     "box_onyx": ["rune_cleansing", "rune_protection", "rune_protection", "potion_restoration", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "potion_growth", "scroll_renunciation", "scroll_transfer", "scroll_contract"],
-    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit", "scroll_renunciation", "scroll_transfer", "scroll_contract"],
-    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity", "scroll_renunciation", "scroll_transfer", "scroll_contract"],
+    "box_obsidian": ["rune_cleansing", "rune_protection", "potion_restoration", "rune_freedom", "rune_stability", "potion_growth", "rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "shard_limit", "scroll_renunciation", "scroll_transfer", "scroll_contract", "scroll_freeze"],
+    "box_dark_quartz": ["rune_restoration_charged", "rune_restoration_charged", "rune_growth_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "shard_limit", "crystal_restoration", "crystal_clarity", "scroll_renunciation", "scroll_transfer", "scroll_contract", "scroll_freeze"],
     "box_scarlet": ["rune_restoration_charged", "rune_growth_charged", "rune_protection_charged", "rune_limit_charged", "rune_fate_cleansing", "rune_cleansing_full", "shard_limit_double"],
     "box_crimson": ["rune_fate_cleansing", "rune_cleansing_full", "potion_restoration_full", "rune_protection_absolute", "shard_limit_double"],
     "box_purple": ["potion_restoration_full", "rune_protection_absolute", "rune_burden_release", "rune_return", "crystal_impulse"],
@@ -1698,11 +1741,12 @@
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания." },
     titles: { title: "Титулы", content: "Достижения Игрока разблокируют титулы — каждый со своим условием и своей наградой. Одновременно может быть открыто сразу несколько, но действует только один — тот, что выбран активным в данный момент. Остальные разблокированные титулы ждут своего часа, не оказывая никакого эффекта, пока не выбраны. Сменить активный титул можно свободно, в любой момент, среди уже открытых." },
     anomaly_burden: { title: "Бремя Аномалии", content: "Один из двух возможных исходов при открытии Шкатулки Аномалии — резонанс, искажающий расчёты Системы, определяемый случайно в момент самого открытия. При неудачном исходе следующее дневное задание заметно усложняется, и это сразу бросается в глаза. Цена провала в такой день тоже иная — штраф ощутимо возрастает. Обычная защита от штрафа в такой день бессильна — предотвратить его способна лишь Абсолютная защита." },
-    scrolls: { title: "Свитки", content: "Свитки — особый тип расходников, каждый из которых целиком меняет условия дневного задания, а не просто усиливает уже существующее. Действовать может только один свиток за раз, а начатый эффект нельзя отменить раньше срока — только дождаться его завершения, каким бы ни был исход дня." },
-    player_registry: { title: "Реестр Игроков", content: "Система ведёт общий Реестр всех Игроков, попавших под её наблюдение. Сведения об Игроке пополняются Системой самостоятельно. Место в Реестре отражает достигнутое, не заявленное — записи, вызывающие сомнение, Система рассматривает отдельно, прежде чем допустить их в общий счёт." },
+    scrolls: { title: "Свитки", content: "Свитки — особый тип расходников, каждый из которых целиком меняет условия дневного задания, а не просто усиливает уже существующее. Действовать может только один свиток за раз, а активный эффект большинства из них нельзя отменить раньше срока — только дождаться его завершения, каким бы ни был исход дня." },
+    player_registry: { title: "Реестр Игроков", content: "Система ведёт общий Реестр Игроков. Сведения о каждом пополняются Системой самостоятельно. Место в Реестре отражает достигнутое, не заявленное — записи, вызывающие сомнение, Система рассматривает отдельно, прежде чем допустить их в общий перечень." },
     scroll_renunciation: { title: "Свиток Отречения", content: "При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания. Характеристики, титул и часть артефактов молчат, пока действует эффект. Обычно сегодняшнее усилие и всё, что накоплено прежде, складываются в один результат, неразличимо друг от друга. Свиток на время убирает второе — испытание для самого себя, без «брони», накопленной со временем." },
     scroll_transfer: { title: "Свиток Переноса", content: "Свиток Переноса снимает одно упражнение дневного задания — ни цель, ни награда по нему в этот день не учитываются. Освобождённый вес не исчезает: он ложится на оставшиеся четыре, соразмерно увеличивая их цель. При частом использовании подряд эта компенсация становится заметнее — нагрузка на оставшиеся четыре упражнения растёт с каждым днём непрерывного применения." },
     scroll_contract: { title: "Свиток Договора", content: "Свиток Договора — игрок сам поднимает цели предстоящего дневного задания, зная заранее: полное исполнение будет вознаграждено сверх обычного. Условие названо прежде, чем сделан первый шаг." },
+    scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Артефакт D-ранга — кристалл, отзывающийся на сам ритм движения, а не на его цель. Каждый пройденный шаг приносит заметно больше кредитов, чем без него." },
@@ -1907,6 +1951,7 @@
     "scroll_renunciation": { rank: "D", type: "Свиток", usage: "Одноразовое использование" },
     "scroll_transfer": { rank: "E", type: "Свиток", usage: "Одноразовое использование" },
     "scroll_contract": { rank: "C", type: "Свиток", usage: "Одноразовое использование" },
+    "scroll_freeze": { rank: "B", type: "Свиток", usage: "Одноразовое использование" },
     "rune_burden_release": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_return": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "crystal_impulse": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
@@ -1999,6 +2044,7 @@
       if (entry.status === 'success') statusLine = 'Задание выполнено.';
       else if (entry.status === 'penalty') statusLine = 'Задание не выполнено, получен штраф.';
       else if (entry.status === 'protected') statusLine = 'Задание не выполнено, штраф предотвращён (Руна Защиты).';
+      else if (entry.status === 'frozen') statusLine = 'Задание заморожено Свитком — без исхода, без штрафа.';
       donePercent = entry.donePercent;
       expGained = entry.expGained || 0;
       expLost = entry.expLost || 0;
@@ -2203,14 +2249,14 @@
     if (action) action(qid);
   }
 
-  function showConfirm(message, onConfirm) {
+  function showConfirm(message, onConfirm, cancelLabel, confirmLabel) {
     pendingConfirmAction = onConfirm;
     document.getElementById('confirmContent').innerHTML = `
       <div class="danger-warning-step">
         <div class="danger-text" style="color:#a8d8ff;">${escapeHtml(message)}</div>
         <div class="danger-btn-row">
-          <button class="danger-btn-cancel" onclick="closeConfirmModal()">Отмена</button>
-          <button class="confirm-btn-continue" onclick="runConfirmedAction()">Подтвердить</button>
+          <button class="danger-btn-cancel" onclick="closeConfirmModal()">${escapeHtml(cancelLabel || 'Отмена')}</button>
+          <button class="confirm-btn-continue" onclick="runConfirmedAction()">${escapeHtml(confirmLabel || 'Подтвердить')}</button>
         </div>
       </div>`;
     document.getElementById('confirmOverlay').style.display = 'flex';
@@ -2332,7 +2378,16 @@
       let dayStatus;
       let expLostThatDay = 0;
       let completedExercisesThatDay = null;
-      if (data.isGoalMet || allQuestsDone()) {
+      if (data.activeScroll === 'freeze') {
+        dayStatus = 'frozen';
+        data.consecutiveDays = 0;
+        if (now >= data.freezeEndTimestamp) {
+          data.activeScroll = null;
+          data.freezeEndTimestamp = null;
+          if (data.curseActiveToday) { data.freezeJustEndedWithCurse = true; }
+          setTimeout(() => showNotice("Заморозка завершилась. Задание возобновлено.", 'info'), 500);
+        }
+      } else if (data.isGoalMet || allQuestsDone()) {
         applyPenaltyLogic();
         dayStatus = 'success';
       } else if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute' && !data.curseActiveToday) {
@@ -2368,8 +2423,19 @@
         data.earlySaveNoticeShown = true;
         setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger', false, 'saveReminder'), 5500);
       }
-      data.completed = {};
-      data.isGoalMet = false;
+      if (dayStatus !== 'frozen') {
+        data.completed = {};
+        data.isGoalMet = false;
+        if (data.freezeJustEndedWithCurse) {
+          data.freezeJustEndedWithCurse = false;
+          // Бремя было активно на момент окончания заморозки — оно
+          // наследуется на этот, первый размороженный день без изменений,
+          // не пересчитывается заново от pendingCurse.
+        } else {
+          data.curseActiveToday = !!data.pendingCurse;
+          data.pendingCurse = false;
+        }
+      }
       data.limitBreaksToday = 0;
       data.limitBreaksCompletedToday = 0;
       data.expGainedToday = 0;
@@ -2377,8 +2443,6 @@
       data.opensYesterday = data.opensToday || 0;
       data.opensToday = 0;
       data.dailyTargetLevel = data.level;
-      data.curseActiveToday = !!data.pendingCurse;
-      data.pendingCurse = false;
       // Перенос не имеет ожидающего состояния (в отличие от Отречения) — он
       // либо действовал весь закончившийся день, либо не действовал вовсе.
       // Счётчик дней подряд обнуляется, если сегодня его не было; если был —
@@ -2390,21 +2454,29 @@
       } else {
         data.transferExerciseId = null;
       }
-      data.activeScroll = data.pendingScroll;
-      data.pendingScroll = null;
+      if (dayStatus !== 'frozen') {
+        data.activeScroll = data.pendingScroll;
+        data.pendingScroll = null;
+        if (data.activeScroll === 'freeze' && !data.freezeEndTimestamp) {
+          data.freezeEndTimestamp = getNextCleanReset(Date.now()) + 6 * 24 * 60 * 60 * 1000;
+          data.freezeAnimPlayed = false;
+        }
+      }
       data.limitBreakRoundPending = false;
       data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
       data.notificationLog = [];
       data.progressNoticesShown = [];
-      data.targetDiscountToday = false;
-      data.targetDiscountRate = 0;
-      data.targetDiscountSourceId = null;
-      data.expBoostToday = 0;
-      data.expBoostSourceId = null;
-      data.creditBoostToday = 0;
-      data.creditBoostSourceId = null;
-      data.extraLimitBreaksToday = 0;
+      if (dayStatus !== 'frozen') {
+        data.targetDiscountToday = false;
+        data.targetDiscountRate = 0;
+        data.targetDiscountSourceId = null;
+        data.expBoostToday = 0;
+        data.expBoostSourceId = null;
+        data.creditBoostToday = 0;
+        data.creditBoostSourceId = null;
+        data.extraLimitBreaksToday = 0;
+      }
       nextReset = getNextCleanReset(data.lastReset);
     }
     saveData(); render();
@@ -2589,6 +2661,19 @@
     }
   }
   function updateTimerInner() {
+    const labelEl = document.querySelector('#resetTimerContainer .reset-label');
+    if (data.activeScroll === 'freeze') {
+      const timeLeft = data.freezeEndTimestamp - Date.now();
+      if (timeLeft <= 0) { checkMissedDays(); return; }
+      const h = Math.floor(timeLeft/3600000), m = Math.floor((timeLeft%3600000)/60000), s = Math.floor((timeLeft%60000)/1000);
+      document.getElementById('timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      document.getElementById('timer').classList.add('freeze-width');
+      if (labelEl) labelEl.textContent = 'Заморозка закончится через';
+      document.getElementById('resetTimerContainer').classList.remove('warning');
+      return;
+    }
+    document.getElementById('timer').classList.remove('freeze-width');
+    if (labelEl) labelEl.textContent = 'Сброс задания через';
     const nextReset = getNextResetTime();
     const timeLeft = nextReset - Date.now();
     if (timeLeft <= 0) { checkMissedDays(); return; }
@@ -2980,6 +3065,15 @@
     document.getElementById('invOverlay').style.display = 'flex';
   }
 
+  function closeInv() {
+    document.getElementById('invOverlay').style.display = 'none';
+    if (data.activeScroll === 'freeze' && !data.freezeAnimPlayed) {
+      data.freezeAnimPlayed = true;
+      saveData();
+      playFreezeIceAnimation();
+    }
+  }
+
   // Plays a brief flash on the item's card, then runs the actual state change
   // once the flash has had time to register — so using/opening something
   // visibly *does* something, instead of the list just silently updating.
@@ -3159,6 +3253,22 @@
               }
               used = true;
               showFullscreenSeal('contract', '#ff3333');
+          }
+      } else if (id === 'scroll_freeze') {
+          if (data.activeScroll || data.pendingScroll) {
+              showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
+          } else {
+              if (data.isGoalMet) {
+                  data.pendingScroll = 'freeze';
+                  showNotice("Заморозка вступит в силу со следующего цикла.", 'info');
+              } else {
+                  data.activeScroll = 'freeze';
+                  data.freezeEndTimestamp = getNextCleanReset(Date.now()) + 6 * 24 * 60 * 60 * 1000;
+                  data.freezeAnimPlayed = false;
+                  showNotice("Задание заморожено на 7 циклов.", 'info');
+              }
+              used = true;
+              showFullscreenSeal('freeze', '#c8f5ff');
           }
       } else if (id === 'potion_growth') {
           used = useExpBoostItem(0.20, 'Зелье использовано', false, id);
@@ -3560,6 +3670,67 @@
     }
   }
 
+  // Свиток Заморозки — визуал на главном экране: слой льда поверх карточек
+  // и прозрачный слой для досрочного снятия по тапу.
+  function updateFreezeVisual() {
+    const overlay = document.getElementById('freezeIceOverlay');
+    const catcher = document.getElementById('freezeTapCatcher');
+    if (!overlay || !catcher) return;
+    if (data.activeScroll === 'freeze') {
+      catcher.classList.add('active');
+      if (data.freezeAnimPlayed) {
+        overlay.classList.add('active');
+        overlay.style.maskImage = 'none';
+        overlay.style.webkitMaskImage = 'none';
+      }
+      // Если анимация ещё не проигрывалась — лёд остаётся полностью
+      // невидимым здесь; запуск явно происходит только из closeInv(),
+      // в момент, когда игрок реально возвращается на главный экран.
+    } else {
+      overlay.classList.remove('active');
+      catcher.classList.remove('active');
+      overlay.style.maskImage = '';
+      overlay.style.webkitMaskImage = '';
+    }
+  }
+
+  // Наступление льда от краёв к центру, 6 секунд, с размытой границей —
+  // проверено демкой. По завершении маска убирается целиком (не оставляет
+  // урезанный градиент с "хвостиком" ровно в центре).
+  function playFreezeIceAnimation() {
+    const overlay = document.getElementById('freezeIceOverlay');
+    if (!overlay) return;
+    overlay.classList.add('active');
+    const DURATION = 6000;
+    const EDGE = 18;
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / DURATION);
+      if (t >= 1) {
+        overlay.style.maskImage = 'none'; overlay.style.webkitMaskImage = 'none';
+        return;
+      }
+      const clearR = 100 * (1 - t);
+      const outer = Math.min(100, clearR + EDGE);
+      const mask = `radial-gradient(circle at center, transparent ${clearR}%, black ${outer}%)`;
+      overlay.style.maskImage = mask; overlay.style.webkitMaskImage = mask;
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function onFreezeTapCatcherClick() {
+    if (data.activeScroll !== 'freeze') return;
+    showConfirm('Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия Свитка. Завершить эффект заморозки досрочно?', () => {
+      data.activeScroll = null;
+      data.freezeEndTimestamp = null;
+      data.freezeAnimPlayed = false;
+      saveData();
+      render();
+      showNotice('Заморозка снята раньше срока.', 'info');
+    }, 'Нет', 'Да');
+  }
+
   function render() {
     try {
       renderInner();
@@ -3579,6 +3750,7 @@
   function renderInner() {
     updateTitleStatus();
     renderActiveEffects();
+    updateFreezeVisual();
     ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(qid => {
       const counterEl = document.getElementById(qid);
       if (counterEl) {
@@ -3634,6 +3806,7 @@
 
   document.querySelectorAll('.add').forEach(btn => {
     btn.onclick = (e) => {
+      if (data.activeScroll === 'freeze') return;
       const item = e.target.closest('.quest-item');
       const id = item.dataset.id;
       const val = parseInt(e.target.dataset.value);
@@ -3792,7 +3965,7 @@
     const grid = document.getElementById('calDayGrid');
     grid.innerHTML = '';
 
-    let successCount = 0, penaltyCount = 0, protectedCount = 0;
+    let successCount = 0, penaltyCount = 0, protectedCount = 0, frozenCount = 0;
 
     for (let i = 0; i < leadingBlank; i++) {
       const blank = document.createElement('div');
@@ -3815,6 +3988,7 @@
         if (entry.status === 'success') successCount++;
         else if (entry.status === 'penalty') penaltyCount++;
         else if (entry.status === 'protected') protectedCount++;
+        else if (entry.status === 'frozen') frozenCount++;
         detail = buildDayDetail(dateKey, entry, false);
       }
 
@@ -3847,7 +4021,7 @@
     }
 
     document.getElementById('calStreakLine').textContent = `Рекорд серии: ${data.bestStreak} ${pluralDays(data.bestStreak)}`;
-    document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount}`;
+    document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount} · заморожено ${frozenCount}`;
   }
 
   function calShowTooltip(cell, text) {
@@ -3971,7 +4145,7 @@
       complete: !!(s.dailyNotices && s.dailyNotices.complete)
     };
 
-    const VALID_STATUSES = ['success', 'penalty', 'protected'];
+    const VALID_STATUSES = ['success', 'penalty', 'protected', 'frozen'];
     const cleanHistory = {};
     if (s.history && typeof s.history === 'object') {
       for (const key in s.history) {
@@ -4089,6 +4263,9 @@
       opensYesterday: sanitizeNumber(s.opensYesterday, 0),
       lastSyncPeriod: (typeof s.lastSyncPeriod === 'string') ? s.lastSyncPeriod : null,
       syncNoticeShown: (typeof s.syncNoticeShown === 'boolean') ? s.syncNoticeShown : false,
+      freezeEndTimestamp: (typeof s.freezeEndTimestamp === 'number') ? s.freezeEndTimestamp : null,
+      freezeAnimPlayed: (typeof s.freezeAnimPlayed === 'boolean') ? s.freezeAnimPlayed : false,
+      freezeJustEndedWithCurse: (typeof s.freezeJustEndedWithCurse === 'boolean') ? s.freezeJustEndedWithCurse : false,
       creditBoostSourceId: (typeof s.creditBoostSourceId === 'string') ? s.creditBoostSourceId : null,
       targetDiscountSourceId: (typeof s.targetDiscountSourceId === 'string') ? s.targetDiscountSourceId : null,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
