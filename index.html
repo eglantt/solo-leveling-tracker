@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.10 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.13 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -455,7 +455,7 @@
       -webkit-appearance: none;
     }
     .reset-all:hover { background: #880000 !important; border-color: #ff0000 !important; color: #ffffff !important; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
-    .reset-all:active { transform: scale(0.96); background: #aa0000 !important; }
+    .reset-all:active { background: #aa0000 !important; }
 
     .restore-link {
         display: inline-block; margin-top: 15px; color: #40c0ff; font-size: 0.75rem; 
@@ -663,7 +663,7 @@
     /* SL:SYS-TOOLS:START */
     @keyframes sysToolsBtnFlash {
       0% { filter: brightness(1); transform: scale(1); }
-      35% { filter: brightness(1.8); transform: scale(1.04); }
+      35% { filter: brightness(1.8); transform: scale(0.94); }
       100% { filter: brightness(1); transform: scale(1); }
     }
     .sys-tools-btn-flash { animation: sysToolsBtnFlash 0.4s ease; }
@@ -877,7 +877,7 @@
       <div class="stat-line"><span>Пресс:</span><strong id="progPress">0</strong></div>
       <div class="stat-line"><span>Шаги:</span><strong id="progSteps">0</strong></div>
       <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #00aaff22; text-align: center;">
-        <div style="opacity: 0.75; font-size: 0.85rem; margin-bottom: 8px; text-align: left;">Ваше место в общем Реестре Игроков</div>
+        <div style="opacity: 0.75; font-size: 0.85rem; margin-bottom: 12px; text-align: left;">Ваше место в общем Реестре Игроков</div>
         <button onclick="openLeaderboard()">РЕЕСТР ИГРОКОВ</button>
       </div>
     </div>
@@ -970,6 +970,7 @@
         <button class="reset-all" onclick="sysToolsFlashThenRun(this, resetDailyProgressAction)">Сбросить дневной прогресс</button>
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, forceFullResetAction)">Принудительный сброс дня</button>
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetChronicleAction)">Сбросить историю Летописи</button>
+        <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.freezeNextAvailableAt = null; saveData(); })">Сбросить паузу Заморозки</button>
       </div>
     </div>
     <button class="close-status" onclick="document.getElementById('sysToolsOverlay').style.display='none'">ЗАКРЫТЬ</button>
@@ -1145,7 +1146,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.10';
+  const APP_VERSION = '6.5.13';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1595,7 +1596,7 @@
       effects.push({ icon: 'icons/items/effect_limit_break.png', name: 'Преодоление предела', text: 'Кредиты за упражнения удвоены, пока активен режим.' });
     }
     if (data.activeTitle !== 'Новичок' && TITLE_ICON_IDS[data.activeTitle]) {
-      effects.push({ icon: `icons/items/${TITLE_ICON_IDS[data.activeTitle]}.png`, name: data.activeTitle, text: TITLES_DB[data.activeTitle].desc });
+      effects.push({ icon: `icons/items/${TITLE_ICON_IDS[data.activeTitle]}.png`, name: `Титул: ${data.activeTitle}`, text: TITLES_DB[data.activeTitle].desc });
     }
     return effects;
   }
@@ -2469,9 +2470,9 @@
           // статично, без наступления, при следующей же прорисовке экрана.
           data.freezeAnimPlayed = true;
         }
+        data.dailyNotices = { morning: false, complete: false };
       }
       data.limitBreakRoundPending = false;
-      data.dailyNotices = { morning: false, complete: false };
       data.remindersFiredHours = [];
       data.notificationLog = [];
       data.progressNoticesShown = [];
@@ -3768,8 +3769,11 @@
 
   function onFreezeTapCatcherClick() {
     if (data.activeScroll !== 'freeze') return;
+    if (!data.freezeNextAvailableAt) {
+      data.freezeNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    }
     const daysUntilNext = Math.ceil((data.freezeNextAvailableAt - Date.now()) / (24*60*60*1000));
-    showConfirm(`Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия эффекта Свитка. Повторная активация станет доступна не раньше чем через ${daysUntilNext} дней, независимо от того, снимете вы эффект сейчас или дождётесь его естественного завершения.\n\nСнять эффект заморозки досрочно?`, () => {
+    showConfirm(`Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия эффекта Свитка. Повторная активация станет доступна не раньше чем через ${daysUntilNext} дней, независимо от того, снимете вы эффект сейчас или дождётесь его естественного завершения.\n\nСнять эффект заморозки досрочно?\n`, () => {
       data.activeScroll = null;
       data.freezeEndTimestamp = null;
       data.freezeAnimPlayed = false;
