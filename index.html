@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.10 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -480,7 +480,7 @@
 
     .danger-warning-step { text-align: center; }
     .danger-icon { font-size: 2rem; color: #ff5555; text-shadow: 0 0 15px rgba(255,0,0,0.6); margin-bottom: 10px; }
-    .danger-text { font-size: 0.85rem; color: #ffbbbb; margin-bottom: 14px; line-height: 1.4; }
+    .danger-text { font-size: 0.85rem; color: #ffbbbb; margin-bottom: 14px; line-height: 1.4; white-space: pre-line; }
     .danger-text strong { color: #ffe066; letter-spacing: 1px; }
     .danger-list { list-style: none; padding: 0; margin: 0 0 14px; text-align: left; }
     .danger-list li { font-size: 0.8rem; color: #ffcccc; padding: 4px 0 4px 18px; position: relative; }
@@ -1145,7 +1145,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.8';
+  const APP_VERSION = '6.5.10';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1441,19 +1441,19 @@
   };
 
   const SHOP_CATALOG = {
-    "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 500, level: 1 },
-    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра.", price: 1000, level: 1 },
-    "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 800, level: 1 },
-    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до следующего сброса.", price: 1500, level: 5 },
-    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 4500, level: 6 },
-    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до следующего сброса.", price: 1400, level: 9 },
-    "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 1500, level: 12 },
-    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 2500, level: 15 },
-    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 2500, level: 20 },
-    "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 2800, level: 20 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 2500, level: 25 },
-    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 2500, level: 30 },
-    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 5000, level: 40 },
+    "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 2000, level: 1 },
+    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на завтра.", price: 4500, level: 1 },
+    "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 2500, level: 1 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до следующего сброса.", price: 3500, level: 5 },
+    "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 6500, level: 6 },
+    "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до следующего сброса.", price: 3000, level: 9 },
+    "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 3500, level: 12 },
+    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 4500, level: 15 },
+    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 5000, level: 20 },
+    "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 5500, level: 20 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 9600, level: 25 },
+    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 6000, level: 30 },
+    "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 8000, level: 40 },
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
     "scroll_transfer": { name: "Свиток Переноса", icon: "📜", desc: "Снимает одно выбранное упражнение дневного задания — без цели, без награды. Оставшиеся четыре получают +30% к цели, а при использовании подряд эта надбавка растёт ещё на 10% за каждый день.", price: 2000, level: 4 },
     "scroll_contract": { name: "Свиток Договора", icon: "📜", desc: "Поднимает все пять целей дневного задания на 25%. За полное исполнение — доплата +50% к заработанным опыту и кредитам. При срыве — обычный штраф, без бонуса.", price: 2800, level: 8 },
@@ -3768,14 +3768,15 @@
 
   function onFreezeTapCatcherClick() {
     if (data.activeScroll !== 'freeze') return;
-    showConfirm('Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия Свитка. Снять эффект заморозки досрочно?', () => {
+    const daysUntilNext = Math.ceil((data.freezeNextAvailableAt - Date.now()) / (24*60*60*1000));
+    showConfirm(`Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия эффекта Свитка. Повторная активация станет доступна не раньше чем через ${daysUntilNext} дней, независимо от того, снимете вы эффект сейчас или дождётесь его естественного завершения.\n\nСнять эффект заморозки досрочно?`, () => {
       data.activeScroll = null;
       data.freezeEndTimestamp = null;
       data.freezeAnimPlayed = false;
       playFreezeIceMeltAnimation();
       saveData();
       render();
-      showNotice('Заморозка снята раньше срока.', 'info');
+      showNotice(`Эффект Заморозки снят раньше срока. Следующая активация эффекта станет доступна через ${daysUntilNext} дней.`, 'info');
     }, 'Нет', 'Да');
   }
 
