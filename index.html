@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.8 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1145,7 +1145,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.7';
+  const APP_VERSION = '6.5.8';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1259,6 +1259,7 @@
         freezeEndTimestamp: oldData.freezeEndTimestamp || null,
         freezeAnimPlayed: oldData.freezeAnimPlayed || false,
         freezeJustEndedWithCurse: oldData.freezeJustEndedWithCurse || false,
+        freezeNextAvailableAt: oldData.freezeNextAvailableAt || null,
         dailyTargetLevel: oldData.dailyTargetLevel || oldData.level || 1,
         dailyExerciseLog: (oldData.dailyExerciseLog && typeof oldData.dailyExerciseLog === 'object') ? oldData.dailyExerciseLog : {},
         pendingCurse: !!oldData.pendingCurse,
@@ -1287,7 +1288,7 @@
         activeScroll: null, pendingScroll: null, transferExerciseId: null, transferStreakDays: 0,
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0, creditsGainedToday: 0, playerId: null,
         opensToday: 0, totalOpens: 0, opensYesterday: 0, lastSyncPeriod: null, syncNoticeShown: false,
-        freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false,
+        freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false, freezeNextAvailableAt: null,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true
@@ -1392,6 +1393,7 @@
   if (typeof data.freezeEndTimestamp !== 'number') data.freezeEndTimestamp = null;
   if (typeof data.freezeAnimPlayed !== 'boolean') data.freezeAnimPlayed = false;
   if (typeof data.freezeJustEndedWithCurse !== 'boolean') data.freezeJustEndedWithCurse = false;
+  if (typeof data.freezeNextAvailableAt !== 'number') data.freezeNextAvailableAt = null;
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
   if (typeof data.stats.str !== 'number') data.stats.str = 10;
@@ -1455,7 +1457,7 @@
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
     "scroll_transfer": { name: "Свиток Переноса", icon: "📜", desc: "Снимает одно выбранное упражнение дневного задания — без цели, без награды. Оставшиеся четыре получают +30% к цели, а при использовании подряд эта надбавка растёт ещё на 10% за каждый день.", price: 2000, level: 4 },
     "scroll_contract": { name: "Свиток Договора", icon: "📜", desc: "Поднимает все пять целей дневного задания на 25%. За полное исполнение — доплата +50% к заработанным опыту и кредитам. При срыве — обычный штраф, без бонуса.", price: 2800, level: 8 },
-    "scroll_freeze": { name: "Свиток Заморозки", icon: "📜", desc: "Приостанавливает дневное задание на 7 циклов — без исхода, без награды, без штрафа. Уже сделанное сегодня сохраняется до конца срока.", price: 8000, level: 2 },
+    "scroll_freeze": { name: "Свиток Заморозки", icon: "📜", desc: "Приостанавливает дневное задание на 7 циклов — без исхода, без награды, без штрафа. Уже сделанное сегодня сохраняется до конца срока. Между активациями должно пройти 30 дней.", price: 8000, level: 2 },
   };
 
   const KEY_CATALOG = {
@@ -1746,7 +1748,7 @@
     scroll_renunciation: { title: "Свиток Отречения", content: "При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания. Характеристики, титул и часть артефактов молчат, пока действует эффект. Обычно сегодняшнее усилие и всё, что накоплено прежде, складываются в один результат, неразличимо друг от друга. Свиток на время убирает второе — испытание для самого себя, без «брони», накопленной со временем." },
     scroll_transfer: { title: "Свиток Переноса", content: "Свиток Переноса снимает одно упражнение дневного задания — ни цель, ни награда по нему в этот день не учитываются. Освобождённый вес не исчезает: он ложится на оставшиеся четыре, соразмерно увеличивая их цель. При частом использовании подряд эта компенсация становится заметнее — нагрузка на оставшиеся четыре упражнения растёт с каждым днём непрерывного применения." },
     scroll_contract: { title: "Свиток Договора", content: "Свиток Договора — игрок сам поднимает цели предстоящего дневного задания, зная заранее: полное исполнение будет вознаграждено сверх обычного. Условие названо прежде, чем сделан первый шаг." },
-    scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть." },
+    scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть. Повторно использовать Свиток Заморозки можно не раньше чем через 30 дней после предыдущей активации." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Артефакт D-ранга — кристалл, отзывающийся на сам ритм движения, а не на его цель. Каждый пройденный шаг приносит заметно больше кредитов, чем без него." },
@@ -3261,9 +3263,13 @@
               showFullscreenSeal('contract', '#ff3333');
           }
       } else if (id === 'scroll_freeze') {
-          if (data.activeScroll || data.pendingScroll) {
+          if (data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt) {
+              const daysLeft = Math.ceil((data.freezeNextAvailableAt - Date.now()) / (24*60*60*1000));
+              showNotice(`Активация Свитка Заморозки будет доступна через ${daysLeft} дней.`, 'warn', true);
+          } else if (data.activeScroll || data.pendingScroll) {
               showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
           } else {
+              data.freezeNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
               if (data.isGoalMet) {
                   data.pendingScroll = 'freeze';
                   showNotice("Заморозка вступит в силу со следующего цикла.", 'info');
@@ -3762,7 +3768,7 @@
 
   function onFreezeTapCatcherClick() {
     if (data.activeScroll !== 'freeze') return;
-    showConfirm('Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия Свитка. Завершить эффект заморозки досрочно?', () => {
+    showConfirm('Активирован Свиток Заморозки. Дневное задание приостановлено до окончания срока действия Свитка. Снять эффект заморозки досрочно?', () => {
       data.activeScroll = null;
       data.freezeEndTimestamp = null;
       data.freezeAnimPlayed = false;
@@ -4308,6 +4314,7 @@
       freezeEndTimestamp: (typeof s.freezeEndTimestamp === 'number') ? s.freezeEndTimestamp : null,
       freezeAnimPlayed: (typeof s.freezeAnimPlayed === 'boolean') ? s.freezeAnimPlayed : false,
       freezeJustEndedWithCurse: (typeof s.freezeJustEndedWithCurse === 'boolean') ? s.freezeJustEndedWithCurse : false,
+      freezeNextAvailableAt: (typeof s.freezeNextAvailableAt === 'number') ? s.freezeNextAvailableAt : null,
       creditBoostSourceId: (typeof s.creditBoostSourceId === 'string') ? s.creditBoostSourceId : null,
       targetDiscountSourceId: (typeof s.targetDiscountSourceId === 'string') ? s.targetDiscountSourceId : null,
       bestStreak: sanitizeNumber(s.bestStreak, 0),
