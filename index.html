@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.14 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.15 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -970,7 +970,7 @@
         <button class="reset-all" onclick="sysToolsFlashThenRun(this, resetDailyProgressAction)">Сбросить дневной прогресс</button>
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, forceFullResetAction)">Принудительный сброс дня</button>
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetChronicleAction)">Сбросить историю Летописи</button>
-        <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.freezeNextAvailableAt = null; saveData(); })">Сбросить паузу Заморозки</button>
+        <button id="resetFreezePauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.freezeNextAvailableAt = null; saveData(); })">Сбросить паузу Заморозки</button>
       </div>
     </div>
     <button class="close-status" onclick="document.getElementById('sysToolsOverlay').style.display='none'">ЗАКРЫТЬ</button>
@@ -1146,7 +1146,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.14';
+  const APP_VERSION = '6.5.15';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -4737,6 +4737,9 @@
 
   function openSysTools() {
     if (!sysToolsAuthorized) return;
+    const freezePauseBtn = document.getElementById('resetFreezePauseBtn');
+    const hasPause = data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt;
+    freezePauseBtn.disabled = !hasPause || data.activeScroll === 'freeze';
     document.getElementById('sysToolsOverlay').style.display = 'flex';
   }
 
