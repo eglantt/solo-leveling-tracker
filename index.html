@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.17 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.18 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1146,7 +1146,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.17';
+  const APP_VERSION = '6.5.18';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -3521,7 +3521,11 @@
         data.keys[box.requiresKey] = Math.max(0, (data.keys[box.requiresKey] || 0) - 1);
         if (data.keys[box.requiresKey] <= 0) delete data.keys[box.requiresKey];
       }
-      const pool = BOX_LOOT_POOLS[id] || [];
+      const pool = (BOX_LOOT_POOLS[id] || []).filter(itemId => {
+        if (itemId === 'rune_protection_absolute' && (data.consumables['rune_protection_absolute'] || 0) >= 5) return false;
+        if (itemId === 'rune_correction' && (data.consumables['rune_correction'] || 0) >= 5) return false;
+        return true;
+      });
       // Keys the player doesn't already own — never grant a duplicate key.
       const keyPool = (KEY_DROP_POOLS[id] || []).filter(k => !(data.keys[k] > 0));
       const count = box.minItems + Math.floor(Math.random() * (box.maxItems - box.minItems + 1));
@@ -3555,7 +3559,7 @@
       // Independent bonus roll — Скрижаль Пересмотра, only from these four
       // box tiers, on top of the item lottery above (never reduces normal drops).
       const TABLET_ELIGIBLE_BOXES = ['box_basalt', 'box_onyx', 'box_obsidian', 'box_dark_quartz'];
-      if (TABLET_ELIGIBLE_BOXES.includes(id) && Math.random() < 0.03) {
+      if (TABLET_ELIGIBLE_BOXES.includes(id) && (data.consumables['tablet_of_reassessment'] || 0) < 3 && Math.random() < 0.03) {
         data.consumables['tablet_of_reassessment'] = (data.consumables['tablet_of_reassessment'] || 0) + 1;
         gainedItems.push('tablet_of_reassessment');
       }
