@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.15 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.16 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1146,7 +1146,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.15';
+  const APP_VERSION = '6.5.16';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1453,7 +1453,7 @@
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 5000, level: 20 },
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 5500, level: 20 },
     "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на завтра, а также снимает последний полученный штраф.", price: 9600, level: 25 },
-    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +2 использования Преодоления предела сегодня.", price: 6000, level: 30 },
+    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +3 использования Преодоления предела сегодня.", price: 9000, level: 30 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 8000, level: 40 },
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
     "scroll_transfer": { name: "Свиток Переноса", icon: "📜", desc: "Снимает одно выбранное упражнение дневного задания — без цели, без награды. Оставшиеся четыре получают +30% к цели, а при использовании подряд эта надбавка растёт ещё на 10% за каждый день.", price: 2000, level: 4 },
@@ -3317,7 +3317,10 @@
       } else if (id === 'shard_limit') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 1;
           used = true; showNotice("Осколок использован. +1 использование Преодоления предела сегодня.", 'info');
-      } else if (id === 'rune_limit_charged' || id === 'shard_limit_double') {
+      } else if (id === 'rune_limit_charged') {
+          data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 3;
+          used = true; showNotice("+3 использования Преодоления предела сегодня.", 'info');
+      } else if (id === 'shard_limit_double') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 2;
           used = true; showNotice("+2 использования Преодоления предела сегодня.", 'info');
       } else if (id === 'rune_redemption') {
