@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.23 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.27 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -365,6 +365,8 @@
     .target { font-size: 0.85rem; color: #88ffccaa; }
     .counter.cursed { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
     .target.cursed { color: #ff5555aa; }
+    .counter.scroll-tinted { color: #ffaa00; text-shadow: 0 0 8px rgba(255,170,0,0.5); }
+    .target.scroll-tinted { color: #ffaa00aa; }
     .sound-checkbox-zone {
       width: 44px; height: 44px;
       display: flex; align-items: center; justify-content: center;
@@ -536,7 +538,7 @@
       background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.04) 0px, rgba(64,192,255,0.04) 1px, transparent 1px, transparent 3px);
       border: 1px solid #40c0ff;
       border-radius: 4px;
-      padding: 14px 20px;
+      padding: 14px 20px 24px;
       text-align: center;
       pointer-events: auto;
       cursor: pointer;
@@ -545,7 +547,7 @@
       box-shadow: 0 0 25px rgba(0,140,255,0.35), inset 0 0 15px rgba(0,80,200,0.15);
     }
     .system-popup-header {
-      font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.65rem; letter-spacing: 4px;
+      font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.05rem;
       color: #40c0ff; opacity: 0.85; margin-bottom: 8px; text-transform: uppercase;
     }
     .system-popup-body {
@@ -982,14 +984,14 @@
 
 <div class="status-overlay" id="confirmOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
-    <div class="status-header">СИСТЕМА</div>
+    <div class="status-header">ЗАПРОС РЕШЕНИЯ</div>
     <div class="status-body"><div id="confirmContent"></div></div>
   </div>
 </div>
 
 <div class="status-overlay" id="exerciseChoiceOverlay" style="z-index: 1500;">
   <div class="status-window hud-frame">
-    <div class="status-header">СИСТЕМА</div>
+    <div class="status-header">ЗАПРОС ВЫБОРА</div>
     <div class="status-body"><div id="exerciseChoiceContent"></div></div>
   </div>
 </div>
@@ -1148,7 +1150,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.23';
+  const APP_VERSION = '6.5.27';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -2313,7 +2315,7 @@
     else if (tone === 'warn' || tone === 'danger') playSound('denied');
     const p = document.createElement('div');
     p.className = 'system-popup hud-frame';
-    p.innerHTML = `<div class="system-popup-header">Система</div><div class="system-popup-body ${toneClass}">${escapeHtml(body)}</div>` +
+    p.innerHTML = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${escapeHtml(body)}</div>` +
       (sub ? `<div class="system-popup-sub">${escapeHtml(sub)}</div>` : '');
     document.body.appendChild(p);
 
@@ -3219,7 +3221,7 @@
                   showNotice("При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания.", 'info');
               } else {
                   data.pendingScroll = 'renunciation';
-                  showNotice("Свиток вступит в силу со следующего дневного задания.", 'info');
+                  showNotice("Свиток вступит в силу со следующим циклом дневного задания.", 'info');
               }
               used = true;
               showFullscreenSeal('renunciation', '#aaaaaa');
@@ -3264,7 +3266,7 @@
                   showNotice("Цели повышены. Награда — за полное исполнение.", 'info');
               } else {
                   data.pendingScroll = 'contract';
-                  showNotice("Свиток вступит в силу со следующим дневным заданием.", 'info');
+                  showNotice("Свиток вступит в силу со следующим циклом дневного задания.", 'info');
               }
               used = true;
               showFullscreenSeal('contract', '#ff3333');
@@ -3820,9 +3822,14 @@
     ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(qid => {
       const counterEl = document.getElementById(qid);
       if (counterEl) {
+        const isScrollTinted = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
         counterEl.classList.toggle('cursed', !!data.curseActiveToday);
+        counterEl.classList.toggle('scroll-tinted', isScrollTinted);
         const targetEl = counterEl.nextElementSibling;
-        if (targetEl && targetEl.classList.contains('target')) targetEl.classList.toggle('cursed', !!data.curseActiveToday);
+        if (targetEl && targetEl.classList.contains('target')) {
+          targetEl.classList.toggle('cursed', !!data.curseActiveToday);
+          targetEl.classList.toggle('scroll-tinted', isScrollTinted);
+        }
       }
     });
     const rank = getRank(data.level);
