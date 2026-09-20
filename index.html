@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.22 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.23 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -455,7 +455,7 @@
       -webkit-appearance: none;
     }
     .reset-all:hover { background: #880000 !important; border-color: #ff0000 !important; color: #ffffff !important; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
-    .reset-all:active { background: #aa0000 !important; }
+    .reset-all:not(:disabled):active { background: #aa0000 !important; }
 
     .restore-link {
         display: inline-block; margin-top: 15px; color: #40c0ff; font-size: 0.75rem; 
@@ -1148,7 +1148,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.22';
+  const APP_VERSION = '6.5.23';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
