@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.27 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.28 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -564,7 +564,11 @@
     .codex-chapter:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .codex-chapter-title { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.8rem; color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); margin-bottom: 6px; letter-spacing: 0.5px; }
     .codex-chapter-text { font-size: 0.8rem; color: #aaddff; line-height: 1.5; }
-    .notif-log-list { max-height: 320px; overflow-y: auto; }
+    .notif-log-list {
+      max-height: 320px; overflow-y: auto;
+      scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .notif-log-list::-webkit-scrollbar { display: none; }
     .notif-log-row { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #00aaff15; font-size: 0.72rem; }
     .notif-log-time { color: #40c0ff; font-family: 'Roboto Mono', monospace; flex-shrink: 0; opacity: 0.85; }
     .notif-log-text { color: #aaddff; }
@@ -1150,7 +1154,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.27';
+  const APP_VERSION = '6.5.28';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
