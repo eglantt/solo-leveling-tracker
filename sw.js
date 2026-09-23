@@ -1,7 +1,7 @@
 // ============================================================================
 // Service Worker — SLDT
 //
-// Два кэша (v6.5.32):
+// Два кэша (с v6.5.32):
 //  • APP_CACHE    — каркас: страница, манифест, иконки приложения. Версия
 //                   CACHE_VERSION бампается на КАЖДОМ релизе.
 //  • ASSETS_CACHE — иконки предметов и шрифты (~14 МБ). Версия ASSETS_VERSION
@@ -16,7 +16,7 @@
 // установку, ни активацию.
 // ============================================================================
 
-const CACHE_VERSION = 'v6-5-32';
+const CACHE_VERSION = 'v6-5-33';
 const ASSETS_VERSION = 'v1';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;

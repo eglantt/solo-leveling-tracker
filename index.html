@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.32 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.33 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -498,6 +498,18 @@
     .danger-icon { font-size: 2rem; color: #ff5555; text-shadow: 0 0 15px rgba(255,0,0,0.6); margin-bottom: 10px; }
     .danger-text { font-size: 0.85rem; color: #ffbbbb; margin-bottom: 14px; line-height: 1.4; white-space: pre-line; }
     .danger-text strong { color: #ffe066; letter-spacing: 1px; }
+    /* Окно правил (v6.5.33): строки, подзаголовок, «штраф», печать по буквам. */
+    .rules-line { margin-bottom: 0.75em; }
+    .rules-line:last-child { margin-bottom: 0; }
+    .rules-line.rules-heading { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; color: #40c0ff; letter-spacing: 1px; margin: 0.2em 0 0.35em; }
+    .rules-pen { color: #ff5555; font-weight: 700; text-shadow: 0 0 6px rgba(255,40,40,0.55); }
+    /* Символы занимают место с самого начала — окно не «прыгает» при печати. */
+    .rules-typing .rules-ch { visibility: hidden; position: relative; }
+    .rules-typing .rules-ch.on { visibility: visible; }
+    .rules-ch.caret::after { content: ''; position: absolute; left: 100%; top: 0.15em; width: 0.5em; height: 1.05em; background: #40c0ff; box-shadow: 0 0 8px #40c0ff; animation: rulesCaretBlink 0.7s steps(1) infinite; }
+    @keyframes rulesCaretBlink { 50% { opacity: 0; } }
+    .rules-controls { transition: opacity 0.6s ease, transform 0.6s ease; }
+    .rules-controls.pending { opacity: 0; transform: translateY(6px); pointer-events: none; }
     .danger-list { list-style: none; padding: 0; margin: 0 0 14px; text-align: left; }
     .danger-list li { font-size: 0.8rem; color: #ffcccc; padding: 4px 0 4px 18px; position: relative; }
     .danger-list li::before { content: '—'; position: absolute; left: 0; color: #ff5555; }
@@ -1035,17 +1047,17 @@
 
 <div class="status-overlay" id="rulesOverlay" style="z-index: 1550;">
   <div class="status-window hud-frame">
-    <div class="status-header">ПРАВИЛА</div>
-    <div class="status-body">
+    <div class="status-header" id="rulesHeader">УВЕДОМЛЕНИЕ</div>
+    <div class="status-body" id="rulesBody">
     <div class="danger-warning-step">
-      <div class="danger-text" id="rulesText" style="color:#a8d8ff; text-align:left; line-height:1.5;"></div>
+      <div class="danger-text" id="rulesText" onclick="finishRulesAnimation()" style="color:#a8d8ff; text-align:left; line-height:1.5;"></div>
     </div>
     </div>
-    <div id="rulesCheckboxRow" style="display:flex; align-items:center; justify-content:center; gap:10px; padding: 0 20px 12px;">
+    <div id="rulesCheckboxRow" class="rules-controls" style="display:flex; align-items:center; justify-content:center; gap:10px; padding: 0 20px 12px;">
       <div class="sound-checkbox-zone" onclick="toggleRulesCheckbox()"><div class="sound-checkbox" id="rulesCheckbox">✓</div></div>
       <span style="font-size:0.8rem; color:#9fc4e6;">Согласен с правилами.</span>
     </div>
-    <div class="danger-btn-row" style="padding: 0 20px 20px; justify-content:center;">
+    <div class="danger-btn-row rules-controls" id="rulesBtnRow" style="padding: 0 20px 20px; justify-content:center;">
       <button class="confirm-btn-continue" id="rulesAcceptBtn" onclick="acknowledgeRules()" disabled>Принять</button>
       <button class="confirm-btn-continue" id="rulesCloseBtn" onclick="closeRulesOverlay()" style="display:none;">Закрыть</button>
     </div>
@@ -1171,7 +1183,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.32';
+  const APP_VERSION = '6.5.33';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1785,7 +1797,7 @@
       "Система фиксирует: задание не выполнено.",
       "Время до сброса сокращается.",
       "Задание остаётся открытым.",
-      "Система: незавершённое задание требует внимания.",
+      "Незавершённое задание требует внимания.",
       "Система отмечает бездействие Игрока."
     ],
     reminderUrgent: [
@@ -1795,7 +1807,7 @@
       "Меньше двух часов до сброса задания."
     ],
     reminderFinal: [
-      "Система: критически малое время до сброса.",
+      "До завершения цикла осталось критически мало времени.",
       "Время почти истекло. Задание не выполнено.",
       "Система фиксирует: срок задания почти истёк.",
       "Финальное окно для завершения задания."
@@ -1806,7 +1818,7 @@
       "Задание выполнено.",
       "Задание выполнено. Система фиксирует прогресс.",
       "Задание дня завершено.",
-      "Система: задание выполнено полностью.",
+      "Задание исполнено в полном объёме.",
       "Дневное задание выполнено.",
       "Система фиксирует выполнение задания.",
       "День завершён. Задание выполнено."
@@ -1956,20 +1968,133 @@
   // listing which exercises were fully completed on a given day.
   const QUEST_DISPLAY_NAMES = { pushups: 'Отжимания', squats: 'Приседания', pullups: 'Подтягивания', press: 'Пресс', steps: 'Пробежка / шаги' };
 
-  const RULES_TEXT_ONBOARDING = "Обнаружен новый Игрок.<br><br>Активирован протокол ежедневного задания.<br><br>С этого момента Игрок обязан исполнять его каждые сутки.<br><br>Слабость определяется недостатком дисциплины — Система устраняет эту недостачу через ежедневное задание.<br><br>Протокол задания включает пять упражнений; засчитывается только полное исполнение всех пяти — частичное расценивается как неисполнение, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Время до завершения цикла отображается обратным отсчётом на экране.<br><br>Неисполнение влечёт штраф: часть накопленного опыта аннулируется, а при нехватке опыта для покрытия штрафа образуется долг перед Системой.<br><br>Подробности изложены в <strong>Кодексе</strong>.";
-  const RULES_TEXT_ARCHIVE = "Слабость определяется недостатком дисциплины — Система устраняет эту недостачу через ежедневное задание.<br><br>Протокол задания включает пять упражнений; засчитывается только полное исполнение всех пяти — частичное расценивается как неисполнение, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Время до завершения цикла отображается обратным отсчётом на экране.<br><br>Неисполнение влечёт штраф: часть накопленного опыта аннулируется, а при нехватке опыта для покрытия штрафа образуется долг перед Системой.<br><br>Подробности изложены в <strong>Кодексе</strong>.";
+  // Разметка строк: **…** — жирный (Кодекс), !!…!! — красный жирный (штраф).
+  // pause — пауза 1.5 с после строки при печати; heading — подзаголовок.
+  const RULES_LINES_ONBOARDING = [
+    { t: 'Обнаружен новый Игрок.', pause: true },
+    { t: 'Активирован протокол ежедневного задания.', pause: true },
+    { t: 'С этого момента Игрок обязан исполнять его каждые сутки.', pause: true },
+    { t: 'Слабость определяется недостатком дисциплины — Система устраняет эту недостачу через ежедневное задание.', pause: true },
+    { t: 'ПРАВИЛА:', heading: true },
+    { t: 'Протокол задания включает пять упражнений; засчитывается только полное исполнение всех пяти — частичное расценивается как неисполнение, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Время до завершения цикла отображается обратным отсчётом на экране.' },
+    { t: 'Неисполнение влечёт !!штраф!!: часть накопленного опыта аннулируется, а при нехватке опыта для покрытия !!штрафа!! образуется долг перед Системой.' },
+    { t: 'Подробности изложены в **Кодексе**.', pause: true }
+  ];
+  const RULES_LINES_ARCHIVE = RULES_LINES_ONBOARDING.slice(5);
+  // Хронометраж печати (утверждён по demo_30): ~10.5 с набор + 5 пауз по 1.5 с ≈ 18 с.
+  const RULES_TYPE_TOTAL_MS = 10500;
+  const RULES_PAUSE_MS = 1500;
+
+  // Строит текст в #rulesText: каждая буква — отдельный span (для печати).
+  // Возвращает плоский список {ch, line, pauseAfter} в порядке вывода.
+  function buildRulesText(lines) {
+    const box = document.getElementById('rulesText');
+    box.innerHTML = '';
+    const chars = [];
+    lines.forEach(l => {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'rules-line' + (l.heading ? ' rules-heading' : '');
+      const re = /(\*\*[^*]+\*\*|!![^!]+!!)/g;
+      let last = 0, m;
+      const segs = [];
+      while ((m = re.exec(l.t))) {
+        if (m.index > last) segs.push({ s: l.t.slice(last, m.index), kind: '' });
+        segs.push({ s: m[0].slice(2, -2), kind: m[0].startsWith('**') ? 'strong' : 'pen' });
+        last = m.index + m[0].length;
+      }
+      if (last < l.t.length) segs.push({ s: l.t.slice(last), kind: '' });
+      const lineChars = [];
+      segs.forEach(seg => {
+        let wrap = lineEl;
+        if (seg.kind === 'strong') wrap = document.createElement('strong');
+        if (seg.kind === 'pen') { wrap = document.createElement('span'); wrap.className = 'rules-pen'; }
+        for (const c of seg.s) {
+          const sp = document.createElement('span');
+          sp.className = 'rules-ch';
+          sp.textContent = c;
+          wrap.appendChild(sp);
+          lineChars.push(sp);
+        }
+        if (wrap !== lineEl) lineEl.appendChild(wrap);
+      });
+      box.appendChild(lineEl);
+      lineChars.forEach((ch, i) => chars.push({ ch, line: lineEl, pauseAfter: !!l.pause && i === lineChars.length - 1 }));
+    });
+    return chars;
+  }
+
+  // Печать идёт по одному циклу requestAnimationFrame по заранее рассчитанному
+  // расписанию: если приложение свернули, после возврата выводится всё, что
+  // «должно было» напечататься, без сотен отдельных таймеров.
+  let rulesAnim = null;
+
+  function startRulesAnimation(chars) {
+    const perChar = RULES_TYPE_TOTAL_MS / Math.max(1, chars.length);
+    let t = 0;
+    const schedule = chars.map(c => { t += perChar; const at = t; if (c.pauseAfter) t += RULES_PAUSE_MS; return at; });
+    const endAt = t;
+    const startTs = performance.now();
+    const body = document.getElementById('rulesBody');
+    let shown = 0, caretEl = null, lastLine = null;
+    rulesAnim = { chars, raf: null };
+    const step = (now) => {
+      if (!rulesAnim) return;
+      const elapsed = now - startTs;
+      while (shown < chars.length && schedule[shown] <= elapsed) {
+        const c = chars[shown++];
+        c.ch.classList.add('on');
+        if (c.line !== lastLine) {
+          lastLine = c.line;
+          const lb = c.line.getBoundingClientRect(), bb = body.getBoundingClientRect();
+          if (lb.bottom > bb.bottom) body.scrollTop += lb.bottom - bb.bottom + 8;
+        }
+      }
+      if (shown > 0 && chars[shown - 1].ch !== caretEl) {
+        if (caretEl) caretEl.classList.remove('caret');
+        caretEl = chars[shown - 1].ch;
+        caretEl.classList.add('caret');
+      }
+      if (elapsed >= endAt) { finishRulesAnimation(); return; }
+      rulesAnim.raf = requestAnimationFrame(step);
+    };
+    rulesAnim.raf = requestAnimationFrame(step);
+  }
+
+  // Завершает печать немедленно (касание текста) или по расписанию:
+  // весь текст виден, галочка и кнопка плавно появляются.
+  function finishRulesAnimation() {
+    if (!rulesAnim) return;
+    if (rulesAnim.raf) cancelAnimationFrame(rulesAnim.raf);
+    rulesAnim.chars.forEach(c => { c.ch.classList.add('on'); c.ch.classList.remove('caret'); });
+    rulesAnim = null;
+    document.querySelectorAll('#rulesOverlay .rules-controls').forEach(el => el.classList.remove('pending'));
+  }
+
+  function stopRulesAnimation() {
+    if (rulesAnim && rulesAnim.raf) cancelAnimationFrame(rulesAnim.raf);
+    rulesAnim = null;
+  }
 
   function showRulesOverlay(mode) {
-    document.getElementById('rulesText').innerHTML = (mode === 'onboarding') ? RULES_TEXT_ONBOARDING : RULES_TEXT_ARCHIVE;
-    document.getElementById('rulesCheckboxRow').style.display = (mode === 'onboarding') ? 'flex' : 'none';
-    document.getElementById('rulesAcceptBtn').style.display = (mode === 'onboarding') ? 'block' : 'none';
-    document.getElementById('rulesCloseBtn').style.display = (mode === 'onboarding') ? 'none' : 'block';
-    if (mode === 'onboarding') {
+    stopRulesAnimation();
+    const onboarding = (mode === 'onboarding');
+    document.getElementById('rulesHeader').textContent = onboarding ? 'УВЕДОМЛЕНИЕ' : 'ПРАВИЛА';
+    const textEl = document.getElementById('rulesText');
+    textEl.classList.toggle('rules-typing', onboarding);
+    textEl.style.cursor = onboarding ? 'pointer' : '';
+    const chars = buildRulesText(onboarding ? RULES_LINES_ONBOARDING : RULES_LINES_ARCHIVE);
+    document.getElementById('rulesBody').scrollTop = 0;
+    document.getElementById('rulesCheckboxRow').style.display = onboarding ? 'flex' : 'none';
+    document.getElementById('rulesAcceptBtn').style.display = onboarding ? 'block' : 'none';
+    document.getElementById('rulesCloseBtn').style.display = onboarding ? 'none' : 'block';
+    document.querySelectorAll('#rulesOverlay .rules-controls').forEach(el => el.classList.toggle('pending', onboarding));
+    if (onboarding) {
       rulesCheckboxChecked = false;
       document.getElementById('rulesCheckbox').classList.remove('on');
       document.getElementById('rulesAcceptBtn').disabled = true;
     }
     document.getElementById('rulesOverlay').style.display = 'flex';
+    if (onboarding) startRulesAnimation(chars);
   }
 
   let rulesCheckboxChecked = false;
@@ -1981,6 +2106,7 @@
 
   function acknowledgeRules() {
     if (!rulesCheckboxChecked) return;
+    stopRulesAnimation();
     data.rulesAcknowledged = true;
     saveData();
     document.getElementById('rulesOverlay').style.display = 'none';
@@ -1988,6 +2114,7 @@
   }
 
   function closeRulesOverlay() {
+    stopRulesAnimation();
     document.getElementById('rulesOverlay').style.display = 'none';
   }
 

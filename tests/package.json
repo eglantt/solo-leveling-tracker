@@ -1,0 +1,11 @@
+{
+  "name": "sldt-tests",
+  "private": true,
+  "description": "Автотесты SLDT: симуляция всего приложения (jsdom) и стенд Service Worker",
+  "scripts": {
+    "test": "node sw.test.js && node app.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}
