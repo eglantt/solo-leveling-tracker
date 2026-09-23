@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.33 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.34 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1183,7 +1183,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.33';
+  const APP_VERSION = '6.5.34';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1528,6 +1528,101 @@
 
   function getConsumableInfo(id) {
     return SHOP_CATALOG[id] || UNIQUE_CATALOG[id];
+  }
+
+  // ---- v6.5.34: сила защит, усилений опыта и родительный падеж названий ----
+  // Более сильная руна поглощает более слабую; равная/слабая не активируется.
+  const PROTECTION_TIER = { rune_protection: 1, rune_protection_charged: 2, rune_protection_absolute: 3 };
+  // Группа усилений опыта: та же логика поглощения/блокировки.
+  const EXP_BOOST_RATE = { rune_return: 0.15, potion_growth: 0.20, rune_growth_charged: 0.35, crystal_impulse: 0.35, crystal_clarity: 0.55 };
+  const ITEM_GENITIVE = {
+    rune_protection: 'Руны Защиты', rune_protection_charged: 'Руны Защиты (усиленной)', rune_protection_absolute: 'Руны Абсолютной Защиты',
+    rune_return: 'Руны Возврата', potion_growth: 'Зелья Роста', rune_growth_charged: 'Руны Роста (усиленной)',
+    crystal_impulse: 'Кристалла Импульса', crystal_clarity: 'Кристалла Ясности'
+  };
+  const LIMIT_SHARD_IDS = ['shard_limit', 'shard_limit_double', 'rune_limit_charged'];
+
+  // Отношение нового усиления опыта к уже действующему.
+  function expBoostRelation(rate) {
+    const cur = data.expBoostToday || 0;
+    if (cur <= 0) return { kind: 'free' };
+    if (rate > cur + 1e-9) return { kind: 'absorb', activeId: data.expBoostSourceId };
+    return { kind: Math.abs(rate - cur) < 1e-9 ? 'equal' : 'higher', activeId: data.expBoostSourceId };
+  }
+  function expBoostActiveTail(activeId) {
+    const g = ITEM_GENITIVE[activeId];
+    return g ? `: активен эффект ${g}.` : '.';
+  }
+  function expBoostRefusal(rel) {
+    return (rel.kind === 'equal' ? 'Действует равное усиление опыта' : 'Действует более высокое усиление опыта') + expBoostActiveTail(rel.activeId);
+  }
+  function expBoostAbsorbWarning(id) {
+    const rate = EXP_BOOST_RATE[id];
+    const rel = expBoostRelation(rate);
+    if (rel.kind !== 'absorb' || !ITEM_GENITIVE[rel.activeId]) return '';
+    let w = `${getConsumableInfo(id).name} поглотит действие ${ITEM_GENITIVE[rel.activeId]}: усиление опыта станет +${Math.round(rate * 100)}%`;
+    if (rel.activeId === 'crystal_impulse' && id !== 'crystal_impulse' && data.creditBoostSourceId === 'crystal_impulse') w += ', а усиление кредитов +35% исчезнет';
+    return w + '.';
+  }
+
+  // Почему нельзя поставить защиту от штрафа обычной/усиленной руной (или null).
+  function protectionBlockReason(tier) {
+    if (allQuestsDone() || data.isGoalMet || data.dailyNotices.complete) return 'задание уже выполнено';
+    if (data.curseActiveToday) return 'действует Бремя Аномалии';
+    if (data.activeScroll === 'contract') return 'активен Свиток Договора';
+    if (data.activeScroll === 'transfer') return 'активен Свиток Переноса';
+    if (data.insurance) {
+      const cur = PROTECTION_TIER[data.insuranceSourceId] || 1;
+      if (cur >= tier) return cur === 3 ? 'действует Руна Абсолютной Защиты' : `${getConsumableInfo(data.insuranceSourceId).name} уже активна`;
+    }
+    return null;
+  }
+
+  // Полный (согласованный) текст отказа по той же причине — для случая,
+  // когда руна не может сделать вообще ничего.
+  function protectionRefusalNotice(tier) {
+    if (allQuestsDone() || data.isGoalMet || data.dailyNotices.complete) return "Задание уже выполнено — защита не нужна.";
+    if (data.curseActiveToday) return "Обычная защита бессильна против Бремени Аномалии.";
+    if (data.activeScroll === 'contract') return "Активен Свиток Договора. Его условия не допускают обычной защиты от штрафа до следующего цикла.";
+    if (data.activeScroll === 'transfer') return "Активен Свиток Переноса. Его условия не допускают обычной защиты от штрафа до следующего цикла.";
+    if (data.insurance && (PROTECTION_TIER[data.insuranceSourceId] || 1) > tier) return `Действует более сильная защита: ${getConsumableInfo(data.insuranceSourceId).name}.`;
+    return "Защита уже активирована.";
+  }
+
+  // Второй абзац окна подтверждения «Использовать …?» — предупреждение о
+  // последствиях в текущей ситуации ('' — предупреждать не о чем).
+  function getUseWarning(id) {
+    if (id === 'rune_protection_charged') {
+      const reason = protectionBlockReason(2);
+      if (reason && data.lastExpLoss > 0) return `Защита сейчас не может быть установлена: ${reason}. Руна сработает только для возврата опыта.`;
+      if (!reason && data.insurance) return `Руна Защиты (усиленная) поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId]}.`;
+      return '';
+    }
+    if (id === 'rune_protection_absolute') {
+      if (data.insurance && (PROTECTION_TIER[data.insuranceSourceId] || 1) < 3) return `Руна Абсолютной Защиты поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId] || 'текущей защиты'}.`;
+      return '';
+    }
+    if (id === 'rune_return') {
+      const rel = expBoostRelation(EXP_BOOST_RATE.rune_return);
+      if ((rel.kind === 'equal' || rel.kind === 'higher') && data.lastExpLoss > 0) {
+        const head = rel.kind === 'equal' ? 'Усиление опыта уже действует' : 'Действует более высокое усиление опыта';
+        return head + expBoostActiveTail(rel.activeId) + ' Руна сработает только для возврата опыта.';
+      }
+      return '';
+    }
+    if (EXP_BOOST_RATE[id]) return expBoostAbsorbWarning(id);
+    if (id === 'tablet_of_reassessment') {
+      const invested = Object.values(data.stats).some(v => v > 10);
+      const hasProgress = Object.values(data.completed || {}).some(v => v > 0);
+      if (invested && hasProgress && !data.dailyNotices.complete && !data.isGoalMet) return 'Сброс характеристик изменит цели текущего задания. Уже закрытые упражнения могут снова стать незакрытыми.';
+      return '';
+    }
+    if (LIMIT_SHARD_IDS.includes(id)) {
+      if (data.activeScroll === 'freeze') return 'Преодоление предела будет доступно после окончания Заморозки и выполнения задания.';
+      if (!data.dailyNotices.complete && !data.isGoalMet) return 'Преодоление предела будет доступно только после выполнения задания. Неиспользованные попытки исчезнут с началом нового цикла.';
+      return '';
+    }
+    return '';
   }
 
   // Руны нагрузки (одна общая «ячейка» скидки targetDiscount*): засыпают
@@ -2544,17 +2639,20 @@
     enqueueNotification({ body: message, tone, skipLog, sound });
   }
 
-  function showPenaltyBanner(totalLoss, pct, daysCount, completedCount) {
+  function showPenaltyBanner(totalLoss, pct, daysCount, completedCount, runeHalved) {
     const cont = document.getElementById('penaltyContent');
     const daysLine = daysCount > 1 ? `<li>Пропущено дней: ${daysCount}</li>` : '';
+    const pctText = daysCount > 1 ? '' : ` (-${String(pct).replace('.', ',')}%)`;
+    const runeLine = runeHalved ? `<li>${daysCount > 1 ? 'Руна Защиты снизила штраф за один из дней вдвое.' : 'Руна Защиты: штраф снижен вдвое.'}</li>` : '';
     cont.innerHTML = `
       <div class="danger-warning-step">
         <div class="danger-icon">⚠</div>
         <div class="danger-text">Система зафиксировала невыполнение задания.</div>
         <ul class="danger-list">
           <li>Закрыто упражнений: ${completedCount} из 5</li>
-          <li>Потеряно опыта: ${totalLoss} (-${pct}%)</li>
+          <li>Потеряно опыта: ${totalLoss}${pctText}</li>
           ${daysLine}
+          ${runeLine}
         </ul>
       </div>`;
     document.getElementById('penaltyOverlay').style.display = 'flex';
@@ -2573,6 +2671,7 @@
     let penalizedDays = 0;
     let totalLoss = 0;
     let lastPct = 0;
+    let runeHalvedAny = false;
     let lastCompletedCount = 0;
     while (now >= nextReset) {
       const dayKey = dateKeyFromTimestamp(data.lastReset);
@@ -2599,7 +2698,11 @@
           data.activeScroll = null;
           data.freezeEndTimestamp = null;
           if (data.curseActiveToday) { data.freezeJustEndedWithCurse = true; }
-          setTimeout(() => showNotice("Заморозка завершилась. Задание возобновлено.", 'info'), 500);
+          // Началась с нового цикла (стартовое уведомление того цикла ещё не
+          // показано) → следом придёт «Получено задание на день…»; началась
+          // посреди задания → задание просто продолжается.
+          const freezeFromFreshCycle = !data.dailyNotices.morning;
+          setTimeout(() => showNotice(freezeFromFreshCycle ? "Заморозка завершилась." : "Заморозка завершилась. Задание возобновлено.", 'info'), 500);
         }
       } else if (data.isGoalMet || allQuestsDone()) {
         applyPenaltyLogic();
@@ -2607,7 +2710,7 @@
       } else {
         const result = applyPenaltyLogic();
         if (result === 'protected') { dayStatus = 'protected'; }
-        else if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
+        else if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; if (result.halved) runeHalvedAny = true; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
         else { dayStatus = 'success'; }
       }
       const historyEntry = { status: dayStatus, donePercent };
@@ -2701,9 +2804,9 @@
     }
     saveData(); render();
     if (penalizedDays > 0) {
-      setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount), 3000);
+      setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny), 3000);
     }
-    if (!data.dailyNotices.morning) {
+    if (!data.dailyNotices.morning && data.activeScroll !== 'freeze') {
       data.dailyNotices.morning = true;
       saveData();
       if (penalizedDays > 0) {
@@ -2820,7 +2923,9 @@
         completedExercises.push(QUEST_DISPLAY_NAMES[id]);
       }
     }
-    return { loss, pct: Math.round(finalPen * 100), completedExercises };
+    // Фактический процент — уже после снижения Руной Защиты (одна цифра после запятой).
+    const effectivePct = Math.round(finalPen * (halfBlock ? 0.5 : 1) * 1000) / 10;
+    return { loss, pct: effectivePct, completedExercises, halved: halfBlock };
   }
 
   function applyPenaltyLogic() {
@@ -3390,7 +3495,8 @@
   function useItem(id) {
     const item = getConsumableInfo(id);
     if (!item || !(data.consumables[id] > 0)) return;
-    showConfirm(`Использовать «${item.name}»?`, () => performUseItem(id));
+    const warning = getUseWarning(id);
+    showConfirm(`Использовать «${item.name}»?` + (warning ? `\n\n${warning}` : ''), () => performUseItem(id));
   }
 
   function getSellRate() {
@@ -3432,6 +3538,7 @@
             ? "Активен Свиток Договора. Его условия не допускают обычной защиты от штрафа до следующего цикла."
             : "Активен Свиток Переноса. Его условия не допускают обычной защиты от штрафа до следующего цикла.", 'warn', true); }
           else if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; used = true; showNotice("Руна активирована. На следующий цикл штраф за провал будет снижен вдвое.", 'info'); }
+          else if ((PROTECTION_TIER[data.insuranceSourceId] || 1) > 1) { showNotice(`Действует более сильная защита: ${getConsumableInfo(data.insuranceSourceId).name}.`, 'warn', true); }
           else { showNotice("Защита уже активирована.", 'warn', true); }
       } else if (id === 'potion_restoration') {
           used = useRecoveryItem(0.5, 'Зелье использовано');
@@ -3518,7 +3625,9 @@
               showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
           } else {
               data.freezeNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
-              if (data.isGoalMet) {
+              // Выполненный день (в т.ч. без Предела) не замораживается задним
+              // числом — Заморозка начнётся со следующего цикла.
+              if (data.isGoalMet || data.dailyNotices.complete || allQuestsDone()) {
                   data.pendingScroll = 'freeze';
                   showNotice("Заморозка вступит в силу со следующего цикла.", 'info');
               } else {
@@ -3547,32 +3656,36 @@
       } else if (id === 'crystal_clarity') {
           used = useExpBoostItem(0.55, 'Кристалл использован', false, id);
       } else if (id === 'rune_protection_charged') {
-          if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
-          else if (data.curseActiveToday) { showNotice("Обычная защита бессильна против Бремени Аномалии.", 'warn', true); }
-          else if (data.activeScroll === 'contract' || data.activeScroll === 'transfer') { showNotice(data.activeScroll === 'contract'
-            ? "Активен Свиток Договора. Его условия не допускают обычной защиты от штрафа до следующего цикла."
-            : "Активен Свиток Переноса. Его условия не допускают обычной защиты от штрафа до следующего цикла.", 'warn', true); }
-          else {
-          let didSomething = false;
-          let msgParts = [];
-          if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; didSomething = true; msgParts.push('защита на следующий цикл активирована'); }
-          if (data.lastExpLoss > 0) {
+          // Две независимые части: защита (если её можно поставить) и возврат
+          // опыта от последнего штрафа (если есть что возвращать).
+          const reason = protectionBlockReason(2);
+          const canReturn = data.lastExpLoss > 0;
+          if (reason && !canReturn) {
+            showNotice(protectionRefusalNotice(2), 'warn', true);
+          } else {
+            const msgParts = [];
+            if (!reason) {
+              const absorbed = data.insurance ? data.insuranceSourceId : null;
+              data.insurance = true; data.insuranceSourceId = id; data.insuranceHoldScroll = null;
+              msgParts.push(absorbed ? `защита на следующий цикл активирована (поглощено действие ${ITEM_GENITIVE[absorbed] || 'прежней защиты'})` : 'защита на следующий цикл активирована');
+            }
+            if (canReturn) {
               const recovery = data.lastExpLoss;
               gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
-              didSomething = true; msgParts.push(`снят последний полученный штраф (+${recovery} EXP)`);
-          }
-          if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
-          else { showNotice("Снимать нечего: штрафа нет, защита уже активна.", 'warn', true); }
+              msgParts.push(`возвращён опыт от последнего штрафа (+${recovery} EXP)`);
+            }
+            used = true;
+            showNotice(`Руна использована: ${msgParts.join(', ')}.` + (reason ? ` Защита не установлена: ${reason}.` : ''), 'info');
           }
       } else if (id === 'shard_limit') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 1;
-          used = true; showNotice("Осколок использован. +1 использование Преодоления предела сегодня.", 'info');
+          used = true; showNotice("Осколок использован. +1 использование Преодоления предела сегодня." + limitShardTail(), 'info');
       } else if (id === 'rune_limit_charged') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 3;
-          used = true; showNotice("+3 использования Преодоления предела сегодня.", 'info');
+          used = true; showNotice("+3 использования Преодоления предела сегодня." + limitShardTail(), 'info');
       } else if (id === 'shard_limit_double') {
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 2;
-          used = true; showNotice("+2 использования Преодоления предела сегодня.", 'info');
+          used = true; showNotice("+2 использования Преодоления предела сегодня." + limitShardTail(), 'info');
       } else if (id === 'rune_redemption') {
           if (data.totalPenalties > 0 && data.lastExpLoss > 0) {
               const recovery = Math.floor(data.lastExpLoss * 0.55);
@@ -3615,6 +3728,11 @@
           let didSomething = false;
           let msgParts = [];
           if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; didSomething = true; msgParts.push('защита активирована до первого провала'); }
+          else if (data.insuranceSourceId !== id) {
+            const absorbed = data.insuranceSourceId;
+            data.insuranceSourceId = id; data.insuranceHoldScroll = null; didSomething = true;
+            msgParts.push(`защита активирована до первого провала (поглощено действие ${ITEM_GENITIVE[absorbed] || 'прежней защиты'})`);
+          }
           if (!data.streakShield) { data.streakShield = true; data.streakShieldSourceId = id; didSomething = true; msgParts.push('серия защищена от срыва'); }
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
           else { showNotice("Обе защиты уже активны.", 'warn', true); }
@@ -3628,17 +3746,30 @@
               used = true; showNotice("Руна использована. Нагрузка на сегодня значительно снижена.", 'info');
           } else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_return') {
-          if (data.lastExpLoss > 0 || data.expBoostToday < 0.15) {
-              if (data.lastExpLoss > 0) { gainExp(data.lastExpLoss); data.lastExpLoss = 0; checkLevelUp(); }
-              if (data.expBoostToday < 0.15) { data.expBoostToday = 0.15; data.expBoostSourceId = id; }
-              used = true; showNotice("Руна использована. Опыт восстановлен и увеличен на сегодня.", 'info');
-          } else { showNotice("Восстанавливать нечего: усиление опыта уже повышено.", 'warn', true); }
+          const rel = expBoostRelation(EXP_BOOST_RATE.rune_return);
+          const canBoost = rel.kind === 'free' || rel.kind === 'absorb';
+          const canReturn = data.lastExpLoss > 0;
+          if (!canBoost && !canReturn) {
+              showNotice(rel.kind === 'equal'
+                ? 'Возвращать нечего. Усиление опыта уже действует' + expBoostActiveTail(rel.activeId)
+                : 'Возвращать нечего. Действует более высокое усиление опыта' + expBoostActiveTail(rel.activeId), 'warn', true);
+          } else {
+              if (canReturn) { gainExp(data.lastExpLoss); data.lastExpLoss = 0; checkLevelUp(); }
+              if (canBoost) { data.expBoostToday = EXP_BOOST_RATE.rune_return; data.expBoostSourceId = id; }
+              used = true;
+              showNotice(canReturn && canBoost ? "Руна использована. Опыт восстановлен и увеличен на сегодня."
+                : canReturn ? "Руна использована. Опыт восстановлен." : "Руна использована. Опыт увеличен на сегодня.", 'info');
+          }
       } else if (id === 'crystal_impulse') {
-          const boosted1 = useExpBoostItem(0.35, 'Кристалл использован', true, id);
-          const boosted2 = useCreditBoostItem(0.35, 'Кристалл использован', true, id);
-          used = boosted1 || boosted2;
-          if (used) showNotice("Кристалл использован. Опыт и кредиты увеличены на сегодня.", 'info');
-          else showNotice("Усиление опыта и кредитов уже повышено.", 'warn', true);
+          const rel = expBoostRelation(EXP_BOOST_RATE.crystal_impulse);
+          if (rel.kind === 'equal' || rel.kind === 'higher') {
+            showNotice(expBoostRefusal(rel), 'warn', true);
+          } else {
+            useExpBoostItem(EXP_BOOST_RATE.crystal_impulse, 'Кристалл использован', true, id);
+            useCreditBoostItem(0.35, 'Кристалл использован', true, id);
+            used = true;
+            showNotice("Кристалл использован. Опыт и кредиты увеличены на сегодня.", 'info');
+          }
       }
       if (used) {
         playSound('questDone');
@@ -3647,6 +3778,11 @@
         saveData(); render(); openInv();
       }
     });
+  }
+
+  function limitShardTail() {
+    return (data.activeScroll !== 'freeze' && (data.dailyNotices.complete || data.isGoalMet))
+      ? ' Неиспользованные попытки исчезнут с началом нового цикла.' : '';
   }
 
   // Shared handler for the "recover % of last penalty's EXP loss" family
@@ -3668,9 +3804,14 @@
   // Кристалл — Роста/Ясности). Stronger items can upgrade a weaker boost
   // already active today, but a weaker one won't downgrade a stronger one.
   function useExpBoostItem(rate, verbPhrase, silent, sourceId) {
-    if (data.expBoostToday >= rate) {
-      if (!silent) showNotice("Более высокое усиление опыта уже действует.", 'warn', true);
+    const rel = expBoostRelation(rate);
+    if (rel.kind === 'equal' || rel.kind === 'higher') {
+      if (!silent) showNotice(expBoostRefusal(rel), 'warn', true);
       return false;
+    }
+    // Поглощённый Кристалл Импульса забирает с собой и свой бонус к кредитам.
+    if (rel.kind === 'absorb' && rel.activeId === 'crystal_impulse' && sourceId !== 'crystal_impulse' && data.creditBoostSourceId === 'crystal_impulse') {
+      data.creditBoostToday = 0; data.creditBoostSourceId = null;
     }
     data.expBoostToday = rate;
     data.expBoostSourceId = sourceId || null;
@@ -5099,7 +5240,7 @@
     const result = computePenaltyAndApply();
     saveData(); render();
     if (result === 'protected') { showNotice('Штраф отменён — сработала Абсолютная защита.', 'info'); }
-    else { const { loss, pct, completedExercises } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length); }
+    else { const { loss, pct, completedExercises, halved } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length, halved); }
   }
 
   function resetPenaltyCountAction() {
