@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.31 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.32 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -665,6 +665,9 @@
        используется печатями свитков, не рунами. */
     @keyframes effectIconSlowSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .effect-icon-btn img.spinning { animation: effectIconSlowSpin 7.2s linear infinite; }
+    /* Руна, подавленная Бременем Аномалии: приглушена, без искр. */
+    .effect-icon-btn img.suppressed { opacity: 0.45; filter: grayscale(0.7); }
+    .effect-icon-btn.active img.suppressed { filter: grayscale(0.7) drop-shadow(0 0 4px #40c0ff) drop-shadow(0 0 8px #40c0ff); }
     .fullscreen-seal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0);
       display: flex; align-items: center; justify-content: center;
@@ -1168,7 +1171,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.31';
+  const APP_VERSION = '6.5.32';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1469,16 +1472,16 @@
 
   const SHOP_CATALOG = {
     "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 2000, level: 1 },
-    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Снижает штраф за провал следующего цикла вдвое. Не действует против Бремени Аномалии, недоступна во время активации Свитка Договора или Свитка Переноса.", price: 4500, level: 1 },
+    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Снижает штраф за провал на следующий цикл вдвое. Серия дней при провале прерывается.", effectDesc: "При провале цикла штраф будет снижен вдвое. Серия дней прервётся.", price: 4500, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 2500, level: 1 },
-    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до следующего сброса.", price: 3500, level: 5 },
+    "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до следующего сброса. Бремя Аномалии не снимает, но немного облегчает его тяжесть.", effectDesc: "Дневная нагрузка снижена на 10% до следующего сброса.", price: 3500, level: 5 },
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 6500, level: 6 },
     "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до следующего сброса.", price: 3000, level: 9 },
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 3500, level: 12 },
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 4500, level: 15 },
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 5000, level: 20 },
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 5500, level: 20 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на следующий цикл, а также снимает последний полученный штраф. Не действует против Бремени Аномалии, недоступна во время активации Свитка Договора или Свитка Переноса.", price: 9600, level: 25 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Полностью защищает от штрафа за провал следующего цикла и сохраняет серию дней. При активации возвращает опыт, потерянный из-за последнего штрафа.", effectDesc: "При провале цикла штраф будет полностью поглощён. Серия дней сохранится.", price: 9600, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +3 использования Преодоления предела сегодня.", price: 9000, level: 30 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 8000, level: 40 },
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
@@ -1506,7 +1509,7 @@
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа." },
     "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа и защита серии дней, одновременно — действует до первого провала, сколько бы дней до этого ни прошло." },
-    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса. Не действует против Бремени Аномалии, временно приостанавливается во время активации Свитка Договора или Свитка Переноса." },
+    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса. Бремя Аномалии не снимает, но облегчает его тяжесть.", effectDesc: "Дневная нагрузка снижена на 25% до следующего сброса." },
     "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до следующего сброса." },
     "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до следующего сброса." }
   };
@@ -1515,25 +1518,38 @@
     return SHOP_CATALOG[id] || UNIQUE_CATALOG[id];
   }
 
+  // Руны нагрузки (одна общая «ячейка» скидки targetDiscount*): засыпают
+  // под Договором (до его окончания) и Переносом (до следующего цикла).
+  const LOAD_RUNE_IDS = ['rune_burden_release', 'rune_freedom'];
+  function isLoadRuneOnHold() {
+    return data.targetDiscountToday && LOAD_RUNE_IDS.includes(data.targetDiscountSourceId) &&
+      (data.activeScroll === 'contract' || data.activeScroll === 'transfer');
+  }
+
   // Собирает список эффектов, активных прямо сейчас, для контейнера
   // "АКТИВНЫЕ ЭФФЕКТЫ" — переиспользует уже существующие desc-поля предметов
   // и титулов (там уже есть точные проценты), не пишет текст заново.
   function getActiveEffects() {
     const effects = [];
-    const isScrollActiveForHold = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
-    const burdenRuneHeld = data.targetDiscountToday && data.targetDiscountSourceId === 'rune_burden_release' && isScrollActiveForHold;
+    const loadRuneHeld = isLoadRuneOnHold();
     const boostSourceIds = new Set();
-    if (data.targetDiscountToday && data.targetDiscountSourceId && !burdenRuneHeld) boostSourceIds.add(data.targetDiscountSourceId);
+    if (data.targetDiscountToday && data.targetDiscountSourceId && !loadRuneHeld) boostSourceIds.add(data.targetDiscountSourceId);
     if (data.expBoostToday > 0 && data.expBoostSourceId) boostSourceIds.add(data.expBoostSourceId);
     if (data.creditBoostToday > 0 && data.creditBoostSourceId) boostSourceIds.add(data.creditBoostSourceId);
     boostSourceIds.forEach(id => {
       const item = getConsumableInfo(id);
-      if (item) effects.push({ icon: `icons/items/${id}.png`, name: item.name, text: item.desc });
+      if (!item) return;
+      let text = item.effectDesc || item.desc;
+      // Работающая руна нагрузки при действующем Бремени: скидка применяется
+      // до +40% Бремени, т.е. реально облегчает его.
+      if (LOAD_RUNE_IDS.includes(id) && data.curseActiveToday) text += ' Тяжесть Бремени Аномалии облегчена.';
+      effects.push({ icon: `icons/items/${id}.png`, name: item.name, text });
     });
-    if (burdenRuneHeld) {
-      const item = getConsumableInfo('rune_burden_release');
+    if (loadRuneHeld) {
+      const heldId = data.targetDiscountSourceId;
+      const item = getConsumableInfo(heldId);
       if (item) effects.push({
-        icon: 'icons/items/rune_burden_release.png',
+        icon: `icons/items/${heldId}.png`,
         name: `${item.name} (ожидает)`,
         text: data.activeScroll === 'contract'
           ? 'Действие руны приостановлено до окончания действия Свитка Договора.'
@@ -1562,8 +1578,17 @@
               isPending: true,
               sparkCount: 1
             });
+          } else if (data.curseActiveToday) {
+            // Руна активирована раньше, Бремя уже наступило — при провале
+            // она сгорит без эффекта (см. computePenaltyAndApply).
+            effects.push({
+              icon: `icons/items/${data.insuranceSourceId}.png`,
+              name: `${item.name} (подавлена)`,
+              text: 'Бремя Аномалии подавляет действие руны. При провале цикла она будет поглощена без эффекта.',
+              isSuppressed: true
+            });
           } else {
-            effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.desc });
+            effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.effectDesc || item.desc });
           }
         }
       }
@@ -1672,7 +1697,7 @@
     if (signature === window.__activeEffectsSignature) return;
     window.__activeEffectsSignature = signature;
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}" src="${e.icon}" alt=""></div>`
+      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt=""></div>`
     ).join('');
     document.getElementById('effectDetail').classList.remove('open');
     openEffectIndex = null;
@@ -2212,8 +2237,7 @@
     let val = Math.floor(base * getTargetGrowthMultiplier(lvl));
     const bonusSta = Math.max(0, data.stats.sta - 10);
     const staReduction = data.activeScroll === 'renunciation' ? 0 : Math.min(0.20, bonusSta * 0.001);
-    const isRuneOnHold = data.targetDiscountSourceId === 'rune_burden_release' &&
-      (data.activeScroll === 'contract' || data.activeScroll === 'transfer');
+    const isRuneOnHold = isLoadRuneOnHold();
     const runeReduction = (data.targetDiscountToday && !isRuneOnHold) ? (data.targetDiscountRate || 0.25) : 0;
     const combinedReduction = Math.min(0.60, staReduction + runeReduction);
     if (combinedReduction > 0) val = Math.floor(val * (1 - combinedReduction));
@@ -2534,7 +2558,7 @@
       data.progressNoticesShown = [];
       if (dayStatus !== 'frozen') {
         data.insuranceHoldScroll = null;
-        const runeHeldThisCycle = data.targetDiscountSourceId === 'rune_burden_release' && scrollWasContractOrTransfer;
+        const runeHeldThisCycle = LOAD_RUNE_IDS.includes(data.targetDiscountSourceId) && scrollWasContractOrTransfer;
         if (!runeHeldThisCycle) {
           data.targetDiscountToday = false;
           data.targetDiscountRate = 0;
@@ -3289,7 +3313,10 @@
       } else if (id === 'crystal_restoration') {
           used = useRecoveryItem(0.7, 'Кристалл использован');
       } else if (id === 'rune_freedom') {
-          if ((data.targetDiscountRate || 0) < 0.1) { data.targetDiscountToday = true; data.targetDiscountRate = 0.1; data.targetDiscountSourceId = id; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
+          if (data.activeScroll === 'contract' || data.activeScroll === 'transfer') { showNotice(data.activeScroll === 'contract'
+            ? "Активен Свиток Договора. Его условия не допускают снижения нагрузки Руной Освобождения. Руну можно будет использовать после выполнения дневного задания."
+            : "Активен Свиток Переноса. Его условия не допускают снижения нагрузки Руной Освобождения до следующего цикла.", 'warn', true); }
+          else if ((data.targetDiscountRate || 0) < 0.1) { data.targetDiscountToday = true; data.targetDiscountRate = 0.1; data.targetDiscountSourceId = id; used = true; showNotice("Руна использована. Нагрузка на сегодня снижена.", 'info'); }
           else { showNotice("Нагрузка уже снижена достаточно.", 'warn', true); }
       } else if (id === 'rune_stability') {
           if (data.insuranceSourceId === 'rune_protection_absolute') { showNotice("Серия дней уже защищена Руной Абсолютной Защиты.", 'warn', true); }

@@ -1,9 +1,29 @@
-// Bump this on every release that changes any cached file, so old
-// clients pick up the new version instead of being stuck on a stale cache.
-const CACHE_VERSION = 'v6-5-31';
-const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
+// ============================================================================
+// Service Worker — SLDT
+//
+// Два кэша (v6.5.32):
+//  • APP_CACHE    — каркас: страница, манифест, иконки приложения. Версия
+//                   CACHE_VERSION бампается на КАЖДОМ релизе.
+//  • ASSETS_CACHE — иконки предметов и шрифты (~14 МБ). Версия ASSETS_VERSION
+//                   бампается ТОЛЬКО когда меняется содержимое уже
+//                   существующей иконки или шрифта. Обычное обновление этот
+//                   кэш не трогает.
+//
+// Установка качает только каркас (несколько файлов, мимо HTTP-кэша) — новый
+// воркер встаёт за секунды. Страница (навигация) — network-first с таймаутом:
+// онлайн всегда свежая, офлайн/медленная сеть — из кэша. Всё остальное —
+// cache-first. Картинки докачиваются в фоне поштучно, не блокируя ни
+// установку, ни активацию.
+// ============================================================================
 
-const APP_SHELL = [
+const CACHE_VERSION = 'v6-5-32';
+const ASSETS_VERSION = 'v1';
+const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
+const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;
+const NAV_TIMEOUT_MS = 3500;
+
+// Каркас: без него нет первого кадра. Всё обязательное и маленькое.
+const CORE_FILES = [
   './',
   './index.html',
   './manifest.json',
@@ -13,7 +33,12 @@ const APP_SHELL = [
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
   './icons/favicon-32.png',
-  './icons/favicon-16.png',
+  './icons/favicon-16.png'
+];
+
+// Иконки предметов и шрифты — только для фоновой докачки (офлайн-запас).
+// Файл, забытый в этом списке, всё равно попадёт в кэш при первом показе.
+const ASSET_FILES = [
   './icons/items/title_novice.png',
   './icons/items/title_awakened.png',
   './icons/items/title_determined.png',
@@ -91,10 +116,20 @@ const APP_SHELL = [
   './fonts/exo-2-cyrillic-700-normal.woff2'
 ];
 
+function isAssetPath(pathname) {
+  return pathname.includes('/icons/items/') || pathname.includes('/fonts/');
+}
+
+function isCacheable(response) {
+  return response && response.ok;
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(APP_CACHE)
-      .then((cache) => cache.addAll(APP_SHELL))
+      // cache: 'reload' — мимо HTTP-кэша браузера, чтобы в новый кэш не
+      // легла 10-минутная копия прошлой версии с GitHub Pages.
+      .then((cache) => cache.addAll(CORE_FILES.map((u) => new Request(u, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -104,16 +139,12 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== APP_CACHE)
+          .filter((key) => key !== APP_CACHE && key !== ASSETS_CACHE)
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
   );
 });
-
-function isCacheable(response) {
-  return response && response.ok;
-}
 
 async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
@@ -124,15 +155,76 @@ async function cacheFirst(request, cacheName) {
     if (isCacheable(response)) cache.put(request, response.clone());
     return response;
   } catch (err) {
-    return cached || Response.error();
+    return Response.error();
   }
 }
 
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+async function matchCachedPage(request) {
+  const cache = await caches.open(APP_CACHE);
+  return (await cache.match(request, { ignoreSearch: true })) ||
+         (await cache.match('./index.html')) ||
+         (await cache.match('./'));
+}
 
-  // App shell and anything else same-origin.
-  if (url.origin === self.location.origin) {
-    event.respondWith(cacheFirst(event.request, APP_CACHE));
+// Навигация: сеть (с проверкой свежести у сервера) → при таймауте/ошибке кэш.
+// Ответ сети, пришедший позже таймаута, всё равно ложится в кэш — следующее
+// открытие будет уже свежим.
+function handleNavigation(event) {
+  const network = fetch(event.request, { cache: 'no-cache' }).then(async (response) => {
+    if (isCacheable(response)) {
+      const cache = await caches.open(APP_CACHE);
+      await cache.put('./index.html', response.clone());
+    }
+    return response;
+  });
+  event.waitUntil(network.catch(() => {}));
+
+  event.respondWith((async () => {
+    let networkResponse = null;
+    try {
+      networkResponse = await Promise.race([
+        network,
+        new Promise((resolve) => setTimeout(() => resolve(null), NAV_TIMEOUT_MS))
+      ]);
+      if (networkResponse && networkResponse.ok) return networkResponse;
+    } catch (err) { /* сети нет — идём в кэш */ }
+    const cached = await matchCachedPage(event.request);
+    if (cached) return cached;
+    if (networkResponse) return networkResponse;
+    try { return await network; } catch (err) { return Response.error(); }
+  })());
+}
+
+// Фоновая докачка картинок: один раз за жизнь воркера, поштучно, ошибка
+// одного файла ни на что не влияет, уже скачанные пропускаются. Запускается
+// из навигации, а НЕ из activate — иначе перезагруженная после обновления
+// страница ждала бы, пока скачаются все 14 МБ.
+let assetsPrefetchStarted = false;
+function prefetchAssetsOnce() {
+  if (assetsPrefetchStarted) return Promise.resolve();
+  assetsPrefetchStarted = true;
+  return (async () => {
+    const cache = await caches.open(ASSETS_CACHE);
+    for (const url of ASSET_FILES) {
+      try {
+        if (await cache.match(url)) continue;
+        const response = await fetch(url);
+        if (isCacheable(response)) await cache.put(url, response);
+      } catch (err) { /* следующая попытка — при следующем запуске воркера */ }
+    }
+  })();
+}
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  if (request.mode === 'navigate') {
+    handleNavigation(event);
+    event.waitUntil(prefetchAssetsOnce());
+    return;
   }
+  event.respondWith(cacheFirst(request, isAssetPath(url.pathname) ? ASSETS_CACHE : APP_CACHE));
 });
