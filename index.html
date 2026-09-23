@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.29 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.31 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -367,8 +367,18 @@
     .target.cursed { color: #ff5555aa; }
     .counter.scroll-tinted { color: #ffaa00; text-shadow: 0 0 8px rgba(255,170,0,0.5); }
     .target.scroll-tinted { color: #ffaa00aa; }
-    .counter.cursed-scroll { color: #6b1020; text-shadow: 0 0 8px #ff2222, 0 0 16px rgba(255,30,30,0.55); }
-    .target.cursed-scroll { color: #6b1020aa; text-shadow: 0 0 6px rgba(255,30,30,0.45); }
+    /* Бремя + свиток: красные цифры, узкий красный ореол и широкий
+       пульсирующий оранжевый поверх него (раньше оранжевый тонул в красном). */
+    .counter.cursed-scroll { color: #ff5555; animation: cursedScrollPulse 2.2s ease-in-out infinite; }
+    .target.cursed-scroll { color: #ff5555aa; animation: cursedScrollPulseTarget 2.2s ease-in-out infinite; }
+    @keyframes cursedScrollPulse {
+      0%, 100% { text-shadow: 0 0 4px rgba(255,40,40,0.7), 0 0 10px rgba(255,150,0,0.55), 0 0 18px rgba(255,150,0,0.3); }
+      50%      { text-shadow: 0 0 4px rgba(255,40,40,0.8), 0 0 14px rgba(255,160,0,0.95), 0 0 28px rgba(255,150,0,0.65); }
+    }
+    @keyframes cursedScrollPulseTarget {
+      0%, 100% { text-shadow: 0 0 6px rgba(255,150,0,0.3); }
+      50%      { text-shadow: 0 0 10px rgba(255,160,0,0.6); }
+    }
     .counter.limit-break { color: #40c0ff; text-shadow: 0 0 8px rgba(64,192,255,0.55); }
     .target.limit-break { color: #40c0ffaa; }
     .sound-checkbox-zone {
@@ -1158,7 +1168,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.29';
+  const APP_VERSION = '6.5.31';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1235,6 +1245,7 @@
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
         nameNextAvailableAt: oldData.nameNextAvailableAt || null,
+        insuranceHoldScroll: (oldData.insuranceHoldScroll === 'contract' || oldData.insuranceHoldScroll === 'transfer') ? oldData.insuranceHoldScroll : null,
         dailyNotices: oldData.dailyNotices || { morning: false, complete: false },
         notifiedLimitBreakUnlock: typeof oldData.notifiedLimitBreakUnlock === 'boolean' ? oldData.notifiedLimitBreakUnlock : (oldData.level >= 3),
         history: oldData.history || {},
@@ -1290,7 +1301,7 @@
         isGoalMet: false, credits: 0, inventory: [], consumables: {}, boxes: {},
         insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
         lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, limitBreaksCompletedToday: 0, titlesUnlocked: ["Новичок"],
-        playerName: "", nameNextAvailableAt: null, dailyNotices: { morning: false, complete: false },
+        playerName: "", nameNextAvailableAt: null, insuranceHoldScroll: null, dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats"],
@@ -1314,6 +1325,7 @@
   if (typeof data.limitBreaksCompletedToday !== 'number') data.limitBreaksCompletedToday = 0;
   if (typeof data.playerName !== 'string') data.playerName = "";
   if (typeof data.nameNextAvailableAt !== 'number') data.nameNextAvailableAt = null;
+  if (data.insuranceHoldScroll !== 'contract' && data.insuranceHoldScroll !== 'transfer') data.insuranceHoldScroll = null;
   if (!data.dailyNotices || typeof data.dailyNotices !== 'object') data.dailyNotices = {};
   data.dailyNotices.morning = !!data.dailyNotices.morning;
   data.dailyNotices.complete = !!data.dailyNotices.complete;
@@ -1457,7 +1469,7 @@
 
   const SHOP_CATALOG = {
     "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 2000, level: 1 },
-    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Защита от штрафа на следующий цикл.", price: 4500, level: 1 },
+    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Снижает штраф за провал следующего цикла вдвое. Не действует против Бремени Аномалии, недоступна во время активации Свитка Договора или Свитка Переноса.", price: 4500, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 2500, level: 1 },
     "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до следующего сброса.", price: 3500, level: 5 },
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 6500, level: 6 },
@@ -1466,7 +1478,7 @@
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 4500, level: 15 },
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 5000, level: 20 },
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 5500, level: 20 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на следующий цикл, а также снимает последний полученный штраф.", price: 9600, level: 25 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Защита от штрафа на следующий цикл, а также снимает последний полученный штраф. Не действует против Бремени Аномалии, недоступна во время активации Свитка Договора или Свитка Переноса.", price: 9600, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +3 использования Преодоления предела сегодня.", price: 9000, level: 30 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 8000, level: 40 },
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
@@ -1494,7 +1506,7 @@
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа." },
     "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа и защита серии дней, одновременно — действует до первого провала, сколько бы дней до этого ни прошло." },
-    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса." },
+    "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса. Не действует против Бремени Аномалии, временно приостанавливается во время активации Свитка Договора или Свитка Переноса." },
     "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до следующего сброса." },
     "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до следующего сброса." }
   };
@@ -1508,23 +1520,52 @@
   // и титулов (там уже есть точные проценты), не пишет текст заново.
   function getActiveEffects() {
     const effects = [];
+    const isScrollActiveForHold = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
+    const burdenRuneHeld = data.targetDiscountToday && data.targetDiscountSourceId === 'rune_burden_release' && isScrollActiveForHold;
     const boostSourceIds = new Set();
-    if (data.targetDiscountToday && data.targetDiscountSourceId) boostSourceIds.add(data.targetDiscountSourceId);
+    if (data.targetDiscountToday && data.targetDiscountSourceId && !burdenRuneHeld) boostSourceIds.add(data.targetDiscountSourceId);
     if (data.expBoostToday > 0 && data.expBoostSourceId) boostSourceIds.add(data.expBoostSourceId);
     if (data.creditBoostToday > 0 && data.creditBoostSourceId) boostSourceIds.add(data.creditBoostSourceId);
     boostSourceIds.forEach(id => {
       const item = getConsumableInfo(id);
       if (item) effects.push({ icon: `icons/items/${id}.png`, name: item.name, text: item.desc });
     });
+    if (burdenRuneHeld) {
+      const item = getConsumableInfo('rune_burden_release');
+      if (item) effects.push({
+        icon: 'icons/items/rune_burden_release.png',
+        name: `${item.name} (ожидает)`,
+        text: data.activeScroll === 'contract'
+          ? 'Действие руны приостановлено до окончания действия Свитка Договора.'
+          : 'Действие руны приостановлено Свитком Переноса до следующего цикла.',
+        isPending: true,
+        sparkCount: 1
+      });
+    }
     const insuranceIsAbsolute = data.insurance && data.insuranceSourceId === 'rune_protection_absolute';
     const streakShieldIsAbsolute = data.streakShield && data.streakShieldSourceId === 'rune_protection_absolute';
+    const insuranceHoldScroll = getInsuranceHoldScroll();
+    const insuranceHeld = insuranceHoldScroll !== null;
+    const insuranceHoldName = insuranceHoldScroll === 'contract' ? 'Договора' : 'Переноса';
     if (insuranceIsAbsolute && (streakShieldIsAbsolute || !data.streakShield)) {
       const item = getConsumableInfo('rune_protection_absolute');
       if (item) effects.push({ icon: 'icons/items/rune_protection_absolute.png', name: item.name, text: item.desc });
     } else {
       if (data.insurance && data.insuranceSourceId) {
         const item = getConsumableInfo(data.insuranceSourceId);
-        if (item) effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.desc });
+        if (item) {
+          if (insuranceHeld) {
+            effects.push({
+              icon: `icons/items/${data.insuranceSourceId}.png`,
+              name: `${item.name} (ожидает)`,
+              text: `Действие руны приостановлено Свитком ${insuranceHoldName} до следующего цикла.`,
+              isPending: true,
+              sparkCount: 1
+            });
+          } else {
+            effects.push({ icon: `icons/items/${data.insuranceSourceId}.png`, name: item.name, text: item.desc });
+          }
+        }
       }
       if (data.streakShield) {
         effects.push({ icon: 'icons/items/rune_stability.png', name: 'Руна Стабильности', text: 'Серия дней под защитой, следующий штраф не прервёт её.' });
@@ -2171,7 +2212,9 @@
     let val = Math.floor(base * getTargetGrowthMultiplier(lvl));
     const bonusSta = Math.max(0, data.stats.sta - 10);
     const staReduction = data.activeScroll === 'renunciation' ? 0 : Math.min(0.20, bonusSta * 0.001);
-    const runeReduction = data.targetDiscountToday ? (data.targetDiscountRate || 0.25) : 0;
+    const isRuneOnHold = data.targetDiscountSourceId === 'rune_burden_release' &&
+      (data.activeScroll === 'contract' || data.activeScroll === 'transfer');
+    const runeReduction = (data.targetDiscountToday && !isRuneOnHold) ? (data.targetDiscountRate || 0.25) : 0;
     const combinedReduction = Math.min(0.60, staReduction + runeReduction);
     if (combinedReduction > 0) val = Math.floor(val * (1 - combinedReduction));
     if (data.curseActiveToday) val = Math.ceil(val * 1.40);
@@ -2397,6 +2440,7 @@
       let dayStatus;
       let expLostThatDay = 0;
       let completedExercisesThatDay = null;
+      const scrollWasContractOrTransfer = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
       if (data.activeScroll === 'freeze') {
         dayStatus = 'frozen';
         data.consecutiveDays = 0;
@@ -2409,10 +2453,6 @@
       } else if (data.isGoalMet || allQuestsDone()) {
         applyPenaltyLogic();
         dayStatus = 'success';
-      } else if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute' && !data.curseActiveToday) {
-        dayStatus = 'protected';
-        data.insurance = false;
-        data.insuranceSourceId = null;
       } else {
         const result = applyPenaltyLogic();
         if (result === 'protected') { dayStatus = 'protected'; }
@@ -2493,9 +2533,13 @@
       data.notificationLog = [];
       data.progressNoticesShown = [];
       if (dayStatus !== 'frozen') {
-        data.targetDiscountToday = false;
-        data.targetDiscountRate = 0;
-        data.targetDiscountSourceId = null;
+        data.insuranceHoldScroll = null;
+        const runeHeldThisCycle = data.targetDiscountSourceId === 'rune_burden_release' && scrollWasContractOrTransfer;
+        if (!runeHeldThisCycle) {
+          data.targetDiscountToday = false;
+          data.targetDiscountRate = 0;
+          data.targetDiscountSourceId = null;
+        }
         data.expBoostToday = 0;
         data.expBoostSourceId = null;
         data.creditBoostToday = 0;
@@ -2553,6 +2597,17 @@
   // the "Длань архитектора" force-test button (applyPenaltyAction) call this
   // same function, so there is no second copy of the formula that could ever
   // drift out of sync again.
+  // Каким свитком сейчас усыплена обычная/усиленная Руна Защиты:
+  // 'contract' | 'transfer' | null. Пока свиток действует — берётся он сам;
+  // после того как печать Договора погасла при выполнении задания —
+  // берётся запомненное data.insuranceHoldScroll (руна спит до конца цикла).
+  // Абсолютная руна и руна при действующем Бремени не спят никогда.
+  function getInsuranceHoldScroll() {
+    if (!data.insurance || data.insuranceSourceId === 'rune_protection_absolute' || data.curseActiveToday) return null;
+    if (data.activeScroll === 'contract' || data.activeScroll === 'transfer') return data.activeScroll;
+    return data.insuranceHoldScroll || null;
+  }
+
   function computePenaltyAndApply() {
     if (data.insurance && data.insuranceSourceId === 'rune_protection_absolute') {
       data.insurance = false; data.insuranceSourceId = null;
@@ -2561,7 +2616,25 @@
       }
       return 'protected';
     }
-    if (data.insurance) { data.insurance = false; data.insuranceSourceId = null; }
+    const isRuneHeld = getInsuranceHoldScroll() !== null;
+    let halfBlock = false;
+    if (data.insurance && !isRuneHeld) {
+      if (data.curseActiveToday) {
+        // Обычная/усиленная защита бессильна против Бремени — тратится
+        // впустую (могла быть активирована раньше, пока Бремя было ещё
+        // только ожидающим; новая активация во время уже действующего
+        // Бремени и так заблокирована на уровне самой активации).
+        data.insurance = false; data.insuranceSourceId = null;
+      } else if (data.insuranceSourceId === 'rune_protection_charged') {
+        data.insurance = false; data.insuranceSourceId = null;
+        return 'protected';
+      } else {
+        halfBlock = true;
+        data.insurance = false; data.insuranceSourceId = null;
+      }
+    }
+    // isRuneHeld: страховка не трогается вообще — переживает этот цикл
+    // нетронутой, сработает уже на первом цикле без Договора/Переноса.
     playSound('penalty');
     let basePen = 0.15;
     const lvlReduction = Math.floor(data.level / 20) * 0.03;
@@ -2570,7 +2643,8 @@
     let finalPen = Math.max(0.05, basePen - lvlReduction - strReduction);
     if (data.curseActiveToday) finalPen *= 3;
     if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
-    const loss = Math.floor(getExpToNext(data.level) * finalPen);
+    let loss = Math.floor(getExpToNext(data.level) * finalPen);
+    if (halfBlock) loss = Math.floor(loss * 0.5);
     const shortfall = Math.max(0, loss - data.exp);
     data.exp = Math.max(0, data.exp - loss);
     if (shortfall > 0) data.expDebt += shortfall;
@@ -3203,7 +3277,10 @@
       } else if (id === 'rune_protection') {
           if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
           else if (data.curseActiveToday) { showNotice("Обычная защита бессильна против Бремени Аномалии.", 'warn', true); }
-          else if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; used = true; showNotice("Руна активирована. Завтра штраф не будет начислен.", 'info'); }
+          else if (data.activeScroll === 'contract' || data.activeScroll === 'transfer') { showNotice(data.activeScroll === 'contract'
+            ? "Активен Свиток Договора. Его условия не допускают обычной защиты от штрафа до следующего цикла."
+            : "Активен Свиток Переноса. Его условия не допускают обычной защиты от штрафа до следующего цикла.", 'warn', true); }
+          else if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; used = true; showNotice("Руна активирована. На следующий цикл штраф за провал будет снижен вдвое.", 'info'); }
           else { showNotice("Защита уже активирована.", 'warn', true); }
       } else if (id === 'potion_restoration') {
           used = useRecoveryItem(0.5, 'Зелье использовано');
@@ -3318,6 +3395,9 @@
       } else if (id === 'rune_protection_charged') {
           if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
           else if (data.curseActiveToday) { showNotice("Обычная защита бессильна против Бремени Аномалии.", 'warn', true); }
+          else if (data.activeScroll === 'contract' || data.activeScroll === 'transfer') { showNotice(data.activeScroll === 'contract'
+            ? "Активен Свиток Договора. Его условия не допускают обычной защиты от штрафа до следующего цикла."
+            : "Активен Свиток Переноса. Его условия не допускают обычной защиты от штрафа до следующего цикла.", 'warn', true); }
           else {
           let didSomething = false;
           let msgParts = [];
@@ -3385,7 +3465,10 @@
           if (didSomething) { used = true; showNotice(`Руна использована: ${msgParts.join(', ')}.`, 'info'); }
           else { showNotice("Обе защиты уже активны.", 'warn', true); }
       } else if (id === 'rune_burden_release') {
-          if ((data.targetDiscountRate || 0) < 0.25) {
+          if (data.activeScroll === 'contract' || data.activeScroll === 'transfer') { showNotice(data.activeScroll === 'contract'
+            ? "Активен Свиток Договора. Его условия не допускают снижения нагрузки Руной Снятия Бремени. Руну можно будет использовать после выполнения дневного задания."
+            : "Активен Свиток Переноса. Его условия не допускают снижения нагрузки Руной Снятия Бремени до следующего цикла.", 'warn', true); }
+          else if ((data.targetDiscountRate || 0) < 0.25) {
               data.targetDiscountToday = true; data.targetDiscountRate = 0.25;
               data.targetDiscountSourceId = id;
               used = true; showNotice("Руна использована. Нагрузка на сегодня значительно снижена.", 'info');
@@ -3959,7 +4042,14 @@
         }
         if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
-          if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute') { data.insurance = false; data.insuranceSourceId = null; }
+          if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute') {
+            // Спящая руна (усыплена Договором/Переносом) переживает успешный
+            // день и ждёт следующего цикла. Проверка стоит ДО того, как
+            // Договор ниже снимает себя, — поэтому свиток ещё виден.
+            const holdScroll = getInsuranceHoldScroll();
+            if (holdScroll) { data.insuranceHoldScroll = holdScroll; }
+            else { data.insurance = false; data.insuranceSourceId = null; }
+          }
           if (data.activeScroll === 'renunciation') { data.activeScroll = null; }
           if (data.activeScroll === 'contract') {
             const bonusExp = Math.floor(data.expGainedToday * 0.5);
@@ -4329,6 +4419,7 @@
       titlesUnlocked: cleanTitlesUnlocked,
       playerName: sanitizePlayerName(typeof s.playerName === 'string' ? s.playerName : ''),
       nameNextAvailableAt: (typeof s.nameNextAvailableAt === 'number') ? s.nameNextAvailableAt : null,
+      insuranceHoldScroll: (s.insuranceHoldScroll === 'contract' || s.insuranceHoldScroll === 'transfer') ? s.insuranceHoldScroll : null,
       dailyNotices: cleanDailyNotices,
       notifiedLimitBreakUnlock: !!s.notifiedLimitBreakUnlock,
       history: cleanHistory,
