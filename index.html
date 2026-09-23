@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.34 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.35 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1183,7 +1183,8 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.34';
+  const APP_VERSION = '6.5.35';
+  const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1251,6 +1252,7 @@
         boxes: oldData.boxes || {},
         inventory: oldData.inventory || [],
         lastExpLoss: oldData.lastExpLoss || 0,
+        penaltyStack: Array.isArray(oldData.penaltyStack) ? oldData.penaltyStack : undefined,
         limitBreaksCount: oldData.limitBreaksCount || 0,
         limitBreaksToday: oldData.limitBreaksToday || 0,
         limitBreaksCompletedToday: oldData.limitBreaksCompletedToday || 0,
@@ -1315,7 +1317,7 @@
         statPoints: 0, stats: { str: 10, agi: 10, sta: 10, int: 10, per: 10 },
         isGoalMet: false, credits: 0, inventory: [], consumables: {}, boxes: {},
         insurance: false, activeTitle: "Новичок", consecutiveDays: 0,
-        lastExpLoss: 0, limitBreaksCount: 0, limitBreaksToday: 0, limitBreaksCompletedToday: 0, titlesUnlocked: ["Новичок"],
+        penaltyStack: [], limitBreaksCount: 0, limitBreaksToday: 0, limitBreaksCompletedToday: 0, titlesUnlocked: ["Новичок"],
         playerName: "", nameNextAvailableAt: null, insuranceHoldScroll: null, dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
@@ -1435,6 +1437,19 @@
   if (typeof data.freezeEndTimestamp !== 'number') data.freezeEndTimestamp = null;
   if (typeof data.freezeAnimPlayed !== 'boolean') data.freezeAnimPlayed = false;
   if (typeof data.freezeJustEndedWithCurse !== 'boolean') data.freezeJustEndedWithCurse = false;
+  // v6.5.35: стопка штрафов вместо одного lastExpLoss. Старая невозвращённая
+  // потеря становится одной записью; её серия неизвестна → склейка недоступна
+  // (streakHandled: true), возврат и исправление Летописи работают.
+  if (!Array.isArray(data.penaltyStack)) {
+    data.penaltyStack = [];
+    if (typeof data.lastExpLoss === 'number' && data.lastExpLoss > 0) {
+      const keys = Object.keys(data.history || {}).filter(k => data.history[k].status === 'penalty').sort();
+      data.penaltyStack.push({ day: keys.length ? keys[keys.length - 1] : null, loss: Math.floor(data.lastExpLoss), returned: 0,
+        fixedBy: null, brokeStreak: false, streakBefore: 0, streakHandled: true, chainBroken: false });
+    }
+  }
+  data.penaltyStack = sanitizePenaltyStack(data.penaltyStack);
+  delete data.lastExpLoss;
   if (typeof data.freezeNextAvailableAt !== 'number') data.freezeNextAvailableAt = null;
   if (!data.codexUnlocked.includes('titles')) data.codexUnlocked.push('titles');
   if (!data.stats || typeof data.stats !== 'object') data.stats = {};
@@ -1515,7 +1530,7 @@
   const UNIQUE_CATALOG = {
     "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 70% опыта от последнего штрафа." },
     "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Сбрасывает все вложенные очки характеристик, освобождая их для нового распределения." },
-    "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, продлевает серию на один день и отмечает день в Летописи как выполненный." },
+    "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, восстанавливает прерванную им серию дней и засчитывает день в Летописи." },
     "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Стирает 3 штрафа из памяти Системы и возвращает 3× последнюю известную потерю опыта." },
     "rune_cleansing_full": { name: "Руна Полного Очищения", icon: "🔮", desc: "Стирает 5 штрафов из памяти Системы." },
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа." },
@@ -1528,6 +1543,92 @@
 
   function getConsumableInfo(id) {
     return SHOP_CATALOG[id] || UNIQUE_CATALOG[id];
+  }
+
+  // ---- v6.5.35: стопка штрафов ----
+  // Одна запись на каждый штраф, до PENALTY_STACK_MAX последних (старые
+  // вытесняются). Предметы возврата доводят возврат по записи до своего
+  // процента; Руны Искупления/Исправления исправляют день в Летописи;
+  // Исправление склеивает прерванную серию. (Константа объявлена у
+  // APP_VERSION: нормализация сохранения при загрузке выполняется раньше.)
+
+  function sanitizePenaltyStack(arr) {
+    if (!Array.isArray(arr)) return [];
+    const num = (v, d) => (typeof v === 'number' && isFinite(v) && v >= 0) ? Math.floor(v) : d;
+    return arr.filter(r => r && typeof r === 'object' && num(r.loss, 0) > 0).slice(-PENALTY_STACK_MAX).map(r => {
+      const loss = num(r.loss, 0);
+      return {
+        day: (typeof r.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.day)) ? r.day : null,
+        loss,
+        returned: Math.min(loss * 3, num(r.returned, 0)),
+        fixedBy: (r.fixedBy === 'redemption' || r.fixedBy === 'correction') ? r.fixedBy : null,
+        brokeStreak: !!r.brokeStreak,
+        streakBefore: num(r.streakBefore, 0),
+        streakHandled: !!r.streakHandled,
+        chainBroken: !!r.chainBroken
+      };
+    });
+  }
+
+  function pushPenaltyRecord(rec) {
+    data.penaltyStack.push(rec);
+    if (data.penaltyStack.length > PENALTY_STACK_MAX) data.penaltyStack.splice(0, data.penaltyStack.length - PENALTY_STACK_MAX);
+  }
+
+  function penaltyReturnTarget(rec, rate) { return Math.floor(rec.loss * rate); }
+
+  // Самый свежий штраф, по которому возвращено меньше rate. newestOnly —
+  // только самый последний штраф (Зелье Восстановления).
+  function findReturnRecord(rate, newestOnly) {
+    const st = data.penaltyStack;
+    if (newestOnly) {
+      const r = st[st.length - 1];
+      return (r && r.returned < penaltyReturnTarget(r, rate)) ? r : null;
+    }
+    for (let i = st.length - 1; i >= 0; i--) if (st[i].returned < penaltyReturnTarget(st[i], rate)) return st[i];
+    return null;
+  }
+
+  // Доводит возврат по записи до rate; возвращает начисленное.
+  function applyPenaltyReturn(rec, rate) {
+    const grant = penaltyReturnTarget(rec, rate) - rec.returned;
+    if (grant <= 0) return 0;
+    gainExp(grant);
+    rec.returned += grant;
+    checkLevelUp();
+    return grant;
+  }
+
+  // «(штраф за 21 сентября)» — только если запись не самая последняя.
+  function penaltyDayLabel(rec) {
+    const st = data.penaltyStack;
+    return (rec && rec.day && st[st.length - 1] !== rec) ? ` (штраф за ${formatDateRu(rec.day)})` : '';
+  }
+
+  // Засчитывает день штрафа в Летописи. Счётчик штрафов уменьшается только
+  // при первом исправлении записи.
+  function fixPenaltyDay(rec, by) {
+    const firstFix = !rec.fixedBy;
+    rec.fixedBy = by;
+    const h = rec.day ? data.history[rec.day] : null;
+    if (h && (h.status === 'penalty' || h.fixedBy)) {
+      h.status = 'success';
+      h.fixedBy = by;
+      delete h.expLost;
+    }
+    if (firstFix && data.totalPenalties > 0) data.totalPenalties--;
+    return firstFix;
+  }
+
+  // Можно ли склеить серию для записи: после неё не было Заморозки, и все
+  // более новые штрафы, прервавшие серию, уже учтены.
+  function canGlueStreak(rec) {
+    if (rec.chainBroken) return false;
+    const st = data.penaltyStack;
+    for (let i = st.indexOf(rec) + 1; i < st.length; i++) {
+      if (st[i].brokeStreak && !st[i].streakHandled) return false;
+    }
+    return true;
   }
 
   // ---- v6.5.34: сила защит, усилений опыта и родительный падеж названий ----
@@ -1594,7 +1695,7 @@
   function getUseWarning(id) {
     if (id === 'rune_protection_charged') {
       const reason = protectionBlockReason(2);
-      if (reason && data.lastExpLoss > 0) return `Защита сейчас не может быть установлена: ${reason}. Руна сработает только для возврата опыта.`;
+      if (reason && findReturnRecord(1)) return `Защита сейчас не может быть установлена: ${reason}. Руна сработает только для возврата опыта.`;
       if (!reason && data.insurance) return `Руна Защиты (усиленная) поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId]}.`;
       return '';
     }
@@ -1604,13 +1705,21 @@
     }
     if (id === 'rune_return') {
       const rel = expBoostRelation(EXP_BOOST_RATE.rune_return);
-      if ((rel.kind === 'equal' || rel.kind === 'higher') && data.lastExpLoss > 0) {
+      if ((rel.kind === 'equal' || rel.kind === 'higher') && findReturnRecord(1)) {
         const head = rel.kind === 'equal' ? 'Усиление опыта уже действует' : 'Действует более высокое усиление опыта';
         return head + expBoostActiveTail(rel.activeId) + ' Руна сработает только для возврата опыта.';
       }
       return '';
     }
     if (EXP_BOOST_RATE[id]) return expBoostAbsorbWarning(id);
+    if (id === 'scroll_contract') {
+      if (data.activeScroll || data.pendingScroll) return '';
+      const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+      const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
+      const activatesNow = !hasAnyClosed && !data.isGoalMet;
+      if ((activatesNow && data.curseActiveToday) || (!activatesNow && data.pendingCurse)) return 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.';
+      return '';
+    }
     if (id === 'tablet_of_reassessment') {
       const invested = Object.values(data.stats).some(v => v > 10);
       const hasProgress = Object.values(data.completed || {}).some(v => v > 0);
@@ -2348,7 +2457,9 @@
         }
       }
     } else {
-      if (entry.status === 'success') statusLine = 'Задание выполнено.';
+      if (entry.status === 'success' && entry.fixedBy === 'redemption') statusLine = 'Задание не выполнено, штраф отменён (Руна Искупления).';
+      else if (entry.status === 'success' && entry.fixedBy === 'correction') statusLine = 'Задание засчитано Руной Исправления.';
+      else if (entry.status === 'success') statusLine = 'Задание выполнено.';
       else if (entry.status === 'penalty') statusLine = 'Задание не выполнено, получен штраф.';
       else if (entry.status === 'protected') statusLine = 'Задание не выполнено, штраф предотвращён (Руна Защиты).';
       else if (entry.status === 'frozen') statusLine = 'Задание заморожено Свитком — без исхода, без штрафа.';
@@ -2694,6 +2805,7 @@
       if (data.activeScroll === 'freeze') {
         dayStatus = 'frozen';
         data.consecutiveDays = 0;
+        data.penaltyStack.forEach(r => { r.chainBroken = true; });
         if (now >= data.freezeEndTimestamp) {
           data.activeScroll = null;
           data.freezeEndTimestamp = null;
@@ -2708,7 +2820,7 @@
         applyPenaltyLogic();
         dayStatus = 'success';
       } else {
-        const result = applyPenaltyLogic();
+        const result = applyPenaltyLogic(dayKey);
         if (result === 'protected') { dayStatus = 'protected'; }
         else if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; if (result.halved) runeHalvedAny = true; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
         else { dayStatus = 'success'; }
@@ -2862,7 +2974,7 @@
     return data.insuranceHoldScroll || null;
   }
 
-  function computePenaltyAndApply() {
+  function computePenaltyAndApply(dayKey) {
     if (data.insurance && data.insuranceSourceId === 'rune_protection_absolute') {
       data.insurance = false; data.insuranceSourceId = null;
       if (data.streakShieldSourceId === 'rune_protection_absolute') {
@@ -2902,8 +3014,13 @@
     const shortfall = Math.max(0, loss - data.exp);
     data.exp = Math.max(0, data.exp - loss);
     if (shortfall > 0) data.expDebt += shortfall;
-    data.lastExpLoss = loss;
     data.totalPenalties++;
+    const streakBeforePenalty = data.consecutiveDays;
+    const brokeStreak = !data.streakShield;
+    pushPenaltyRecord({
+      day: dayKey || dateKeyFromTimestamp(data.lastReset), loss, returned: 0, fixedBy: null,
+      brokeStreak, streakBefore: brokeStreak ? streakBeforePenalty : 0, streakHandled: false, chainBroken: false
+    });
     if (data.streakShield) {
       data.streakShield = false;
       data.streakShieldSourceId = null;
@@ -2928,14 +3045,14 @@
     return { loss, pct: effectivePct, completedExercises, halved: halfBlock };
   }
 
-  function applyPenaltyLogic() {
+  function applyPenaltyLogic(dayKey) {
     if (data.isGoalMet || allQuestsDone()) {
       data.consecutiveDays++;
       if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
       updateTitleStatus();
       return null;
     }
-    return computePenaltyAndApply();
+    return computePenaltyAndApply(dayKey);
   }
 
   // Order matters: index 0 = most significant title. Unknown/default title = least significant.
@@ -3541,7 +3658,7 @@
           else if ((PROTECTION_TIER[data.insuranceSourceId] || 1) > 1) { showNotice(`Действует более сильная защита: ${getConsumableInfo(data.insuranceSourceId).name}.`, 'warn', true); }
           else { showNotice("Защита уже активирована.", 'warn', true); }
       } else if (id === 'potion_restoration') {
-          used = useRecoveryItem(0.5, 'Зелье использовано');
+          used = useRecoveryItem(0.5, 'Зелье использовано', true);
       } else if (id === 'rune_restoration_charged') {
           used = useRecoveryItem(0.65, 'Руна использована');
       } else if (id === 'crystal_restoration') {
@@ -3659,7 +3776,8 @@
           // Две независимые части: защита (если её можно поставить) и возврат
           // опыта от последнего штрафа (если есть что возвращать).
           const reason = protectionBlockReason(2);
-          const canReturn = data.lastExpLoss > 0;
+          const returnRec = findReturnRecord(1);
+          const canReturn = !!returnRec;
           if (reason && !canReturn) {
             showNotice(protectionRefusalNotice(2), 'warn', true);
           } else {
@@ -3670,9 +3788,9 @@
               msgParts.push(absorbed ? `защита на следующий цикл активирована (поглощено действие ${ITEM_GENITIVE[absorbed] || 'прежней защиты'})` : 'защита на следующий цикл активирована');
             }
             if (canReturn) {
-              const recovery = data.lastExpLoss;
-              gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
-              msgParts.push(`возвращён опыт от последнего штрафа (+${recovery} EXP)`);
+              const label = penaltyDayLabel(returnRec);
+              const recovery = applyPenaltyReturn(returnRec, 1);
+              msgParts.push(label ? `возвращён опыт от штрафа за ${formatDateRu(returnRec.day)} (+${recovery} EXP)` : `возвращён опыт от последнего штрафа (+${recovery} EXP)`);
             }
             used = true;
             showNotice(`Руна использована: ${msgParts.join(', ')}.` + (reason ? ` Защита не установлена: ${reason}.` : ''), 'info');
@@ -3687,36 +3805,71 @@
           data.extraLimitBreaksToday = (data.extraLimitBreaksToday || 0) + 2;
           used = true; showNotice("+2 использования Преодоления предела сегодня." + limitShardTail(), 'info');
       } else if (id === 'rune_redemption') {
-          if (data.totalPenalties > 0 && data.lastExpLoss > 0) {
-              const recovery = Math.floor(data.lastExpLoss * 0.55);
-              gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
-              data.totalPenalties--;
-              const dayKey = findMostRecentPenaltyDayKey();
-              if (dayKey) data.history[dayKey].status = 'success';
-              used = true;
-              showNotice(`Руна использована. Восстановлено ${recovery} EXP, запись в Летописи и статистика штрафов исправлены.`, 'info');
-          } else { showNotice("Исправлять нечего: штрафов нет.", 'warn', true); }
+          // Самый свежий штраф, где не исправлена Летопись или возврат ниже 55%.
+          const st = data.penaltyStack;
+          let rec = null;
+          for (let i = st.length - 1; i >= 0; i--) {
+            if (!st[i].fixedBy || st[i].returned < penaltyReturnTarget(st[i], 0.55)) { rec = st[i]; break; }
+          }
+          if (!rec) {
+            showNotice(st.length ? "Исправлять нечего: последний штраф уже исправлен." : "Исправлять нечего: штрафов нет.", 'warn', true);
+          } else {
+            const label = penaltyDayLabel(rec);
+            const recovery = applyPenaltyReturn(rec, 0.55);
+            const fixedNow = !rec.fixedBy ? fixPenaltyDay(rec, 'redemption') : false;
+            used = true;
+            const parts = [];
+            if (recovery > 0) parts.push(`Восстановлено ${recovery} EXP`);
+            if (fixedNow) parts.push('запись в Летописи и статистика штрафов исправлены');
+            const text = parts.join(', ');
+            showNotice(`Руна использована${label}. ${text.charAt(0).toUpperCase() + text.slice(1)}.`, 'info');
+          }
       } else if (id === 'potion_restoration_full') {
           used = useRecoveryItem(1.0, 'Зелье использовано');
       } else if (id === 'rune_correction') {
-          if (data.lastExpLoss > 0) {
-              const recovery = data.lastExpLoss;
-              gainExp(recovery); data.lastExpLoss = 0; checkLevelUp();
-              data.consecutiveDays++;
-              if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
-              const dayKey = findMostRecentPenaltyDayKey();
-              if (dayKey) data.history[dayKey].status = 'success';
-              used = true;
-              showNotice(`Руна использована. Восстановлено ${recovery} EXP, серия и запись в Летописи исправлены.`, 'info');
-          } else { showNotice("Исправлять нечего: потерь опыта нет.", 'warn', true); }
+          // Самый свежий штраф, где не сделано хоть что-то: возврат 100%,
+          // Летопись (Исправлением), серия.
+          const st = data.penaltyStack;
+          let rec = null;
+          for (let i = st.length - 1; i >= 0; i--) {
+            const r = st[i];
+            if (r.returned < r.loss || r.fixedBy !== 'correction' || !r.streakHandled) { rec = r; break; }
+          }
+          if (!rec) {
+            showNotice(st.length ? "Исправлять нечего: последний штраф уже исправлен." : "Исправлять нечего: штрафов нет.", 'warn', true);
+          } else {
+            const label = penaltyDayLabel(rec);
+            const recovery = applyPenaltyReturn(rec, 1);
+            const wasFixed = rec.fixedBy === 'correction';
+            if (!wasFixed) fixPenaltyDay(rec, 'correction');
+            const parts = [];
+            if (recovery > 0) parts.push(`восстановлено ${recovery} EXP`);
+            if (!wasFixed) parts.push('день в Летописи засчитан');
+            let tail = '';
+            if (!rec.streakHandled) {
+              if (canGlueStreak(rec)) {
+                data.consecutiveDays += 1 + (rec.brokeStreak ? rec.streakBefore : 0);
+                if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
+                updateTitleStatus();
+                parts.push(`серия дней восстановлена: ${data.consecutiveDays}`);
+              } else {
+                tail = ' Серию восстановить нельзя: её прервала Заморозка.';
+              }
+              rec.streakHandled = true;
+            }
+            used = true;
+            const text = parts.join(', ');
+            showNotice(`Руна использована${label}. ${text.charAt(0).toUpperCase() + text.slice(1)}.${tail}`, 'info');
+          }
       } else if (id === 'rune_fate_cleansing') {
-          if (data.totalPenalties > 0 || data.lastExpLoss > 0) {
+          const fateRec = findReturnRecord(3);
+          if (data.totalPenalties > 0 || fateRec) {
               const removed = Math.min(3, data.totalPenalties);
               data.totalPenalties -= removed;
-              const recovery = data.lastExpLoss * 3;
-              if (recovery > 0) { gainExp(recovery); data.lastExpLoss = 0; checkLevelUp(); }
+              const label = fateRec ? penaltyDayLabel(fateRec) : '';
+              const recovery = fateRec ? applyPenaltyReturn(fateRec, 3) : 0;
               used = true;
-              showNotice(`Руна использована. Удалено штрафов: ${removed}, восстановлено ${recovery} EXP.`, 'info');
+              showNotice(`Руна использована. Удалено штрафов: ${removed}, восстановлено ${recovery} EXP${label}.`, 'info');
           } else { showNotice("Очищать нечего: штрафов нет.", 'warn', true); }
       } else if (id === 'rune_cleansing_full') {
           if (data.totalPenalties > 0) {
@@ -3748,17 +3901,19 @@
       } else if (id === 'rune_return') {
           const rel = expBoostRelation(EXP_BOOST_RATE.rune_return);
           const canBoost = rel.kind === 'free' || rel.kind === 'absorb';
-          const canReturn = data.lastExpLoss > 0;
+          const returnRec = findReturnRecord(1);
+          const canReturn = !!returnRec;
           if (!canBoost && !canReturn) {
               showNotice(rel.kind === 'equal'
                 ? 'Возвращать нечего. Усиление опыта уже действует' + expBoostActiveTail(rel.activeId)
                 : 'Возвращать нечего. Действует более высокое усиление опыта' + expBoostActiveTail(rel.activeId), 'warn', true);
           } else {
-              if (canReturn) { gainExp(data.lastExpLoss); data.lastExpLoss = 0; checkLevelUp(); }
+              const label = canReturn ? penaltyDayLabel(returnRec) : '';
+              if (canReturn) applyPenaltyReturn(returnRec, 1);
               if (canBoost) { data.expBoostToday = EXP_BOOST_RATE.rune_return; data.expBoostSourceId = id; }
               used = true;
-              showNotice(canReturn && canBoost ? "Руна использована. Опыт восстановлен и увеличен на сегодня."
-                : canReturn ? "Руна использована. Опыт восстановлен." : "Руна использована. Опыт увеличен на сегодня.", 'info');
+              showNotice((canReturn && canBoost ? "Руна использована. Опыт восстановлен и увеличен на сегодня."
+                : canReturn ? "Руна использована. Опыт восстановлен." : "Руна использована. Опыт увеличен на сегодня.").replace(/\.$/, label + '.'), 'info');
           }
       } else if (id === 'crystal_impulse') {
           const rel = expBoostRelation(EXP_BOOST_RATE.crystal_impulse);
@@ -3787,16 +3942,21 @@
 
   // Shared handler for the "recover % of last penalty's EXP loss" family
   // (Зелье/Руна/Кристалл Восстановления) — differ only in recovery rate.
-  function useRecoveryItem(rate, verbPhrase) {
-    if (data.lastExpLoss > 0) {
-      const recovery = Math.floor(data.lastExpLoss * rate);
-      gainExp(recovery);
-      data.lastExpLoss = 0;
-      checkLevelUp();
-      showNotice(`${verbPhrase}. Восстановлено ${recovery} EXP.`, 'info');
+  // Доводит возврат до rate по самому свежему штрафу, где он ниже rate.
+  // newestOnly — только самый последний штраф (Зелье Восстановления).
+  function useRecoveryItem(rate, verbPhrase, newestOnly) {
+    const rec = findReturnRecord(rate, newestOnly);
+    if (rec) {
+      const label = penaltyDayLabel(rec);
+      const recovery = applyPenaltyReturn(rec, rate);
+      showNotice(`${verbPhrase}. Восстановлено ${recovery} EXP${label}.`, 'info');
       return true;
     }
-    showNotice("Восстанавливать нечего: потерь опыта нет.", 'warn', true);
+    if (newestOnly && data.penaltyStack.length > 0) {
+      showNotice("Зелье Восстановления действует только на последний штраф — по нему опыт уже возвращён.", 'warn', true);
+    } else {
+      showNotice("Восстанавливать нечего: потерь опыта нет.", 'warn', true);
+    }
     return false;
   }
 
@@ -4636,6 +4796,7 @@
         if (eg > 0) clean.expGained = Math.floor(eg);
         const el = sanitizeNumber(entry.expLost, 0, 0);
         if (el > 0) clean.expLost = Math.floor(el);
+        if (entry.status === 'success' && (entry.fixedBy === 'redemption' || entry.fixedBy === 'correction')) clean.fixedBy = entry.fixedBy;
         if (Array.isArray(entry.completedExercises)) {
           const validNames = Object.values(QUEST_DISPLAY_NAMES);
           const cleanExercises = entry.completedExercises.filter(n => typeof n === 'string' && validNames.includes(n)).slice(0, 5);
@@ -4707,7 +4868,8 @@
       insurance: !!s.insurance,
       activeTitle: cleanActiveTitle,
       consecutiveDays: sanitizeNumber(s.consecutiveDays, 0),
-      lastExpLoss: sanitizeNumber(s.lastExpLoss, 0),
+      penaltyStack: Array.isArray(s.penaltyStack) ? sanitizePenaltyStack(s.penaltyStack) : undefined,
+      lastExpLoss: Array.isArray(s.penaltyStack) ? undefined : sanitizeNumber(s.lastExpLoss, 0),
       limitBreaksCount: sanitizeNumber(s.limitBreaksCount, 0),
       limitBreaksToday: Math.min(10, sanitizeNumber(s.limitBreaksToday, 0)),
       limitBreaksCompletedToday: Math.min(10, sanitizeNumber(s.limitBreaksCompletedToday, 0)),

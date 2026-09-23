@@ -39,14 +39,14 @@ function completeDay(w) {
 }
 function reset(w) { E(w, `forceFullResetAction()`); }
 function effects(w) { return E(w, `JSON.stringify(getActiveEffects().filter(e=>/Руна/.test(e.name)).map(e=>e.name+' | '+e.text+(e.sparkCount?' | искр:'+e.sparkCount:'')))`); }
-const st = w => E(w, `JSON.stringify({ins:data.insurance, src:data.insuranceSourceId, hold:data.insuranceHoldScroll, scroll:data.activeScroll, streak:data.consecutiveDays, lastLoss:data.lastExpLoss, disc:data.targetDiscountToday})`);
+const st = w => E(w, `JSON.stringify({ins:data.insurance, src:data.insuranceSourceId, hold:data.insuranceHoldScroll, scroll:data.activeScroll, streak:data.consecutiveDays, lastLoss:(data.penaltyStack.length ? data.penaltyStack[data.penaltyStack.length-1].loss : 0), disc:data.targetDiscountToday})`);
 
 const results = [];
 function check(name, cond, info) { results.push((cond?'OK  ':'FAIL')+' '+name+(info?'  → '+info:'')); }
 
 // базовый штраф без руны для сравнения
 let w = boot(); setup(w); reset(w);
-const baseLoss = E(w,'data.lastExpLoss');
+const baseLoss = E(w,'(data.penaltyStack.length ? data.penaltyStack[data.penaltyStack.length-1].loss : 0)');
 
 // 1. Руна Защиты + Договор, успех → руна выжила и спит, затем провал обычного цикла → половина
 w = boot(); setup(w, `data.insurance=true; data.insuranceSourceId='rune_protection'; data.activeScroll='contract';`);
@@ -58,7 +58,7 @@ check('1c После сброса: руна жива, hold очищен, ден�
 check('1d Панель на обычном цикле: руна без «ожидает»', !/ожидает/.test(effects(w)), effects(w));
 const full1 = E(w,'(()=>{let p=Math.max(0.05,0.15-Math.floor(data.level/20)*0.03-Math.max(0,data.stats.str-10)*0.0025); if(data.inventory.includes("amulet_will"))p*=0.85; return Math.floor(getExpToNext(data.level)*p);})()');
 reset(w);
-check('1e Провал обычного цикла: штраф вдвое, руна сгорела, серия 0', E(w,`data.lastExpLoss===Math.floor(${full1}*0.5) && !data.insurance && data.consecutiveDays===0`), st(w)+' полный='+full1+' уровень='+E(w,'data.level'));
+check('1e Провал обычного цикла: штраф вдвое, руна сгорела, серия 0', E(w,`(data.penaltyStack.length ? data.penaltyStack[data.penaltyStack.length-1].loss : 0)===Math.floor(${full1}*0.5) && !data.insurance && data.consecutiveDays===0`), st(w)+' полный='+full1+' уровень='+E(w,'data.level'));
 
 // 2. То же с Переносом
 w = boot(); setup(w, `data.insurance=true; data.insuranceSourceId='rune_protection_charged'; data.activeScroll='transfer'; data.transferExerciseId='steps'; data.transferStreakDays=1; document.querySelector('.quest-item[data-id="steps"]').style.display='none';`);
@@ -73,7 +73,7 @@ check('2d Провал обычного цикла: усиленная защи�
 // 3. Провал под Договором — как в v6.5.30
 w = boot(); setup(w, `data.insurance=true; data.insuranceSourceId='rune_protection'; data.activeScroll='contract';`);
 reset(w);
-check('3 Провал под Договором: полный штраф, руна жива', E(w,`data.lastExpLoss===${baseLoss} && data.insurance`), st(w));
+check('3 Провал под Договором: полный штраф, руна жива', E(w,`(data.penaltyStack.length ? data.penaltyStack[data.penaltyStack.length-1].loss : 0)===${baseLoss} && data.insurance`), st(w));
 
 // 4. Без свитка, успех → руна гаснет как раньше
 w = boot(); setup(w, `data.insurance=true; data.insuranceSourceId='rune_protection';`);
