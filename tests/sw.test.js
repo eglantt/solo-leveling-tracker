@@ -74,7 +74,8 @@ function makeEnv(opts) {
   // фоновая докачка: идёт, ошибка одной иконки не мешает, кэшированный шрифт не качается
   await Promise.all(ev.waits);
   const assets = env.store.get('solo-leveling-assets-v1');
-  check('S3 фоновая докачка: 74 из 75 (одна 404), шрифт не перекачивался', assets.size === 74 && !env.log.some(l => l.url.endsWith('orbitron-latin-500-normal.woff2')), `в кэше ${assets.size}`);
+  const ASSET_COUNT = (code.match(/const ASSET_FILES = \[([\s\S]*?)\];/)[1].match(/'\.\//g) || []).length;
+  check(`S3 фоновая докачка: ${ASSET_COUNT - 1} из ${ASSET_COUNT} (одна 404), шрифт не перекачивался`, assets.size === ASSET_COUNT - 1 && !env.log.some(l => l.url.endsWith('orbitron-latin-500-normal.woff2')), `в кэше ${assets.size}`);
   check('S3 страница легла в кэш', (await (await env.store.get(APP_NAME).get(BASE + 'index.html')).clone().text()) === 'body:./index.html:fresh');
   // повторная навигация не запускает докачку заново
   env.log.length = 0; ev = env.nav(); await ev.responded; await Promise.all(ev.waits);

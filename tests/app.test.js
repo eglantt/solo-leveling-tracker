@@ -141,7 +141,7 @@ for (const rid of ['rune_protection','rune_protection_charged']) {
   const e = eff(w)[0];
   E(w,'renderActiveEffects()');
   const html = E(w,'document.getElementById("effectsRow").innerHTML');
-  check(`14a ${rid} при Бремени: (подавлена), без искр, приглушена`, /\(подавлена\)$/.test(e.name) && e.text==='Бремя Аномалии подавляет действие руны. При провале цикла она будет поглощена без эффекта.' && /suppressed/.test(html) && !/spark-ring-wrap/.test(html), e.name);
+  check(`14a ${rid} при Бремени: (подавлена), без искр, приглушена`, /\(подавлена\)$/.test(e.name) && e.text==='Бремя Аномалии подавляет действие руны. При провале дневного задания она будет поглощена без эффекта.' && /suppressed/.test(html) && !/spark-ring-wrap/.test(html), e.name);
   E(w,'data.curseActiveToday=false; data.pendingCurse=true;');
   check(`14b ${rid} при ожидающем Бремени: обычный текст`, eff(w)[0].name.indexOf('подавлена')<0, eff(w)[0].name+' | '+eff(w)[0].text);
   // с Бременем + Договор руна не спит, а подавлена
@@ -156,12 +156,82 @@ check('15b Магазин: усиленная', T[1][0]==='Полностью з
 check('15c Магазин: Снятия Бремени', T[2][0]==='Снижает дневную нагрузку на 25% до следующего сброса. Бремя Аномалии не снимает, но облегчает его тяжесть.');
 check('15d Магазин: Освобождения', T[3][0]==='Снижает дневную нагрузку на 10% до следующего сброса. Бремя Аномалии не снимает, но немного облегчает его тяжесть.');
 setup(w, `data.insurance=true; data.insuranceSourceId='rune_protection';`);
-check('15e Эффект работающей Руны Защиты', eff(w)[0].text==='При провале цикла штраф будет снижен вдвое. Серия дней прервётся.', eff(w)[0].text);
+check('15e Эффект работающей Руны Защиты', eff(w)[0].text==='При провале дневного задания штраф будет снижен вдвое. Серия дней прервётся.', eff(w)[0].text);
 setup(w, `data.insurance=true; data.insuranceSourceId='rune_protection_charged';`);
-check('15f Эффект работающей усиленной', eff(w)[0].text==='При провале цикла штраф будет полностью поглощён. Серия дней сохранится.', eff(w)[0].text);
+check('15f Эффект работающей усиленной', eff(w)[0].text==='При провале дневного задания штраф будет полностью предотвращён. Серия дней сохранится.', eff(w)[0].text);
 const shopHtml = E(w,'(()=>{ try { renderShop && renderShop(); } catch(e){} return document.body.innerHTML; })()');
 check('15g В разметке нет старой фразы', shopHtml.indexOf('недоступна во время активации')<0);
 
+
+
+// ===== v6.5.36: дизайн =====
+async function designTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document;
+  // --- полоска прогресса ---
+  const fillW = id => D.querySelector(`.quest-item[data-id="${id}"] .qbar-fill`).style.width;
+  check('P1 полоска есть во всех пяти карточках, под «/ цель»', D.querySelectorAll('.quest-item .qbar .qbar-fill').length === 5
+    && [...D.querySelectorAll('.quest-item')].every(q => q.querySelector('.target').nextElementSibling.classList.contains('qbar')));
+  E(w, `data.completed={}; render()`);
+  check('P2 0% при пустом прогрессе', fillW('pushups') === '0%', fillW('pushups'));
+  E(w, `data.completed.pushups = Math.floor(getDynamicTarget(100, data.dailyTargetLevel, 'pushups') / 2); render()`);
+  const t = E(w, `getDynamicTarget(100, data.dailyTargetLevel, 'pushups')`), half = Math.floor(t/2);
+  check('P3 частичный прогресс = сделано ÷ цель', Math.abs(parseFloat(fillW('pushups')) - half / t * 100) < 0.01, fillW('pushups'));
+  E(w, `data.completed.pushups = getDynamicTarget(100, data.dailyTargetLevel, 'pushups') + 7; render()`);
+  check('P4 сверх цели — ровно 100%', fillW('pushups') === '100%', fillW('pushups'));
+  const tintOf = () => [...D.querySelector('.quest-item[data-id="pushups"] .qbar-fill').classList].filter(c => c !== 'qbar-fill').join(',');
+  const cases = [['обычный', 'data.curseActiveToday=false; data.activeScroll=null; data.limitBreakRoundPending=false;', ''],
+                 ['свиток', "data.activeScroll='contract';", 'scroll-tinted'],
+                 ['Предел', "data.activeScroll=null; data.limitBreakRoundPending=true;", 'limit-break'],
+                 ['Бремя', "data.limitBreakRoundPending=false; data.curseActiveToday=true;", 'cursed'],
+                 ['Бремя+свиток', "data.activeScroll='transfer'; data.transferExerciseId='steps';", 'cursed-scroll']];
+  for (const [label, code, cls] of cases) {
+    E(w, code + ' render()');
+    const counterCls = [...D.getElementById('pushups').classList].join(',');
+    check(`P5 цвет полоски = цвет цифр: ${label}`, tintOf() === cls && (cls === '' ? counterCls === 'counter' : counterCls.includes(cls)), tintOf() + ' | ' + counterCls);
+  }
+  // --- LEVEL UP ---
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const kf = (css.match(/@keyframes levelUp \{([^\n]*)\}/) || [])[1] || '';
+  check('L1 центрирующий сдвиг внутри каждого кадра анимации', (kf.match(/translateX\(-50%\)/g) || []).length === 4, kf);
+  const lu = (css.match(/\.levelup-popup \{([^}]*)\}/) || [])[1] || '';
+  check('L2 одна строка и размер по ширине экрана', lu.includes('white-space:nowrap') && lu.includes('font-size:clamp(1.6rem, 11vw, 3.5rem)') && lu.includes('animation:levelUp 3s'), lu);
+  // --- шрифты: по вычисленному стилю ---
+  const fam = sel => { const el = D.querySelector(sel); return el ? w.getComputedStyle(el).fontFamily : null; };
+  const probe = D.createElement('div'); probe.innerHTML = `
+    <div class="item-card"><div class="item-info"><div class="item-name">x</div><div class="item-desc">x</div></div><button class="use-btn sell-btn">-1</button></div>
+    <div class="item-preview-meta">x</div><div class="danger-text">x</div><ul class="danger-list"><li>x</li></ul>
+    <div class="notif-log-row"><span class="notif-log-time">09:00</span><span class="notif-log-text">x</span></div>
+    <div class="effect-detail-name">x</div><div class="effect-detail-text">x</div><div class="codex-chapter-text">x</div>
+    <div class="stat-lore-text">x</div><div class="cal-month-summary">x</div><div class="legend">x</div><div class="cal-tooltip-body">x</div>
+    <div class="system-popup-sub">x</div><div class="backup-summary">x</div><span class="restore-link">x</span>`;
+  D.body.appendChild(probe);
+  const TEXT = ['.item-name','.item-desc','.item-preview-meta','.danger-text','.danger-list','.notif-log-text','.effect-detail-name','.effect-detail-text',
+                '.codex-chapter-text','.stat-lore-text','.cal-month-summary','.legend','.cal-tooltip-body','.system-popup-sub','.backup-summary','.restore-link',
+                '.stats-container .stat-line > span','.stats-caption'];
+  const bad = TEXT.filter(sel => !(fam(sel) || '').includes('Exo 2 Text'));
+  check('F1 все текстовые элементы из таблицы — Exo 2 Text', bad.length === 0, bad.join(', '));
+  const SIZES = { '.item-name':'1.03rem', '.item-desc':'0.81rem', '.item-preview-meta':'0.84rem', '.danger-text':'0.92rem', '.danger-list':'0.86rem', '.notif-log-text':'0.78rem',
+                  '.effect-detail-name':'1.03rem', '.effect-detail-text':'0.81rem', '.codex-chapter-text':'0.86rem', '.stat-lore-text':'0.92rem',
+                  '.cal-month-summary':'0.7rem', '.legend':'0.67rem', '.system-popup-sub':'0.81rem', '.backup-summary':'0.81rem', '.restore-link':'0.81rem' };
+  const badSize = Object.entries(SIZES).filter(([sel, v]) => w.getComputedStyle(D.querySelector(sel)).fontSize !== v).map(([sel]) => sel + '=' + w.getComputedStyle(D.querySelector(sel)).fontSize);
+  check('F2 размеры +8% по таблице', badSize.length === 0, badSize.join(', '));
+  check('F3 межстрочный интервал Кодекса 1,55', w.getComputedStyle(D.querySelector('.codex-chapter-text')).lineHeight === '1.55');
+  const NUM = ['#pushups', '.target', '.reward', '#exp', '#creditsVal', '#totalDays', '.notif-log-time', '#resetTimer'];
+  const badNum = NUM.filter(sel => D.querySelector(sel) && (fam(sel) || '').includes('Exo 2 Text'));
+  check('F4 цифры и данные не перешли на Exo 2', badNum.length === 0, badNum.join(', '));
+  const quest = fam('.quest-name') || '', hdr = fam('#titleDisplay') || '';
+  check('F5 названия упражнений и шапка не изменились', !quest.includes('Exo 2 Text') && !hdr.includes('Exo 2 Text'), quest + ' | ' + hdr);
+  check('F6 кнопки остались в Orbitron', (fam('.sell-btn') || '').includes('Orbitron'), fam('.sell-btn'));
+  const faces = css.match(/@font-face \{[^}]*'Exo 2 Text'[^}]*\}/g) || [];
+  const fs = require('fs'), path = require('path');
+  const files = faces.map(f => f.match(/fonts\/([^']+)'/)[1]);
+  check('F7 семейство Exo 2 Text: 4 начертания, файлы на месте', faces.length === 4 && files.every(f => fs.existsSync(path.join(__dirname, '..', 'fonts', f))), files.join(', '));
+  const sw = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf-8');
+  check('F8 новые шрифты в списке докачки Service Worker', ['exo-2-cyrillic-400-normal.woff2','exo-2-latin-400-normal.woff2','exo-2-latin-700-normal.woff2'].every(f => sw.includes(`'./fonts/${f}'`)));
+  const exo2Weights = (css.match(/@font-face \{[^}]*font-family: 'Exo 2';[^}]*\}/g) || []).map(f => f.match(/font-weight: (\d+)/)[1]).sort().join(',');
+  check('F9 семейство Exo 2 для заголовков не тронуто (только 500 и 700)', exo2Weights === '500,700', exo2Weights);
+}
 
 // ===== v6.5.33: окно правил =====
 async function rulesTests() {
@@ -215,6 +285,7 @@ function noticeFor(scroll, item) {
     check(`9 Уведомление ${it} при ${sc}`, sc==='contract' ? /^Активен Свиток Договора\./.test(n) : /^Активен Свиток Переноса\./.test(n), n);
   }
   await rulesTests();
+  await designTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

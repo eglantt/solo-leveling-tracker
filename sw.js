@@ -16,7 +16,7 @@
 // установку, ни активацию.
 // ============================================================================
 
-const CACHE_VERSION = 'v6-5-35';
+const CACHE_VERSION = 'v6-5-36';
 const ASSETS_VERSION = 'v1';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;
@@ -113,7 +113,10 @@ const ASSET_FILES = [
   './fonts/roboto-mono-latin-400-normal.woff2',
   './fonts/roboto-mono-latin-700-normal.woff2',
   './fonts/exo-2-cyrillic-500-normal.woff2',
-  './fonts/exo-2-cyrillic-700-normal.woff2'
+  './fonts/exo-2-cyrillic-700-normal.woff2',
+  './fonts/exo-2-cyrillic-400-normal.woff2',
+  './fonts/exo-2-latin-400-normal.woff2',
+  './fonts/exo-2-latin-700-normal.woff2'
 ];
 
 function isAssetPath(pathname) {

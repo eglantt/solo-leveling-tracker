@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.35 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.5.36 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -58,6 +58,41 @@
       font-style: normal;
       font-display: swap;
       unicode-range: U+0400-04FF;
+    }
+    /* v6.5.36: отдельное семейство для основного текста (кириллица + латиница, 400/700).
+       Отдельное имя, а не 'Exo 2': иначе заголовки и кнопки ('Orbitron','Exo 2')
+       взяли бы новое начертание 400 вместо нынешнего 500 и стали бы тоньше. */
+    @font-face {
+      font-family: 'Exo 2 Text';
+      src: url('fonts/exo-2-cyrillic-400-normal.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+      unicode-range: U+0400-04FF;
+    }
+    @font-face {
+      font-family: 'Exo 2 Text';
+      src: url('fonts/exo-2-latin-400-normal.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+      font-family: 'Exo 2 Text';
+      src: url('fonts/exo-2-cyrillic-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+      unicode-range: U+0400-04FF;
+    }
+    @font-face {
+      font-family: 'Exo 2 Text';
+      src: url('fonts/exo-2-latin-700-normal.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -402,6 +437,13 @@
       text-shadow: 0 0 8px rgba(64,192,255,0.8); box-shadow: 0 0 10px rgba(64,192,255,0.3);
     }
     .reward { font-size: 0.8rem; color: #ffd700cc; margin-top: 2px; }
+    /* v6.5.36: полоска прогресса под «/ цель» — растёт справа налево, цвет как у цифр счётчика. */
+    .qbar { width: 170px; max-width: 100%; height: 4px; margin: 4px 0 2px auto; background: rgba(255,255,255,0.07); border-radius: 2px; display: flex; justify-content: flex-end; }
+    .qbar-fill { height: 100%; width: 0; border-radius: 2px; background: #40ffaa; box-shadow: 0 0 6px rgba(64,255,170,0.5); transition: width 0.2s ease-out; }
+    .qbar-fill.cursed { background: #ff5555; box-shadow: 0 0 6px rgba(255,0,0,0.5); }
+    .qbar-fill.scroll-tinted { background: #ffaa00; box-shadow: 0 0 6px rgba(255,170,0,0.5); }
+    .qbar-fill.limit-break { background: #40c0ff; box-shadow: 0 0 6px rgba(64,192,255,0.55); }
+    .qbar-fill.cursed-scroll { background: #ff5555; box-shadow: 0 0 4px rgba(255,40,40,0.7), 0 0 8px rgba(255,150,0,0.5); }
     .stat-lore-box {
       width: 85%; max-width: 320px; background: #0d1a2d; border: 1px solid #40c0ff;
       border-radius: 10px; padding: 18px 20px; box-shadow: 0 0 30px rgba(0,140,255,0.4);
@@ -543,13 +585,14 @@
     /* ANIMATIONS & EFFECTS */
     @keyframes flash { 0% { background: rgba(0,255,136,0.35); } 100% { background: transparent; } }
     @keyframes completeText { 0% {opacity:0; transform:scale(0.4) translateY(30px);} 40% {opacity:1; transform:scale(1.35) translateY(0);} 100% {opacity:0; transform:scale(2) translateY(-60px);} }
-    @keyframes levelUp { 0% {opacity:0; transform:scale(0.3) rotate(-20deg);} 25% {opacity:1; transform:scale(1.5) rotate(12deg);} 75% {transform:scale(1.1) rotate(-8deg);} 100% {opacity:0; transform:scale(2.2) rotate(0);} }
+    /* v6.5.36: центрирующий сдвиг — часть анимации (раньше keyframes его затирали, и надпись уезжала вправо). */
+    @keyframes levelUp { 0% {opacity:0; transform:translateX(-50%) scale(0.3) rotate(-20deg);} 25% {opacity:1; transform:translateX(-50%) scale(1.5) rotate(12deg);} 75% {transform:translateX(-50%) scale(1.1) rotate(-8deg);} 100% {opacity:0; transform:translateX(-50%) scale(2.2) rotate(0);} }
     @keyframes pulse-bg { 0% { background: rgba(80,20,20,0.6); } 50% { background: rgba(120,30,30,0.8); } 100% { background: rgba(80,20,20,0.6); } }
     @keyframes pulse-text { 0% { opacity: 0.8; } 100% { opacity: 1; text-shadow: 0 0 20px #ff4444; } }
     
     .completion-effect { position:absolute; inset:0; pointer-events:none; animation:flash 1.2s ease-out forwards; z-index: 1; }
     .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-size:1.8rem; font-weight:bold; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
-    .levelup-popup { position:fixed; top:20%; left:50%; transform:translateX(-50%); color:#ffd700; font-family:'Orbitron',sans-serif; font-size:4.5rem; text-shadow:0 0 30px #ffd700; pointer-events:none; animation:levelUp 3s forwards; z-index:100; }
+    .levelup-popup { position:fixed; top:20%; left:50%; transform:translateX(-50%); color:#ffd700; font-family:'Orbitron',sans-serif; font-size:clamp(1.6rem, 11vw, 3.5rem); white-space:nowrap; text-shadow:0 0 30px #ffd700; pointer-events:none; animation:levelUp 3s forwards; z-index:100; }
 
     @keyframes systemPopupIn {
       0% { opacity: 0; transform: translate(-50%, -46%) scale(0.92); }
@@ -755,6 +798,25 @@
       .item-icon-img { width: 28px; height: 28px; }
       .use-btn { padding: 5px 6px; font-size: 0.65rem; }
     }
+    /* ===== v6.5.36: основной текст — Exo 2 Text (400, +8% к прежнему размеру);
+       цифры и данные — Roboto Mono. Правило для новых элементов то же. ===== */
+    .item-name { font-family: 'Exo 2 Text', sans-serif; font-size: 1.03rem; }
+    .item-desc { font-family: 'Exo 2 Text', sans-serif; font-size: 0.81rem; }
+    .item-preview-meta { font-family: 'Exo 2 Text', sans-serif; font-size: 0.84rem; }
+    .danger-text { font-family: 'Exo 2 Text', sans-serif; font-size: 0.92rem; }
+    .danger-list { font-family: 'Exo 2 Text', sans-serif; font-size: 0.86rem; }
+    .notif-log-text { font-family: 'Exo 2 Text', sans-serif; font-size: 0.78rem; }
+    .effect-detail-name { font-family: 'Exo 2 Text', sans-serif; font-size: 1.03rem; }
+    .effect-detail-text { font-family: 'Exo 2 Text', sans-serif; font-size: 0.81rem; }
+    .codex-chapter-text { font-family: 'Exo 2 Text', sans-serif; font-size: 0.86rem; line-height: 1.55; }
+    .stat-lore-text { font-family: 'Exo 2 Text', sans-serif; font-size: 0.92rem; }
+    .cal-month-summary { font-family: 'Exo 2 Text', sans-serif; font-size: 0.70rem; }
+    .legend { font-family: 'Exo 2 Text', sans-serif; font-size: 0.67rem; }
+    .cal-tooltip-body { font-family: 'Exo 2 Text', sans-serif; font-size: 1.08em; }
+    .system-popup-sub { font-family: 'Exo 2 Text', sans-serif; font-size: 0.81rem; }
+    .stats-container .stat-line > span, .stats-caption { font-family: 'Exo 2 Text', sans-serif; font-size: 1.08em; }
+    .backup-summary, .restore-link { font-family: 'Exo 2 Text', sans-serif; font-size: 0.81rem; }
+    #appVersionTag { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; }
   </style>
 </head>
 <body>
@@ -906,7 +968,7 @@
         <span class="cal-month-label" id="progMonthLabel">АВГУСТ 2026</span>
         <span class="cal-arrow" id="progNextBtn" onclick="progShiftMonth(1)">&#8594;</span>
       </div>
-      <div>Прогресс за месяц:</div>
+      <div class="stats-caption">Прогресс за месяц:</div>
       <div class="stat-line"><span>Отжимания:</span><strong id="progPushups">0</strong></div>
       <div class="stat-line"><span>Приседания:</span><strong id="progSquats">0</strong></div>
       <div class="stat-line"><span>Подтягивания:</span><strong id="progPullups">0</strong></div>
@@ -1104,6 +1166,7 @@
         <div class="quest-progress">
           <div class="counter" id="pushups">0</div>
           <div class="target">/ 100</div>
+          <div class="qbar"><div class="qbar-fill"></div></div>
           <div class="reward">+80 EXP</div>
           <div class="buttons">
             <button class="add" data-value="1">+1</button>
@@ -1117,6 +1180,7 @@
         <div class="quest-progress">
           <div class="counter" id="squats">0</div>
           <div class="target">/ 120</div>
+          <div class="qbar"><div class="qbar-fill"></div></div>
           <div class="reward">+90 EXP</div>
           <div class="buttons">
             <button class="add" data-value="1">+1</button>
@@ -1130,6 +1194,7 @@
         <div class="quest-progress">
           <div class="counter" id="pullups">0</div>
           <div class="target">/ 40</div>
+          <div class="qbar"><div class="qbar-fill"></div></div>
           <div class="reward">+120 EXP</div>
           <div class="buttons">
             <button class="add" data-value="1">+1</button>
@@ -1143,6 +1208,7 @@
         <div class="quest-progress">
           <div class="counter" id="press">0</div>
           <div class="target">/ 100</div>
+          <div class="qbar"><div class="qbar-fill"></div></div>
           <div class="reward">+80 EXP</div>
           <div class="buttons">
             <button class="add" data-value="1">+1</button>
@@ -1156,6 +1222,7 @@
         <div class="quest-progress">
           <div class="counter" id="steps">0</div>
           <div class="target">/ 10000</div>
+          <div class="qbar"><div class="qbar-fill"></div></div>
           <div class="reward">+150 EXP</div>
           <div class="buttons">
             <button class="add" data-value="100">+100</button>
@@ -1183,7 +1250,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.35';
+  const APP_VERSION = '6.5.36';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -1499,7 +1566,7 @@
 
   const SHOP_CATALOG = {
     "rune_cleansing": { name: "Руна Очищения", icon: "⚗️", desc: "Стирает 1 штраф из памяти Системы.", price: 2000, level: 1 },
-    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Снижает штраф за провал на следующий цикл вдвое. Серия дней при провале прерывается.", effectDesc: "При провале цикла штраф будет снижен вдвое. Серия дней прервётся.", price: 4500, level: 1 },
+    "rune_protection": { name: "Руна Защиты", icon: "📜", desc: "Снижает штраф за провал на следующий цикл вдвое. Серия дней при провале прерывается.", effectDesc: "При провале дневного задания штраф будет снижен вдвое. Серия дней прервётся.", price: 4500, level: 1 },
     "potion_restoration": { name: "Зелье Восстановления", icon: "🍶", desc: "Восстанавливает 50% опыта от последнего штрафа.", price: 2500, level: 1 },
     "rune_freedom": { name: "Руна Освобождения", icon: "🪶", desc: "Снижает дневную нагрузку на 10% до следующего сброса. Бремя Аномалии не снимает, но немного облегчает его тяжесть.", effectDesc: "Дневная нагрузка снижена на 10% до следующего сброса.", price: 3500, level: 5 },
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 6500, level: 6 },
@@ -1508,7 +1575,7 @@
     "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 4500, level: 15 },
     "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 5000, level: 20 },
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 5500, level: 20 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Полностью защищает от штрафа за провал следующего цикла и сохраняет серию дней. При активации возвращает опыт, потерянный из-за последнего штрафа.", effectDesc: "При провале цикла штраф будет полностью поглощён. Серия дней сохранится.", price: 9600, level: 25 },
+    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Полностью защищает от штрафа за провал следующего цикла и сохраняет серию дней. При активации возвращает опыт, потерянный из-за последнего штрафа.", effectDesc: "При провале дневного задания штраф будет полностью предотвращён. Серия дней сохранится.", price: 9600, level: 25 },
     "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +3 использования Преодоления предела сегодня.", price: 9000, level: 30 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 8000, level: 40 },
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
@@ -1800,7 +1867,7 @@
             effects.push({
               icon: `icons/items/${data.insuranceSourceId}.png`,
               name: `${item.name} (подавлена)`,
-              text: 'Бремя Аномалии подавляет действие руны. При провале цикла она будет поглощена без эффекта.',
+              text: 'Бремя Аномалии подавляет действие руны. При провале дневного задания она будет поглощена без эффекта.',
               isSuppressed: true
             });
           } else {
@@ -4381,9 +4448,11 @@
         else if (isLimitBreak) tintClass = 'limit-break';
         else if (isScroll) tintClass = 'scroll-tinted';
         const targetEl = counterEl.nextElementSibling;
+        const barFill = counterEl.closest('.quest-item') ? counterEl.closest('.quest-item').querySelector('.qbar-fill') : null;
         ['cursed', 'scroll-tinted', 'cursed-scroll', 'limit-break'].forEach(c => {
           counterEl.classList.toggle(c, c === tintClass);
           if (targetEl && targetEl.classList.contains('target')) targetEl.classList.toggle(c, c === tintClass);
+          if (barFill) barFill.classList.toggle(c, c === tintClass);
         });
       }
     });
@@ -4419,6 +4488,8 @@
       const current = data.completed[id] || 0;
       item.querySelector('.counter').textContent = current;
       item.querySelector('.target').textContent = `/ ${target}`;
+      const barFill = item.querySelector('.qbar-fill');
+      if (barFill) barFill.style.width = (target > 0 ? Math.min(100, current / target * 100) : 0) + '%';
       item.querySelector('.reward').textContent = `+${getDynamicExp(parseInt(item.dataset.exp), data.level, id)} EXP`;
       item.querySelectorAll('.add').forEach(b => b.disabled = (current >= target));
     });
