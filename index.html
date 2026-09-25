@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.5.36 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -159,14 +159,6 @@
       flex-direction: column;
       gap: 12px;
     }
-    .header-bottom-row {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 110px;
-    }
     .title {
       font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 1.7rem;
@@ -174,33 +166,6 @@
       text-shadow: 0 0 12px #00aaffaa;
       letter-spacing: 1.5px;
     }
-    .rank-info {
-      text-align: right;
-      font-size: 1.05rem;
-      line-height: 1.35;
-      min-width: 180px;
-      cursor: pointer;
-    }
-    .level-display { font-weight: bold; }
-    .rank { font-weight: bold; text-shadow: 0 0 10px currentColor; }
-    .rank.e { color: #aaaaaa; text-shadow: 0 0 8px #aaaaaa; }
-    .rank.d { color: #88ffcc; }
-    .rank.c { color: #40ffaa; }
-    .rank.b { color: #00ff88; }
-    .rank.a { color: #00ddff; text-shadow: 0 0 12px #00ddff; }
-    .rank.s { color: #0088ff; text-shadow: 0 0 16px #0088ff; }
-    .rank.national { color: #ffaa00; text-shadow: 0 0 16px #ffaa00; }
-    .rank.sss { color: #cc00ff; text-shadow: 0 0 20px #cc00ff; animation: auraPulseSss 2.4s ease-in-out infinite; }
-    .rank.monarch { color: #aa00ff; text-shadow: 0 0 24px #aa00ff, 0 0 40px #6600aa; animation: auraPulseMonarch 2.2s ease-in-out infinite; }
-    .level-display.e { color: #aaaaaa; }
-    .level-display.d { color: #88ffcc; }
-    .level-display.c { color: #40ffaa; }
-    .level-display.b { color: #00ff88; }
-    .level-display.a { color: #00ddff; }
-    .level-display.s { color: #0088ff; }
-    .level-display.national { color: #ffaa00; }
-    .level-display.sss { color: #cc00ff; }
-    .level-display.monarch { color: #aa00ff; }
     @keyframes auraPulseSss {
       0%, 100% { text-shadow: 0 0 16px #cc00ff; }
       50% { text-shadow: 0 0 28px #cc00ff, 0 0 12px #ff66ff; }
@@ -209,59 +174,83 @@
       0%, 100% { text-shadow: 0 0 24px #aa00ff, 0 0 40px #6600aa; }
       50% { text-shadow: 0 0 36px #aa00ff, 0 0 58px #6600aa, 0 0 16px #ff44ff; }
     }
-    .exp { font-size: 0.85rem; color: #88ffcc; }
-    .exp.exp-in-debt { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
-    .exp-debt { font-size: 0.8rem; color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); margin-top: 2px; }
-    .credits { font-size: 0.85rem; color: #ffd700; font-weight: bold; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
-    .title-display { font-size: 0.75rem; color: #40ffaa; font-style: italic; opacity: 0.9; margin-top: 2px; }
-    .player-name {
-      font-family: 'Orbitron', 'Exo 2', sans-serif;
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #88ddff;
-      letter-spacing: 0.5px;
-      opacity: 0.9;
-      margin-bottom: 3px;
-    }
+    /* ===== v6.6.0: карточка статуса на главном экране ===== */
+    .rk-e { --rk: #aaaaaa; } .rk-d { --rk: #88ffcc; } .rk-c { --rk: #40ffaa; } .rk-b { --rk: #00ff88; } .rk-a { --rk: #00ddff; }
+    .rk-s { --rk: #0088ff; } .rk-national { --rk: #ffaa00; } .rk-sss { --rk: #cc00ff; } .rk-monarch { --rk: #aa00ff; }
+    .status-card { text-align: left; border: 1px solid #40c0ff66; border-radius: 8px; background: rgba(0,20,45,0.55); padding: 10px 12px 12px; cursor: pointer; }
+    .sc-top { display: flex; gap: 12px; align-items: center; text-align: left; }
+    .sc-emb { width: 80px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .sc-hexw { filter: drop-shadow(0 0 5px var(--rk)); }
+    .rk-sss .sc-hexw { animation: hexPulseSss 2.4s ease-in-out infinite; }
+    .rk-monarch .sc-hexw { animation: hexPulseMonarch 2.2s ease-in-out infinite; }
+    @keyframes hexPulseSss { 0%, 100% { filter: drop-shadow(0 0 6px #cc00ff); } 50% { filter: drop-shadow(0 0 14px #cc00ff) drop-shadow(0 0 4px #ff66ff); } }
+    @keyframes hexPulseMonarch { 0%, 100% { filter: drop-shadow(0 0 8px #aa00ff) drop-shadow(0 0 14px #6600aa); } 50% { filter: drop-shadow(0 0 16px #aa00ff) drop-shadow(0 0 22px #6600aa) drop-shadow(0 0 5px #ff44ff); } }
+    .sc-hex { width: 72px; height: 80px; position: relative; display: flex; align-items: center; justify-content: center;
+      clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--rk); }
+    .sc-hex::before { content: ''; position: absolute; inset: 3px; clip-path: inherit; background: radial-gradient(circle at 50% 40%, #10263f, #050c18); }
+    .sc-hex b { position: relative; font-family: 'Orbitron', sans-serif; font-weight: 700; color: #eaf8ff; line-height: 1;
+      text-shadow: 0 0 12px var(--rk), 0 0 22px rgba(64,192,255,0.45); }
+    .sc-hex b.d1 { font-size: 2.3rem; } .sc-hex b.d2 { font-size: 2.05rem; } .sc-hex b.d3 { font-size: 1.5rem; }
+    .sc-emb-cap { font-family: 'Exo 2 Text', sans-serif; color: #88ddff; font-size: 0.76rem; opacity: 0.9; }
+    .sc-info { flex: 1; min-width: 0; line-height: 1.4; }
+    .sc-name { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; color: #e0f7ff; font-size: 1rem; overflow-wrap: anywhere; }
+    .sc-rank { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: 0.88rem; color: var(--rk); text-shadow: 0 0 10px var(--rk); }
+    .rk-sss .sc-rank { animation: auraPulseSss 2.4s ease-in-out infinite; }
+    .rk-monarch .sc-rank { animation: auraPulseMonarch 2.2s ease-in-out infinite; }
+    .sc-title { font-family: 'Exo 2 Text', sans-serif; font-size: 0.84rem; color: #88ddff; }
+    .sc-title span { color: #40ffaa; }
+    .sc-title img { width: 16px; height: 16px; object-fit: contain; vertical-align: -3px; margin-right: 4px; }
+    .sc-exp { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 10px 0 4px; }
+    .sc-exp .k { font-family: 'Exo 2 Text', sans-serif; color: #88ddff; font-size: 0.84rem; }
+    .sc-exp .n { font-family: 'Roboto Mono', monospace; color: #88ffcc; font-size: 0.95rem; font-weight: 700; white-space: nowrap; }
+    .sc-exp.debt .n { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
+    .sc-bar { height: 6px; border: 1px solid #40c0ff88; border-radius: 4px; background: rgba(0,0,0,0.35); overflow: hidden; }
+    .sc-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #40c0ff, #9fe6ff); box-shadow: 0 0 8px #40c0ff; transition: width 0.3s ease-out; }
+    .sc-bar.debt { border-color: #ff5555aa; }
+    .sc-bar.debt i { background: #ff5555; box-shadow: 0 0 8px #ff5555; }
+    .sc-debt { font-family: 'Exo 2 Text', sans-serif; font-size: 0.8rem; color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); margin-top: 4px; }
+    .sc-chips { display: flex; gap: 8px; margin-top: 9px; }
+    .sc-chip { flex: 1; min-width: 0; border: 1px solid #40c0ff33; border-radius: 6px; padding: 5px 9px; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; background: rgba(0,0,0,0.25); }
+    .sc-chip .k { font-family: 'Exo 2 Text', sans-serif; color: #88ddff; font-size: 0.78rem; }
+    .sc-chip .n { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+    .sc-chip.cr .n { color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
+    .sc-chip.st .n { color: #40ffaa; }
 
-    .reset-timer {
-      text-align: center;
-      width: 220px;
-      min-width: 180px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: rgba(0, 40, 80, 0.5);
-      border: 1px solid #00448866;
-      transition: all 0.4s ease;
-      overflow: hidden;
-    }
-    .reset-label { font-size: 0.9rem; color: #88ddff; margin-bottom: 4px; }
-    .reset-time {
-      font-family: 'Orbitron', 'Exo 2', sans-serif;
-      font-size: 1.9rem;
-      font-weight: 700;
-      color: #40c0ff;
-      text-shadow: 0 0 12px #40c0ffcc;
-      letter-spacing: 2px;
-      white-space: nowrap;
-      width: 165px;
-      margin: 0 auto;
-      text-align: left;
-      position: relative;
-      left: 2px;
-    }
-    .reset-time.freeze-width { width: 185px; }
-    .reset-timer.warning {
-      background: rgba(80,20,20,0.6);
-      border-color: #ff4444aa;
-      box-shadow: 0 0 20px rgba(255,68,68,0.5);
-      animation: pulse-bg 1.8s infinite;
-    }
-    .reset-timer.warning .reset-time {
-      color: #ff7777;
-      text-shadow: 0 0 16px #ff4444;
-      animation: pulse-text 1.2s infinite alternate;
-    }
+    /* ===== v6.6.0: полоса таймера. Цифры — в ячейках одной ширины (не «скачут»);
+       ячейки — в контейнере у правого края; подпись переносится при нехватке места. ===== */
+    .tstrip { position: relative; overflow: hidden; display: flex; align-items: center; text-align: left; border: 1px solid #00448899; border-radius: 8px;
+      background: rgba(0,40,80,0.5); padding: 11px 14px 13px; transition: background 0.4s ease, border-color 0.4s ease; }
+    .tstrip .reset-label { font-family: 'Exo 2 Text', sans-serif; font-size: 0.86rem; color: #88ddff; line-height: 1.25; flex: 1; min-width: 0; padding-right: 10px; }
+    .tbox { margin-left: auto; display: flex; flex-shrink: 0; }
+    .tbox .tc { display: inline-block; text-align: center; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.8rem; color: #40c0ff; text-shadow: 0 0 12px #40c0ffcc; line-height: 1; }
+    .tbox .tc.dg { width: 0.78em; } .tbox .tc.col { width: 0.34em; }
+    .tstrip.warning { background: rgba(80,20,20,0.6); border-color: #ff4444aa; box-shadow: 0 0 20px rgba(255,68,68,0.5); animation: pulse-bg 1.8s infinite; }
+    .tstrip.warning .tc { color: #ff7777; text-shadow: 0 0 16px #ff4444; }
+    .tstrip.warning .tbox { animation: pulse-text 1.2s infinite alternate; }
+    .dayline { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(64,192,255,0.12); display: flex; justify-content: flex-end; }
+    .dayline i { display: block; height: 100%; width: 0; background: #40c0ff; box-shadow: 0 0 6px #40c0ff; transition: width 1s linear; }
+    .tstrip.warning .dayline i { background: #ff5555; box-shadow: 0 0 6px #ff4444; }
+
+    /* ===== v6.6.0: окно «СТАТУС» ===== */
+    .st-sec { border: 1px solid #40c0ff44; border-radius: 6px; padding: 10px 12px; margin-top: 12px; text-align: left; }
+    .st-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+    .st-k { font-family: 'Exo 2 Text', sans-serif; color: #88ddff; font-size: 0.86rem; cursor: pointer; }
+    .st-line { display: flex; align-items: center; gap: 6px; }
+    .st-v { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #40ffaa; font-size: 1.35rem; text-shadow: 0 0 10px #40ffaa66; }
+    .st-line .stat-add-btn { margin-left: auto; width: 30px; height: 30px; }
+    .st-free { text-align: right; }
+    .st-free-n { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #ffd700; font-size: 1.5rem; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+    .st-free-k { font-family: 'Exo 2 Text', sans-serif; color: #88ddff; font-size: 0.76rem; }
+    /* v6.6.1: прокручиваемый блок окна обрезает всё за своими краями, а эмблема стоит
+       вплотную к его углу — пульсирующее свечение SSS/Monarch срезалось «квадратом».
+       Внутренний отступ даёт свечению запас, отрицательный внешний сохраняет раскладку. */
+    #statusOverlay .status-body { padding: 16px; margin: -16px; }
+    /* v6.6.2: запаса 16px не хватило — пик свечения SSS/Monarch 22px всё ещё срезался сверху
+       и слева. В окне «СТАТУС» свечение компактнее: наибольший радиус 12px (< запаса). */
+    #statusOverlay .rk-sss .sc-hexw { animation-name: hexPulseSssCompact; }
+    #statusOverlay .rk-monarch .sc-hexw { animation-name: hexPulseMonarchCompact; }
+    @keyframes hexPulseSssCompact { 0%, 100% { filter: drop-shadow(0 0 5px #cc00ff); } 50% { filter: drop-shadow(0 0 10px #cc00ff) drop-shadow(0 0 3px #ff66ff); } }
+    @keyframes hexPulseMonarchCompact { 0%, 100% { filter: drop-shadow(0 0 6px #aa00ff) drop-shadow(0 0 9px #6600aa); } 50% { filter: drop-shadow(0 0 10px #aa00ff) drop-shadow(0 0 12px #6600aa) drop-shadow(0 0 4px #ff44ff); } }
 
     .status-overlay {
       position: fixed; inset: 0; background: rgba(0,5,15,0.95);
@@ -416,6 +405,17 @@
     }
     .counter.limit-break { color: #40c0ff; text-shadow: 0 0 8px rgba(64,192,255,0.55); }
     .target.limit-break { color: #40c0ffaa; }
+    /* v6.6.2: Предел + свиток — голубой Предела с пульсирующим оранжевым ореолом (как «Бремя + свиток»). */
+    .counter.limit-scroll { color: #40c0ff; animation: limitScrollPulse 2.2s ease-in-out infinite; }
+    .target.limit-scroll { color: #40c0ffaa; animation: limitScrollPulseTarget 2.2s ease-in-out infinite; }
+    @keyframes limitScrollPulse {
+      0%, 100% { text-shadow: 0 0 4px rgba(64,192,255,0.8), 0 0 10px rgba(255,160,0,0.5), 0 0 18px rgba(255,160,0,0.25); }
+      50%      { text-shadow: 0 0 4px rgba(64,192,255,0.9), 0 0 14px rgba(255,170,0,0.95), 0 0 28px rgba(255,160,0,0.6); }
+    }
+    @keyframes limitScrollPulseTarget {
+      0%, 100% { text-shadow: 0 0 6px rgba(255,160,0,0.3); }
+      50%      { text-shadow: 0 0 10px rgba(255,170,0,0.6); }
+    }
     .sound-checkbox-zone {
       width: 44px; height: 44px;
       display: flex; align-items: center; justify-content: center;
@@ -443,6 +443,7 @@
     .qbar-fill.cursed { background: #ff5555; box-shadow: 0 0 6px rgba(255,0,0,0.5); }
     .qbar-fill.scroll-tinted { background: #ffaa00; box-shadow: 0 0 6px rgba(255,170,0,0.5); }
     .qbar-fill.limit-break { background: #40c0ff; box-shadow: 0 0 6px rgba(64,192,255,0.55); }
+    .qbar-fill.limit-scroll { background: #40c0ff; box-shadow: 0 0 4px rgba(64,192,255,0.8), 0 0 9px rgba(255,170,0,0.6); }
     .qbar-fill.cursed-scroll { background: #ff5555; box-shadow: 0 0 4px rgba(255,40,40,0.7), 0 0 8px rgba(255,150,0,0.5); }
     .stat-lore-box {
       width: 85%; max-width: 320px; background: #0d1a2d; border: 1px solid #40c0ff;
@@ -788,11 +789,7 @@
     @media (max-width: 600px) {
       .system-container { padding: 16px 10px 60px; }
       .header { flex-direction: column; align-items: stretch; text-align: center; gap: 12px; }
-      .header-bottom-row { flex-direction: column; align-items: stretch; gap: 12px; }
       .title { font-size: 1.5rem; }
-      .rank-info { text-align: center; min-width: auto; font-size: 1rem; }
-      .reset-timer { width: 100%; max-width: none; }
-      .reset-time { font-size: 1.8rem; }
       .item-card { padding: 8px; gap: 6px; }
       .item-icon { min-width: 30px; }
       .item-icon-img { width: 28px; height: 28px; }
@@ -822,45 +819,30 @@
 <body>
 <div class="status-overlay" id="statusOverlay">
   <div class="status-window hud-frame">
-    <div class="status-header">ХАРАКТЕРИСТИКИ</div>
+    <div class="status-header">СТАТУС</div>
     <div class="status-body">
-    <div class="stat-points-info">ОЧКИ ПАРАМЕТРОВ: <span id="statPoints">0</span></div>
-
-    <div class="stat-row">
-      <span class="stat-label" onclick="showStatLore('str')">СИЛА</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valStr">10</span>
-        <button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button>
+      <div class="sc-top" id="stTop">
+          <div class="sc-emb"><div class="sc-hexw"><div class="sc-hex"><b id="stLevel" class="d1">1</b></div></div><div class="sc-emb-cap">Уровень</div></div>
+          <div class="sc-info">
+            <div class="sc-name" id="stName">Игрок</div>
+            <div class="sc-rank" id="stRank">E-Rank</div>
+            <div class="sc-title" id="stTitle">Титул: <span>Новичок</span></div>
+          </div>
+        </div>
+      <div class="st-sec">
+        <div class="sc-exp" id="stExpRow"><span class="k">Опыт</span><span class="n" id="stExp">0 / 1 000 EXP</span></div>
+        <div class="sc-bar" id="stBar"><i id="stBarFill"></i></div>
+        <div class="sc-debt" id="stDebt" style="display:none;">Долг перед Системой: −<span id="stDebtVal">0</span> EXP</div>
+        <div class="sc-chips"><div class="sc-chip cr"><span class="k">Кредиты</span><span class="n" id="stCredits">0 ◈</span></div><div class="sc-chip st"><span class="k">Серия дней</span><span class="n" id="stStreak">0</span></div></div>
       </div>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label" onclick="showStatLore('agi')">ЛОВКОСТЬ</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valAgi">10</span>
-        <button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button>
-      </div>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label" onclick="showStatLore('sta')">ВЫНОСЛИВОСТЬ</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valSta">10</span>
-        <button onclick="incStat('sta')" class="stat-add-btn" id="btnSta">+</button>
-      </div>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label" onclick="showStatLore('int')">ИНТЕЛЛЕКТ</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valInt">10</span>
-        <button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button>
-      </div>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label" onclick="showStatLore('per')">ВОСПРИЯТИЕ</span>
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span class="stat-value" id="valPer">10</span>
-        <button onclick="incStat('per')" class="stat-add-btn" id="btnPer">+</button>
-      </div>
-    </div>
+      <div class="st-sec"><div class="st-grid">
+          <div class="st-cell"><div class="st-k" onclick="showStatLore('str')">Сила</div><div class="st-line"><span class="st-v" id="valStr">10</span><button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button></div></div>
+          <div class="st-cell"><div class="st-k" onclick="showStatLore('agi')">Ловкость</div><div class="st-line"><span class="st-v" id="valAgi">10</span><button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button></div></div>
+          <div class="st-cell"><div class="st-k" onclick="showStatLore('sta')">Выносливость</div><div class="st-line"><span class="st-v" id="valSta">10</span><button onclick="incStat('sta')" class="stat-add-btn" id="btnSta">+</button></div></div>
+          <div class="st-cell"><div class="st-k" onclick="showStatLore('int')">Интеллект</div><div class="st-line"><span class="st-v" id="valInt">10</span><button onclick="incStat('int')" class="stat-add-btn" id="btnInt">+</button></div></div>
+          <div class="st-cell"><div class="st-k" onclick="showStatLore('per')">Восприятие</div><div class="st-line"><span class="st-v" id="valPer">10</span><button onclick="incStat('per')" class="stat-add-btn" id="btnPer">+</button></div></div>
+          <div class="st-free"><div class="st-free-n" id="statPoints">0</div><div class="st-free-k">Свободные очки характеристик</div></div>
+      </div></div>
     </div>
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
   </div>
@@ -1132,21 +1114,21 @@
       <div class="header-top-row">
         <div class="title">ЕЖЕДНЕВНОЕ ЗАДАНИЕ</div>
       </div>
-      <div class="header-bottom-row">
-        <div class="rank-info" id="rankInfoBtn">
-          <div class="player-name" id="playerNameDisplay">Игрок</div>
-          <div class="level-display" id="levelDisplay">Уровень: 1</div>
-          <div class="rank" id="rankDisplay">Ранг: E-Rank</div>
-          <div class="title-display" id="titleDisplay">Новичок</div>
-          <div class="exp" id="expLine">EXP: <span id="exp">0</span> / <span id="expToNext">1000</span></div>
-          <div class="exp-debt" id="expDebtLine" style="display:none;">Долг перед Системой: −<span id="expDebtVal">0</span> EXP</div>
-          <div class="credits">Кредиты: <span id="creditsVal">0</span> ◈</div>
+      <div class="status-card" id="rankInfoBtn">
+        <div class="sc-top" id="hdrTop">
+          <div class="sc-emb"><div class="sc-hexw"><div class="sc-hex"><b id="hdrLevel" class="d1">1</b></div></div><div class="sc-emb-cap">Уровень</div></div>
+          <div class="sc-info">
+            <div class="sc-name" id="hdrName">Игрок</div>
+            <div class="sc-rank" id="hdrRank">E-Rank</div>
+            <div class="sc-title" id="hdrTitle">Титул: <span>Новичок</span></div>
+          </div>
         </div>
-        <div class="reset-timer" id="resetTimerContainer">
-          <div class="reset-label">Сброс задания через</div>
-          <div class="reset-time" id="timer">00:00:00</div>
-        </div>
+        <div class="sc-exp" id="hdrExpRow"><span class="k">Опыт</span><span class="n" id="hdrExp">0 / 1 000 EXP</span></div>
+        <div class="sc-bar" id="hdrBar"><i id="hdrBarFill"></i></div>
+        <div class="sc-debt" id="hdrDebt" style="display:none;">Долг перед Системой: −<span id="hdrDebtVal">0</span> EXP</div>
+        <div class="sc-chips"><div class="sc-chip cr"><span class="k">Кредиты</span><span class="n" id="hdrCredits">0 ◈</span></div><div class="sc-chip st"><span class="k">Серия дней</span><span class="n" id="hdrStreak">0</span></div></div>
       </div>
+      <div class="tstrip" id="resetTimerContainer"><span class="reset-label">Сброс задания через</span><span class="tbox" id="timer"></span><div class="dayline"><i id="dayLineFill"></i></div></div>
     </div>
     <div class="effects-container" id="effectsContainer" style="display:none;">
       <div class="effects-header">АКТИВНЫЕ ЭФФЕКТЫ</div>
@@ -1250,7 +1232,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.5.36';
+  const APP_VERSION = '6.6.2';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -3199,26 +3181,47 @@
       console.error('updateTimer failed:', e);
     }
   }
+  // v6.6.0: время выводится по ячейкам одной ширины (цифры не «скачут»);
+  // обновляются только изменившиеся ячейки. При Заморозке часы трёхзначные.
+  function renderTimerCells(text) {
+    const box = document.getElementById('timer');
+    if (box.children.length !== text.length) {
+      box.innerHTML = text.split('').map(ch => `<span class="tc ${ch === ':' ? 'col' : 'dg'}">${ch}</span>`).join('');
+      return;
+    }
+    for (let i = 0; i < text.length; i++) {
+      if (box.children[i].textContent !== text[i]) box.children[i].textContent = text[i];
+    }
+  }
+  function formatTimeLeft(ms) {
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), s = Math.floor((ms % 60000) / 1000);
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  // Линия остатка по нижнему краю полосы: доля от 24 ч (обычно) или от 7 суток (Заморозка).
+  function setDayLine(ms, spanMs) {
+    const el = document.getElementById('dayLineFill');
+    if (el) el.style.width = Math.max(0, Math.min(100, ms / spanMs * 100)) + '%';
+  }
+
   function updateTimerInner() {
-    const labelEl = document.querySelector('#resetTimerContainer .reset-label');
+    const container = document.getElementById('resetTimerContainer');
+    const labelEl = container.querySelector('.reset-label');
     if (data.activeScroll === 'freeze') {
       const timeLeft = data.freezeEndTimestamp - Date.now();
       if (timeLeft <= 0) { checkMissedDays(); return; }
-      const h = Math.floor(timeLeft/3600000), m = Math.floor((timeLeft%3600000)/60000), s = Math.floor((timeLeft%60000)/1000);
-      document.getElementById('timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-      document.getElementById('timer').classList.add('freeze-width');
+      renderTimerCells(formatTimeLeft(timeLeft));
       if (labelEl) labelEl.textContent = 'Заморозка закончится через';
-      document.getElementById('resetTimerContainer').classList.remove('warning');
+      container.classList.remove('warning');
+      setDayLine(timeLeft, 7 * 24 * 3600000);
       return;
     }
-    document.getElementById('timer').classList.remove('freeze-width');
     if (labelEl) labelEl.textContent = 'Сброс задания через';
     const nextReset = getNextResetTime();
     const timeLeft = nextReset - Date.now();
     if (timeLeft <= 0) { checkMissedDays(); return; }
-    const h = Math.floor(timeLeft/3600000), m = Math.floor((timeLeft%3600000)/60000), s = Math.floor((timeLeft%60000)/1000);
-    document.getElementById('timer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    document.getElementById('resetTimerContainer').classList.toggle('warning', h < 1);
+    renderTimerCells(formatTimeLeft(timeLeft));
+    container.classList.toggle('warning', timeLeft < 3600000);
+    setDayLine(timeLeft, 24 * 3600000);
     checkReminderNotice(timeLeft);
   }
 
@@ -4441,44 +4444,25 @@
       if (counterEl) {
         const isCursed = !!data.curseActiveToday;
         const isScroll = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
-        const isLimitBreak = !!data.limitBreakRoundPending;
+        // v6.6.2: голубой — весь день после запуска Предела (isGoalMet ставится при первом
+        // раунде Предела и снимается только сбросом), в т.ч. в закрытом раунде.
+        const isLimitBreak = !!data.isGoalMet || !!data.limitBreakRoundPending;
         let tintClass = null;
         if (isCursed && isScroll) tintClass = 'cursed-scroll';
         else if (isCursed) tintClass = 'cursed';
+        else if (isLimitBreak && isScroll) tintClass = 'limit-scroll';
         else if (isLimitBreak) tintClass = 'limit-break';
         else if (isScroll) tintClass = 'scroll-tinted';
         const targetEl = counterEl.nextElementSibling;
         const barFill = counterEl.closest('.quest-item') ? counterEl.closest('.quest-item').querySelector('.qbar-fill') : null;
-        ['cursed', 'scroll-tinted', 'cursed-scroll', 'limit-break'].forEach(c => {
+        ['cursed', 'scroll-tinted', 'cursed-scroll', 'limit-break', 'limit-scroll'].forEach(c => {
           counterEl.classList.toggle(c, c === tintClass);
           if (targetEl && targetEl.classList.contains('target')) targetEl.classList.toggle(c, c === tintClass);
           if (barFill) barFill.classList.toggle(c, c === tintClass);
         });
       }
     });
-    const rank = getRank(data.level);
-    const rankEl = document.getElementById('rankDisplay');
-    const levelEl = document.getElementById('levelDisplay');
-    levelEl.textContent = `Уровень: ${data.level}`;
-    levelEl.className = 'level-display ' + rank.class;
-    rankEl.textContent = `Ранг: ${rank.name}`;
-    rankEl.className = 'rank ' + rank.class;
-    document.getElementById('playerNameDisplay').textContent = data.playerName ? `Имя: ${data.playerName}` : "Игрок";
-    document.getElementById('exp').textContent = Math.floor(data.exp);
-    const expLineEl = document.getElementById('expLine');
-    const expDebtLineEl = document.getElementById('expDebtLine');
-    if (data.expDebt > 0) {
-      expLineEl.classList.add('exp-in-debt');
-      expDebtLineEl.style.display = 'block';
-      document.getElementById('expDebtVal').textContent = Math.floor(data.expDebt);
-    } else {
-      expLineEl.classList.remove('exp-in-debt');
-      expDebtLineEl.style.display = 'none';
-    }
-    document.getElementById('expToNext').textContent = getExpToNext(data.level);
-    document.getElementById('creditsVal').textContent = Math.floor(data.credits);
-    const headerTitleIconId = TITLE_ICON_IDS[data.activeTitle];
-    document.getElementById('titleDisplay').innerHTML = 'Титул: ' + (headerTitleIconId ? `<img src="icons/items/${headerTitleIconId}.png" alt="" style="width:16px;height:16px;object-fit:contain;vertical-align:-3px;margin-right:4px;">` : '') + escapeHtml(data.activeTitle);
+    fillStatusBlock('hdr');
     document.querySelectorAll('.quest-item').forEach(item => {
       const id = item.dataset.id;
       const isTransferred = data.activeScroll === 'transfer' && id === data.transferExerciseId;
@@ -4616,7 +4600,36 @@
     }
   }
 
+  // v6.6.0: заполняет карточку статуса (prefix 'hdr' — главный экран, 'st' — окно «СТАТУС»).
+  function fillStatusBlock(prefix) {
+    const top = document.getElementById(prefix + 'Top');
+    if (!top) return;
+    const rank = getRank(data.level);
+    top.className = 'sc-top rk-' + rank.class;
+    const lv = document.getElementById(prefix + 'Level');
+    lv.textContent = data.level;
+    lv.className = 'd' + Math.min(3, String(data.level).length);
+    document.getElementById(prefix + 'Name').textContent = data.playerName || 'Игрок';
+    document.getElementById(prefix + 'Rank').textContent = rank.name;
+    const iconId = TITLE_ICON_IDS[data.activeTitle];
+    document.getElementById(prefix + 'Title').innerHTML = 'Титул: ' +
+      (iconId ? `<img src="icons/items/${iconId}.png" alt="">` : '') + `<span>${escapeHtml(data.activeTitle)}</span>`;
+    const inDebt = data.expDebt > 0;
+    const expToNext = getExpToNext(data.level);
+    document.getElementById(prefix + 'ExpRow').classList.toggle('debt', inDebt);
+    document.getElementById(prefix + 'Exp').textContent = inDebt
+      ? `Долг −${Math.floor(data.expDebt)} EXP`
+      : `${Math.floor(data.exp)} / ${expToNext} EXP`;
+    document.getElementById(prefix + 'Bar').classList.toggle('debt', inDebt);
+    document.getElementById(prefix + 'BarFill').style.width = inDebt ? '100%' : Math.max(0, Math.min(100, data.exp / expToNext * 100)) + '%';
+    document.getElementById(prefix + 'Debt').style.display = inDebt ? 'block' : 'none';
+    document.getElementById(prefix + 'DebtVal').textContent = Math.floor(data.expDebt);
+    document.getElementById(prefix + 'Credits').textContent = Math.floor(data.credits) + ' ◈';
+    document.getElementById(prefix + 'Streak').textContent = data.consecutiveDays || 0;
+  }
+
   function updateStatusUI() {
+    fillStatusBlock('st');
     document.getElementById('statPoints').textContent = data.statPoints;
     document.getElementById('valStr').textContent = data.stats.str;
     document.getElementById('valAgi').textContent = data.stats.agi;
@@ -5500,7 +5513,7 @@
   }
   /* SL:SYS-TOOLS:END */
 
-  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; };
+  document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; }; // карточка статуса → окно «СТАТУС»
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
 
   // On a fresh install, checkMissedDays()/updateTimer() can immediately queue a

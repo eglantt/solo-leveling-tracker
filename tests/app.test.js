@@ -164,6 +164,139 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+
+// ===== v6.6.2: цвет в Пределе, «Предел + свиток», свечение эмблемы в «СТАТУСЕ» =====
+async function limitTintTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document;
+  const tint = () => {
+    const c = [...D.getElementById('pushups').classList].filter(x => x !== 'counter').join(',');
+    const t = [...D.querySelector('.quest-item[data-id="pushups"] .target').classList].filter(x => x !== 'target').join(',');
+    const b = [...D.querySelector('.quest-item[data-id="pushups"] .qbar-fill').classList].filter(x => x !== 'qbar-fill').join(',');
+    return (c === t && t === b) ? c : `РАЗНОЕ counter=${c} target=${t} bar=${b}`;
+  };
+  const full = `data.completed = {pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups')};`;
+  const CASES = [
+    ['основной раунд идёт', 'data.isGoalMet=false; data.limitBreakRoundPending=false; data.activeScroll=null; data.curseActiveToday=false; data.completed={pushups:10};', ''],
+    ['основной раунд закрыт', 'data.isGoalMet=false; data.limitBreakRoundPending=false;' + full, ''],
+    ['Предел идёт', 'data.isGoalMet=true; data.limitBreakRoundPending=true; data.completed={pushups:10};', 'limit-break'],
+    ['Предел закрыт', 'data.isGoalMet=true; data.limitBreakRoundPending=false;' + full, 'limit-break'],
+    ['следующий раунд Предела', 'data.isGoalMet=true; data.limitBreakRoundPending=true; data.completed={};', 'limit-break'],
+    ['основной раунд с Переносом', "data.isGoalMet=false; data.limitBreakRoundPending=false; data.activeScroll='transfer'; data.transferExerciseId='steps';" + full, 'scroll-tinted'],
+    ['Предел + Перенос идёт', "data.isGoalMet=true; data.limitBreakRoundPending=true; data.activeScroll='transfer'; data.completed={pushups:10};", 'limit-scroll'],
+    ['Предел + Перенос закрыт', "data.isGoalMet=true; data.limitBreakRoundPending=false; data.activeScroll='transfer';" + full, 'limit-scroll'],
+    ['Бремя + Предел', "data.activeScroll=null; data.curseActiveToday=true; data.isGoalMet=true;", 'cursed'],
+    ['Бремя + Перенос + Предел', "data.activeScroll='transfer'; data.curseActiveToday=true; data.isGoalMet=true;", 'cursed-scroll'],
+  ];
+  for (const [label, code, exp] of CASES) {
+    E(w, code + ' render()');
+    check(`T ${label}: ${exp || 'обычный зелёный'}`, tint() === exp, tint());
+  }
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  check('T «Предел + свиток»: пульсирующий ореол у цифр и цели, свечение у полоски',
+    /\.counter\.limit-scroll \{ color: #40c0ff; animation: limitScrollPulse/.test(css) && /\.target\.limit-scroll \{[^}]*animation: limitScrollPulseTarget/.test(css) && /\.qbar-fill\.limit-scroll \{ background: #40c0ff;/.test(css));
+  // свечение эмблемы в окне «СТАТУС» помещается в запас прокручиваемой области
+  const maxR = name => { const m = css.match(new RegExp('@keyframes ' + name + ' \\{([^\\n]*)\\}')); return m ? Math.max(...[...m[1].matchAll(/drop-shadow\(0 0 (\d+)px/g)].map(x => +x[1])) : Infinity; };
+  const pad = parseFloat(w.getComputedStyle(D.querySelector('#statusOverlay .status-body')).paddingTop);
+  const rs = maxR('hexPulseSssCompact'), rm = maxR('hexPulseMonarchCompact');
+  check('G1 наибольший радиус свечения SSS/Monarch в «СТАТУСЕ» меньше запаса окна', rs <= 12 && rm <= 12 && rs < pad && rm < pad, `SSS ${rs}px, Monarch ${rm}px, запас ${pad}px`);
+  check('G2 в «СТАТУСЕ» используется компактная пульсация, на главном экране — прежняя',
+    /#statusOverlay \.rk-sss \.sc-hexw \{ animation-name: hexPulseSssCompact; \}/.test(css) && /#statusOverlay \.rk-monarch \.sc-hexw \{ animation-name: hexPulseMonarchCompact; \}/.test(css)
+    && /\n    \.rk-sss \.sc-hexw \{ animation: hexPulseSss 2\.4s/.test(css));
+}
+
+// ===== v6.6.0: карточка статуса, полоса таймера, окно «СТАТУС» =====
+async function headerTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, $ = id => D.getElementById(id);
+  // --- ранги, цвет, число в эмблеме ---
+  const RANKS = [[5,'e','E-Rank','d1'],[15,'d','D-Rank','d2'],[26,'c','C-Rank','d2'],[35,'b','B-Rank','d2'],[45,'a','A-Rank','d2'],
+                 [55,'s','S-Rank','d2'],[67,'national','National Level','d2'],[88,'sss','SSS-Rank','d2'],[100,'monarch','Shadow Monarch','d3'],[123,'monarch','Shadow Monarch','d3']];
+  const bad = [];
+  for (const [lv, cls, name, dcls] of RANKS) {
+    E(w, `data.level=${lv}; render()`);
+    if ($('hdrTop').className !== 'sc-top rk-' + cls || $('hdrRank').textContent !== name || $('hdrLevel').textContent !== String(lv) || $('hdrLevel').className !== dcls) bad.push(lv + ':' + $('hdrTop').className + '/' + $('hdrRank').textContent + '/' + $('hdrLevel').className);
+  }
+  check('H1 эмблема: уровень, класс цифр, цвет и название ранга для всех рангов', bad.length === 0, bad.join(', '));
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  check('H2 у SSS и Monarch пульсируют эмблема и название', /\.rk-sss \.sc-hexw \{ animation: hexPulseSss/.test(css) && /\.rk-monarch \.sc-hexw \{ animation: hexPulseMonarch/.test(css)
+    && /\.rk-sss \.sc-rank \{ animation: auraPulseSss/.test(css) && /\.rk-monarch \.sc-rank \{ animation: auraPulseMonarch/.test(css));
+  check('H3 у карточки нет уголков', !/\.status-card::(before|after)/.test(css) && !$('rankInfoBtn').classList.contains('hud-frame'));
+  // --- имя, титул с иконкой, опыт, долг, кредиты, серия ---
+  E(w, `data.playerName=''; data.activeTitle='Новичок'; data.level=26; data.exp=1250; data.expDebt=0; data.credits=8420.7; data.consecutiveDays=12; render()`);
+  check('H4 имя по умолчанию «Игрок» без приставки', $('hdrName').textContent === 'Игрок', $('hdrName').textContent);
+  E(w, `data.playerName='Святослав'; render()`);
+  check('H5 имя игрока', $('hdrName').textContent === 'Святослав');
+  const etn = E(w, 'getExpToNext(26)');
+  const sp = t => t.replace(/[\u00a0\u202f]/g, ' ');
+  check('H6 опыт «X / Y EXP» (без разделителя разрядов) и шкала', $('hdrExp').textContent === `1250 / ${etn} EXP` && Math.abs(parseFloat($('hdrBarFill').style.width) - 1250 / etn * 100) < 0.01, $('hdrExp').textContent);
+  check('H7 кредиты целым числом с ◈ (без разделителя), «Серия дней» числом', $('hdrCredits').textContent === '8420 ◈' && $('hdrStreak').textContent === '12'
+    && $('hdrStreak').previousElementSibling.textContent === 'Серия дней' && $('stStreak').previousElementSibling.textContent === 'Серия дней', $('hdrCredits').textContent + ' | ' + $('hdrStreak').textContent);
+  const act = E(w, 'data.activeTitle'), hasIcon = E(w, `!!TITLE_ICON_IDS[data.activeTitle]`);
+  check('H8 титул активный, иконка — если она есть у титула', $('hdrTitle').querySelector('span').textContent === act && !!$('hdrTitle').querySelector('img') === hasIcon, $('hdrTitle').innerHTML);
+  E(w, `data.exp=0; data.expDebt=300; render()`);
+  check('H9 долг: строка, красная шкала, строка долга', $('hdrExpRow').classList.contains('debt') && $('hdrExp').textContent === 'Долг −300 EXP' && $('hdrBar').classList.contains('debt')
+    && $('hdrDebt').style.display === 'block' && $('hdrDebtVal').textContent === '300', $('hdrExp').textContent);
+  E(w, `data.expDebt=0; render()`);
+  check('H10 без долга строка долга скрыта', $('hdrDebt').style.display === 'none');
+  E(w, `data.credits=1234567; data.exp=118400; render()`);
+  check('H10a большие числа — без разделителя, как во всём приложении', $('hdrCredits').textContent === '1234567 ◈' && $('hdrExp').textContent.startsWith('118400 / ')
+    && !/[\u00a0\u202f ]\d{3}\b/.test($('hdrCredits').textContent.replace(' ◈','')), $('hdrCredits').textContent + ' | ' + $('hdrExp').textContent);
+  E(w, `data.credits=8420.7; data.exp=1250; render()`);
+  // --- таймер ---
+  E(w, `data.activeScroll=null; updateTimer()`);
+  const cells = () => [...$('timer').children];
+  check('H11 обычный таймер: 8 ячеек (6 цифр + 2 двоеточия), подпись', cells().length === 8 && cells().filter(c => c.classList.contains('col')).length === 2
+    && $('resetTimerContainer').querySelector('.reset-label').textContent === 'Сброс задания через', cells().map(c => c.textContent).join(''));
+  const exp24 = E(w, `(getNextResetTime() - Date.now()) / 86400000 * 100`);
+  check('H12 линия — доля от 24 ч', Math.abs(parseFloat($('dayLineFill').style.width) - exp24) < 0.1, $('dayLineFill').style.width);
+  const firstCell = cells()[0];
+  E(w, `updateTimer()`);
+  check('H13 при обновлении ячейки не пересоздаются', cells()[0] === firstCell);
+  E(w, `data.activeScroll='freeze'; data.freezeEndTimestamp = Date.now() + (143*3600 + 12*60 + 5) * 1000; updateTimer()`);
+  const txt = cells().map(c => c.textContent).join('');
+  check('H14 Заморозка: 9 ячеек, часы трёхзначные, своя подпись', cells().length === 9 && /^14[23]:\d\d:\d\d$/.test(txt)
+    && $('resetTimerContainer').querySelector('.reset-label').textContent === 'Заморозка закончится через', txt);
+  check('H15 Заморозка: линия — доля от 7 суток, без красного', Math.abs(parseFloat($('dayLineFill').style.width) - (143*3600+12*60+5) / (7*86400) * 100) < 0.2 && !$('resetTimerContainer').classList.contains('warning'), $('dayLineFill').style.width);
+  E(w, `data.activeScroll=null; updateTimer()`);
+  check('H16 после Заморозки снова 8 ячеек', cells().length === 8);
+  const warnNow = E(w, `(getNextResetTime() - Date.now()) < 3600000`);
+  check('H17 красное состояние только при остатке меньше часа', $('resetTimerContainer').classList.contains('warning') === warnNow);
+  check('H18 красное состояние: CSS для полосы, цифр и линии', /\.tstrip\.warning \{/.test(css) && /\.tstrip\.warning \.tc \{/.test(css) && /\.tstrip\.warning \.dayline i \{/.test(css));
+  check('H19 цифры в ячейках одной ширины', /\.tbox \.tc\.dg \{ width: 0\.78em; \}/.test(css) && /\.tbox \{ margin-left: auto;/.test(css));
+  // --- окно «СТАТУС» ---
+  E(w, `data.statPoints=2; data.stats={str:18,agi:14,sta:22,int:12,per:15}; render()`);
+  $('rankInfoBtn').click();
+  check('H20 нажатие на карточку открывает «СТАТУС»', $('statusOverlay').style.display === 'flex' && D.querySelector('#statusOverlay .status-header').textContent === 'СТАТУС');
+  check('H21 в окне та же карточка', $('stLevel').textContent === $('hdrLevel').textContent && $('stRank').textContent === $('hdrRank').textContent && $('stExp').textContent === $('hdrExp').textContent && $('stStreak').textContent === $('hdrStreak').textContent);
+  check('H22 характеристики и свободные очки', $('valStr').textContent === '18' && $('valSta').textContent === '22' && $('statPoints').textContent === '2'
+    && D.querySelector('#statusOverlay .st-free-k').textContent === 'Свободные очки характеристик');
+  $('btnAgi').click();
+  check('H23 «+» тратит очко и вспыхивает', $('valAgi').textContent === '15' && $('statPoints').textContent === '1' && $('btnAgi').classList.contains('stat-btn-flash'));
+  $('btnAgi').click();
+  check('H24 при нуле очков «+» неактивна', $('statPoints').textContent === '0' && $('btnStr').disabled);
+  E(w, `window.__lore = null; const _o = showStatLore; showStatLore = id => { window.__lore = id; }`);
+  D.querySelectorAll('#statusOverlay .st-k')[2].click();
+  check('H25 касание названия открывает описание характеристики', E(w, 'window.__lore') === 'sta');
+  const labels = [...D.querySelectorAll('#statusOverlay .st-k')].map(e => e.textContent).join(',');
+  check('H26 названия характеристик по-русски', labels === 'Сила,Ловкость,Выносливость,Интеллект,Восприятие', labels);
+  $('closeStatusBtn').click();
+  check('H27 «ЗАКРЫТЬ» закрывает окно', $('statusOverlay').style.display === 'none');
+  // --- шрифты новых элементов по правилу ---
+  const fam = sel => w.getComputedStyle(D.querySelector(sel)).fontFamily;
+  const textEls = ['.sc-title', '.sc-exp .k', '.sc-chip .k', '.tstrip .reset-label', '.st-k', '.st-free-k', '.sc-emb-cap'];
+  const numEls = ['.sc-exp .n', '.sc-chip .n'];
+  const badF = textEls.filter(s => !fam(s).includes('Exo 2 Text')).concat(numEls.filter(s => !fam(s).includes('Roboto Mono')));
+  check('H28 шрифты: текст — Exo 2 Text, числа — Roboto Mono', badF.length === 0, badF.join(', '));
+  const sb = D.querySelector('#statusOverlay .status-body'), cs = w.getComputedStyle(sb);
+  check('H29a окно «СТАТУС»: у прокручиваемого блока запас под свечение эмблемы', cs.paddingTop === '16px' && cs.paddingLeft === '16px' && cs.marginTop === '-16px' && cs.marginLeft === '-16px',
+    cs.padding + ' / ' + cs.margin);
+  const other = D.querySelector('.status-overlay:not(#statusOverlay) .status-body');
+  check('H29b другие окна запас не получили', !other || w.getComputedStyle(other).paddingTop !== '16px');
+  check('H29 старой шапки в разметке нет', !D.querySelector('.header-bottom-row, .rank-info, #playerNameDisplay, #levelDisplay, #creditsVal, .reset-time'));
+}
+
 // ===== v6.5.36: дизайн =====
 async function designTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
@@ -217,11 +350,11 @@ async function designTests() {
   const badSize = Object.entries(SIZES).filter(([sel, v]) => w.getComputedStyle(D.querySelector(sel)).fontSize !== v).map(([sel]) => sel + '=' + w.getComputedStyle(D.querySelector(sel)).fontSize);
   check('F2 размеры +8% по таблице', badSize.length === 0, badSize.join(', '));
   check('F3 межстрочный интервал Кодекса 1,55', w.getComputedStyle(D.querySelector('.codex-chapter-text')).lineHeight === '1.55');
-  const NUM = ['#pushups', '.target', '.reward', '#exp', '#creditsVal', '#totalDays', '.notif-log-time', '#resetTimer'];
+  const NUM = ['#pushups', '.target', '.reward', '#hdrExp', '#hdrCredits', '#hdrStreak', '#totalDays', '.notif-log-time', '#timer .tc'];
   const badNum = NUM.filter(sel => D.querySelector(sel) && (fam(sel) || '').includes('Exo 2 Text'));
   check('F4 цифры и данные не перешли на Exo 2', badNum.length === 0, badNum.join(', '));
-  const quest = fam('.quest-name') || '', hdr = fam('#titleDisplay') || '';
-  check('F5 названия упражнений и шапка не изменились', !quest.includes('Exo 2 Text') && !hdr.includes('Exo 2 Text'), quest + ' | ' + hdr);
+  const quest = fam('.quest-name') || '';
+  check('F5 названия упражнений не изменились', !quest.includes('Exo 2 Text'), quest);
   check('F6 кнопки остались в Orbitron', (fam('.sell-btn') || '').includes('Orbitron'), fam('.sell-btn'));
   const faces = css.match(/@font-face \{[^}]*'Exo 2 Text'[^}]*\}/g) || [];
   const fs = require('fs'), path = require('path');
@@ -286,6 +419,8 @@ function noticeFor(scroll, item) {
   }
   await rulesTests();
   await designTests();
+  await headerTests();
+  await limitTintTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
