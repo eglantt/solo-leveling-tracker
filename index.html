@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -270,10 +270,6 @@
       scrollbar-width: none; -ms-overflow-style: none;
     }
     .status-body::-webkit-scrollbar { display: none; }
-    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid #00aaff22; }
-    .stat-label { font-family: 'Orbitron', 'Exo 2', sans-serif; color: #88ddff; font-size: 1.1rem; cursor: pointer; }
-    .stat-value { color: #40ffaa; font-weight: bold; font-size: 1.4rem; text-shadow: 0 0 10px #40ffaa66; letter-spacing: 1px; }
-    .stat-points-info { text-align: center; color: #ffd700; margin-bottom: 20px; font-weight: bold; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.1rem; }
 
     /* Calendar (Летопись) */
     .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -1200,7 +1196,7 @@
         </div>
       </div>
       <div class="quest-item" data-id="steps" data-target="10000" data-exp="150">
-        <div class="quest-name">Пробежка / шаги</div>
+        <div class="quest-name">Бег (шаги)</div>
         <div class="quest-progress">
           <div class="counter" id="steps">0</div>
           <div class="target">/ 10000</div>
@@ -1232,7 +1228,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.2';
+  const APP_VERSION = '6.6.3';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -2219,7 +2215,7 @@
 
   // Same wording as the quest cards themselves (.quest-name divs) — used when
   // listing which exercises were fully completed on a given day.
-  const QUEST_DISPLAY_NAMES = { pushups: 'Отжимания', squats: 'Приседания', pullups: 'Подтягивания', press: 'Пресс', steps: 'Пробежка / шаги' };
+  const QUEST_DISPLAY_NAMES = { pushups: 'Отжимания', squats: 'Приседания', pullups: 'Подтягивания', press: 'Пресс', steps: 'Бег (шаги)' };
 
   // Разметка строк: **…** — жирный (Кодекс), !!…!! — красный жирный (штраф).
   // pause — пауза 1.5 с после строки при печати; heading — подзаголовок.

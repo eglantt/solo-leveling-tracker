@@ -166,6 +166,20 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.3: «Бег (шаги)», уборка стилей старого окна характеристик =====
+async function cleanupTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, html = D.documentElement.outerHTML;
+  check('C1 карточка называется «Бег (шаги)»', D.querySelector('.quest-item[data-id="steps"] .quest-name').textContent === 'Бег (шаги)');
+  check('C2 название для Летописи и уведомлений — «Бег (шаги)»', E(w, 'QUEST_DISPLAY_NAMES.steps') === 'Бег (шаги)');
+  check('C3 «Пробежка» нигде не осталась', !html.includes('Пробежка'));
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const gone = ['stat-row', 'stat-label', 'stat-value', 'stat-points-info'];
+  check('C4 стили старого окна характеристик удалены', gone.every(c => !new RegExp('\\.' + c + '\\b').test(css)), gone.filter(c => new RegExp('\\.' + c + '\\b').test(css)).join(','));
+  check('C5 и нигде не используются', gone.every(c => !D.querySelector('.' + c)));
+}
+
 // ===== v6.6.2: цвет в Пределе, «Предел + свиток», свечение эмблемы в «СТАТУСЕ» =====
 async function limitTintTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
@@ -421,6 +435,7 @@ function noticeFor(scroll, item) {
   await designTests();
   await headerTests();
   await limitTintTests();
+  await cleanupTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
