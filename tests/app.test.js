@@ -172,6 +172,49 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.10: значок кредитов вместо «◈» =====
+async function creditIconTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, $ = id => D.getElementById(id), cs = el => w.getComputedStyle(el);
+  const noDiamond = el => !el.textContent.includes('◈');
+  const hasIcon = el => { const i = el.querySelector('.cr-ic'); return !!i && i.querySelector('use').getAttribute('href') === '#credSeal' && i.getAttribute('aria-label') === 'кредитов'; };
+  check('W0 образец значка в разметке один', D.querySelectorAll('symbol#credSeal').length === 1);
+  E(w, `data.credits = 8420; render(); updateStatusUI(); openShop()`);
+  const places = { 'карточка': $('hdrCredits'), 'СТАТУС': $('stCredits'), 'баланс Магазина': $('shopBalance'), 'цена в Магазине': D.querySelector('#shopOverlay .item-price') };
+  const bad = Object.entries(places).filter(([k, el]) => !el || !noDiamond(el) || !hasIcon(el)).map(([k]) => k);
+  check('W1 карточка, «СТАТУС», баланс и цены: значок вместо «◈»', bad.length === 0, bad.join(', '));
+  // всплывающее уведомление и журнал
+  const waitPopup = async needle => { for (let i = 0; i < 80; i++) { const el = [...D.querySelectorAll('.system-popup-body')].find(b => b.textContent.includes(needle)); if (el) return el; await new Promise(r => setTimeout(r, 250)); } return null; };
+  // проверяется вывод уведомления (не очередь) — вызываем показ напрямую
+  E(w, `displayNotificationNow({ body: 'Договор исполнен: +10 EXP и +250 ◈.', tone: 'info', skipLog: true })`);
+  const pop = await waitPopup('+250');
+  check('W2 всплывающее уведомление: значок вместо «◈»', !!pop && noDiamond(pop) && hasIcon(pop) && pop.textContent.includes('+250'), pop && pop.innerHTML);
+  // экранирование сохраняется
+  E(w, `displayNotificationNow({ body: '<b id="evil">x</b> +5 ◈', tone: 'info', skipLog: true })`);
+  const last = await waitPopup('evil');
+  check('W3 экранирование прежнее: разметка из текста не исполняется, значок на месте', !D.getElementById('evil') && !!last && last.textContent.includes('<b id="evil">x</b>') && hasIcon(last), last && last.innerHTML);
+  // журнал уведомлений, в т.ч. «старая» запись со «◈»
+  E(w, `data.notificationLog.unshift({ time: '09:00', text: 'Старая запись: +120 ◈' }); backupModalStep = 'notifications'; renderBackupModal()`);
+  const rows = [...D.querySelectorAll('.notif-log-text')];
+  const old = rows.find(r => r.textContent.includes('Старая запись'));
+  check('W4 журнал: старая запись со «◈» показана со значком', !!old && noDiamond(old) && hasIcon(old));
+  check('W5 журнал: нигде нет видимого «◈»', rows.every(noDiamond));
+  // COMPLETE
+  E(w, `data.completed = { squats: getDynamicTarget(120, data.dailyTargetLevel, 'squats') - 1 }; render()`);
+  D.querySelector('.quest-item[data-id="squats"] .add').click();
+  const cp = D.querySelector('.quest-item[data-id="squats"] .complete-popup');
+  check('W6 «COMPLETE»: значок вместо «◈»', !!cp && noDiamond(cp) && hasIcon(cp));
+  // отблеск только на карточке и в «СТАТУСЕ»
+  const gl = sel => cs(D.querySelector(sel + ' .cr-ic .gl')).display;
+  check('W7 отблеск на карточке и в «СТАТУСЕ», в Магазине и уведомлениях — нет',
+    gl('#hdrCredits') === 'block' && gl('#stCredits') === 'block' && gl('#shopBalance') === 'none' && gl('#shopOverlay .item-price') === 'none');
+  const probe = D.createElement('div'); probe.className = 'system-popup-body'; probe.innerHTML = E(w, `creditsHtml('+1 ◈')`); D.body.appendChild(probe);
+  check('W7a в уведомлениях значок неподвижен', cs(probe.querySelector('.cr-ic .gl')).display === 'none');
+  const ic = cs(D.querySelector('#hdrCredits .cr-ic'));
+  check('W8 размер значка 12px, стоит после числа', ic.width === '12px' && ic.height === '12px' && D.querySelector('#hdrCredits').lastElementChild.classList.contains('cr-ic'));
+}
+
 // ===== v6.6.9: плашки «Кредиты» и «Серия дней» — подпись над числом =====
 async function chipsTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
@@ -184,7 +227,7 @@ async function chipsTests() {
   check('P1 плашки одинаковые, подпись сверху слева, число снизу справа — на карточке и в «СТАТУСЕ»', bad.length === 0, bad.join(', '));
   check('P2 подпись мельче числа', D.querySelector('#rankInfoBtn .sc-chip .k') && cs(D.querySelector('#rankInfoBtn .sc-chip .k')).fontSize === '0.72rem');
   E(w, `data.credits = 123456789; data.consecutiveDays = 1234; render(); updateStatusUI()`);
-  check('P3 большие значения выводятся целиком', D.getElementById('hdrCredits').textContent === '123456789 ◈' && D.getElementById('stStreak').textContent === '1234');
+  check('P3 большие значения выводятся целиком', D.getElementById('hdrCredits').textContent.trim() === '123456789' && !!D.querySelector('#hdrCredits .cr-ic') && D.getElementById('stStreak').textContent === '1234');
 }
 
 // ===== v6.6.8: активация Преодоления предела без перезагрузки страницы =====
@@ -222,7 +265,7 @@ async function completeTests() {
   E(w, `data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') - 1 }; render()`);
   D.querySelector('.quest-item[data-id="pushups"] .add').click();
   const p = D.querySelector('.quest-item[data-id="pushups"] .complete-popup');
-  check('K1 надпись появляется при закрытии упражнения', !!p && /^COMPLETE\+\d+ EXP \+\d+ ◈/.test(p.textContent.replace(/\s+/g, ' ').replace('COMPLETE ', 'COMPLETE')), p && p.textContent);
+  check('K1 надпись появляется при закрытии упражнения', !!p && /^COMPLETE\+\d+ EXP \+\d+/.test(p.textContent.replace(/\s+/g, ' ').replace('COMPLETE ', 'COMPLETE')) && !!p.querySelector('.cr-ic'), p && p.textContent);
   const cs = w.getComputedStyle(p);
   check('K2 Orbitron жирный 1,6rem', /^["']?Orbitron/.test(cs.fontFamily) && cs.fontSize === '1.6rem' && cs.fontWeight === '700', `${cs.fontFamily} ${cs.fontSize} ${cs.fontWeight}`);
   check('K3 без переноса строк (опыт, кредиты, BONUS — одной строкой)', cs.whiteSpace === 'nowrap');
@@ -397,7 +440,7 @@ async function headerTests() {
   const etn = E(w, 'getExpToNext(26)');
   const sp = t => t.replace(/[\u00a0\u202f]/g, ' ');
   check('H6 опыт «X / Y EXP» (без разделителя разрядов) и шкала', $('hdrExp').textContent === `1250 / ${etn} EXP` && Math.abs(parseFloat($('hdrBarFill').style.width) - 1250 / etn * 100) < 0.01, $('hdrExp').textContent);
-  check('H7 кредиты целым числом с ◈ (без разделителя), «Серия дней» числом', $('hdrCredits').textContent === '8420 ◈' && $('hdrStreak').textContent === '12'
+  check('H7 кредиты целым числом со значком (без разделителя), «Серия дней» числом', $('hdrCredits').textContent.trim() === '8420' && !!$('hdrCredits').querySelector('.cr-ic') && $('hdrStreak').textContent === '12'
     && $('hdrStreak').previousElementSibling.textContent === 'Серия дней' && $('stStreak').previousElementSibling.textContent === 'Серия дней', $('hdrCredits').textContent + ' | ' + $('hdrStreak').textContent);
   const act = E(w, 'data.activeTitle'), hasIcon = E(w, `!!TITLE_ICON_IDS[data.activeTitle]`);
   check('H8 титул активный, иконка — если она есть у титула', $('hdrTitle').querySelector('span').textContent === act && !!$('hdrTitle').querySelector('img') === hasIcon, $('hdrTitle').innerHTML);
@@ -407,8 +450,8 @@ async function headerTests() {
   E(w, `data.expDebt=0; render()`);
   check('H10 без долга строка долга скрыта', $('hdrDebt').style.display === 'none');
   E(w, `data.credits=1234567; data.exp=118400; render()`);
-  check('H10a большие числа — без разделителя, как во всём приложении', $('hdrCredits').textContent === '1234567 ◈' && $('hdrExp').textContent.startsWith('118400 / ')
-    && !/[\u00a0\u202f ]\d{3}\b/.test($('hdrCredits').textContent.replace(' ◈','')), $('hdrCredits').textContent + ' | ' + $('hdrExp').textContent);
+  check('H10a большие числа — без разделителя, как во всём приложении', $('hdrCredits').textContent.trim() === '1234567' && $('hdrExp').textContent.startsWith('118400 / ')
+    && !/[\u00a0\u202f ]\d{3}\b/.test($('hdrCredits').textContent.trim()), $('hdrCredits').textContent + ' | ' + $('hdrExp').textContent);
   E(w, `data.credits=8420.7; data.exp=1250; render()`);
   // --- таймер ---
   E(w, `data.activeScroll=null; updateTimer()`);
@@ -601,6 +644,7 @@ function noticeFor(scroll, item) {
   await completeTests();
   await limitActivateTests();
   await chipsTests();
+  await creditIconTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
