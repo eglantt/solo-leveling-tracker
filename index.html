@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.9 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -215,6 +215,12 @@
     .sc-chip .n { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
     .sc-chip.cr .n { color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
     .sc-chip.st .n { color: #40ffaa; }
+    /* v6.6.9: подпись над числом (вариант «Е», демо 48) — плашки одинаковые; подпись сверху мелко,
+       прижата влево; число снизу, прижато вправо и получает всю ширину плашки. На 360px:
+       кредиты до 9 цифр (карточка) / 8 (окно «СТАТУС»), серия до 4 цифр. */
+    .sc-chip { flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 1px; padding: 5px 9px 6px; }
+    .sc-chip .k { align-self: flex-start; font-size: 0.72rem; line-height: 1.1; }
+    .sc-chip .n { align-self: flex-end; }
 
     /* ===== v6.6.0: полоса таймера. Цифры — в ячейках одной ширины (не «скачут»);
        ячейки — в контейнере у правого края; подпись переносится при нехватке места. ===== */
@@ -1280,7 +1286,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.8';
+  const APP_VERSION = '6.6.9';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';

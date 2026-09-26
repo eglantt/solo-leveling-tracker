@@ -171,6 +171,22 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.9: плашки «Кредиты» и «Серия дней» — подпись над числом =====
+async function chipsTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, cs = el => w.getComputedStyle(el);
+  const bad = [];
+  for (const sel of ['#rankInfoBtn .sc-chip.cr', '#rankInfoBtn .sc-chip.st', '#statusOverlay .sc-chip.cr', '#statusOverlay .sc-chip.st']) {
+    const ch = D.querySelector(sel), k = ch.querySelector('.k'), n = ch.querySelector('.n');
+    if (cs(ch).flexDirection !== 'column' || cs(k).alignSelf !== 'flex-start' || cs(n).alignSelf !== 'flex-end' || cs(ch).flexGrow !== '1') bad.push(sel);
+  }
+  check('P1 плашки одинаковые, подпись сверху слева, число снизу справа — на карточке и в «СТАТУСЕ»', bad.length === 0, bad.join(', '));
+  check('P2 подпись мельче числа', D.querySelector('#rankInfoBtn .sc-chip .k') && cs(D.querySelector('#rankInfoBtn .sc-chip .k')).fontSize === '0.72rem');
+  E(w, `data.credits = 123456789; data.consecutiveDays = 1234; render(); updateStatusUI()`);
+  check('P3 большие значения выводятся целиком', D.getElementById('hdrCredits').textContent === '123456789 ◈' && D.getElementById('stStreak').textContent === '1234');
+}
+
 // ===== v6.6.8: активация Преодоления предела без перезагрузки страницы =====
 async function limitActivateTests() {
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
@@ -584,6 +600,7 @@ function noticeFor(scroll, item) {
   await bootTests();
   await completeTests();
   await limitActivateTests();
+  await chipsTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
