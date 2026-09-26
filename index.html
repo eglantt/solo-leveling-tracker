@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -265,8 +265,8 @@
       max-height: 90vh;
       display: flex; flex-direction: column;
     }
-    .status-header { flex-shrink: 0; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 20px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; }
-    .shop-balance { flex-shrink: 0; text-align: center; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.8rem; color: #ffd700; margin: -12px 0 16px; }
+    .status-header { flex-shrink: 0; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.4rem; color: #40c0ff; text-align: center; margin-bottom: 10px; border-bottom: 1px solid #40c0ff33; padding-bottom: 10px; } /* v6.6.5: под линией 10px (было 20px) */
+    .shop-balance { flex-shrink: 0; text-align: center; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.8rem; color: #ffd700; margin: -2px 0 10px; } /* v6.6.5: 8px от линии (отступ заголовка 10 − 2), до прокрутки 10px */
     .status-body {
       flex: 1 1 auto; overflow-y: auto; min-height: 0;
       scrollbar-width: none; -ms-overflow-style: none;
@@ -567,7 +567,9 @@
     .danger-btn-confirm:disabled { opacity: 0.35; cursor: not-allowed; }
     .danger-btn-confirm:not(:disabled):hover { background: #880000; box-shadow: 0 0 15px rgba(255,0,0,0.5); }
     .confirm-btn-continue { background: rgba(0,140,255,0.15); border: 1px solid #40c0ff; color: #40c0ff; }
-    .confirm-btn-continue:hover { background: rgba(0,140,255,0.3); box-shadow: 0 0 15px rgba(0,140,255,0.3); }
+    .confirm-btn-continue:not(:disabled):hover { background: rgba(0,140,255,0.3); box-shadow: 0 0 15px rgba(0,140,255,0.3); }
+    .confirm-btn-continue:disabled { opacity: 0.35; cursor: not-allowed; }
+    .name-hint { font-family: 'Exo 2 Text', sans-serif; font-size: 0.78rem; color: #88ddff; opacity: 0.75; text-align: center; margin: -4px 0 14px; } /* v6.6.5 */
     .danger-input {
       width: 100%; padding: 10px; margin-bottom: 14px; text-align: center; font-family: 'Orbitron', 'Exo 2', sans-serif;
       font-size: 1rem; letter-spacing: 3px; background: rgba(0,0,0,0.4); border: 1px solid #ff4444;
@@ -1078,9 +1080,10 @@
     <div class="danger-warning-step">
       <div class="danger-text" style="color:#a8d8ff;">Назовите себя, Игрок.</div>
       <input type="text" id="playerNameInput" class="code-input-area" style="min-height:auto; text-align:center; font-family:'Orbitron', 'Exo 2', sans-serif; letter-spacing:1px; font-size:0.9rem;" maxlength="20" autocomplete="off" placeholder="Имя">
+      <div class="name-hint">Имя можно задать позже в Архиве.</div>
       <div class="danger-btn-row">
         <button class="danger-btn-cancel" onclick="skipPlayerName()">Пропустить</button>
-        <button class="confirm-btn-continue" onclick="submitPlayerName()">Подтвердить</button>
+        <button class="confirm-btn-continue" id="nameConfirmBtn" onclick="submitPlayerName()" disabled>Подтвердить</button>
       </div>
     </div>
     </div>
@@ -1230,7 +1233,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.4';
+  const APP_VERSION = '6.6.5';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -2542,7 +2545,15 @@
     return raw.replace(/[<>"'`]/g, '').trim().slice(0, 20);
   }
 
+  // v6.6.5: «Подтвердить» активна только при непустом имени (по тем же правилам,
+  // что и сохранение: без пробелов по краям и запрещённых символов).
+  function updateNameConfirmState() {
+    const field = document.getElementById('playerNameInput');
+    document.getElementById('nameConfirmBtn').disabled = !sanitizePlayerName(field ? field.value : '');
+  }
+
   function openNameModal() {
+    updateNameConfirmState();
     document.getElementById('nameOverlay').style.display = 'flex';
   }
 
@@ -2554,7 +2565,9 @@
 
   function submitPlayerName() {
     const field = document.getElementById('playerNameInput');
-    data.playerName = sanitizePlayerName(field ? field.value : '');
+    const name = sanitizePlayerName(field ? field.value : '');
+    if (!name) return; // пустое имя подтверждать нельзя — для этого есть «Пропустить»
+    data.playerName = name;
     saveData();
     document.getElementById('nameOverlay').style.display = 'none';
     render();
@@ -5401,6 +5414,10 @@
     }
   }
 
+  document.getElementById('playerNameInput').addEventListener('input', updateNameConfirmState);
+  document.getElementById('playerNameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('nameConfirmBtn').disabled) submitPlayerName();
+  });
   document.getElementById('sysToolsAuthInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') confirmSysToolsAuth();
   });

@@ -167,6 +167,49 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.5: окно имени (вариант Б), отступ под линией заголовка 10px =====
+async function nameAndSpacingTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, $ = id => D.getElementById(id);
+  const field = $('playerNameInput'), btn = $('nameConfirmBtn');
+  const type = v => { field.value = v; field.dispatchEvent(new w.Event('input', { bubbles: true })); };
+  E(w, `data.playerName=''; openNameModal()`);
+  type('');
+  check('N1 пустое поле — «Подтвердить» неактивна', btn.disabled);
+  type('    ');
+  check('N2 одни пробелы — неактивна', btn.disabled);
+  type('<>"\'`');
+  check('N3 одни запрещённые символы — неактивна', btn.disabled);
+  type('Сон');
+  check('N4 нормальное имя — активна', !btn.disabled);
+  check('N5 подсказка под полем', D.querySelector('#nameOverlay .name-hint').textContent === 'Имя можно задать позже в Архиве.');
+  E(w, `window.__fi = 0; finishInit = () => { window.__fi++; }`);
+  type('   ');
+  field.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  check('N6 Enter при неактивной кнопке ничего не делает', E(w, 'data.playerName') === '' && $('nameOverlay').style.display === 'flex');
+  E(w, `submitPlayerName()`);
+  check('N7 пустое имя подтвердить нельзя и программно', E(w, 'data.playerName') === '' && $('nameOverlay').style.display === 'flex');
+  type('  Сон Джин-Ву  ');
+  field.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  check('N8 Enter при активной кнопке сохраняет имя (без пробелов по краям)', E(w, 'data.playerName') === 'Сон Джин-Ву' && $('nameOverlay').style.display === 'none', E(w, 'data.playerName'));
+  E(w, `data.playerName=''; openNameModal()`); type('Кто-то'); D.querySelector('#nameOverlay .danger-btn-cancel').click();
+  check('N9 «Пропустить» — имя остаётся «Игрок», введённое не сохраняется', E(w, 'data.playerName') === '' && $('hdrName').textContent === 'Игрок');
+  // --- отступы ---
+  const cs = el => w.getComputedStyle(el), px = v => parseFloat(v) || 0;
+  const headerMb = px(cs(D.querySelector('.status-header')).marginBottom);
+  check('S1 отступ под линией заголовка — 10px', headerMb === 10, headerMb);
+  const bal = D.querySelector('#shopOverlay .shop-balance');
+  const toLine = px(cs(D.querySelector('#shopOverlay .status-header')).marginBottom) + px(cs(bal).marginTop);
+  const toBody = px(cs(bal).marginBottom) + px(cs(D.querySelector('#shopOverlay .status-body')).marginTop);
+  check('S2 Магазин: баланс в 8px от линии, до прокрутки 10px', toLine === 8 && toBody === 10, `${toLine} / ${toBody}`);
+  const sb = cs(D.querySelector('#statusOverlay .status-body'));
+  check('S3 «СТАТУС»: запас под свечение прежний (14px)', sb.paddingTop === '14px' && sb.paddingLeft === '14px');
+  const all = [...D.querySelectorAll('.status-window')].filter(win => win.querySelector('.status-header') && win.querySelector('.status-body') && !win.querySelector('.shop-balance'));
+  const bad = all.filter(win => px(cs(win.querySelector('.status-header')).marginBottom) + px(cs(win.querySelector('.status-body')).marginTop) !== 10).map(win => win.closest('.status-overlay').id);
+  check('S4 во всех окнах от линии до прокрутки 10px', bad.length === 0 && all.length >= 8, bad.join(',') + ' / окон: ' + all.length);
+}
+
 // ===== v6.6.3: «Бег (шаги)», уборка стилей старого окна характеристик =====
 async function cleanupTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
@@ -313,7 +356,7 @@ async function headerTests() {
     return [px(w.getComputedStyle(hdr).marginBottom) + px(bs.marginTop), px(bs.marginBottom) + px(w.getComputedStyle(btn).marginTop)].join('/');
   };
   const E_ = ['statusOverlay', 'codexOverlay', 'shopOverlay', 'invOverlay'].map(id => id + '=' + edges(id));
-  check('H29c края прокрутки «СТАТУСА» как у Кодекса, Магазина, Инвентаря (20 под линией / 15 над кнопкой)', E_.every(x => x.endsWith('=20/15')), E_.join(', '));
+  check('H29c края прокрутки «СТАТУСА» как у Кодекса, Инвентаря (10 под линией / 15 над кнопкой)', ['statusOverlay','codexOverlay','invOverlay'].every(id => E_.includes(id + '=10/15')), E_.join(', '));
   const other = ['codexOverlay', 'shopOverlay', 'invOverlay'].map(id => w.getComputedStyle(D.querySelector('#' + id + ' .status-body')));
   check('H29d другие окна не изменились', other.every(o => o.paddingTop === '0px' && o.marginLeft === '0px' && o.marginTop === '0px'), other.map(o => o.padding + '|' + o.margin).join(', '));
   check('H29 старой шапки в разметке нет', !D.querySelector('.header-bottom-row, .rank-info, #playerNameDisplay, #levelDisplay, #creditsVal, .reset-time'));
@@ -444,6 +487,7 @@ function noticeFor(scroll, item) {
   await headerTests();
   await limitTintTests();
   await cleanupTests();
+  await nameAndSpacingTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
