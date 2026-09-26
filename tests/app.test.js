@@ -20,7 +20,7 @@ function boot() {
   return dom.window;
 }
 const E = (w, c) => w.eval(c);
-{ const w0 = boot(); SEED = w0.eval(`JSON.stringify(Object.assign({}, data, {level:20, exp:5000, rulesAcknowledged:true, playerName:'T', lastReset: Date.now(), dailyTargetLevel:20}))`); w0.close(); }
+{ const w0 = boot(); SEED = w0.eval(`JSON.stringify(Object.assign({}, data, {level:20, exp:5000, rulesAcknowledged:true, playerName:'T', lastReset: getLastResetThreshold(Date.now()), dailyTargetLevel:20}))`); w0.close(); }
 function setup(w, extra) {
   E(w, `data.completed={}; data.isGoalMet=false; data.dailyNotices.complete=false; data.insurance=false; data.insuranceSourceId=null;
         data.activeScroll=null; data.pendingScroll=null; data.curseActiveToday=false; data.pendingCurse=false; data.streakShield=false;
@@ -303,11 +303,19 @@ async function headerTests() {
   const numEls = ['.sc-exp .n', '.sc-chip .n'];
   const badF = textEls.filter(s => !fam(s).includes('Exo 2 Text')).concat(numEls.filter(s => !fam(s).includes('Roboto Mono')));
   check('H28 шрифты: текст — Exo 2 Text, числа — Roboto Mono', badF.length === 0, badF.join(', '));
-  const sb = D.querySelector('#statusOverlay .status-body'), cs = w.getComputedStyle(sb);
-  check('H29a окно «СТАТУС»: у прокручиваемого блока запас под свечение эмблемы', cs.paddingTop === '16px' && cs.paddingLeft === '16px' && cs.marginTop === '-16px' && cs.marginLeft === '-16px',
-    cs.padding + ' / ' + cs.margin);
-  const other = D.querySelector('.status-overlay:not(#statusOverlay) .status-body');
-  check('H29b другие окна запас не получили', !other || w.getComputedStyle(other).paddingTop !== '16px');
+  const cs = w.getComputedStyle(D.querySelector('#statusOverlay .status-body'));
+  check('H29a «СТАТУС»: запас под свечение — 14px сверху и по бокам, снизу 0', cs.paddingTop === '14px' && cs.paddingLeft === '14px' && cs.paddingRight === '14px' && cs.paddingBottom === '0px', cs.padding);
+  check('H29b «СТАТУС»: ширина содержимого прежняя (отступ компенсирован по горизонтали)', cs.marginLeft === '-14px' && cs.marginRight === '-14px');
+  // края прокрутки: у всех окон одинаковые — (отступ под заголовком + верх области) и (низ области + отступ кнопки)
+  const edges = id => {
+    const win = D.getElementById(id), body = win.querySelector('.status-body'), hdr = win.querySelector('.status-header'), btn = win.querySelector('.close-status');
+    const px = v => parseFloat(v) || 0, bs = w.getComputedStyle(body);
+    return [px(w.getComputedStyle(hdr).marginBottom) + px(bs.marginTop), px(bs.marginBottom) + px(w.getComputedStyle(btn).marginTop)].join('/');
+  };
+  const E_ = ['statusOverlay', 'codexOverlay', 'shopOverlay', 'invOverlay'].map(id => id + '=' + edges(id));
+  check('H29c края прокрутки «СТАТУСА» как у Кодекса, Магазина, Инвентаря (20 под линией / 15 над кнопкой)', E_.every(x => x.endsWith('=20/15')), E_.join(', '));
+  const other = ['codexOverlay', 'shopOverlay', 'invOverlay'].map(id => w.getComputedStyle(D.querySelector('#' + id + ' .status-body')));
+  check('H29d другие окна не изменились', other.every(o => o.paddingTop === '0px' && o.marginLeft === '0px' && o.marginTop === '0px'), other.map(o => o.padding + '|' + o.margin).join(', '));
   check('H29 старой шапки в разметке нет', !D.querySelector('.header-bottom-row, .rank-info, #playerNameDisplay, #levelDisplay, #creditsVal, .reset-time'));
 }
 

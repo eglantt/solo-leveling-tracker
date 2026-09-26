@@ -17,7 +17,7 @@ function boot() {
   return w;
 }
 const E = (w, c) => w.eval(c);
-{ const w0 = boot(); SEED = E(w0, `JSON.stringify(Object.assign({}, data, {level:25, exp:3000, rulesAcknowledged:true, playerName:'T', lastReset: Date.now(), dailyTargetLevel:25, dailyNotices:{morning:true, complete:false}}))`); w0.close(); }
+{ const w0 = boot(); SEED = E(w0, `JSON.stringify(Object.assign({}, data, {level:25, exp:3000, rulesAcknowledged:true, playerName:'T', lastReset: getLastResetThreshold(Date.now()), dailyTargetLevel:25, dailyNotices:{morning:true, complete:false}}))`); w0.close(); }
 function fresh(extra) {
   const w = boot();
   E(w, `data.completed={}; data.isGoalMet=false; data.dailyNotices={morning:true,complete:false}; data.insurance=false; data.insuranceSourceId=null;

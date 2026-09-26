@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -241,12 +241,14 @@
     .st-free { text-align: right; }
     .st-free-n { font-family: 'Orbitron', sans-serif; font-weight: 700; color: #ffd700; font-size: 1.5rem; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
     .st-free-k { font-family: 'Exo 2 Text', sans-serif; color: #88ddff; font-size: 0.76rem; }
-    /* v6.6.1: прокручиваемый блок окна обрезает всё за своими краями, а эмблема стоит
-       вплотную к его углу — пульсирующее свечение SSS/Monarch срезалось «квадратом».
-       Внутренний отступ даёт свечению запас, отрицательный внешний сохраняет раскладку. */
-    #statusOverlay .status-body { padding: 16px; margin: -16px; }
+    /* v6.6.4: запас под свечение эмблемы — внутренний отступ сверху и по бокам.
+       Отрицательный отступ только по горизонтали (ширина содержимого прежняя);
+       верх и низ прокручиваемой области — как у Кодекса, Магазина, Инвентаря
+       (20px под линией заголовка, 15px над «ЗАКРЫТЬ»). В v6.6.1 отрицательный
+       отступ был со всех сторон и растянул края прокрутки почти до линии и кнопки. */
+    #statusOverlay .status-body { padding: 14px 14px 0; margin: 0 -14px; }
     /* v6.6.2: запаса 16px не хватило — пик свечения SSS/Monarch 22px всё ещё срезался сверху
-       и слева. В окне «СТАТУС» свечение компактнее: наибольший радиус 12px (< запаса). */
+       и слева. В окне «СТАТУС» свечение компактнее: наибольший радиус 12px (< запаса 14px). */
     #statusOverlay .rk-sss .sc-hexw { animation-name: hexPulseSssCompact; }
     #statusOverlay .rk-monarch .sc-hexw { animation-name: hexPulseMonarchCompact; }
     @keyframes hexPulseSssCompact { 0%, 100% { filter: drop-shadow(0 0 5px #cc00ff); } 50% { filter: drop-shadow(0 0 10px #cc00ff) drop-shadow(0 0 3px #ff66ff); } }
@@ -1228,7 +1230,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.3';
+  const APP_VERSION = '6.6.4';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
