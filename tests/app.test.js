@@ -170,6 +170,35 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.8: активация Преодоления предела без перезагрузки страницы =====
+async function limitActivateTests() {
+  const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
+  const hStart = raw.indexOf("document.getElementById('limitBreakBtn').onclick");
+  const handler = raw.slice(hStart, raw.indexOf('\n  };', hStart) + 5).split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
+  check('L0 в обработчике активации Предела нет перезагрузки страницы', handler.length > 0 && !/location\.reload\(/.test(handler) && /saveData\(\); render\(\);/.test(handler));
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, $ = id => D.getElementById(id);
+  E(w, `data.level = 20; data.dailyTargetLevel = 20; data.isGoalMet = false; data.limitBreakRoundPending = false; data.limitBreaksToday = 0; data.activeScroll = null; data.curseActiveToday = false;
+        data.completed = {}; document.querySelectorAll('.quest-item').forEach(i => { data.completed[i.dataset.id] = getDynamicTarget(parseInt(i.dataset.target), data.dailyTargetLevel, i.dataset.id); });
+        data.dailyNotices.complete = true; render(); window.__marker = 'тот же документ'`);
+  check('L1 кнопка Предела доступна после выполнения задания', !$('limitBreakBtn').disabled);
+  const counterEl = $('pushups');
+  $('limitBreakBtn').click();
+  D.querySelector('#confirmContent .confirm-btn-continue').click();
+  check('L2 страница не перезагружалась (тот же документ и те же элементы)', E(w, 'window.__marker') === 'тот же документ' && $('pushups') === counterEl);
+  check('L3 состояние: Предел начат, раунд идёт, счётчик Преодолений +1', E(w, 'data.isGoalMet && data.limitBreakRoundPending && data.limitBreaksToday === 1'));
+  check('L4 счётчики упражнений обнулены на экране', [...D.querySelectorAll('.quest-item .counter')].every(c => c.textContent === '0'));
+  const tintBad = [...D.querySelectorAll('.quest-item')].filter(q => !q.querySelector('.counter').classList.contains('limit-break') || !q.querySelector('.qbar-fill').classList.contains('limit-break'));
+  check('L5 цифры и полоски голубые', tintBad.length === 0, tintBad.length);
+  check('L6 блок Предела: «Завершите текущий раунд…»', $('limitStatus').textContent === 'Завершите текущий раунд Преодоления предела' && $('limitBreakBtn').disabled, $('limitStatus').textContent);
+  const saved = JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0'));
+  check('L7 данные сохранены', saved.isGoalMet === true && saved.limitBreakRoundPending === true && saved.limitBreaksToday === 1);
+  E(w, `document.querySelectorAll('.quest-item').forEach(i => { data.completed[i.dataset.id] = getDynamicTarget(parseInt(i.dataset.target), data.dailyTargetLevel, i.dataset.id) - 1; }); render()`);
+  D.querySelectorAll('.quest-item').forEach(i => i.querySelector('.add').click());
+  check('L8 закрытие раунда Предела работает как обычно', E(w, '!data.limitBreakRoundPending && data.isGoalMet'), E(w, 'JSON.stringify({p:data.limitBreakRoundPending,g:data.isGoalMet})'));
+}
+
 // ===== v6.6.7: надпись «COMPLETE» =====
 async function completeTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
@@ -554,6 +583,7 @@ function noticeFor(scroll, item) {
   await nameAndSpacingTests();
   await bootTests();
   await completeTests();
+  await limitActivateTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

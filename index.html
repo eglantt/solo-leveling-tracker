@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.8 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1280,7 +1280,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.7';
+  const APP_VERSION = '6.6.8';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -5395,7 +5395,10 @@
         data.limitBreaksToday++;
         data.isGoalMet = true; data.completed = {}; 
         data.limitBreakRoundPending = true;
-        saveData(); location.reload();
+        // v6.6.8: без перезагрузки страницы — перерисовка на месте. Раньше здесь была
+        // location.reload(): экран пересобирался с нуля (с v6.6.6 — с анимацией загрузки),
+        // сбивалась прокрутка. Всё, что меняет активация, обновляет обычный render().
+        saveData(); render();
     });
   };
   /* SL:SYS-TOOLS:START */
