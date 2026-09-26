@@ -118,31 +118,31 @@ for (const a of X) for (const b of X) {
   if (a === 'rune_return') {
     // без штрафа — отказ; со штрафом — только возврат
     let w = fresh(setBoost(b)); const u = use(w, a);
-    const exp = b === 'rune_return' ? 'Возвращать нечего. Усиление опыта уже действует: активен эффект Руны Возврата.'
-                                    : `Возвращать нечего. Действует более высокое усиление опыта: активен эффект ${GEN[b]}.`;
+    const exp = b === 'rune_return' ? 'Возвращать нечего. Увеличение получаемого опыта уже действует: активен эффект Руны Возврата.'
+                                    : `Возвращать нечего. Действует более высокое увеличение получаемого опыта: активен эффект ${GEN[b]}.`;
     check(label + ', штрафа нет: отказ', !u.spent && u.notice === exp, u.notice);
     w = fresh(setBoost(b) + ` data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`); const wr = warn(w, a); const u2 = use(w, a);
-    const head = b === 'rune_return' ? 'Усиление опыта уже действует' : 'Действует более высокое усиление опыта';
+    const head = b === 'rune_return' ? 'Увеличение получаемого опыта уже действует' : 'Действует более высокое увеличение получаемого опыта';
     check(label + ', штраф есть: только возврат', u2.spent && !E(w,'findReturnRecord(1)') && E(w,'data.expBoostSourceId')===b
       && wr === `${head}: активен эффект ${GEN[b]}. Руна сработает только для возврата опыта.` && u2.notice === 'Руна использована. Опыт восстановлен.', wr + ' | ' + u2.notice);
     continue;
   }
   const w = fresh(setBoost(b)); const wr = warn(w, a); const u = use(w, a);
   if (R[a] > R[b]) {
-    let expW = `${NAME[a]} поглотит действие ${GEN[b]}: усиление опыта станет +${Math.round(R[a]*100)}%`;
-    if (b === 'crystal_impulse') expW += ', а усиление кредитов +35% исчезнет';
+    let expW = `${NAME[a]} поглотит действие ${GEN[b]}: получаемый опыт будет увеличен на ${Math.round(R[a]*100)}%`;
+    if (b === 'crystal_impulse') expW += ', а увеличение получаемых кредитов на 35% исчезнет';
     check(label + ': поглощает (предупреждение)', wr === expW + '.', wr);
     check(label + ': поглощает (результат)', u.spent && E(w,'data.expBoostToday')===R[a] && E(w,'data.expBoostSourceId')===a
       && (b !== 'crystal_impulse' || E(w,'data.creditBoostToday')===0), J(w,'{e:data.expBoostToday,s:data.expBoostSourceId,c:data.creditBoostToday}'));
   } else {
-    const exp = (R[a] === R[b] ? 'Действует равное усиление опыта' : 'Действует более высокое усиление опыта') + `: активен эффект ${GEN[b]}.`;
+    const exp = (R[a] === R[b] ? 'Действует равное увеличение получаемого опыта' : 'Действует более высокое увеличение получаемого опыта') + `: активен эффект ${GEN[b]}.`;
     check(label + ': отказ, не тратится', !u.spent && u.notice === exp && E(w,'data.expBoostSourceId')===b, u.notice);
   }
 }
 { const w = fresh(); const u = use(w,'crystal_impulse');
   check('D Импульс без усилений: опыт и кредиты +35%', u.spent && E(w,'data.expBoostToday')===0.35 && E(w,'data.creditBoostToday')===0.35); }
 { const w = fresh(`data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`); const u = use(w,'rune_return');
-  check('D Руна Возврата без усилений: возврат и +15%', u.spent && E(w,'data.expBoostToday')===0.15 && !E(w,'findReturnRecord(1)') && u.notice==='Руна использована. Опыт восстановлен и увеличен на сегодня.', u.notice); }
+  check('D Руна Возврата без усилений: возврат и +15%', u.spent && E(w,'data.expBoostToday')===0.15 && !E(w,'findReturnRecord(1)') && u.notice==='Руна использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса.', u.notice); }
 
 // ===== E. Заморозка =====
 { const w = fresh(); complete(w); const u = use(w,'scroll_freeze');
@@ -306,6 +306,55 @@ const CW = 'Действует Бремя Аномалии: нагрузка и 
   const clean = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData(${JSON.stringify(legacyBackup)}))`));
   const saved = SEED; SEED = JSON.stringify(clean.state); const w2 = boot(); SEED = saved;
   check('I31 Импорт старого бэкапа: потеря становится записью в стопке', JSON.parse(J(w2,'data.penaltyStack')).length === 1 && JSON.parse(J(w2,'data.penaltyStack'))[0].loss === 250, J(w2,'data.penaltyStack')); }
+
+
+// ===== J. v6.6.11: «увеличение получаемого» вместо «усиления», кредиты значком (19 согласованных текстов) =====
+{ const w = fresh(); const t = [
+    ['J10 Зелье Роста', 'potion_growth', 'Зелье использовано. Получаемый опыт увеличен до следующего сброса.'],
+    ['J10 Руна Роста (усиленная)', 'rune_growth_charged', 'Руна использована. Получаемый опыт увеличен до следующего сброса.'] ];
+  for (const [label, id, exp] of t) { const w1 = fresh(); const u = use(w1, id); check(label, u.notice === exp, u.notice); }
+  const w2 = fresh(); const u2 = use(w2, 'crystal_clarity'); check('J10 Кристалл Ясности', u2.notice === 'Кристалл использован. Получаемый опыт увеличен до следующего сброса.', u2.notice);
+  const w3 = fresh(); const u3 = use(w3, 'crystal_impulse'); check('J11 Кристалл Импульса', u3.notice === 'Кристалл использован. Получаемые опыт и кредиты увеличены до следующего сброса.', u3.notice);
+  const w4 = fresh(`data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
+  const u4 = use(w4, 'rune_return'); check('J12 Руна Возврата: возврат и увеличение', u4.notice === 'Руна использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса.', u4.notice);
+  const w5 = fresh(`data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false},{day:'2026-09-02',loss:300,returned:300,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
+  const u5 = use(w5, 'rune_return'); check('J12 Руна Возврата: с датой штрафа', /^Руна использована\. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса \(штраф за [^)]+\)\.$/.test(u5.notice), u5.notice);
+  const w6 = fresh(); const u6 = use(w6, 'rune_return'); check('J13 Руна Возврата: только увеличение', u6.notice === 'Руна использована. Получаемый опыт увеличен до следующего сброса.', u6.notice);
+  const w7 = fresh(`data.expBoostToday=0.55; data.expBoostSourceId='crystal_clarity'; data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
+  const u7 = use(w7, 'rune_return'); check('J Руна Возврата: только возврат (без изменений)', u7.notice === 'Руна использована. Опыт восстановлен.', u7.notice);
+  const w8 = fresh(); E(w8, `window.__N=[]; useCreditBoostItem(0.35, 'Использовано', false, 'crystal_impulse'); useCreditBoostItem(0.35, 'Использовано', false, 'crystal_impulse')`);
+  const n8 = JSON.parse(J(w8, 'window.__N'));
+  check('J14 общая функция кредитов: успех', n8[0] === 'Использовано. Получаемые кредиты увеличены до следующего сброса.', n8[0]);
+  check('J5 общая функция кредитов: отказ', n8[1] === 'Действует более высокое увеличение получаемых кредитов.', n8[1]);
+  check('J15 описание Кристалла Импульса', E(w, "getConsumableInfo('crystal_impulse').desc") === 'Увеличивает получаемые опыт и кредиты на 35% до следующего сброса.');
+  check('J16 описание Руны Возврата', E(w, "getConsumableInfo('rune_return').desc") === 'Полностью восстанавливает опыт от последнего штрафа и увеличивает получаемый опыт на 15% до следующего сброса.');
+  // продажа: подтверждение и уведомление — значок вместо «кредитов»
+  const w9 = fresh(`data.consumables={rune_protection:2};`);
+  E(w9, `sellItem('rune_protection')`);
+  const conf = w9.document.getElementById('confirmContent');
+  check('J17 подтверждение продажи: значок, без «кредитов»', /^Продать «Руна Защиты» за \d+ \?$/.test(conf.querySelector('.danger-text').textContent.trim()) && !!conf.querySelector('.danger-text .cr-ic') && !conf.textContent.includes('кредит'),
+    conf.querySelector('.danger-text').innerHTML);
+  E(w9, `window.__N=[]; performSellItem('rune_protection')`);
+  const sold = E(w9, 'window.__N[0]');
+  check('J18 уведомление о продаже (метка → значок при выводе)', /^Продано: Руна Защиты\. \+\d+ ◈\.$/.test(sold) && E(w9, `creditsHtml(window.__N[0]).includes('cr-ic')`), sold);
+  // сводка сохранения в Архиве
+  E(w9, `data.credits=8420; data.consecutiveDays=12; backupModalStep='main'; renderBackupModal()`);
+  const sum = [...w9.document.querySelectorAll('.backup-summary')].find(e => e.textContent.startsWith('Уровень'));
+  check('J19 сводка Архива: значок, «серия дней N»', !!sum && !!sum.querySelector('.cr-ic') && /· 8420 · .* · серия дней 12$/.test(sum.textContent.replace(/\s+/g, ' ').trim()) && !sum.textContent.includes('кредит') && !sum.textContent.includes('дн.'),
+    sum && sum.textContent);
+  // экранирование в окне подтверждения
+  E(w9, `showConfirm('<b id="evil2">x</b> за 5 ◈?', () => {})`);
+  const c2 = w9.document.querySelector('#confirmContent .danger-text');
+  check('J экранирование в окне подтверждения прежнее, значок на месте', !w9.document.getElementById('evil2') && c2.textContent.includes('<b id="evil2">x</b>') && !!c2.querySelector('.cr-ic'), c2.innerHTML);
+  // не изменились
+  check('J «Недостаточно кредитов.» осталось словом', /showNotice\("Недостаточно кредитов\.", 'warn', true\)/.test(html));
+  check('J название «Руна Роста (усиленная)» не тронуто', E(w, "getConsumableInfo('rune_growth_charged').name") === 'Руна Роста (усиленная)');
+  // сквозные проверки по всему коду
+  const scripts = html.slice(html.indexOf('<script>'));
+  const code = scripts.split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
+  check('J нигде нет «усиление опыта/кредитов» в текстах', !/[Уу]силени[ея] (опыта|кредитов)/.test(code));
+  check('J нигде нет суммы со словом «кредитов»', !/(\$\{[^}]*\}|\d)\s*кредит/.test(code));
+}
 
 console.log(results.join('\n'));
 const nFail = results.filter(r => r.startsWith('FAIL')).length;

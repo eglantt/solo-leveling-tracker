@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.10 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.11 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1302,7 +1302,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.10';
+  const APP_VERSION = '6.6.11';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -1656,8 +1656,8 @@
     "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа и защита серии дней, одновременно — действует до первого провала, сколько бы дней до этого ни прошло." },
     "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса. Бремя Аномалии не снимает, но облегчает его тяжесть.", effectDesc: "Дневная нагрузка снижена на 25% до следующего сброса." },
-    "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает опыт на 15% до следующего сброса." },
-    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает опыт и кредиты на 35% до следующего сброса." }
+    "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает получаемый опыт на 15% до следующего сброса." },
+    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает получаемые опыт и кредиты на 35% до следующего сброса." }
   };
 
   function getConsumableInfo(id) {
@@ -1774,14 +1774,14 @@
     return g ? `: активен эффект ${g}.` : '.';
   }
   function expBoostRefusal(rel) {
-    return (rel.kind === 'equal' ? 'Действует равное усиление опыта' : 'Действует более высокое усиление опыта') + expBoostActiveTail(rel.activeId);
+    return (rel.kind === 'equal' ? 'Действует равное увеличение получаемого опыта' : 'Действует более высокое увеличение получаемого опыта') + expBoostActiveTail(rel.activeId);
   }
   function expBoostAbsorbWarning(id) {
     const rate = EXP_BOOST_RATE[id];
     const rel = expBoostRelation(rate);
     if (rel.kind !== 'absorb' || !ITEM_GENITIVE[rel.activeId]) return '';
-    let w = `${getConsumableInfo(id).name} поглотит действие ${ITEM_GENITIVE[rel.activeId]}: усиление опыта станет +${Math.round(rate * 100)}%`;
-    if (rel.activeId === 'crystal_impulse' && id !== 'crystal_impulse' && data.creditBoostSourceId === 'crystal_impulse') w += ', а усиление кредитов +35% исчезнет';
+    let w = `${getConsumableInfo(id).name} поглотит действие ${ITEM_GENITIVE[rel.activeId]}: получаемый опыт будет увеличен на ${Math.round(rate * 100)}%`;
+    if (rel.activeId === 'crystal_impulse' && id !== 'crystal_impulse' && data.creditBoostSourceId === 'crystal_impulse') w += ', а увеличение получаемых кредитов на 35% исчезнет';
     return w + '.';
   }
 
@@ -1825,7 +1825,7 @@
     if (id === 'rune_return') {
       const rel = expBoostRelation(EXP_BOOST_RATE.rune_return);
       if ((rel.kind === 'equal' || rel.kind === 'higher') && findReturnRecord(1)) {
-        const head = rel.kind === 'equal' ? 'Усиление опыта уже действует' : 'Действует более высокое усиление опыта';
+        const head = rel.kind === 'equal' ? 'Увеличение получаемого опыта уже действует' : 'Действует более высокое увеличение получаемого опыта';
         return head + expBoostActiveTail(rel.activeId) + ' Руна сработает только для возврата опыта.';
       }
       return '';
@@ -2809,7 +2809,7 @@
     pendingConfirmAction = onConfirm;
     document.getElementById('confirmContent').innerHTML = `
       <div class="danger-warning-step">
-        <div class="danger-text" style="color:#a8d8ff;">${escapeHtml(message)}</div>
+        <div class="danger-text" style="color:#a8d8ff;">${creditsHtml(message)}</div>
         <div class="danger-btn-row">
           <button class="danger-btn-cancel" onclick="closeConfirmModal()">${escapeHtml(cancelLabel || 'Отмена')}</button>
           <button class="confirm-btn-continue" onclick="runConfirmedAction()">${escapeHtml(confirmLabel || 'Подтвердить')}</button>
@@ -3782,7 +3782,7 @@
     const shopItem = SHOP_CATALOG[id];
     if (!shopItem || !(data.consumables[id] > 0)) return;
     const sellPrice = Math.floor(shopItem.price * getSellRate());
-    showConfirm(`Продать «${shopItem.name}» за ${sellPrice} кредитов?`, () => performSellItem(id));
+    showConfirm(`Продать «${shopItem.name}» за ${sellPrice} ◈?`, () => performSellItem(id));
   }
 
   function performSellItem(id) {
@@ -3795,7 +3795,7 @@
       if (data.consumables[id] <= 0) delete data.consumables[id];
       data.credits += sellPrice;
       data.totalItemsSold = (data.totalItemsSold || 0) + 1;
-      showNotice(`Продано: ${shopItem.name}. +${sellPrice} кредитов.`, 'info');
+      showNotice(`Продано: ${shopItem.name}. +${sellPrice} ◈.`, 'info');
       saveData(); render(); openInv();
     }, 'item-flash-orange');
   }
@@ -4063,15 +4063,15 @@
           const canReturn = !!returnRec;
           if (!canBoost && !canReturn) {
               showNotice(rel.kind === 'equal'
-                ? 'Возвращать нечего. Усиление опыта уже действует' + expBoostActiveTail(rel.activeId)
-                : 'Возвращать нечего. Действует более высокое усиление опыта' + expBoostActiveTail(rel.activeId), 'warn', true);
+                ? 'Возвращать нечего. Увеличение получаемого опыта уже действует' + expBoostActiveTail(rel.activeId)
+                : 'Возвращать нечего. Действует более высокое увеличение получаемого опыта' + expBoostActiveTail(rel.activeId), 'warn', true);
           } else {
               const label = canReturn ? penaltyDayLabel(returnRec) : '';
               if (canReturn) applyPenaltyReturn(returnRec, 1);
               if (canBoost) { data.expBoostToday = EXP_BOOST_RATE.rune_return; data.expBoostSourceId = id; }
               used = true;
-              showNotice((canReturn && canBoost ? "Руна использована. Опыт восстановлен и увеличен на сегодня."
-                : canReturn ? "Руна использована. Опыт восстановлен." : "Руна использована. Опыт увеличен на сегодня.").replace(/\.$/, label + '.'), 'info');
+              showNotice((canReturn && canBoost ? "Руна использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса."
+                : canReturn ? "Руна использована. Опыт восстановлен." : "Руна использована. Получаемый опыт увеличен до следующего сброса.").replace(/\.$/, label + '.'), 'info');
           }
       } else if (id === 'crystal_impulse') {
           const rel = expBoostRelation(EXP_BOOST_RATE.crystal_impulse);
@@ -4081,7 +4081,7 @@
             useExpBoostItem(EXP_BOOST_RATE.crystal_impulse, 'Кристалл использован', true, id);
             useCreditBoostItem(0.35, 'Кристалл использован', true, id);
             used = true;
-            showNotice("Кристалл использован. Опыт и кредиты увеличены на сегодня.", 'info');
+            showNotice("Кристалл использован. Получаемые опыт и кредиты увеличены до следующего сброса.", 'info');
           }
       }
       if (used) {
@@ -4133,7 +4133,7 @@
     }
     data.expBoostToday = rate;
     data.expBoostSourceId = sourceId || null;
-    if (!silent) showNotice(`${verbPhrase}. Опыт увеличен до следующего сброса.`, 'info');
+    if (!silent) showNotice(`${verbPhrase}. Получаемый опыт увеличен до следующего сброса.`, 'info');
     return true;
   }
 
@@ -4141,12 +4141,12 @@
   // (introduced for Кристалл Импульса — the first item to boost credits).
   function useCreditBoostItem(rate, verbPhrase, silent, sourceId) {
     if (data.creditBoostToday >= rate) {
-      if (!silent) showNotice("Более высокое усиление кредитов уже действует.", 'warn', true);
+      if (!silent) showNotice("Действует более высокое увеличение получаемых кредитов.", 'warn', true);
       return false;
     }
     data.creditBoostToday = rate;
     data.creditBoostSourceId = sourceId || null;
-    if (!silent) showNotice(`${verbPhrase || 'Использовано'}. Кредиты увеличены до следующего сброса.`, 'info');
+    if (!silent) showNotice(`${verbPhrase || 'Использовано'}. Получаемые кредиты увеличены до следующего сброса.`, 'info');
     return true;
   }
 
@@ -5123,7 +5123,7 @@
   }
 
   function currentSummaryHtml() {
-    return `Уровень ${data.level} · ${Math.floor(data.credits)} кредитов · ${data.totalDays} ${pluralDays(data.totalDays)} всего · серия ${data.consecutiveDays} дн.`;
+    return `Уровень ${data.level} · ${Math.floor(data.credits)} ◈ · ${data.totalDays} ${pluralDays(data.totalDays)} всего · серия дней ${data.consecutiveDays}`;
   }
 
   function openBackupModal() {
@@ -5190,7 +5190,7 @@
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Экспорт</div>
-          <div class="backup-summary">${escapeHtml(currentSummaryHtml())}</div>
+          <div class="backup-summary">${creditsHtml(currentSummaryHtml())}</div>
           <button class="backup-action-btn" onclick="exportDataFile()">Скачать файл бэкапа</button>
           <span class="restore-link" onclick="exportDataCode()">Через код</span>
         </div>
