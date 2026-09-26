@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="booting">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -230,6 +230,52 @@
     .dayline { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(64,192,255,0.12); display: flex; justify-content: flex-end; }
     .dayline i { display: block; height: 100%; width: 0; background: #40c0ff; box-shadow: 0 0 6px #40c0ff; transition: width 1s linear; }
     .tstrip.warning .dayline i { background: #ff5555; box-shadow: 0 0 6px #ff4444; }
+
+    /* ===== v6.6.6: запуск «Г+Д+З». Пока основная программа не отрисовала данные,
+       на <html> стоит класс booting: значения скрыты (в разметке — заготовки «1», «Игрок»…),
+       через 0,25 с (если загрузка ещё идёт) — «Идентификация…» на эмблеме и
+       «Синхронизация…» в полосе таймера. Всё только стилями: программа ещё не работает.
+       Страховка: через 5 с значения проявляются в любом случае. ===== */
+    #hdrName, #hdrRank, #hdrTitle, #hdrExp, #hdrBarFill, #hdrCredits, #hdrStreak,
+    .quest-item .counter, .quest-item .target, .quest-item .qbar-fill, .quest-item .reward { transition: opacity 0.25s ease; }
+    .booting #hdrName, .booting #hdrRank, .booting #hdrTitle, .booting #hdrExp, .booting #hdrBarFill, .booting #hdrCredits, .booting #hdrStreak,
+    .booting #hdrDebt, .booting .quest-item .counter, .booting .quest-item .target, .booting .quest-item .qbar-fill, .booting .quest-item .reward {
+      opacity: 0; animation: bootFailsafeShow 0s 5s forwards; }
+    @keyframes bootFailsafeShow { to { opacity: 1; } }
+    @keyframes bootAppear { to { opacity: 1; } }
+    @keyframes bootHide { to { opacity: 0; } }
+    @keyframes bootBlink { 50% { opacity: 0.35; } }
+    @keyframes bootFailsafeVisible { to { visibility: visible; } }
+    .sc-idq, .cap-id, .boot-sync { display: none; }
+    .booting #hdrTop { --rk: #4a5b6e; }
+    .booting #hdrTop .sc-hexw { animation: none; filter: drop-shadow(0 0 4px #4a5b6e); }
+    .booting #hdrLevel { visibility: hidden; animation: bootFailsafeVisible 0s 5s forwards; }
+    .booting .sc-idq { display: block; position: absolute; font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 2rem; color: #7f93a8;
+      opacity: 0; animation: bootAppear 0s 0.25s forwards, bootBlink 1s 0.25s ease-in-out infinite, bootHide 0s 5s forwards; }
+    .booting .cap-lv { display: none; }
+    .booting .cap-id { display: inline; opacity: 0; animation: bootAppear 0s 0.25s forwards, bootBlink 1s 0.25s ease-in-out infinite, bootHide 0s 5s forwards; }
+    .booting .reset-label { display: none; }
+    .booting .boot-sync { display: block; flex: 1; min-width: 0; padding-right: 10px; font-family: 'Exo 2 Text', sans-serif; font-size: 0.86rem; color: #88ddff;
+      line-height: 1.25; opacity: 0; animation: bootAppear 0s 0.25s forwards, bootBlink 1s 0.25s ease-in-out infinite; }
+    .booting .tbox { visibility: hidden; }
+    .booting .dayline i { width: 28% !important; transition: none; opacity: 0; animation: bootAppear 0s 0.25s forwards, bootShuttle 1.1s 0.25s ease-in-out infinite alternate; }
+    @keyframes bootShuttle { from { transform: translateX(-260%); } to { transform: translateX(0); } }
+
+    /* ===== v6.6.6: полоса таймера — место под время фиксированной высоты (не «прыгает»,
+       когда появляются цифры); минимальная высота — под две строки подписи, при
+       необходимости растёт (три строки при Заморозке на узком экране). ===== */
+    .tbox { min-height: 1.8rem; align-items: center; }
+    .tstrip { min-height: calc(0.86rem * 1.25 * 2 + 24px + 2px); }
+    .tstrip .reset-label { overflow-wrap: break-word; hyphens: auto; }
+
+    /* ===== v6.6.6: шрифты карточек упражнений — названия Orbitron + Exo 2,
+       игровые числа (счётчик, цель, награда, кнопки «+», опыт/кредиты/серия) — Orbitron. ===== */
+    .quest-name { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; font-size: 1.02rem; letter-spacing: 0.5px; }
+    .counter { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.45rem; }
+    .target { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; }
+    .reward { font-family: 'Orbitron', sans-serif; }
+    .buttons button { font-family: 'Orbitron', sans-serif; }
+    .sc-exp .n, .sc-chip .n { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; }
 
     /* ===== v6.6.0: окно «СТАТУС» ===== */
     .st-sec { border: 1px solid #40c0ff44; border-radius: 6px; padding: 10px 12px; margin-top: 12px; text-align: left; }
@@ -1117,7 +1163,7 @@
       </div>
       <div class="status-card" id="rankInfoBtn">
         <div class="sc-top" id="hdrTop">
-          <div class="sc-emb"><div class="sc-hexw"><div class="sc-hex"><b id="hdrLevel" class="d1">1</b></div></div><div class="sc-emb-cap">Уровень</div></div>
+          <div class="sc-emb"><div class="sc-hexw"><div class="sc-hex"><b id="hdrLevel" class="d1">1</b><span class="sc-idq">?</span></div></div><div class="sc-emb-cap"><span class="cap-lv">Уровень</span><span class="cap-id">Идентификация…</span></div></div>
           <div class="sc-info">
             <div class="sc-name" id="hdrName">Игрок</div>
             <div class="sc-rank" id="hdrRank">E-Rank</div>
@@ -1129,7 +1175,7 @@
         <div class="sc-debt" id="hdrDebt" style="display:none;">Долг перед Системой: −<span id="hdrDebtVal">0</span> EXP</div>
         <div class="sc-chips"><div class="sc-chip cr"><span class="k">Кредиты</span><span class="n" id="hdrCredits">0 ◈</span></div><div class="sc-chip st"><span class="k">Серия дней</span><span class="n" id="hdrStreak">0</span></div></div>
       </div>
-      <div class="tstrip" id="resetTimerContainer"><span class="reset-label">Сброс задания через</span><span class="tbox" id="timer"></span><div class="dayline"><i id="dayLineFill"></i></div></div>
+      <div class="tstrip" id="resetTimerContainer"><span class="boot-sync">Синхронизация…</span><span class="reset-label">Сброс задания через</span><span class="tbox" id="timer"></span><div class="dayline"><i id="dayLineFill"></i></div></div>
     </div>
     <div class="effects-container" id="effectsContainer" style="display:none;">
       <div class="effects-header">АКТИВНЫЕ ЭФФЕКТЫ</div>
@@ -1233,7 +1279,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.5';
+  const APP_VERSION = '6.6.6';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -5610,6 +5656,36 @@
     }
   }
 
+  // v6.6.6: снимает состояние загрузки (класс booting на <html>) после первой отрисовки
+  // и один раз при запуске проигрывает «отсчёт уровня»: число в эмблеме набегает
+  // от 1 до текущего за 0,5 с, имя печатается по 0,04 с на букву. Если во время
+  // анимации данные изменятся — анимация прекращается и ставятся настоящие значения.
+  function finishBoot() {
+    document.documentElement.classList.remove('booting');
+    playBootIntro();
+  }
+  function playBootIntro() {
+    const lvEl = document.getElementById('hdrLevel'), nmEl = document.getElementById('hdrName');
+    if (!lvEl || !nmEl) return;
+    const finalLv = data.level, finalName = data.playerName || 'Игрок';
+    let done = false;
+    const stop = () => { if (done) return; done = true; fillStatusBlock('hdr'); };
+    const t0 = performance.now();
+    const step = now => {
+      if (done) return;
+      if (data.level !== finalLv || (data.playerName || 'Игрок') !== finalName) { stop(); return; }
+      const k = Math.min(1, (now - t0) / 500);
+      const cur = Math.max(1, Math.round(1 + (finalLv - 1) * k));
+      lvEl.textContent = cur;
+      lvEl.className = 'd' + Math.min(3, String(cur).length);
+      const letters = Math.min(finalName.length, Math.floor((now - t0) / 40) + 1);
+      nmEl.textContent = finalName.slice(0, letters);
+      if (k < 1 || letters < finalName.length) requestAnimationFrame(step); else stop();
+    };
+    lvEl.textContent = '1'; lvEl.className = 'd1'; nmEl.textContent = '';
+    requestAnimationFrame(step);
+  }
+
   function finishInit() {
     checkMissedDays();
     data.opensToday = (data.opensToday || 0) + 1;
@@ -5631,6 +5707,7 @@
   } else {
     finishInit();
   }
+  finishBoot();
 
   let swRegistration = null;
   if ('serviceWorker' in navigator) {

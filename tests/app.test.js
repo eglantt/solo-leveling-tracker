@@ -168,6 +168,50 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.6: запуск «Г+Д+З», полоса таймера, шрифты карточек упражнений =====
+async function bootTests() {
+  const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
+  check('B1 состояние загрузки заложено в разметке (<html class="booting">)', /<html lang="ru" class="booting">/.test(raw));
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, $ = id => D.getElementById(id);
+  check('B2 после первой отрисовки состояние загрузки снято', !D.documentElement.classList.contains('booting'));
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  check('B3 при загрузке скрыты значения карточки и упражнений, со страховкой через 5 с',
+    /\.booting #hdrName,[^{]*\.booting \.quest-item \.counter, \.booting \.quest-item \.target, \.booting \.quest-item \.qbar-fill, \.booting \.quest-item \.reward \{\s*opacity: 0; animation: bootFailsafeShow 0s 5s forwards; \}/.test(css));
+  check('B4 «Идентификация…» и «Синхронизация…» появляются через 0,25 с',
+    /\.booting \.sc-idq \{[^}]*animation: bootAppear 0s 0\.25s forwards/.test(css) && /\.booting \.cap-id \{[^}]*bootAppear 0s 0\.25s/.test(css) && /\.booting \.boot-sync \{[^}]*bootAppear 0s 0\.25s/.test(css)
+    && D.querySelector('.boot-sync').textContent === 'Синхронизация…' && D.querySelector('.cap-id').textContent === 'Идентификация…');
+  check('B5 эмблема при загрузке серая, уровень скрыт со страховкой', /\.booting #hdrTop \{ --rk: #4a5b6e; \}/.test(css) && /\.booting #hdrLevel \{ visibility: hidden; animation: bootFailsafeVisible 0s 5s forwards; \}/.test(css));
+  check('B6 вне загрузки служебные надписи скрыты', w.getComputedStyle(D.querySelector('.sc-idq')).display === 'none' && w.getComputedStyle(D.querySelector('.boot-sync')).display === 'none');
+  // «З»: отсчёт уровня и печать имени
+  E(w, `data.level = 26; data.playerName = 'Святослав'; render()`);
+  check('B7 обычная отрисовка не запускает анимацию', $('hdrLevel').textContent === '26' && $('hdrName').textContent === 'Святослав');
+  E(w, `playBootIntro()`);
+  await new Promise(r => setTimeout(r, 120));
+  const midLv = +$('hdrLevel').textContent, midNm = $('hdrName').textContent;
+  check('B8 во время анимации уровень набегает, имя печатается', midLv >= 1 && midLv < 26 && midNm.length < 'Святослав'.length && 'Святослав'.startsWith(midNm), `${midLv} / «${midNm}»`);
+  await new Promise(r => setTimeout(r, 900));
+  check('B9 анимация заканчивается настоящими уровнем и именем', $('hdrLevel').textContent === '26' && $('hdrLevel').className === 'd2' && $('hdrName').textContent === 'Святослав');
+  E(w, `playBootIntro()`); await new Promise(r => setTimeout(r, 60));
+  E(w, `data.level = 31`); await new Promise(r => setTimeout(r, 120));
+  check('B10 при изменении данных анимация прекращается и ставятся настоящие значения', $('hdrLevel').textContent === '31' && $('hdrName').textContent === 'Святослав', $('hdrLevel').textContent);
+  // полоса таймера
+  check('B11 место под время фиксированной высоты', w.getComputedStyle(D.querySelector('.tbox')).minHeight === '1.8rem');
+  check('B12 полоса: минимальная высота под две строки (может расти)', /\.tstrip \{ min-height: calc\(0\.86rem \* 1\.25 \* 2 \+ 24px \+ 2px\); \}/.test(css) && !/\.tstrip \{[^}]*[^-]height: \d/.test(css.replace(/min-height/g, 'min_h')));
+  check('B13 страховка узких экранов: перенос длинного слова', /\.tstrip \.reset-label \{ overflow-wrap: break-word; hyphens: auto; \}/.test(css));
+  // шрифты
+  const fam = sel => w.getComputedStyle(D.querySelector(sel)).fontFamily;
+  const ORB = ['.quest-name', '.counter', '.target', '.reward', '.buttons button', '.sc-exp .n', '.sc-chip .n'];
+  const badO = ORB.filter(sel => !/^["']?Orbitron/.test(fam(sel)));
+  check('B14 названия упражнений и игровые числа — Orbitron', badO.length === 0, badO.map(x => x + '=' + fam(x)).join(', '));
+  check('B15 названия упражнений: Orbitron + Exo 2 (кириллица)', /Orbitron["']?, ["']Exo 2["']/.test(fam('.quest-name')), fam('.quest-name'));
+  const MONO = ['.notif-log-time'].concat(D.querySelector('#appVersionTag') ? ['#appVersionTag'] : []);
+  const probe = D.createElement('span'); probe.className = 'notif-log-time'; D.body.appendChild(probe);
+  const badM = MONO.filter(sel => !/Roboto Mono/.test(fam(sel)));
+  check('B16 служебные числа (время в журнале, версия) — Roboto Mono', badM.length === 0, badM.join(','));
+}
+
 // ===== v6.6.5: окно имени (вариант Б), отступ под линией заголовка 10px =====
 async function nameAndSpacingTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
@@ -344,8 +388,8 @@ async function headerTests() {
   const fam = sel => w.getComputedStyle(D.querySelector(sel)).fontFamily;
   const textEls = ['.sc-title', '.sc-exp .k', '.sc-chip .k', '.tstrip .reset-label', '.st-k', '.st-free-k', '.sc-emb-cap'];
   const numEls = ['.sc-exp .n', '.sc-chip .n'];
-  const badF = textEls.filter(s => !fam(s).includes('Exo 2 Text')).concat(numEls.filter(s => !fam(s).includes('Roboto Mono')));
-  check('H28 шрифты: текст — Exo 2 Text, числа — Roboto Mono', badF.length === 0, badF.join(', '));
+  const badF = textEls.filter(s => !fam(s).includes('Exo 2 Text')).concat(numEls.filter(s => !/^["']?Orbitron/.test(fam(s))));
+  check('H28 шрифты: текст — Exo 2 Text, игровые числа — Orbitron (с v6.6.6)', badF.length === 0, badF.join(', '));
   const cs = w.getComputedStyle(D.querySelector('#statusOverlay .status-body'));
   check('H29a «СТАТУС»: запас под свечение — 14px сверху и по бокам, снизу 0', cs.paddingTop === '14px' && cs.paddingLeft === '14px' && cs.paddingRight === '14px' && cs.paddingBottom === '0px', cs.padding);
   check('H29b «СТАТУС»: ширина содержимого прежняя (отступ компенсирован по горизонтали)', cs.marginLeft === '-14px' && cs.marginRight === '-14px');
@@ -488,6 +532,7 @@ function noticeFor(scroll, item) {
   await limitTintTests();
   await cleanupTests();
   await nameAndSpacingTests();
+  await bootTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
