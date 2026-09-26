@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -631,14 +631,15 @@
 
     /* ANIMATIONS & EFFECTS */
     @keyframes flash { 0% { background: rgba(0,255,136,0.35); } 100% { background: transparent; } }
-    @keyframes completeText { 0% {opacity:0; transform:scale(0.4) translateY(30px);} 40% {opacity:1; transform:scale(1.35) translateY(0);} 100% {opacity:0; transform:scale(2) translateY(-60px);} }
+    /* v6.6.7: центрирующий сдвиг — часть каждого кадра (раньше кадры его затирали, надпись уезжала вправо-вниз и переносилась). */
+    @keyframes completeText { 0% {opacity:0; transform:translate(-50%,-50%) scale(0.4) translateY(30px);} 40% {opacity:1; transform:translate(-50%,-50%) scale(1.35) translateY(0);} 100% {opacity:0; transform:translate(-50%,-50%) scale(2) translateY(-60px);} }
     /* v6.5.36: центрирующий сдвиг — часть анимации (раньше keyframes его затирали, и надпись уезжала вправо). */
     @keyframes levelUp { 0% {opacity:0; transform:translateX(-50%) scale(0.3) rotate(-20deg);} 25% {opacity:1; transform:translateX(-50%) scale(1.5) rotate(12deg);} 75% {transform:translateX(-50%) scale(1.1) rotate(-8deg);} 100% {opacity:0; transform:translateX(-50%) scale(2.2) rotate(0);} }
     @keyframes pulse-bg { 0% { background: rgba(80,20,20,0.6); } 50% { background: rgba(120,30,30,0.8); } 100% { background: rgba(80,20,20,0.6); } }
     @keyframes pulse-text { 0% { opacity: 0.8; } 100% { opacity: 1; text-shadow: 0 0 20px #ff4444; } }
     
     .completion-effect { position:absolute; inset:0; pointer-events:none; animation:flash 1.2s ease-out forwards; z-index: 1; }
-    .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-size:1.8rem; font-weight:bold; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
+    .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-family:'Orbitron','Exo 2',sans-serif; font-size:1.6rem; font-weight:700; white-space:nowrap; text-align:center; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
     .levelup-popup { position:fixed; top:20%; left:50%; transform:translateX(-50%); color:#ffd700; font-family:'Orbitron',sans-serif; font-size:clamp(1.6rem, 11vw, 3.5rem); white-space:nowrap; text-shadow:0 0 30px #ffd700; pointer-events:none; animation:levelUp 3s forwards; z-index:100; }
 
     @keyframes systemPopupIn {
@@ -1279,7 +1280,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.6';
+  const APP_VERSION = '6.6.7';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';

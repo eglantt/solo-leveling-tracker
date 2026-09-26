@@ -169,6 +169,26 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.7: надпись «COMPLETE» =====
+async function completeTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document;
+  E(w, `data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') - 1 }; render()`);
+  D.querySelector('.quest-item[data-id="pushups"] .add').click();
+  const p = D.querySelector('.quest-item[data-id="pushups"] .complete-popup');
+  check('K1 надпись появляется при закрытии упражнения', !!p && /^COMPLETE\+\d+ EXP \+\d+ ◈/.test(p.textContent.replace(/\s+/g, ' ').replace('COMPLETE ', 'COMPLETE')), p && p.textContent);
+  const cs = w.getComputedStyle(p);
+  check('K2 Orbitron жирный 1,6rem', /^["']?Orbitron/.test(cs.fontFamily) && cs.fontSize === '1.6rem' && cs.fontWeight === '700', `${cs.fontFamily} ${cs.fontSize} ${cs.fontWeight}`);
+  check('K3 без переноса строк (опыт, кредиты, BONUS — одной строкой)', cs.whiteSpace === 'nowrap');
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const kf = (css.match(/@keyframes completeText \{([^\n]*)\}/) || [])[1] || '';
+  check('K4 центрирующий сдвиг в каждом кадре анимации', (kf.match(/translate\(-50%,-50%\)/g) || []).length === 3, kf);
+  check('K5 длительность прежняя (1,8 с)', /\.complete-popup \{[^}]*animation:completeText 1\.8s forwards/.test(css));
+  await new Promise(r => setTimeout(r, 1900));
+  check('K6 надпись исчезает через 1,8 с', !D.querySelector('.quest-item[data-id="pushups"] .complete-popup'));
+}
+
 // ===== v6.6.6: запуск «Г+Д+З», полоса таймера, шрифты карточек упражнений =====
 async function bootTests() {
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
@@ -533,6 +553,7 @@ function noticeFor(scroll, item) {
   await cleanupTests();
   await nameAndSpacingTests();
   await bootTests();
+  await completeTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
