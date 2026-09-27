@@ -177,6 +177,25 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.7.3: кредиты не уходят в минус =====
+async function creditsFloorTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const D = w.document;
+  const add = v => { D.getElementById('sysCreditsInput').value = String(v); E(w, 'addCreditsAction()'); return E(w, 'data.credits'); };
+  E(w, 'data.credits = 500'); const a = add(-800);
+  E(w, 'data.credits = 500'); const b = add(-300);
+  E(w, 'data.credits = 500'); const c = add(300);
+  check('CF1 Длань: −800 при 500 → 0; −300 → 200; +300 → 800', a === 0 && b === 200 && c === 800, `${a}, ${b}, ${c}`);
+  const legacy = JSON.parse(SEED); legacy.credits = -1200; const saved = SEED; SEED = JSON.stringify(legacy); const w2 = boot(); SEED = saved;
+  await new Promise(r => setTimeout(r, 250));
+  check('CF2 отрицательный баланс в сохранении → 0 при загрузке', E(w2, 'data.credits') === 0);
+  const clean = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { credits: -50 }), total: {} }))`));
+  check('CF3 бэкап с отрицательным балансом → 0', clean.state.credits === 0);
+  E(w, `data.credits = 10; window.__N = []; const _sn = showNotice; showNotice = (m) => window.__N.push(m); buyItem(Object.keys(SHOP_CATALOG)[0])`);
+  check('CF4 покупка без нужной суммы отклоняется, баланс не меняется', E(w, 'data.credits') === 10 && E(w, 'window.__N.includes("Недостаточно кредитов.")'), E(w, 'JSON.stringify(window.__N)'));
+}
+
 // ===== v6.7.2: Восприятие снижает шансы простых шкатулок (Б-мягкий) =====
 async function boxOddsTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -900,6 +919,7 @@ function noticeFor(scroll, item) {
   await equipmentTests();
   await artifactPreviewTests();
   await boxOddsTests();
+  await creditsFloorTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

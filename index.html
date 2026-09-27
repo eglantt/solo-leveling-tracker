@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.7.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.7.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1336,7 +1336,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.7.2';
+  const APP_VERSION = '6.7.3';
   const PENALTY_STACK_MAX = 20;
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70]; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -1567,6 +1567,7 @@
   if (typeof data.extraLimitBreaksToday !== 'number') data.extraLimitBreaksToday = 0;
   if (typeof data.expGainedToday !== 'number') data.expGainedToday = 0;
   if (typeof data.creditsGainedToday !== 'number') data.creditsGainedToday = 0;
+  if (typeof data.credits !== 'number' || !Number.isFinite(data.credits) || data.credits < 0) data.credits = 0;   // v6.7.3: отрицательный баланс (после Длани) → 0
   if (typeof data.dailyTargetLevel !== 'number' || data.dailyTargetLevel < 1) data.dailyTargetLevel = data.level || 1;
   if (typeof data.expDebt !== 'number' || data.expDebt < 0) data.expDebt = 0;
   if (!data.dailyExerciseLog || typeof data.dailyExerciseLog !== 'object' || Array.isArray(data.dailyExerciseLog)) data.dailyExerciseLog = {};
@@ -5788,7 +5789,7 @@
   function addCreditsAction() {
     const val = parseInt(document.getElementById('sysCreditsInput').value, 10);
     if (!Number.isFinite(val)) return;
-    data.credits += val;
+    data.credits = Math.max(0, data.credits + val);   // v6.7.3: не ниже нуля
     saveData(); render();
   }
 
