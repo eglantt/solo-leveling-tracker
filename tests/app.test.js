@@ -176,6 +176,31 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.7.2: Восприятие снижает шансы простых шкатулок (Б-мягкий) =====
+async function boxOddsTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const W = { box_basalt:70, box_onyx:30, box_obsidian:18, box_dark_quartz:10, box_scarlet:6, box_crimson:3, box_purple:2, box_shadow:1 };
+  const expected = per => { const b = Math.max(0, per - 10), rare = 1 + 0.003 * b, w2 = {};
+    for (const k in W) w2[k] = k === 'box_basalt' ? W[k] / (1 + 0.006 * b) : k === 'box_onyx' ? W[k] / (1 + 0.003 * b) : W[k] * rare;
+    const t = Object.values(w2).reduce((a, x) => a + x, 0); const o = {}; for (const k in w2) o[k] = w2[k] / t; return o; };
+  const sample = (lvl, per, n) => JSON.parse(E(w, `(() => { data.level = ${lvl}; data.stats.per = ${per}; const c = {}; for (let i = 0; i < ${n}; i++) { const x = rollBoxTier(); c[x] = (c[x] || 0) + 1; } return JSON.stringify(c); })()`));
+  const N = 40000;
+  for (const per of [10, 100, 200, 335]) {
+    const c = sample(100, per, N), e = expected(per), bad = [];
+    for (const k in W) { const got = (c[k] || 0) / N; if (Math.abs(got - e[k]) > 0.012) bad.push(`${k}: ${(got*100).toFixed(1)} vs ${(e[k]*100).toFixed(1)}`); }
+    check(`BX Восприятие ${per}: шансы по таблице Б-мягкого`, bad.length === 0, bad.join(', '));
+  }
+  const e335 = expected(335);
+  check('BX при Восприятии 335 Базальтовая ≈ 20%, Ониксовая ≈ 13%', Math.abs(e335.box_basalt - 0.201) < 0.002 && Math.abs(e335.box_onyx - 0.129) < 0.002);
+  const e10 = expected(10);
+  check('BX при Восприятии 10 — как прежде (50% / 21,4%)', Math.abs(e10.box_basalt - 0.5) < 1e-9 && Math.abs(e10.box_onyx - 30/140) < 1e-9);
+  const low10 = sample(5, 10, N), low200 = sample(5, 200, N);
+  check('BX до 10-го уровня (только две простые): Восприятие сдвигает к Ониксовой', (low200.box_onyx || 0) > (low10.box_onyx || 0) && Object.keys(low200).every(k => k === 'box_basalt' || k === 'box_onyx'),
+    `${JSON.stringify(low10)} → ${JSON.stringify(low200)}`);
+  check('BX Шкатулка Аномалии в выборе по весам не участвует', !Object.keys(sample(100, 335, 5000)).includes('box_anomaly'));
+}
+
 // ===== v6.7.1: превью артефактов, окно артефакта в «СТАТУСЕ», формулировка Сферы Роста =====
 async function artifactPreviewTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -874,6 +899,7 @@ function noticeFor(scroll, item) {
   await runeBoltTests();
   await equipmentTests();
   await artifactPreviewTests();
+  await boxOddsTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

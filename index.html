@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.7.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.7.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1336,7 +1336,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.7.1';
+  const APP_VERSION = '6.7.2';
   const PENALTY_STACK_MAX = 20;
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70]; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2216,7 +2216,12 @@
     // Ониксовая (kept as the guaranteed "common floor").
     const bonusPer = Math.max(0, data.stats.per - 10);
     const rareBoost = bonusPer * 0.003;
-    const getWeight = id => (id === 'box_basalt' || id === 'box_onyx') ? BOX_CATALOG[id].weight : BOX_CATALOG[id].weight * (1 + rareBoost);
+    // v6.7.2: Восприятие ещё и снижает шансы простых шкатулок (вариант «Б-мягкий»):
+    // Базальтовая — вес ÷ (1 + 0,006·b), Ониксовая — ÷ (1 + 0,003·b), где b = Восприятие − 10.
+    // При Восприятии 10 всё как раньше; прибавка редким — прежняя.
+    const getWeight = id => id === 'box_basalt' ? BOX_CATALOG[id].weight / (1 + 0.006 * bonusPer)
+      : id === 'box_onyx' ? BOX_CATALOG[id].weight / (1 + 0.003 * bonusPer)
+      : BOX_CATALOG[id].weight * (1 + rareBoost);
     const totalWeight = tiers.reduce((sum, id) => sum + getWeight(id), 0);
     let r = Math.random() * totalWeight;
     for (const id of tiers) {
