@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.7.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.8.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -313,6 +313,9 @@
     .eq-text { font-family: 'Exo 2 Text', sans-serif; color: #a8d8ff; font-size: 0.92rem; text-align: center; margin-bottom: 10px; line-height: 1.45; }
     .eq-big { display: block; margin: 0 auto 8px; width: 88px; height: 88px; object-fit: contain; }
     .eq-meta { margin-bottom: 14px; }   /* v6.7.1: как превью — по левому краю, строки Ранг/Тип/Применение/Эффект */
+
+    /* ===== v6.8.0: перегрев кнопок «+» при контроле темпа — оранжевый, только вид ===== */
+    .buttons button.add.pace-hot { border-color: #ffaa44; color: #ffcc88; background: rgba(80,45,0,0.45); box-shadow: 0 0 8px rgba(255,170,68,0.35); }
 
     /* ===== v6.6.0: окно «СТАТУС» ===== */
     .st-sec { border: 1px solid #40c0ff44; border-radius: 6px; padding: 10px 12px; margin-top: 12px; text-align: left; }
@@ -1131,6 +1134,12 @@
         </div>
       </div>
       <div class="backup-section">
+        <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <span>Контроль темпа</span>
+          <div class="sound-checkbox-zone" onclick="togglePaceControl()"><div class="sound-checkbox on" id="paceControlCheckbox">✓</div></div>
+        </div>
+      </div>
+      <div class="backup-section">
         <div class="backup-section-title">Кредиты</div>
         <input type="number" id="sysCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addCreditsAction)">Добавить кредиты</button>
@@ -1336,10 +1345,15 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.7.3';
-  const PENALTY_STACK_MAX = 20;
+  const APP_VERSION = '6.8.0';
+  const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
-  const CONTOUR_LEVELS = [10, 30, 50, 70]; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
+  const CONTOUR_LEVELS = [10, 30, 50, 70];
+  // v6.8.0: контроль темпа — «подход» по упражнению, окно и его запас (в подходах работы). Шаги не контролируются.
+  const PACE_SET = { pushups: 60, squats: 80, pullups: 40, press: 60 };
+  const PACE_WINDOW_MS = 2 * 60 * 1000;
+  const PACE_BUDGET = 2;
+  const PACE_NOTICE = 'Зафиксирован недопустимый темп. Последнее внесение не засчитано — Система восстанавливает контроль.';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1425,6 +1439,8 @@
         pendingLevelUpToday: oldData.pendingLevelUpToday || 0,
         codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"],
         equippedArtifacts: Array.isArray(oldData.equippedArtifacts) ? oldData.equippedArtifacts : [null, null, null, null],
+        paceControl: typeof oldData.paceControl === 'boolean' ? oldData.paceControl : true,
+        paceWindow: oldData.paceWindow,
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
@@ -1479,6 +1495,7 @@
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats", "equipment"],
         equippedArtifacts: [null, null, null, null],
+        paceControl: true, paceWindow: { start: null, used: 0, locked: false, hot: [] },
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
@@ -1516,6 +1533,8 @@
   if (!data.codexUnlocked.includes('player_registry')) data.codexUnlocked.push('player_registry');
   if (!data.codexUnlocked.includes('equipment')) data.codexUnlocked.push('equipment');   // v6.7.0: глава «Снаряжение» — с начала игры
   data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level);
+  if (typeof data.paceControl !== 'boolean') data.paceControl = true;   // v6.8.0
+  data.paceWindow = sanitizePaceWindow(data.paceWindow);
   // Догоняющая проверка — та же логика, что уже применена выше к title_probuzhdenny.
   // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
   // достижения нужного уровня (внутри checkLevelUp()) или находки — игроки, уже
@@ -1711,6 +1730,15 @@
   // процента; Руны Искупления/Исправления исправляют день в Летописи;
   // Исправление склеивает прерванную серию. (Константа объявлена у
   // APP_VERSION: нормализация сохранения при загрузке выполняется раньше.)
+
+  // v6.8.0: окно контроля темпа.
+  function emptyPaceWindow() { return { start: null, used: 0, locked: false, hot: [] }; }
+  function sanitizePaceWindow(w) {
+    if (!w || typeof w !== 'object' || typeof w.start !== 'number' || !Number.isFinite(w.start) || w.start > Date.now()) return emptyPaceWindow();
+    const used = (typeof w.used === 'number' && Number.isFinite(w.used)) ? Math.min(PACE_BUDGET, Math.max(0, w.used)) : 0;
+    const hot = Array.isArray(w.hot) ? w.hot.filter((id, i, a) => PACE_SET[id] && a.indexOf(id) === i) : [];
+    return { start: w.start, used, locked: !!w.locked, hot };
+  }
 
   // v6.7.0: сколько контуров снаряжения открыто на уровне.
   function openContourCount(level) { return CONTOUR_LEVELS.filter(l => level >= l).length; }
@@ -2276,7 +2304,7 @@
   };
 
   const CODEX_CHAPTERS = {
-    daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Задание исполнено только при закрытии всех пяти пунктов — частичное выполнение приравнивается к неисполнению, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Смена цикла отслеживается обратным отсчётом на экране — по его истечении начинается новый цикл. Выполненное задание приносит опыт и кредиты." },
+    daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Задание исполнено только при закрытии всех пяти пунктов — частичное выполнение приравнивается к неисполнению, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Смена цикла отслеживается обратным отсчётом на экране — по его истечении начинается новый цикл. Выполненное задание приносит опыт и кредиты. Система следит за темпом выполнения: повторения, внесённые быстрее, чем их возможно совершить, не засчитываются." },
     penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Однако с ростом силы и уровня эта тяжесть снижается. Если же накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия." },
     stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку и увеличивает опыт при превышении задания." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
@@ -2953,6 +2981,54 @@
     if (action) action();
   }
 
+  // ===== v6.8.0: КОНТРОЛЬ ТЕМПА =====
+  // Окно 2 мин открывается первым засчитанным внесением любого из четырёх упражнений; запас окна —
+  // 2 подхода работы (PACE_SET), общий, не копится. Нажатие сверх запаса не засчитывается целиком,
+  // окно закрывается для всех четырёх до конца; упражнение, на котором был отказ, перегревается.
+  // Шаги и инструменты Длани не контролируются.
+  function paceExpire() {
+    const w = data.paceWindow;
+    if (w && w.start !== null && Date.now() >= w.start + PACE_WINDOW_MS) { data.paceWindow = emptyPaceWindow(); return true; }
+    return false;
+  }
+  function paceAllows(id, val) {
+    if (!data.paceControl || !PACE_SET[id]) return true;
+    paceExpire();
+    const w = data.paceWindow, cost = val / PACE_SET[id];
+    if (w.locked || w.used + cost > PACE_BUDGET + 1e-9) {
+      w.locked = true;
+      if (!w.hot.includes(id)) w.hot.push(id);
+      return false;
+    }
+    if (w.start === null) w.start = Date.now();
+    w.used += cost;
+    return true;
+  }
+  // Перегрев: все кнопки «+» упражнения — оранжевые до конца окна (остаются нажимаемыми).
+  function renderPaceButtons() {
+    const hot = (data.paceControl && data.paceWindow) ? data.paceWindow.hot : [];
+    document.querySelectorAll('.quest-item').forEach(item => {
+      const on = hot.includes(item.dataset.id);
+      item.querySelectorAll('.add').forEach(b => b.classList.toggle('pace-hot', on && !b.disabled));
+    });
+  }
+  function paceTick() { if (paceExpire()) { saveData(); renderPaceButtons(); } }
+  // Уведомление не добавляется повторно, пока такое же на экране или в очереди. Звук — отдельно, на каждый отказ.
+  let currentNotificationBody = null;
+  function showPaceNotice() {
+    if (currentNotificationBody === PACE_NOTICE || notificationQueue.some(n => n.body === PACE_NOTICE)) return;
+    showNotice(PACE_NOTICE, 'warn', false, 'none');
+  }
+  function togglePaceControl() {
+    data.paceControl = !data.paceControl;
+    data.paceWindow = emptyPaceWindow();
+    saveData(); syncPaceCheckbox(); renderPaceButtons();
+  }
+  function syncPaceCheckbox() {
+    const cb = document.getElementById('paceControlCheckbox');
+    if (cb) cb.classList.toggle('on', !!data.paceControl);
+  }
+
   // ===== NOTIFICATION QUEUE =====
   // Every system message (short banners, title/rank/codex announcements) goes through
   // this single queue so overlapping events never render on screen at the same time.
@@ -2971,6 +3047,7 @@
   }
 
   function displayNotificationNow({ body, sub, tone, skipLog, sound }) {
+    currentNotificationBody = body;
     if (!skipLog) logNotification(sub ? `${body} ${sub}` : body);
 
     if (!data.notificationsEnabled) {
@@ -2994,6 +3071,7 @@
       dismissed = true;
       p.remove();
       notificationActive = false;
+      currentNotificationBody = null;
       setTimeout(processNotificationQueue, 2000);
     };
     p.addEventListener('click', dismiss);
@@ -3111,6 +3189,7 @@
       }
       if (dayStatus !== 'frozen') {
         data.completed = {};
+        data.paceWindow = emptyPaceWindow();   // v6.8.0: новый цикл — новое окно темпа
         data.isGoalMet = false;
         if (data.freezeJustEndedWithCurse) {
           data.freezeJustEndedWithCurse = false;
@@ -3416,6 +3495,7 @@
   }
 
   function updateTimerInner() {
+    paceTick();
     const container = document.getElementById('resetTimerContainer');
     const labelEl = container.querySelector('.reset-label');
     if (data.activeScroll === 'freeze') {
@@ -4699,6 +4779,7 @@
       }
     });
     fillStatusBlock('hdr');
+    syncPaceCheckbox();
     document.querySelectorAll('.quest-item').forEach(item => {
       const id = item.dataset.id;
       const isTransferred = data.activeScroll === 'transfer' && id === data.transferExerciseId;
@@ -4723,6 +4804,7 @@
     checkLimitBreak();
   }
 
+  renderPaceButtons();
   document.querySelectorAll('.add').forEach(btn => {
     btn.onclick = (e) => {
       if (data.activeScroll === 'freeze') return;
@@ -4732,6 +4814,10 @@
       const target = getDynamicTarget(parseInt(item.dataset.target), data.dailyTargetLevel, id);
       let current = data.completed[id] || 0;
       if (current >= target) return;
+      if (!paceAllows(id, val)) {             // v6.8.0: контроль темпа — нажатие не засчитано целиком
+        playSound('denied'); showPaceNotice(); saveData(); renderPaceButtons();
+        return;
+      }
       playSound('tap');
       data.completed[id] = current + val;
       totalStats[id] += val;
@@ -5252,6 +5338,8 @@
       credits: sanitizeNumber(s.credits, 0),
       inventory: cleanInventory,
       equippedArtifacts: cleanEquipped,
+      paceControl: typeof s.paceControl === 'boolean' ? s.paceControl : true,
+      paceWindow: sanitizePaceWindow(s.paceWindow),
       consumables: cleanConsumables,
       insurance: !!s.insurance,
       activeTitle: cleanActiveTitle,
@@ -5639,7 +5727,7 @@
     if (data.limitBreaksToday >= getDailyLimitBreakCap()) return;
     showConfirm('Активировать «Преодоление предела»? Награды в кредитах будут удвоены.', () => {
         data.limitBreaksToday++;
-        data.isGoalMet = true; data.completed = {}; 
+        data.isGoalMet = true; data.completed = {}; data.paceWindow = emptyPaceWindow(); 
         data.limitBreakRoundPending = true;
         // v6.6.8: без перезагрузки страницы — перерисовка на месте. Раньше здесь была
         // location.reload(): экран пересобирался с нуля (с v6.6.6 — с анимацией загрузки),
@@ -5807,6 +5895,7 @@
 
   function resetDailyProgressAction() {
     data.completed = {};
+    data.paceWindow = emptyPaceWindow();
     data.isGoalMet = false;
     saveData(); render();
   }

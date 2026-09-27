@@ -178,6 +178,89 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.8.0: контроль темпа =====
+async function paceTests() {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const mk = async () => {
+    const w = boot(); await sleep(250);
+    E(w, `window.__t = Date.now(); Date.now = () => window.__t; window.__denied = 0; const _ps = playSound; playSound = n => { if (n === 'denied') window.__denied++; return _ps(n); };
+          data.dailyTargetLevel = 80; data.completed = {}; data.isGoalMet = false; data.activeScroll = null; data.curseActiveToday = false; data.paceControl = true; data.paceWindow = emptyPaceWindow(); render();`);
+    return w;
+  };
+  const tap = (w, id, v, n = 1) => { for (let i = 0; i < n; i++) { const b = w.document.querySelector(`.quest-item[data-id="${id}"] .add[data-value="${v}"]`); if (b && !b.disabled) b.click(); } };
+  const cnt = (w, id) => E(w, `data.completed['${id}'] || 0`);
+  const hot = (w, id) => [...w.document.querySelectorAll(`.quest-item[data-id="${id}"] .add`)].every(b => b.classList.contains('pace-hot'));
+  const adv = (w, ms) => E(w, `window.__t += ${ms}; paceTick()`);
+  { const w = await mk();
+    check('PC0 контроль включён по умолчанию, чекбокс в Длани отмечен', E(w, 'data.paceControl') === true && w.document.getElementById('paceControlCheckbox').classList.contains('on'));
+    tap(w, 'pushups', 10, 15);
+    check('PC1 натыкать нельзя: 15 × «+10» отжиманий → засчитано 120 (два подхода)', cnt(w, 'pushups') === 120, cnt(w, 'pushups'));
+    check('PC2 после отказа все три кнопки отжиманий перегреты, остаются нажимаемыми', hot(w, 'pushups') && [...w.document.querySelectorAll('.quest-item[data-id="pushups"] .add')].every(b => !b.disabled));
+    check('PC3 кнопки приседаний до нажатия не перегреты', !hot(w, 'squats'));
+    tap(w, 'squats', 1);
+    check('PC4 окно закрыто для всех: «+1» приседаний — отказ, их кнопки перегреваются', cnt(w, 'squats') === 0 && hot(w, 'squats'));
+    check('PC5 звук отказа на каждое отклонённое нажатие', E(w, 'window.__denied') === 4, E(w, 'window.__denied'));
+    const n = E(w, `(currentNotificationBody === PACE_NOTICE ? 1 : 0) + notificationQueue.filter(x => x.body === PACE_NOTICE).length`);
+    check('PC6 уведомление о темпе одно, при нескольких отказах подряд', n === 1, n);
+    check('PC7 текст и тон уведомления', E(w, `PACE_NOTICE`) === 'Зафиксирован недопустимый темп. Последнее внесение не засчитано — Система восстанавливает контроль.'
+      && E(w, `(notificationQueue.find(x => x.body === PACE_NOTICE) || { tone: 'warn' }).tone`) === 'warn');
+    tap(w, 'steps', 1000, 80);
+    check('PC8 шаги без ограничений: вся норма разом, запас окна не тратится', cnt(w, 'steps') >= E(w, `getDynamicTarget(10000, data.dailyTargetLevel, 'steps')`) && !hot(w, 'steps'));
+    adv(w, 2 * 60000 + 10);
+    check('PC9 конец окна: все кнопки остыли, окно пустое', !hot(w, 'pushups') && !hot(w, 'squats') && E(w, 'data.paceWindow.start') === null);
+    tap(w, 'pushups', 10, 1);
+    check('PC10 после остывания внесение снова засчитывается', cnt(w, 'pushups') === 130); }
+  { const w = await mk();
+    tap(w, 'pushups', 10, 6); tap(w, 'squats', 10, 8);
+    check('PC11 общий запас: 60 отжиманий + 80 приседаний засчитаны', cnt(w, 'pushups') === 60 && cnt(w, 'squats') === 80);
+    tap(w, 'press', 1);
+    check('PC12 следующее нажатие любого упражнения — отказ', cnt(w, 'press') === 0 && hot(w, 'press')); }
+  { const w = await mk();
+    tap(w, 'pushups', 10, 1); adv(w, 60 * 60000); tap(w, 'pushups', 10, 20);
+    check('PC13 запас не копится: +10, час перерыва, дальше подряд — засчитано ещё только 120', cnt(w, 'pushups') === 130, cnt(w, 'pushups')); }
+  { const w = await mk();
+    const target = E(w, `getDynamicTarget(100, data.dailyTargetLevel, 'pushups')`);
+    let guard = 0; while (cnt(w, 'pushups') < target && guard++ < 50) { tap(w, 'pushups', 10, 3); adv(w, 150000); }
+    check('PC14 честно по подходу (30) с перерывами 2,5 мин — ни одного отказа', cnt(w, 'pushups') >= target && E(w, 'window.__denied') === 0, `${cnt(w, 'pushups')} / ${target}`);
+    const w2 = await mk();
+    for (let i = 0; i < 60; i++) { tap(w2, 'press', 1); adv(w2, 3000); }
+    check('PC15 по одному повторению каждые 3 с — ни одного отказа', cnt(w2, 'press') === 60 && E(w2, 'window.__denied') === 0); }
+  { const w = await mk();
+    tap(w, 'pushups', 10, 15);
+    E(w, `data.completed = {}; document.querySelectorAll('.quest-item').forEach(i => { data.completed[i.dataset.id] = getDynamicTarget(parseInt(i.dataset.target), data.dailyTargetLevel, i.dataset.id); }); data.dailyNotices.complete = true; render()`);
+    w.document.getElementById('limitBreakBtn').click(); w.document.querySelector('#confirmContent .confirm-btn-continue').click();
+    check('PC16 начало раунда Предела сбрасывает окно', E(w, 'data.paceWindow.start') === null && !E(w, 'data.paceWindow.locked') && E(w, 'data.limitBreakRoundPending'));
+    tap(w, 'pushups', 10, 15);
+    check('PC17 в раунде Предела правило то же', cnt(w, 'pushups') === 120, cnt(w, 'pushups')); }
+  { const w = await mk();
+    tap(w, 'pushups', 10, 15);
+    E(w, `data.lastReset -= 86400000; checkMissedDays()`);
+    check('PC18 суточный сброс обнуляет окно', E(w, 'data.paceWindow.start') === null && !E(w, 'data.paceWindow.locked'));
+    tap(w, 'pushups', 10, 15);
+    E(w, `resetDailyProgressAction()`);
+    check('PC19 инструмент Длани «сбросить прогресс» сбрасывает и окно (инструменты контролем не ограничены)', E(w, 'data.paceWindow.start') === null); }
+  { const w = await mk();
+    tap(w, 'pushups', 10, 15);
+    E(w, `togglePaceControl()`);
+    check('PC20 выключение в Длани: чекбокс снят, перегрев снят, сохранено', !w.document.getElementById('paceControlCheckbox').classList.contains('on') && !hot(w, 'pushups')
+      && JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).paceControl === false);
+    tap(w, 'squats', 10, 15);
+    check('PC21 при выключенном контроле всё засчитывается', cnt(w, 'squats') === 150 && !hot(w, 'squats'));
+    E(w, `togglePaceControl()`);
+    check('PC22 включение обратно', E(w, 'data.paceControl') === true && w.document.getElementById('paceControlCheckbox').classList.contains('on')); }
+  { const w = await mk();
+    check('PC23 Кодекс: глава «Дневное Задание» дополнена', E(w, `CODEX_CHAPTERS.daily_quota.content`).endsWith('Выполненное задание приносит опыт и кредиты. Система следит за темпом выполнения: повторения, внесённые быстрее, чем их возможно совершить, не засчитываются.'));
+    const legacy = JSON.parse(SEED); delete legacy.paceControl; delete legacy.paceWindow; const saved = SEED; SEED = JSON.stringify(legacy); const w2 = boot(); SEED = saved; await sleep(250);
+    check('PC24 старое сохранение: контроль включён, окно пустое', E(w2, 'data.paceControl') === true && E(w2, 'JSON.stringify(data.paceWindow)') === JSON.stringify({ start: null, used: 0, locked: false, hot: [] }));
+    const bad = JSON.parse(E(w, `JSON.stringify([ sanitizePaceWindow({ start: Date.now() + 999999, used: 1, locked: true, hot: ['pushups'] }),
+      sanitizePaceWindow({ start: Date.now() - 1000, used: -5, locked: 1, hot: ['pushups', 'steps', 'evil', 'pushups'] }) ])`));
+    check('PC25 бэкап: окно из будущего → пустое; отрицательный запас → 0; шаги и чужое из перегрева убраны',
+      bad[0].start === null && bad[1].used === 0 && bad[1].locked === true && JSON.stringify(bad[1].hot) === '["pushups"]', JSON.stringify(bad));
+    const clean = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { paceControl: 'yes' }), total: {} }))`));
+    check('PC26 бэкап с неверным флагом → контроль включён', clean.state.paceControl === true); }
+}
+
 // ===== v6.7.3: кредиты не уходят в минус =====
 async function creditsFloorTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -920,6 +1003,7 @@ function noticeFor(scroll, item) {
   await artifactPreviewTests();
   await boxOddsTests();
   await creditsFloorTests();
+  await paceTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
