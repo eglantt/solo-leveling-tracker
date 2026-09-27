@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.11 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.6.12 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -785,6 +785,10 @@
        используется печатями свитков, не рунами. */
     @keyframes effectIconSlowSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .effect-icon-btn img.spinning { animation: effectIconSlowSpin 7.2s linear infinite; }
+    /* v6.6.12: бегущий разряд по работающей руне (демо 51): прямой ломаный фронт
+       проходит по иконке за 0,9 с в случайном из 8 направлений, раз в 8–15 с.
+       Искры — эффект ожидает; разряд — руна работает; ничего — подавлена или не руна. */
+    .rune-bolt { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; transform: translate(-50%, -50%); pointer-events: none; overflow: visible; }
     /* Руна, подавленная Бременем Аномалии: приглушена, без искр. */
     .effect-icon-btn img.suppressed { opacity: 0.45; filter: grayscale(0.7); }
     .effect-icon-btn.active img.suppressed { filter: grayscale(0.7) drop-shadow(0 0 4px #40c0ff) drop-shadow(0 0 8px #40c0ff); }
@@ -1302,7 +1306,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.11';
+  const APP_VERSION = '6.6.12';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
@@ -2017,11 +2021,70 @@
   }
 
   let openEffectIndex = null;
+  // ---- v6.6.12: бегущий разряд по работающим рунам ----
+  const RUNE_BOLT_INTERVAL = [8000, 15000];   // у каждой руны свой случайный интервал, мс
+  const RUNE_BOLT_DURATION = 900;             // пробег от края до края, мс
+  let runeBoltTimers = [];
+  // Работающая руна: иконка предмета-руны, не «ожидает» и не «подавлена».
+  function isWorkingRune(e) {
+    return !e.isPending && !e.isSuppressed && /icons\/items\/rune_/.test(e.icon);
+  }
+  function runeBoltSvg(i, e) {
+    const abs = /rune_protection_absolute/.test(e.icon) ? ' data-abs="1"' : '';
+    return `<svg class="rune-bolt"${abs} viewBox="0 0 40 40" aria-hidden="true"><defs><clipPath id="runeBoltClip${i}"><circle cx="20" cy="20" r="16.5"/></clipPath></defs><g clip-path="url(#runeBoltClip${i})"></g></svg>`;
+  }
+  function clearRuneBolts() {
+    runeBoltTimers.forEach(clearTimeout);
+    runeBoltTimers = [];
+  }
+  function scheduleRuneBolt(svg) {
+    const [a, b] = RUNE_BOLT_INTERVAL;
+    const t = setTimeout(() => {
+      if (!svg.isConnected) return;                       // панель перерисована — таймер больше не нужен
+      if (!document.hidden) runRuneBolt(svg);            // приложение свёрнуто — пропускаем пробег
+      scheduleRuneBolt(svg);
+    }, a + Math.random() * (b - a));
+    runeBoltTimers.push(t);
+  }
+  function pickRuneBoltDirection() { return Math.floor(Math.random() * 8) * Math.PI / 4; }
+  function runRuneBolt(svg) {
+    const g = svg.querySelector('g');
+    if (!g) return;
+    const glow = svg.dataset.abs === '1' ? '#ffd700' : '#40c0ff';
+    svg.style.filter = `drop-shadow(0 0 2px ${glow}) drop-shadow(0 0 4px ${glow})`;
+    const ang = pickRuneBoltDirection(), u = [Math.cos(ang), Math.sin(ang)], p = [-u[1], u[0]];
+    svg.dataset.dir = String(Math.round(ang / (Math.PI / 4)));
+    const t0 = performance.now();
+    let lastJitter = 0, pts = null;
+    const step = now => {
+      if (!svg.isConnected) return;
+      const k = Math.min(1, (now - t0) / RUNE_BOLT_DURATION);
+      const pos = -24 + 48 * k;                            // фронт проходит от края до края
+      const c = [20 + u[0] * pos, 20 + u[1] * pos];
+      if (!pts || now - lastJitter > 45) {                 // изломы перерисовываются на ходу
+        pts = [];
+        for (let n = 0; n <= 8; n++) {
+          const s = -20 + 5 * n, off = Math.random() * 4.4 - 2.2;
+          pts.push([c[0] + p[0] * s + u[0] * off, c[1] + p[1] * s + u[1] * off]);
+        }
+        lastJitter = now;
+      }
+      const op = Math.sin(Math.PI * k) * (0.75 + 0.25 * Math.random());
+      const d = 'M' + pts.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L');
+      g.innerHTML = k >= 1 ? '' :
+        `<path d="${d}" stroke="${glow}" stroke-width="2.2" opacity="${(0.85 * op).toFixed(2)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `<path d="${d}" stroke="#ffffff" stroke-width="0.8" opacity="${op.toFixed(2)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
   function renderActiveEffects() {
     const effects = getActiveEffects();
     const container = document.getElementById('effectsContainer');
     if (!effects.length) {
       container.style.display = 'none';
+      clearRuneBolts();
       window.__activeEffectsCache = effects;
       window.__activeEffectsSignature = '';
       return;
@@ -2031,9 +2094,11 @@
     const signature = effects.map(e => e.name + '|' + !!e.isPending).join(',');
     if (signature === window.__activeEffectsSignature) return;
     window.__activeEffectsSignature = signature;
+    clearRuneBolts();
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt=""></div>`
+      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
     ).join('');
+    document.querySelectorAll('#effectsRow .rune-bolt').forEach(scheduleRuneBolt);
     document.getElementById('effectDetail').classList.remove('open');
     openEffectIndex = null;
   }

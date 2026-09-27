@@ -173,6 +173,64 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.6.12: бегущий разряд по работающим рунам =====
+async function runeBoltTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const D = w.document, sleep = ms => new Promise(r => setTimeout(r, ms));
+  const base = `data.insurance=false; data.insuranceSourceId=null; data.streakShield=false; data.streakShieldSourceId=null; data.activeScroll=null; data.pendingScroll=null;
+    data.curseActiveToday=false; data.pendingCurse=false; data.targetDiscountToday=false; data.targetDiscountSourceId=null; data.expBoostToday=0; data.expBoostSourceId=null; data.creditBoostToday=0;`;
+  const bolts = () => [...D.querySelectorAll('#effectsRow .rune-bolt')];
+  const iconsWithBolt = () => bolts().map(b => b.parentElement.querySelector('img').getAttribute('src').replace('icons/items/', '').replace('.png', ''));
+  // работающие руны — есть разряд; кристалл — нет
+  E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection'; data.streakShield=true; data.streakShieldSourceId='rune_stability';
+    data.targetDiscountToday=true; data.targetDiscountRate=0.1; data.targetDiscountSourceId='rune_freedom'; data.expBoostToday=0.55; data.expBoostSourceId='crystal_clarity'; render()`);
+  const on = iconsWithBolt().sort().join(',');
+  check('RB1 разряд у работающих рун (Защиты, Стабильности, Освобождения), у Кристалла Ясности — нет', on === 'rune_freedom,rune_protection,rune_stability', on);
+  check('RB2 цвет: у обычных рун голубой (не отмечены как Абсолютная)', bolts().every(b => b.dataset.abs !== '1'));
+  E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection_absolute'; data.streakShield=true; data.streakShieldSourceId='rune_protection_absolute'; render()`);
+  const ab = bolts().find(b => b.parentElement.querySelector('img').src.includes('rune_protection_absolute'));
+  check('RB3 у Абсолютной — отмечена для золотого разряда', !!ab && ab.dataset.abs === '1');
+  // «спящая», «подавленная», ожидающие — без разряда
+  E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection'; data.activeScroll='contract'; data.pendingCurse=true; render()`);
+  check('RB4 «спящая» руна и ожидающее Бремя — без разряда', bolts().length === 0, iconsWithBolt().join(','));
+  E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection'; data.curseActiveToday=true; render()`);
+  check('RB5 «подавленная» руна — без разряда', bolts().length === 0, iconsWithBolt().join(','));
+  // пробег
+  E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection'; render()`);
+  const svg = bolts()[0];
+  E(w, `runRuneBolt(document.querySelector('#effectsRow .rune-bolt'))`);
+  await sleep(150); const p1 = svg.querySelector('path') && svg.querySelector('path').getAttribute('d');
+  await sleep(300); const p2 = svg.querySelector('path') && svg.querySelector('path').getAttribute('d');
+  check('RB6 разряд появляется и движется', !!p1 && !!p2 && p1 !== p2);
+  check('RB7 цвет голубой с белой сердцевиной', svg.querySelectorAll('path')[0].getAttribute('stroke') === '#40c0ff' && svg.querySelectorAll('path')[1].getAttribute('stroke') === '#ffffff');
+  await sleep(700);
+  check('RB8 через 0,9 с разряд исчезает', !svg.querySelector('path') && E(w, 'RUNE_BOLT_DURATION') === 900);
+  check('RB9 видимость ограничена кругом иконки', !!svg.querySelector('clipPath circle') && svg.querySelector('g').getAttribute('clip-path').startsWith('url(#runeBoltClip'));
+  const dirs = new Set(JSON.parse(E(w, `JSON.stringify(Array.from({length: 400}, () => Math.round(pickRuneBoltDirection() / (Math.PI / 4) * 1000) / 1000))`)));
+  check('RB10 направления — только 8 допустимых', [...dirs].every(x => Number.isInteger(x) && x >= 0 && x <= 7) && dirs.size === 8, [...dirs].join(','));
+  // интервал 8–15 с, независимый у каждой руны
+  E(w, `window.__d = []; window.__cb = []; window.__st = setTimeout; setTimeout = (f, ms) => { window.__d.push(ms); window.__cb.push(f); return 0; };
+        for (let i = 0; i < 60; i++) scheduleRuneBolt(document.querySelector('#effectsRow .rune-bolt')); setTimeout = window.__st;`);
+  const delays = JSON.parse(E(w, 'JSON.stringify(window.__d)'));
+  check('RB11 интервал каждой руны случайный в пределах 8–15 с', delays.length === 60 && delays.every(x => x >= 8000 && x <= 15000) && new Set(delays.map(Math.round)).size > 30, `${Math.min(...delays)}–${Math.max(...delays)}`);
+  // свёрнутое приложение — пробег не запускается, но планируется следующий
+  Object.defineProperty(D, 'hidden', { configurable: true, get: () => true });
+  E(w, `window.__d = []; setTimeout = (f, ms) => { window.__d.push(ms); return 0; }; window.__cb[0](); setTimeout = window.__st;`);
+  await sleep(120);
+  check('RB12 пока приложение свёрнуто, пробег не запускается (следующий запланирован)', !svg.querySelector('path') && JSON.parse(E(w, 'JSON.stringify(window.__d)')).length === 1);
+  Object.defineProperty(D, 'hidden', { configurable: true, get: () => false });
+  // смена эффектов — старые таймеры сняты
+  E(w, `clearRuneBolts()`);
+  E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection'; data.streakShield=true; data.streakShieldSourceId='rune_stability'; render()`);
+  const n1 = E(w, 'runeBoltTimers.length');
+  E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection'; render()`);
+  const n2 = E(w, 'runeBoltTimers.length');
+  check('RB13 при смене эффектов старые таймеры снимаются, лишних не остаётся', n1 === 2 && n2 === 1, `${n1} → ${n2}`);
+  E(w, base + `render()`);
+  check('RB14 нет эффектов — нет таймеров', E(w, 'runeBoltTimers.length') === 0);
+}
+
 // ===== v6.6.10: значок кредитов вместо «◈» =====
 async function creditIconTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
@@ -645,6 +703,7 @@ function noticeFor(scroll, item) {
   await limitActivateTests();
   await chipsTests();
   await creditIconTests();
+  await runeBoltTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
