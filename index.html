@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.8.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.8.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1134,12 +1134,6 @@
         </div>
       </div>
       <div class="backup-section">
-        <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-          <span>Контроль темпа</span>
-          <div class="sound-checkbox-zone" onclick="togglePaceControl()"><div class="sound-checkbox on" id="paceControlCheckbox">✓</div></div>
-        </div>
-      </div>
-      <div class="backup-section">
         <div class="backup-section-title">Кредиты</div>
         <input type="number" id="sysCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addCreditsAction)">Добавить кредиты</button>
@@ -1156,6 +1150,13 @@
       <div class="backup-section">
         <div class="backup-section-title">Реестр Игроков</div>
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, () => { syncToLeaderboard(); showNotice('Синхронизация с реестром запущена вручную.', 'info'); })">Отправить данные в реестр</button>
+      </div>
+      <div class="backup-section">
+        <div class="backup-section-title">Контроль темпа</div>
+        <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <span id="paceControlLabel">Контроль: включён.</span>
+          <div class="sound-checkbox-zone" onclick="togglePaceControl()"><div class="sound-checkbox on" id="paceControlCheckbox">✓</div></div>
+        </div>
       </div>
       <div class="backup-section danger-zone">
         <div class="backup-section-title danger">Сбросы</div>
@@ -1345,7 +1346,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.8.0';
+  const APP_VERSION = '6.8.1';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -3027,6 +3028,8 @@
   function syncPaceCheckbox() {
     const cb = document.getElementById('paceControlCheckbox');
     if (cb) cb.classList.toggle('on', !!data.paceControl);
+    const lbl = document.getElementById('paceControlLabel');   // v6.8.1: как настройки звука и уведомлений в Архиве
+    if (lbl) lbl.textContent = data.paceControl ? 'Контроль: включён.' : 'Контроль: выключен.';
   }
 
   // ===== NOTIFICATION QUEUE =====

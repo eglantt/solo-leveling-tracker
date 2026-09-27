@@ -179,6 +179,29 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.8.1: раздел «Контроль темпа» в Длани =====
+async function paceSectionTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const D = w.document;
+  const titles = [...D.querySelectorAll('.backup-section-title')].map(t => t.textContent.trim());
+  const iR = titles.indexOf('Реестр Игроков'), iP = titles.indexOf('Контроль темпа'), iS = titles.indexOf('Сбросы');
+  check('PS1 порядок: «Реестр Игроков» → «Контроль темпа» → «Сбросы»', iR >= 0 && iP === iR + 1 && iS === iP + 1, titles.join(' | '));
+  const tP = [...D.querySelectorAll('.backup-section-title')].find(t => t.textContent.trim() === 'Контроль темпа');
+  const tR = [...D.querySelectorAll('.backup-section-title')].find(t => t.textContent.trim() === 'Реестр Игроков');
+  const cs = el => w.getComputedStyle(el);
+  check('PS2 заголовок в том же стиле, что у соседних разделов', tP.className === tR.className && cs(tP).fontFamily === cs(tR).fontFamily && cs(tP).fontSize === cs(tR).fontSize);
+  const lbl = D.getElementById('paceControlLabel'), cb = D.getElementById('paceControlCheckbox');
+  check('PS3 контроль включён: «Контроль: включён.», галочка', lbl.textContent === 'Контроль: включён.' && cb.classList.contains('on'));
+  E(w, 'togglePaceControl()');
+  check('PS4 контроль выключен: «Контроль: выключен.», галочки нет', lbl.textContent === 'Контроль: выключен.' && !cb.classList.contains('on'));
+  E(w, 'togglePaceControl()');
+  check('PS5 снова включён', lbl.textContent === 'Контроль: включён.' && cb.classList.contains('on'));
+  const row = lbl.parentElement;
+  check('PS6 строка оформлена как настройки Архива (тот же класс и раскладка)', row.classList.contains('backup-summary') && row.style.display === 'flex' && row.style.justifyContent === 'space-between'
+    && row.querySelector('.sound-checkbox-zone .sound-checkbox') === cb);
+}
+
 // ===== v6.8.0: контроль темпа =====
 async function paceTests() {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1004,6 +1027,7 @@ function noticeFor(scroll, item) {
   await boxOddsTests();
   await creditsFloorTests();
   await paceTests();
+  await paceSectionTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
