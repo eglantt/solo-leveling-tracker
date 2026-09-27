@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.6.12 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.7.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -293,6 +293,25 @@
       background: linear-gradient(100deg, transparent, rgba(255,255,255,0.95), transparent); transform: skewX(-15deg); animation: creditGlint 4s ease-in-out infinite; }
     @keyframes creditGlint { 0%, 70% { left: -60%; } 100% { left: 130%; } }
     #hdrCredits .cr-ic .gl, #stCredits .cr-ic .gl { display: block; }
+
+    /* ===== v6.7.0: снаряжение — контуры артефактов в окне «СТАТУС» и отметка в Инвентаре ===== */
+    .st-sec-title { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 0.72rem; letter-spacing: 1.5px; color: #40c0ff; margin-bottom: 8px; }
+    .eq-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .eq-slot { aspect-ratio: 1 / 1.12; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative;
+      background: rgba(0,0,0,0.28); border: 1px solid #40c0ff66; cursor: pointer; }
+    .eq-slot img { width: 62%; height: auto; object-fit: contain; }
+    .eq-slot .eq-rk { position: absolute; top: 3px; right: 5px; font-family: 'Orbitron', sans-serif; font-size: 0.55rem; font-weight: 700; color: #40c0ff; }
+    .eq-slot.filled { border-color: #40c0ff; box-shadow: 0 0 10px rgba(64,192,255,0.35), inset 0 0 8px rgba(64,192,255,0.35); }
+    .eq-slot.locked { cursor: default; opacity: 0.6; background: rgba(0,0,0,0.45); border-color: #40c0ff1a; }
+    .item-card.eq-on { border-color: #40c0ff; box-shadow: 0 0 8px rgba(64,192,255,0.35); }
+    .eq-btn { width: 96px; flex-shrink: 0; text-align: center; }
+    .eq-btn.eq-extract { background: rgba(0,0,0,0.2); border-color: #6f93b5; color: #9fc4e6; }
+    .eq-state { font-family: 'Exo 2 Text', sans-serif; font-size: 0.84rem; color: #88ddff; margin: 0 0 8px 2px; }
+    .eq-opt { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid #00aaff33; border-radius: 8px; margin-bottom: 6px; cursor: pointer; text-align: left; }
+    .eq-opt img { width: 30px; height: 30px; object-fit: contain; }
+    .eq-opt .nm { font-family: 'Exo 2 Text', sans-serif; font-weight: 700; color: #40c0ff; font-size: 0.95rem; }
+    .eq-text { font-family: 'Exo 2 Text', sans-serif; color: #a8d8ff; font-size: 0.92rem; text-align: center; margin-bottom: 10px; line-height: 1.45; }
+    .eq-big { display: block; margin: 0 auto 8px; width: 88px; height: 88px; object-fit: contain; }
 
     /* ===== v6.6.0: окно «СТАТУС» ===== */
     .st-sec { border: 1px solid #40c0ff44; border-radius: 6px; padding: 10px 12px; margin-top: 12px; text-align: left; }
@@ -916,8 +935,18 @@
           <div class="st-cell"><div class="st-k" onclick="showStatLore('per')">Восприятие</div><div class="st-line"><span class="st-v" id="valPer">10</span><button onclick="incStat('per')" class="stat-add-btn" id="btnPer">+</button></div></div>
           <div class="st-free"><div class="st-free-n" id="statPoints">0</div><div class="st-free-k">Свободные очки характеристик</div></div>
       </div></div>
+      <div class="st-sec"><div class="st-sec-title">СНАРЯЖЕНИЕ</div><div class="eq-slots" id="eqSlots"></div></div>
     </div>
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<!-- v6.7.0: окно снаряжения — выбор артефакта для контура, описание размещённого, замена -->
+<div class="status-overlay" id="equipOverlay" style="z-index:1600;" onclick="if(event.target.id==='equipOverlay') closeEquipOverlay()">
+  <div class="status-window hud-frame">
+    <div class="status-header" id="equipHeader">СНАРЯЖЕНИЕ</div>
+    <div class="status-body" id="equipBody"></div>
+    <button class="close-status" onclick="closeEquipOverlay()">ЗАКРЫТЬ</button>
   </div>
 </div>
 
@@ -1306,8 +1335,10 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.6.12';
-  const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
+  const APP_VERSION = '6.7.0';
+  const PENALTY_STACK_MAX = 20;
+  // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
+  const CONTOUR_LEVELS = [10, 30, 50, 70]; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1392,6 +1423,7 @@
         bestStreak: oldData.bestStreak || 0,
         pendingLevelUpToday: oldData.pendingLevelUpToday || 0,
         codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"],
+        equippedArtifacts: Array.isArray(oldData.equippedArtifacts) ? oldData.equippedArtifacts : [null, null, null, null],
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
@@ -1444,7 +1476,8 @@
         playerName: "", nameNextAvailableAt: null, insuranceHoldScroll: null, dailyNotices: { morning: false, complete: false },
         notifiedLimitBreakUnlock: false,
         history: {}, bestStreak: 0, pendingLevelUpToday: 0,
-        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats"],
+        codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats", "equipment"],
+        equippedArtifacts: [null, null, null, null],
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
@@ -1480,6 +1513,8 @@
   if (!data.codexUnlocked.includes('stats')) data.codexUnlocked.push('stats');
   if (!data.codexUnlocked.includes('scrolls')) data.codexUnlocked.push('scrolls');
   if (!data.codexUnlocked.includes('player_registry')) data.codexUnlocked.push('player_registry');
+  if (!data.codexUnlocked.includes('equipment')) data.codexUnlocked.push('equipment');   // v6.7.0: глава «Снаряжение» — с начала игры
+  data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level);
   // Догоняющая проверка — та же логика, что уже применена выше к title_probuzhdenny.
   // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
   // достижения нужного уровня (внутри checkLevelUp()) или находки — игроки, уже
@@ -1594,14 +1629,14 @@
   }
 
   const ARTEFACTS = {
-    "crystal_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "Постоянный эффект: +10% кредитов за шаги.", level: 10 },
-    "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "Постоянный эффект: Штрафы снижены на 15%.", level: 20 },
-    "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "Постоянный эффект: +3 очка характеристик при повышении уровня.", level: 30 },
-    "seal_limit": { name: "Печать Предела", icon: "🎖", desc: "Постоянный эффект: +1 использование Преодоления предела каждый день.", level: 40 },
-    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "Постоянный эффект: ещё +4 очка характеристик при повышении уровня (складывается с Печатью Развития).", level: 50 },
-    "amulet_continuity": { name: "Амулет Непрерывности", icon: "☥", desc: "Постоянный эффект: усиливает бонус титула «Целеустремлённый» на 50%.", level: 60 },
-    "crystal_insight": { name: "Кристалл Прозрения", icon: "💎", desc: "Постоянный эффект: +8% к получаемому опыту.", level: 70 },
-    "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "Постоянный эффект: +15% кредитов, +5% опыта, +6 очков характеристик при повышении уровня. Шанс на бонусную шкатулку при полном выполнении дня.", level: 80 }
+    "crystal_speed": { name: "Кристалл Ускорения", icon: "💎", desc: "При размещении в контуре снаряжения: +10% к кредитам за шаги.", level: 10 },
+    "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "При размещении в контуре снаряжения: штрафы снижены на 15%.", level: 20 },
+    "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "При размещении в контуре снаряжения: +3 очка характеристик при повышении уровня.", level: 30 },
+    "seal_limit": { name: "Печать Предела", icon: "🎖", desc: "При размещении в контуре снаряжения: +1 использование Преодоления предела каждый день.", level: 40 },
+    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "При размещении в контуре снаряжения: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если обе размещены в контурах снаряжения.", level: 50 },
+    "amulet_continuity": { name: "Амулет Непрерывности", icon: "☥", desc: "При размещении в контуре снаряжения: увеличивает бонус титула «Целеустремлённый» на 50%.", level: 60 },
+    "crystal_insight": { name: "Кристалл Прозрения", icon: "💎", desc: "При размещении в контуре снаряжения: +8% к получаемому опыту.", level: 70 },
+    "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "При размещении в контуре снаряжения: +15% к получаемым кредитам, +5% к получаемому опыту, +6 очков характеристик при повышении уровня. Шанс на бонусную шкатулку при полном выполнении дня.", level: 80 }
   };
 
   const TITLES_DB = {
@@ -1674,6 +1709,22 @@
   // процента; Руны Искупления/Исправления исправляют день в Летописи;
   // Исправление склеивает прерванную серию. (Константа объявлена у
   // APP_VERSION: нормализация сохранения при загрузке выполняется раньше.)
+
+  // v6.7.0: сколько контуров снаряжения открыто на уровне.
+  function openContourCount(level) { return CONTOUR_LEVELS.filter(l => level >= l).length; }
+  // Чистит содержимое контуров: только имеющиеся у игрока артефакты, без повторов,
+  // только в открытых контурах; всегда 4 позиции (null — пусто).
+  function sanitizeEquippedArtifacts(arr, inventory, level) {
+    const owned = Array.isArray(inventory) ? inventory : [];
+    const open = openContourCount(level);
+    const out = [null, null, null, null], seen = new Set();
+    if (Array.isArray(arr)) arr.slice(0, 4).forEach((id, i) => {
+      if (i < open && typeof id === 'string' && owned.includes(id) && !seen.has(id)) { out[i] = id; seen.add(id); }
+    });
+    return out;
+  }
+  // Действует ли артефакт: только если размещён в контуре снаряжения.
+  function isArtifactEquipped(id) { return Array.isArray(data.equippedArtifacts) && data.equippedArtifacts.includes(id); }
 
   function sanitizePenaltyStack(arr) {
     if (!Array.isArray(arr)) return [];
@@ -2234,12 +2285,13 @@
     scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть. Повторно использовать Свиток Заморозки можно не раньше чем через 30 дней после предыдущей активации." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
+    equipment: { title: "Снаряжение", content: "Сила артефакта не пробуждается сама по себе: Система связывает её с Игроком лишь тогда, когда артефакт размещён в контуре снаряжения. Контуров немного, и каждый новый Система открывает, когда Игрок доказывает, что готов нести больше. Извлечённый из контура артефакт не утрачивает силы — он ждёт своего часа. Выбор снаряжения — выбор пути: Игрок сам решает, какая сила сопровождает его." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Артефакт D-ранга — кристалл, отзывающийся на сам ритм движения, а не на его цель. Каждый пройденный шаг приносит заметно больше кредитов, чем без него." },
     artifact_amulet_will: { title: "Амулет Воли", content: "Артефакт C-ранга — амулет, ослабляющий саму тяжесть неудачи, не отменяя её. При штрафе теряется заметно меньше накопленного опыта." },
     artifact_seal_growth: { title: "Печать Развития", content: "Артефакт B-ранга — печать, закрепляющая уже доказанную готовность расти быстрее, чем растёт большинство. При каждом повышении уровня начисляется больше очков характеристик, чем без неё." },
     artifact_seal_limit: { title: "Печать Предела", content: "Артефакт A-ранга — знак того, что установленный Системой предел признан Игроком слишком тесным. Преодоление предела становится доступно на одно применение больше каждый день." },
-    artifact_sphere_growth: { title: "Сфера Роста", content: "Артефакт A-ранга, действующий заодно с Печатью Развития, а не вместо неё — редкий случай, когда два артефакта усиливают друг друга, а не конкурируют. При каждом повышении уровня начисляется ещё больше очков характеристик." },
-    artifact_amulet_continuity: { title: "Амулет Непрерывности", content: "Артефакт S-ранга. Создан не для силы и не для скорости, а для верности — усиливает награду не сам по себе, а лишь отражением уже проявленной решимости. Работает исключительно пока активен титул «Целеустремлённый»: стоит сменить титул на любой другой — и амулет замолкает, не давая ничего взамен, до тех пор, пока «Целеустремлённый» не будет снова выбран активным. Пока же условие выполнено, награда в опыте от серии дней становится заметно весомее." },
+    artifact_sphere_growth: { title: "Сфера Роста", content: "Артефакт A-ранга, действующий заодно с Печатью Развития, если обе размещены в контурах снаряжения, а не вместо неё — редкий случай, когда два артефакта усиливают друг друга, а не конкурируют. При каждом повышении уровня начисляется ещё больше очков характеристик." },
+    artifact_amulet_continuity: { title: "Амулет Непрерывности", content: "Артефакт S-ранга. Создан не для силы и не для скорости, а для верности — усиливает награду не сам по себе, а лишь отражением уже проявленной решимости. Работает исключительно пока амулет размещён в контуре снаряжения и активен титул «Целеустремлённый»: стоит сменить титул на любой другой — и амулет замолкает, не давая ничего взамен, до тех пор, пока «Целеустремлённый» не будет снова выбран активным. Пока же условие выполнено, награда в опыте от серии дней становится заметно весомее." },
     artifact_crystal_insight: { title: "Кристалл Прозрения", content: "Артефакт S-ранга. Носящий его будто начинает яснее видеть саму суть тренировки — не рутину, а путь. Весь получаемый опыт заметно увеличен." },
     artifact_crystal_shadow: { title: "Кристалл Теней", content: "Артефакт S-ранга — кристалл, обостряющий внимание к деталям, которые обычно ускользают из виду. Кредиты и опыт Игрока заметно увеличены, а полное выполнение дневного задания иногда приносит дополнительную находку." },
     title_celeustremlenny: { title: "Целеустремлённый", content: "Титул стойкой воли — семь дней без единого срыва, планка, которую держат немногие. Опыт в такие дни начисляется заметно щедрее обычного." },
@@ -2793,7 +2845,7 @@
       mul += (bonusInt * 0.01);
       if (data.activeTitle === "Целеустремлённый") {
         let determinedBonus = 0.05;
-        if (data.inventory.includes("amulet_continuity")) determinedBonus *= 1.5;
+        if (isArtifactEquipped('amulet_continuity')) determinedBonus *= 1.5;
         mul += determinedBonus;
       }
       if (data.activeTitle === "Странник" && id === "steps") mul += 0.10;
@@ -2802,9 +2854,9 @@
       if (data.activeTitle === "Неутомимый" && id === "pushups") mul += 0.10;
       if (data.activeTitle === "Несокрушимый" && id === "pushups") mul += 0.20;
       if (data.activeTitle === "Сокрушитель" && id === "pushups") mul += 0.30;
-      if (data.inventory.includes("crystal_insight")) mul += 0.08;
+      if (isArtifactEquipped('crystal_insight')) mul += 0.08;
     }
-    if (data.inventory.includes("crystal_shadow")) mul += 0.05;
+    if (isArtifactEquipped('crystal_shadow')) mul += 0.05;
     if (data.activeScroll !== 'renunciation' && data.isGoalMet) {
       const bonusSta = Math.max(0, data.stats.sta - 10);
       mul += (bonusSta * 0.02);
@@ -3210,7 +3262,7 @@
     const strReduction = bonusStr * 0.0025;
     let finalPen = Math.max(0.05, basePen - lvlReduction - strReduction);
     if (data.curseActiveToday) finalPen *= 3;
-    if (data.inventory.includes("amulet_will")) finalPen *= 0.85;
+    if (isArtifactEquipped('amulet_will')) finalPen *= 0.85;
     let loss = Math.floor(getExpToNext(data.level) * finalPen);
     if (halfBlock) loss = Math.floor(loss * 0.5);
     const shortfall = Math.max(0, loss - data.exp);
@@ -3691,11 +3743,21 @@
           </div>`;
     });
     cont.innerHTML += `<div class="section-title">Артефакты</div>`;
-    let arts = sortByRank(data.inventory.filter(k => ARTEFACTS[k]));
+    const ownedArts = sortByRank(data.inventory.filter(k => ARTEFACTS[k]));
+    const openContours = openContourCount(data.level);
+    if (openContours > 0) {
+      const used = data.equippedArtifacts.slice(0, openContours).filter(Boolean).length;
+      cont.innerHTML += `<div class="eq-state">Снаряжение: ${used} из ${openContours} ${openContours === 1 ? 'контура' : 'контуров'}</div>`;
+    }
+    // размещённые в контурах — первыми (v6.7.0)
+    const arts = ownedArts.filter(k => isArtifactEquipped(k)).concat(ownedArts.filter(k => !isArtifactEquipped(k)));
     if (!arts.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
     arts.forEach(key => {
-      const art = ARTEFACTS[key];
-      cont.innerHTML += `<div class="item-card"><div class="item-icon"><img class="item-icon-img" src="icons/items/${key}.png" alt="" onclick="showItemPreview('${key}','${escapeHtml(art.name)}')"></div><div class="item-info"><div class="item-name">${art.name}</div><div class="item-desc">${art.desc}</div></div></div>`;
+      const art = ARTEFACTS[key], on = isArtifactEquipped(key);
+      const btn = openContours === 0 ? '' : on
+        ? `<button class="use-btn eq-btn eq-extract" onclick="extractArtifact('${key}')">ИЗВЛЕЧЬ</button>`
+        : `<button class="use-btn eq-btn" onclick="equipArtifact('${key}')">СНАРЯДИТЬ</button>`;
+      cont.innerHTML += `<div class="item-card${on ? ' eq-on' : ''}"><div class="item-icon"><img class="item-icon-img" src="icons/items/${key}.png" alt="" onclick="showItemPreview('${key}','${escapeHtml(art.name)}')"></div><div class="item-info"><div class="item-name">${art.name}${on ? ' ●' : ''}</div><div class="item-desc">${art.desc}</div></div>${btn}</div>`;
     });
     cont.innerHTML += `<div class="section-title">Шкатулки</div>`;
     const boxIds = sortByRank(Object.keys(data.boxes).filter(id => data.boxes[id] > 0));
@@ -4371,7 +4433,7 @@
 
   function getDailyLimitBreakCap() {
     let cap = 1;
-    if (data.inventory.includes("seal_limit")) cap += 1;
+    if (isArtifactEquipped('seal_limit')) cap += 1;
     cap += (data.extraLimitBreaksToday || 0);
     return cap;
   }
@@ -4397,6 +4459,7 @@
 
   function checkLevelUp() {
     let leveled = false;
+    const contoursBefore = openContourCount(data.level);
     const rankBefore = getRank(data.level).name;
     const gainedBoxes = [];
     const gainedArtefacts = [];
@@ -4406,9 +4469,9 @@
       data.level++;
       playSound('levelUp');
       let statGain = 5;
-      if (data.inventory.includes("seal_growth")) statGain += 3;
-      if (data.inventory.includes("sphere_growth")) statGain += 4;
-      if (data.inventory.includes("crystal_shadow")) statGain += 6;
+      if (isArtifactEquipped('seal_growth')) statGain += 3;
+      if (isArtifactEquipped('sphere_growth')) statGain += 4;
+      if (isArtifactEquipped('crystal_shadow')) statGain += 6;
       data.statPoints += statGain;
       leveled = true;
       const boxId = rollBoxTier();
@@ -4447,6 +4510,9 @@
         const unlockText = SYSTEM_NOTICES.limitBreakUnlock[Math.floor(Math.random() * SYSTEM_NOTICES.limitBreakUnlock.length)];
         setTimeout(() => showNotice(unlockText, 'info'), 4500);
         unlockCodexChapter('limit_break');
+      }
+      if (openContourCount(data.level) > contoursBefore) {
+        setTimeout(() => showNotice('Открыт новый контур снаряжения.', 'info'), 4500);   // v6.7.0
       }
       // Order per artifact: level notice (above) already queued first, then
       // "item received", then the Codex-chapter unlock — in that sequence.
@@ -4665,9 +4731,9 @@
         if (data.activeScroll !== 'renunciation') {
           const critChance = Math.max(0, data.stats.agi - 10) * 0.5;
           if (Math.random() * 100 < critChance) { creds = Math.floor(creds * 1.5); critMsg = " BONUS!"; playSound('bonus'); }
-          if (id === "steps" && data.inventory.includes("crystal_speed")) creds *= 1.1;
+          if (id === "steps" && isArtifactEquipped('crystal_speed')) creds *= 1.1;
         }
-        if (data.inventory.includes("crystal_shadow")) creds *= 1.15;
+        if (isArtifactEquipped('crystal_shadow')) creds *= 1.15;
         if (data.creditBoostToday > 0) creds *= (1 + data.creditBoostToday);
         if (data.activeScroll !== 'renunciation') {
           if (data.activeTitle === "Преодолевший предел" && data.isGoalMet) creds *= 1.05;
@@ -4725,7 +4791,7 @@
           playSound('dayComplete');
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
           setTimeout(() => showNotice(completeText, 'info'), 4500);
-          if (data.inventory.includes('crystal_shadow')) {
+          if (isArtifactEquipped('crystal_shadow')) {
             if (Math.random() < 0.10) {
               data.boxes['box_obsidian'] = (data.boxes['box_obsidian'] || 0) + 1;
               setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_obsidian'].name}`, 'info'), 4500);
@@ -4781,7 +4847,73 @@
     document.getElementById(prefix + 'Streak').textContent = data.consecutiveDays || 0;
   }
 
+  // ---- v6.7.0: снаряжение ----
+  function artifactRank(id) { return (ITEM_META[id] && ITEM_META[id].rank) || ''; }
+  function freeArtifacts() { return sortByRank(data.inventory.filter(k => ARTEFACTS[k] && !isArtifactEquipped(k))); }
+  // Видны открытые контуры и ровно один следующий закрытый (затемнённый); остальные скрыты.
+  function renderEquipment() {
+    const box = document.getElementById('eqSlots');
+    if (!box) return;
+    const open = openContourCount(data.level);
+    let html = '';
+    for (let i = 0; i < Math.min(4, open + 1); i++) {
+      if (i >= open) { html += '<div class="eq-slot locked"></div>'; continue; }
+      const id = data.equippedArtifacts[i];
+      html += id
+        ? `<div class="eq-slot filled" onclick="onContourClick(${i})"><span class="eq-rk">${artifactRank(id)}</span><img src="icons/items/${id}.png" alt=""></div>`
+        : `<div class="eq-slot" onclick="onContourClick(${i})"></div>`;
+    }
+    box.innerHTML = html;
+  }
+  function openEquipOverlay(header, body) {
+    document.getElementById('equipHeader').textContent = header;
+    document.getElementById('equipBody').innerHTML = body;
+    document.getElementById('equipOverlay').style.display = 'flex';
+  }
+  function closeEquipOverlay() { document.getElementById('equipOverlay').style.display = 'none'; }
+  function onContourClick(i) {
+    if (i >= openContourCount(data.level)) return;
+    const id = data.equippedArtifacts[i];
+    if (id) {
+      openEquipOverlay(ARTEFACTS[id].name,
+        `<img class="eq-big" src="icons/items/${id}.png" alt=""><div class="eq-text">Ранг ${artifactRank(id)}. ${escapeHtml(ARTEFACTS[id].desc)}</div>` +
+        `<div style="text-align:center"><button class="use-btn eq-btn eq-extract" onclick="extractArtifact('${id}')">ИЗВЛЕЧЬ</button></div>`);
+      return;
+    }
+    const free = freeArtifacts();
+    if (!free.length) return;   // по механике не бывает: свободный артефакт есть всегда
+    openEquipOverlay('СНАРЯЖЕНИЕ', `<div class="eq-text">Выберите артефакт:</div>` +
+      free.map(k => `<div class="eq-opt" onclick="equipArtifact('${k}', ${i})"><img src="icons/items/${k}.png" alt=""><span class="nm">${ARTEFACTS[k].name}</span></div>`).join(''));
+  }
+  function afterEquipmentChange() {
+    closeEquipOverlay();
+    saveData(); render(); updateStatusUI();
+    if (document.getElementById('invOverlay').style.display === 'flex') openInv();
+  }
+  // Снарядить: в указанный контур, иначе в первый свободный, иначе — выбор, что заменить. Молча.
+  function equipArtifact(id, slot) {
+    if (!ARTEFACTS[id] || !data.inventory.includes(id) || isArtifactEquipped(id)) return;
+    const open = openContourCount(data.level);
+    if (open === 0) return;
+    if (slot === undefined) slot = data.equippedArtifacts.slice(0, open).findIndex(x => !x);
+    if (slot === -1) {
+      openEquipOverlay('СНАРЯЖЕНИЕ', `<div class="eq-text">Все контуры заняты. Заменить:</div>` +
+        data.equippedArtifacts.slice(0, open).map((e, i) => `<div class="eq-opt" onclick="equipArtifact('${id}', ${i})"><img src="icons/items/${e}.png" alt=""><span class="nm">${ARTEFACTS[e].name}</span></div>`).join(''));
+      return;
+    }
+    if (slot < 0 || slot >= open) return;
+    data.equippedArtifacts[slot] = id;
+    afterEquipmentChange();
+  }
+  function extractArtifact(id) {
+    const i = data.equippedArtifacts.indexOf(id);
+    if (i < 0) return;
+    data.equippedArtifacts[i] = null;
+    afterEquipmentChange();
+  }
+
   function updateStatusUI() {
+    renderEquipment();
     fillStatusBlock('st');
     document.getElementById('statPoints').textContent = data.statPoints;
     document.getElementById('valStr').textContent = data.stats.str;
@@ -4971,6 +5103,7 @@
     };
 
     const cleanInventory = Array.isArray(s.inventory) ? s.inventory.filter(k => ARTEFACTS[k]) : [];
+    const cleanEquipped = sanitizeEquippedArtifacts(s.equippedArtifacts, cleanInventory, sanitizeNumber(s.level, 1, 1));
     const cleanConsumables = {};
     if (s.consumables && typeof s.consumables === 'object' && !Array.isArray(s.consumables)) {
       for (const key in s.consumables) {
@@ -5101,6 +5234,7 @@
       isGoalMet: !!s.isGoalMet,
       credits: sanitizeNumber(s.credits, 0),
       inventory: cleanInventory,
+      equippedArtifacts: cleanEquipped,
       consumables: cleanConsumables,
       insurance: !!s.insurance,
       activeTitle: cleanActiveTitle,

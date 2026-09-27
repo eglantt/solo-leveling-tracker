@@ -35,7 +35,7 @@ const complete = w => {
   ids.forEach(id => E(w, `document.querySelector('.quest-item[data-id="${id}"] .add').click()`));
 };
 const J = (w, c) => E(w, `JSON.stringify(${c})`);
-const fullLoss = w => E(w, `Math.floor(getExpToNext(data.level)*Math.max(0.05,0.15-Math.floor(data.level/20)*0.03-Math.max(0,data.stats.str-10)*0.0025)*(data.curseActiveToday?3:1)*(data.inventory.includes("amulet_will")?0.85:1))`);
+const fullLoss = w => E(w, `Math.floor(getExpToNext(data.level)*Math.max(0.05,0.15-Math.floor(data.level/20)*0.03-Math.max(0,data.stats.str-10)*0.0025)*(data.curseActiveToday?3:1)*(isArtifactEquipped("amulet_will")?0.85:1))`);
 
 const results = []; const check = (n, c, i) => results.push((c ? 'OK  ' : 'FAIL') + ' ' + n + (i !== undefined && !c ? '  → ' + i : ''));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
