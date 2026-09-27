@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.7.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.7.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -312,6 +312,7 @@
     .eq-opt .nm { font-family: 'Exo 2 Text', sans-serif; font-weight: 700; color: #40c0ff; font-size: 0.95rem; }
     .eq-text { font-family: 'Exo 2 Text', sans-serif; color: #a8d8ff; font-size: 0.92rem; text-align: center; margin-bottom: 10px; line-height: 1.45; }
     .eq-big { display: block; margin: 0 auto 8px; width: 88px; height: 88px; object-fit: contain; }
+    .eq-meta { margin-bottom: 14px; }   /* v6.7.1: как превью — по левому краю, строки Ранг/Тип/Применение/Эффект */
 
     /* ===== v6.6.0: окно «СТАТУС» ===== */
     .st-sec { border: 1px solid #40c0ff44; border-radius: 6px; padding: 10px 12px; margin-top: 12px; text-align: left; }
@@ -1335,7 +1336,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.7.0';
+  const APP_VERSION = '6.7.1';
   const PENALTY_STACK_MAX = 20;
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70]; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -1633,7 +1634,7 @@
     "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "При размещении в контуре снаряжения: штрафы снижены на 15%.", level: 20 },
     "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "При размещении в контуре снаряжения: +3 очка характеристик при повышении уровня.", level: 30 },
     "seal_limit": { name: "Печать Предела", icon: "🎖", desc: "При размещении в контуре снаряжения: +1 использование Преодоления предела каждый день.", level: 40 },
-    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "При размещении в контуре снаряжения: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если обе размещены в контурах снаряжения.", level: 50 },
+    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "При размещении в контуре снаряжения: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если оба артефакта размещены в контурах снаряжения.", level: 50 },
     "amulet_continuity": { name: "Амулет Непрерывности", icon: "☥", desc: "При размещении в контуре снаряжения: увеличивает бонус титула «Целеустремлённый» на 50%.", level: 60 },
     "crystal_insight": { name: "Кристалл Прозрения", icon: "💎", desc: "При размещении в контуре снаряжения: +8% к получаемому опыту.", level: 70 },
     "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "При размещении в контуре снаряжения: +15% к получаемым кредитам, +5% к получаемому опыту, +6 очков характеристик при повышении уровня. Шанс на бонусную шкатулку при полном выполнении дня.", level: 80 }
@@ -2290,7 +2291,7 @@
     artifact_amulet_will: { title: "Амулет Воли", content: "Артефакт C-ранга — амулет, ослабляющий саму тяжесть неудачи, не отменяя её. При штрафе теряется заметно меньше накопленного опыта." },
     artifact_seal_growth: { title: "Печать Развития", content: "Артефакт B-ранга — печать, закрепляющая уже доказанную готовность расти быстрее, чем растёт большинство. При каждом повышении уровня начисляется больше очков характеристик, чем без неё." },
     artifact_seal_limit: { title: "Печать Предела", content: "Артефакт A-ранга — знак того, что установленный Системой предел признан Игроком слишком тесным. Преодоление предела становится доступно на одно применение больше каждый день." },
-    artifact_sphere_growth: { title: "Сфера Роста", content: "Артефакт A-ранга, действующий заодно с Печатью Развития, если обе размещены в контурах снаряжения, а не вместо неё — редкий случай, когда два артефакта усиливают друг друга, а не конкурируют. При каждом повышении уровня начисляется ещё больше очков характеристик." },
+    artifact_sphere_growth: { title: "Сфера Роста", content: "Артефакт A-ранга, действующий заодно с Печатью Развития, если оба артефакта размещены в контурах снаряжения, а не вместо неё — редкий случай, когда два артефакта усиливают друг друга, а не конкурируют. При каждом повышении уровня начисляется ещё больше очков характеристик." },
     artifact_amulet_continuity: { title: "Амулет Непрерывности", content: "Артефакт S-ранга. Создан не для силы и не для скорости, а для верности — усиливает награду не сам по себе, а лишь отражением уже проявленной решимости. Работает исключительно пока амулет размещён в контуре снаряжения и активен титул «Целеустремлённый»: стоит сменить титул на любой другой — и амулет замолкает, не давая ничего взамен, до тех пор, пока «Целеустремлённый» не будет снова выбран активным. Пока же условие выполнено, награда в опыте от серии дней становится заметно весомее." },
     artifact_crystal_insight: { title: "Кристалл Прозрения", content: "Артефакт S-ранга. Носящий его будто начинает яснее видеть саму суть тренировки — не рутину, а путь. Весь получаемый опыт заметно увеличен." },
     artifact_crystal_shadow: { title: "Кристалл Теней", content: "Артефакт S-ранга — кристалл, обостряющий внимание к деталям, которые обычно ускользают из виду. Кредиты и опыт Игрока заметно увеличены, а полное выполнение дневного задания иногда приносит дополнительную находку." },
@@ -2567,14 +2568,14 @@
   }
 
   const ITEM_META = {
-    "crystal_speed": { rank: "D", type: "Артефакт скорости", usage: "Пассивно" },
-    "amulet_will": { rank: "C", type: "Артефакт стойкости", usage: "Пассивно" },
-    "seal_growth": { rank: "B", type: "Артефакт роста", usage: "Пассивно" },
-    "seal_limit": { rank: "A", type: "Артефакт предела", usage: "Пассивно" },
-    "sphere_growth": { rank: "A", type: "Артефакт восхождения", usage: "Пассивно" },
-    "amulet_continuity": { rank: "S", type: "Артефакт постоянства", usage: "Пассивно" },
-    "crystal_insight": { rank: "S", type: "Артефакт мудрости", usage: "Пассивно" },
-    "crystal_shadow": { rank: "S", type: "Артефакт превосходства", usage: "Пассивно" },
+    "crystal_speed": { rank: "D", type: "Артефакт скорости", usage: "Контур снаряжения" },
+    "amulet_will": { rank: "C", type: "Артефакт стойкости", usage: "Контур снаряжения" },
+    "seal_growth": { rank: "B", type: "Артефакт роста", usage: "Контур снаряжения" },
+    "seal_limit": { rank: "A", type: "Артефакт предела", usage: "Контур снаряжения" },
+    "sphere_growth": { rank: "A", type: "Артефакт восхождения", usage: "Контур снаряжения" },
+    "amulet_continuity": { rank: "S", type: "Артефакт постоянства", usage: "Контур снаряжения" },
+    "crystal_insight": { rank: "S", type: "Артефакт мудрости", usage: "Контур снаряжения" },
+    "crystal_shadow": { rank: "S", type: "Артефакт превосходства", usage: "Контур снаряжения" },
     "rune_cleansing": { rank: "E", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_protection": { rank: "E", type: "Расходный предмет", usage: "Одноразовое использование" },
     "potion_restoration": { rank: "E", type: "Расходный предмет", usage: "Одноразовое использование" },
@@ -3858,16 +3859,26 @@
     return null;
   }
 
+  // v6.7.1: текст превью предмета (Ранг / Тип / Применение / Эффект). Общий для превью
+  // и окна артефакта в «СТАТУСЕ». У артефактов в «Эффект:» — описание без приставки
+  // «При размещении в контуре снаряжения:» (она уже сказана строкой «Применение»).
+  const ARTIFACT_DESC_PREFIX = 'При размещении в контуре снаряжения: ';
+  function itemPreviewText(iconId) {
+    const meta = ITEM_META[iconId];
+    let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
+    let desc = getItemDesc(iconId);
+    if (desc && ARTEFACTS[iconId] && desc.startsWith(ARTIFACT_DESC_PREFIX)) {
+      desc = desc.slice(ARTIFACT_DESC_PREFIX.length);
+      desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+    }
+    if (desc) text += `\nЭффект: ${desc}`;
+    return text;
+  }
+
   function showItemPreview(iconId, name) {
     document.getElementById('itemPreviewImg').src = `icons/items/${iconId}.png`;
     document.getElementById('itemPreviewName').textContent = name;
-    const meta = ITEM_META[iconId];
-    let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
-    const desc = getItemDesc(iconId);
-    if (desc) {
-      text += ARTEFACTS[iconId] ? `\n${desc}` : `\nЭффект: ${desc}`;
-    }
-    document.getElementById('itemPreviewMeta').textContent = text;
+    document.getElementById('itemPreviewMeta').textContent = itemPreviewText(iconId);
     document.getElementById('itemPreviewOverlay').style.display = 'flex';
   }
 
@@ -4876,7 +4887,7 @@
     const id = data.equippedArtifacts[i];
     if (id) {
       openEquipOverlay(ARTEFACTS[id].name,
-        `<img class="eq-big" src="icons/items/${id}.png" alt=""><div class="eq-text">Ранг ${artifactRank(id)}. ${escapeHtml(ARTEFACTS[id].desc)}</div>` +
+        `<img class="eq-big" src="icons/items/${id}.png" alt=""><div class="item-preview-meta eq-meta">${escapeHtml(itemPreviewText(id))}</div>` +
         `<div style="text-align:center"><button class="use-btn eq-btn eq-extract" onclick="extractArtifact('${id}')">ИЗВЛЕЧЬ</button></div>`);
       return;
     }

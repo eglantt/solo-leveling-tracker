@@ -175,6 +175,42 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.7.1: превью артефактов, окно артефакта в «СТАТУСЕ», формулировка Сферы Роста =====
+async function artifactPreviewTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const D = w.document;
+  E(w, `data.level = 80; data.inventory = Object.keys(ARTEFACTS); data.equippedArtifacts = ['sphere_growth', null, null, null]; render(); updateStatusUI();`);
+  check('Q1 Сфера Роста: «если оба артефакта…» в описании и в главе',
+    E(w, `ARTEFACTS.sphere_growth.desc`).endsWith('складывается с Печатью Развития, если оба артефакта размещены в контурах снаряжения.')
+    && E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если оба артефакта размещены в контурах снаряжения') && !E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если обе'));
+  const ids = JSON.parse(E(w, 'JSON.stringify(Object.keys(ARTEFACTS))'));
+  const bad = [];
+  for (const id of ids) {
+    E(w, `showItemPreview('${id}', ARTEFACTS['${id}'].name)`);
+    const t = D.getElementById('itemPreviewMeta').textContent.split('\n');
+    if (t[2] !== 'Применение: Контур снаряжения' || !t[3] || !t[3].startsWith('Эффект: ') || t[3].includes('При размещении') || t.length !== 4) bad.push(id + ': ' + t.join(' / '));
+  }
+  check('Q2 превью всех 8 артефактов: «Применение: Контур снаряжения», «Эффект:» без приставки', bad.length === 0, bad.join(' | '));
+  E(w, `showItemPreview('sphere_growth', 'Сфера Роста')`);
+  check('Q3 пример — Сфера Роста', D.getElementById('itemPreviewMeta').textContent === 'Ранг: A\nТип: Артефакт восхождения\nПрименение: Контур снаряжения\nЭффект: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если оба артефакта размещены в контурах снаряжения.',
+    D.getElementById('itemPreviewMeta').textContent);
+  const rune = E(w, `itemPreviewText('rune_protection')`);
+  check('Q4 превью других предметов не изменилось', /^Ранг: .+\nТип: .+\nПрименение: .+\nЭффект: /.test(rune) && !rune.includes('Контур снаряжения'), rune);
+  D.querySelector('#eqSlots .eq-slot.filled').click();
+  const meta = D.querySelector('#equipBody .item-preview-meta');
+  check('Q5 окно артефакта в «СТАТУСЕ» — тот же текст, что в превью', !!meta && meta.textContent === E(w, `itemPreviewText('sphere_growth')`));
+  check('Q6 текст окна по левому краю, строки сохраняются', w.getComputedStyle(meta).textAlign === 'left' && w.getComputedStyle(meta).whiteSpace === 'pre-line');
+  const btnWrap = D.querySelector('#equipBody .eq-extract').parentElement;
+  check('Q7 кнопка «ИЗВЛЕЧЬ» по центру', btnWrap.style.textAlign === 'center');
+  E(w, `closeEquipOverlay(); data.equippedArtifacts = [null,null,null,null]; render(); updateStatusUI();`);
+  D.querySelector('#eqSlots .eq-slot:not(.locked)').click();
+  check('Q8 строка «Выберите артефакт:» осталась по центру', w.getComputedStyle(D.querySelector('#equipBody .eq-text')).textAlign === 'center');
+  E(w, `closeEquipOverlay(); openInv()`);
+  const card = [...D.querySelectorAll('#invContent .item-card')].find(c => c.querySelector('.item-name') && c.querySelector('.item-name').textContent.startsWith('Сфера Роста'));
+  check('Q9 в Инвентаре описание полное, с приставкой', !!card && card.querySelector('.item-desc').textContent.startsWith('При размещении в контуре снаряжения: '));
+}
+
 // ===== v6.7.0: снаряжение — контуры артефактов =====
 async function equipmentTests() {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -303,7 +339,7 @@ async function equipmentTests() {
     const descs = JSON.parse(E(w, `JSON.stringify(Object.values(ARTEFACTS).map(a => a.desc))`));
     check('E35 описания артефактов: «При размещении в контуре снаряжения:», без «Постоянный эффект»', descs.every(d => d.startsWith('При размещении в контуре снаряжения: ')) && !descs.some(d => d.includes('Постоянный эффект')));
     check('E36 главы Сферы Роста и Амулета Непрерывности обновлены',
-      E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если обе размещены в контурах снаряжения') && E(w, `CODEX_CHAPTERS.artifact_amulet_continuity.content`).includes('пока амулет размещён в контуре снаряжения и активен титул')); }
+      E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если оба артефакта размещены в контурах снаряжения') && E(w, `CODEX_CHAPTERS.artifact_amulet_continuity.content`).includes('пока амулет размещён в контуре снаряжения и активен титул')); }
 }
 
 // ===== v6.6.12: бегущий разряд по работающим рунам =====
@@ -837,6 +873,7 @@ function noticeFor(scroll, item) {
   await creditIconTests();
   await runeBoltTests();
   await equipmentTests();
+  await artifactPreviewTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
