@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.8.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.8.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -951,7 +951,7 @@
           <div class="st-cell"><div class="st-k" onclick="showStatLore('per')">Восприятие</div><div class="st-line"><span class="st-v" id="valPer">10</span><button onclick="incStat('per')" class="stat-add-btn" id="btnPer">+</button></div></div>
           <div class="st-free"><div class="st-free-n" id="statPoints">0</div><div class="st-free-k">Свободные очки характеристик</div></div>
       </div></div>
-      <div class="st-sec"><div class="st-sec-title">СНАРЯЖЕНИЕ</div><div class="eq-slots" id="eqSlots"></div></div>
+      <div class="st-sec"><div class="st-sec-title">КОНТУР СНАРЯЖЕНИЯ</div><div class="eq-slots" id="eqSlots"></div></div>
     </div>
     <button class="close-status" id="closeStatusBtn">ЗАКРЫТЬ</button>
   </div>
@@ -960,7 +960,7 @@
 <!-- v6.7.0: окно снаряжения — выбор артефакта для контура, описание размещённого, замена -->
 <div class="status-overlay" id="equipOverlay" style="z-index:1600;" onclick="if(event.target.id==='equipOverlay') closeEquipOverlay()">
   <div class="status-window hud-frame">
-    <div class="status-header" id="equipHeader">СНАРЯЖЕНИЕ</div>
+    <div class="status-header" id="equipHeader">КОНТУР СНАРЯЖЕНИЯ</div>
     <div class="status-body" id="equipBody"></div>
     <button class="close-status" onclick="closeEquipOverlay()">ЗАКРЫТЬ</button>
   </div>
@@ -1358,7 +1358,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.8.4';
+  const APP_VERSION = '6.8.5';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -1544,7 +1544,7 @@
   if (!data.codexUnlocked.includes('stats')) data.codexUnlocked.push('stats');
   if (!data.codexUnlocked.includes('scrolls')) data.codexUnlocked.push('scrolls');
   if (!data.codexUnlocked.includes('player_registry')) data.codexUnlocked.push('player_registry');
-  if (!data.codexUnlocked.includes('equipment')) data.codexUnlocked.push('equipment');   // v6.7.0: глава «Снаряжение» — с начала игры
+  if (!data.codexUnlocked.includes('equipment')) data.codexUnlocked.push('equipment');   // v6.7.0: глава «Контур снаряжения» (v6.8.5) — с начала игры
   data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level);
   if (typeof data.paceControl !== 'boolean') data.paceControl = true;   // v6.8.0
   data.paceWindow = sanitizePaceWindow(data.paceWindow);
@@ -1667,7 +1667,7 @@
     "amulet_will": { name: "Амулет Воли", icon: "☥", desc: "При размещении в контуре снаряжения: штрафы снижены на 15%.", level: 20 },
     "seal_growth": { name: "Печать Развития", icon: "🎖", desc: "При размещении в контуре снаряжения: +3 очка характеристик при повышении уровня.", level: 30 },
     "seal_limit": { name: "Печать Предела", icon: "🎖", desc: "При размещении в контуре снаряжения: +1 использование Преодоления предела каждый день.", level: 40 },
-    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "При размещении в контуре снаряжения: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если оба артефакта размещены в контурах снаряжения.", level: 50 },
+    "sphere_growth": { name: "Сфера Роста", icon: "🔮", desc: "При размещении в контуре снаряжения: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если оба артефакта размещены в контуре снаряжения.", level: 50 },
     "amulet_continuity": { name: "Амулет Непрерывности", icon: "☥", desc: "При размещении в контуре снаряжения: увеличивает бонус титула «Целеустремлённый» на 50%.", level: 60 },
     "crystal_insight": { name: "Кристалл Прозрения", icon: "💎", desc: "При размещении в контуре снаряжения: +8% к получаемому опыту.", level: 70 },
     "crystal_shadow": { name: "Кристалл Теней", icon: "🌑", desc: "При размещении в контуре снаряжения: +15% к получаемым кредитам, +5% к получаемому опыту, +6 очков характеристик при повышении уровня. Шанс на бонусную шкатулку при полном выполнении дня.", level: 80 }
@@ -2355,12 +2355,12 @@
     scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть. Повторно использовать Свиток Заморозки можно не раньше чем через 30 дней после предыдущей активации." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
-    equipment: { title: "Снаряжение", content: "Сила артефакта не пробуждается сама по себе: Система связывает её с Игроком лишь тогда, когда артефакт размещён в контуре снаряжения. Контуров немного, и каждый новый Система открывает, когда Игрок доказывает, что готов нести больше. Извлечённый из контура артефакт не утрачивает силы — он ждёт своего часа. Выбор снаряжения — выбор пути: Игрок сам решает, какая сила сопровождает его." },
+    equipment: { title: "Контур снаряжения", content: "Сила артефакта не пробуждается сама по себе: Система связывает её с Игроком лишь тогда, когда артефакт размещён в контуре снаряжения. Вместимость контура ограничена: Система расширяет её, когда Игрок доказывает, что готов нести больше. Извлечённый из контура артефакт не утрачивает силы — он ждёт своего часа. Выбор снаряжения — выбор пути: Игрок сам решает, какая сила сопровождает его." },
     artifact_crystal_speed: { title: "Кристалл Ускорения", content: "Артефакт D-ранга — кристалл, отзывающийся на сам ритм движения, а не на его цель. Каждый пройденный шаг приносит заметно больше кредитов, чем без него." },
     artifact_amulet_will: { title: "Амулет Воли", content: "Артефакт C-ранга — амулет, ослабляющий саму тяжесть неудачи, не отменяя её. При штрафе теряется заметно меньше накопленного опыта." },
     artifact_seal_growth: { title: "Печать Развития", content: "Артефакт B-ранга — печать, закрепляющая уже доказанную готовность расти быстрее, чем растёт большинство. При каждом повышении уровня начисляется больше очков характеристик, чем без неё." },
     artifact_seal_limit: { title: "Печать Предела", content: "Артефакт A-ранга — знак того, что установленный Системой предел признан Игроком слишком тесным. Преодоление предела становится доступно на одно применение больше каждый день." },
-    artifact_sphere_growth: { title: "Сфера Роста", content: "Артефакт A-ранга, действующий заодно с Печатью Развития, если оба артефакта размещены в контурах снаряжения, а не вместо неё — редкий случай, когда два артефакта усиливают друг друга, а не конкурируют. При каждом повышении уровня начисляется ещё больше очков характеристик." },
+    artifact_sphere_growth: { title: "Сфера Роста", content: "Артефакт A-ранга, действующий заодно с Печатью Развития, если оба артефакта размещены в контуре снаряжения, а не вместо неё — редкий случай, когда два артефакта усиливают друг друга, а не конкурируют. При каждом повышении уровня начисляется ещё больше очков характеристик." },
     artifact_amulet_continuity: { title: "Амулет Непрерывности", content: "Артефакт S-ранга. Создан не для силы и не для скорости, а для верности — усиливает награду не сам по себе, а лишь отражением уже проявленной решимости. Работает исключительно пока амулет размещён в контуре снаряжения и активен титул «Целеустремлённый»: стоит сменить титул на любой другой — и амулет замолкает, не давая ничего взамен, до тех пор, пока «Целеустремлённый» не будет снова выбран активным. Пока же условие выполнено, награда в опыте от серии дней становится заметно весомее." },
     artifact_crystal_insight: { title: "Кристалл Прозрения", content: "Артефакт S-ранга. Носящий его будто начинает яснее видеть саму суть тренировки — не рутину, а путь. Весь получаемый опыт заметно увеличен." },
     artifact_crystal_shadow: { title: "Кристалл Теней", content: "Артефакт S-ранга — кристалл, обостряющий внимание к деталям, которые обычно ускользают из виду. Кредиты и опыт Игрока заметно увеличены, а полное выполнение дневного задания иногда приносит дополнительную находку." },
@@ -3881,7 +3881,7 @@
     const openContours = openContourCount(data.level);
     if (openContours > 0) {
       const used = data.equippedArtifacts.slice(0, openContours).filter(Boolean).length;
-      cont.innerHTML += `<div class="eq-state">Снаряжение: ${used} из ${openContours} ${openContours === 1 ? 'контура' : 'контуров'}</div>`;
+      cont.innerHTML += `<div class="eq-state">Контур снаряжения: ${used} из ${openContours}</div>`;
     }
     // размещённые в контурах — первыми (v6.7.0)
     const arts = ownedArts.filter(k => isArtifactEquipped(k)).concat(ownedArts.filter(k => !isArtifactEquipped(k)));
@@ -4661,7 +4661,7 @@
         unlockCodexChapter('limit_break');
       }
       if (openContourCount(data.level) > contoursBefore) {
-        setTimeout(() => showNotice('Открыт новый контур снаряжения.', 'info'), 4500);   // v6.7.0
+        setTimeout(() => showNotice('Вместимость контура снаряжения увеличена.', 'info'), 4500);   // v6.7.0
       }
       // Order per artifact: level notice (above) already queued first, then
       // "item received", then the Codex-chapter unlock — in that sequence.
@@ -5046,7 +5046,7 @@
     }
     const free = freeArtifacts();
     if (!free.length) return;   // по механике не бывает: свободный артефакт есть всегда
-    openEquipOverlay('СНАРЯЖЕНИЕ', `<div class="eq-text">Выберите артефакт:</div>` +
+    openEquipOverlay('КОНТУР СНАРЯЖЕНИЯ', `<div class="eq-text">Выберите артефакт:</div>` +
       free.map(k => `<div class="eq-opt" onclick="equipArtifact('${k}', ${i})"><img src="icons/items/${k}.png" alt=""><span class="nm">${ARTEFACTS[k].name}</span></div>`).join(''));
   }
   function afterEquipmentChange() {
@@ -5061,7 +5061,7 @@
     if (open === 0) return;
     if (slot === undefined) slot = data.equippedArtifacts.slice(0, open).findIndex(x => !x);
     if (slot === -1) {
-      openEquipOverlay('СНАРЯЖЕНИЕ', `<div class="eq-text">Все контуры заняты. Заменить:</div>` +
+      openEquipOverlay('КОНТУР СНАРЯЖЕНИЯ', `<div class="eq-text">Контур снаряжения заполнен. Заменить:</div>` +
         data.equippedArtifacts.slice(0, open).map((e, i) => `<div class="eq-opt" onclick="equipArtifact('${id}', ${i})"><img src="icons/items/${e}.png" alt=""><span class="nm">${ARTEFACTS[e].name}</span></div>`).join(''));
       return;
     }

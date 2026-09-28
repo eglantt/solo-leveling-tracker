@@ -182,6 +182,24 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.8.5: «Контур снаряжения» =====
+async function contourNamingTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const D = w.document;
+  E(w, `data.level = 50; data.inventory = Object.keys(ARTEFACTS).filter(k => ARTEFACTS[k].level <= 50); data.equippedArtifacts = [null,null,null,null]; updateStatusUI();`);
+  check('CN1 заголовок секции в «СТАТУСЕ» — «КОНТУР СНАРЯЖЕНИЯ»', [...D.querySelectorAll('.st-sec-title')].some(t => t.textContent === 'КОНТУР СНАРЯЖЕНИЯ'));
+  D.querySelector('#eqSlots .eq-slot:not(.locked)').click();
+  check('CN2 заголовок окна выбора — «КОНТУР СНАРЯЖЕНИЯ»', D.getElementById('equipHeader').textContent === 'КОНТУР СНАРЯЖЕНИЯ');
+  check('CN3 глава Кодекса: название и полный текст', E(w, 'CODEX_CHAPTERS.equipment.title') === 'Контур снаряжения' && E(w, 'CODEX_CHAPTERS.equipment.content') ===
+    'Сила артефакта не пробуждается сама по себе: Система связывает её с Игроком лишь тогда, когда артефакт размещён в контуре снаряжения. Вместимость контура ограничена: Система расширяет её, когда Игрок доказывает, что готов нести больше. Извлечённый из контура артефакт не утрачивает силы — он ждёт своего часа. Выбор снаряжения — выбор пути: Игрок сам решает, какая сила сопровождает его.');
+  const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
+  const code = raw.split('\n').filter(l => !/^\s*(\/\/|\/\*|\*|<!--)/.test(l)).join('\n');
+  check('CN4 в текстах нет «контуры/контуров/контурах» и заголовка «СНАРЯЖЕНИЕ»', !/контур(ы|ов|ах)\b/.test(code) && !/СНАРЯЖЕНИЕ/.test(code));
+  const readme = require('fs').readFileSync(require('path').join(__dirname, '..', 'README.md'), 'utf-8');
+  check('CN5 README: «при размещении в контуре снаряжения»', readme.includes('при размещении в контуре снаряжения') && !readme.includes('контурах'));
+}
+
 // ===== v6.8.4: Свиток Отречения подавляет артефакты и Силу; подавленные в панели =====
 async function renunciationTests() {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -451,8 +469,8 @@ async function artifactPreviewTests() {
   const D = w.document;
   E(w, `data.level = 80; data.inventory = Object.keys(ARTEFACTS); data.equippedArtifacts = ['sphere_growth', null, null, null]; render(); updateStatusUI();`);
   check('Q1 Сфера Роста: «если оба артефакта…» в описании и в главе',
-    E(w, `ARTEFACTS.sphere_growth.desc`).endsWith('складывается с Печатью Развития, если оба артефакта размещены в контурах снаряжения.')
-    && E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если оба артефакта размещены в контурах снаряжения') && !E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если обе'));
+    E(w, `ARTEFACTS.sphere_growth.desc`).endsWith('складывается с Печатью Развития, если оба артефакта размещены в контуре снаряжения.')
+    && E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если оба артефакта размещены в контуре снаряжения') && !E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если обе'));
   const ids = JSON.parse(E(w, 'JSON.stringify(Object.keys(ARTEFACTS))'));
   const bad = [];
   for (const id of ids) {
@@ -462,7 +480,7 @@ async function artifactPreviewTests() {
   }
   check('Q2 превью всех 8 артефактов: «Применение: Контур снаряжения», «Эффект:» без приставки', bad.length === 0, bad.join(' | '));
   E(w, `showItemPreview('sphere_growth', 'Сфера Роста')`);
-  check('Q3 пример — Сфера Роста', D.getElementById('itemPreviewMeta').textContent === 'Ранг: A\nТип: Артефакт восхождения\nПрименение: Контур снаряжения\nЭффект: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если оба артефакта размещены в контурах снаряжения.',
+  check('Q3 пример — Сфера Роста', D.getElementById('itemPreviewMeta').textContent === 'Ранг: A\nТип: Артефакт восхождения\nПрименение: Контур снаряжения\nЭффект: +4 очка характеристик при повышении уровня; складывается с Печатью Развития, если оба артефакта размещены в контуре снаряжения.',
     D.getElementById('itemPreviewMeta').textContent);
   const rune = E(w, `itemPreviewText('rune_protection')`);
   check('Q4 превью других предметов не изменилось', /^Ранг: .+\nТип: .+\nПрименение: .+\nЭффект: /.test(rune) && !rune.includes('Контур снаряжения'), rune);
@@ -518,7 +536,7 @@ async function equipmentTests() {
   { const w = await mk(50); const D = w.document;
     E(w, `openInv()`);
     const st = () => D.querySelector('#invContent .eq-state').textContent;
-    check('E8 строка «Снаряжение: 0 из 3 контуров»', st() === 'Снаряжение: 0 из 3 контуров', st());
+    check('E8 строка «Контур снаряжения: 0 из 3»', st() === 'Контур снаряжения: 0 из 3', st());
     const eqBtns = () => [...D.querySelectorAll('#invContent .eq-btn')];
     check('E9 у каждого артефакта кнопка «СНАРЯДИТЬ», ширина одинаковая', eqBtns().length === 5 && eqBtns().every(b => b.textContent === 'СНАРЯДИТЬ' && w.getComputedStyle(b).width === '96px'));
     const lastBtn = eqBtns()[4]; const lastId = lastBtn.getAttribute('onclick').match(/'([a-z_]+)'/)[1];
@@ -526,12 +544,12 @@ async function equipmentTests() {
     const firstCard = D.querySelector('#invContent .eq-state').nextElementSibling;
     check('E10 снаряжённый — первым, голубая рамка, «●», кнопка «ИЗВЛЕЧЬ» той же ширины',
       firstCard.classList.contains('eq-on') && firstCard.querySelector('.item-name').textContent.endsWith(' ●') && firstCard.querySelector('.eq-btn').textContent === 'ИЗВЛЕЧЬ'
-      && w.getComputedStyle(firstCard.querySelector('.eq-btn')).width === '96px' && E(w, `isArtifactEquipped('${lastId}')`) && st() === 'Снаряжение: 1 из 3 контуров');
+      && w.getComputedStyle(firstCard.querySelector('.eq-btn')).width === '96px' && E(w, `isArtifactEquipped('${lastId}')`) && st() === 'Контур снаряжения: 1 из 3');
     eqBtns().filter(b => b.textContent === 'СНАРЯДИТЬ').slice(0, 2).forEach(b => b.click());
-    check('E11 заполнены все три открытых контура', st() === 'Снаряжение: 3 из 3 контуров');
+    check('E11 заполнены все три открытых контура', st() === 'Контур снаряжения: 3 из 3');
     D.querySelector('#invContent .eq-btn:not(.eq-extract)').click();
     const repl = [...D.querySelectorAll('#equipBody .eq-opt')];
-    check('E12 все заняты → «Все контуры заняты. Заменить:»', D.querySelector('#equipBody .eq-text').textContent === 'Все контуры заняты. Заменить:' && repl.length === 3);
+    check('E12 все заняты → «Контур снаряжения заполнен. Заменить:»', D.querySelector('#equipBody .eq-text').textContent === 'Контур снаряжения заполнен. Заменить:' && repl.length === 3);
     const before = E(w, 'JSON.stringify(data.equippedArtifacts)'); repl[1].click();
     check('E13 замена работает', E(w, 'JSON.stringify(data.equippedArtifacts)') !== before && E(w, 'data.equippedArtifacts.filter(Boolean).length') === 3); }
   { const w = await mk(5); E(w, `openInv()`);
@@ -590,25 +608,25 @@ async function equipmentTests() {
   { const w = await mk(29); E(w, `window.__N = []; const _sn = showNotice; showNotice = (m) => window.__N.push(m); data.exp = getExpToNext(data.level); checkLevelUp()`);
     await sleep(4700);
     const n = JSON.parse(E(w, 'JSON.stringify(window.__N)'));
-    check('E29 на 30-м уровне — «Открыт новый контур снаряжения.»', n.includes('Открыт новый контур снаряжения.'), n.join(' | '));
+    check('E29 на 30-м уровне — «Вместимость контура снаряжения увеличена.»', n.includes('Вместимость контура снаряжения увеличена.'), n.join(' | '));
     const w2 = await mk(30); E(w2, `window.__N = []; const _sn = showNotice; showNotice = (m) => window.__N.push(m); data.exp = getExpToNext(data.level); checkLevelUp()`);
     await sleep(4700);
-    check('E30 на 31-м — уведомления о контуре нет', !JSON.parse(E(w2, 'JSON.stringify(window.__N)')).includes('Открыт новый контур снаряжения.')); }
+    check('E30 на 31-м — уведомления о контуре нет', !JSON.parse(E(w2, 'JSON.stringify(window.__N)')).includes('Вместимость контура снаряжения увеличена.')); }
   // --- Кодекс, старое сохранение, бэкап, отсутствие уровней в текстах ---
   { const w = await mk(1);
-    check('E31 глава «Снаряжение» доступна с начала игры', E(w, `data.codexUnlocked.includes('equipment') && CODEX_CHAPTERS.equipment.title === 'Снаряжение'`));
+    check('E31 глава «Снаряжение» доступна с начала игры', E(w, `data.codexUnlocked.includes('equipment') && CODEX_CHAPTERS.equipment.title === 'Контур снаряжения'`));
     const legacy = JSON.parse(SEED); legacy.level = 55; legacy.inventory = ['crystal_speed','amulet_will','seal_growth','seal_limit','sphere_growth']; delete legacy.equippedArtifacts;
     legacy.codexUnlocked = ['daily_quota']; const saved = SEED; SEED = JSON.stringify(legacy); const w2 = boot(); SEED = saved; await sleep(250);
     check('E32 старое сохранение: контуры пустые, артефакты не действуют, глава открыта',
       E(w2, `JSON.stringify(data.equippedArtifacts)`) === '[null,null,null,null]' && !E(w2, `isArtifactEquipped('amulet_will')`) && E(w2, `data.codexUnlocked.includes('equipment')`));
     const clean = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { level: 35, inventory: ['crystal_speed','amulet_will','seal_growth'], equippedArtifacts: ['crystal_shadow','amulet_will','amulet_will','seal_growth'] }), total: {} }))`));
     check('E33 бэкап: чужие, повторные и неоткрытые записи отбрасываются', JSON.stringify(clean.state.equippedArtifacts) === '[null,"amulet_will",null,null]', JSON.stringify(clean.state.equippedArtifacts));
-    const texts = E(w, `CODEX_CHAPTERS.equipment.content`) + ' ' + 'Открыт новый контур снаряжения.';
+    const texts = E(w, `CODEX_CHAPTERS.equipment.content`) + ' ' + 'Вместимость контура снаряжения увеличена.';
     check('E34 в текстах снаряжения нет уровней и цифр', !/\d/.test(texts));
     const descs = JSON.parse(E(w, `JSON.stringify(Object.values(ARTEFACTS).map(a => a.desc))`));
     check('E35 описания артефактов: «При размещении в контуре снаряжения:», без «Постоянный эффект»', descs.every(d => d.startsWith('При размещении в контуре снаряжения: ')) && !descs.some(d => d.includes('Постоянный эффект')));
     check('E36 главы Сферы Роста и Амулета Непрерывности обновлены',
-      E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если оба артефакта размещены в контурах снаряжения') && E(w, `CODEX_CHAPTERS.artifact_amulet_continuity.content`).includes('пока амулет размещён в контуре снаряжения и активен титул')); }
+      E(w, `CODEX_CHAPTERS.artifact_sphere_growth.content`).includes('если оба артефакта размещены в контуре снаряжения') && E(w, `CODEX_CHAPTERS.artifact_amulet_continuity.content`).includes('пока амулет размещён в контуре снаряжения и активен титул')); }
 }
 
 // ===== v6.6.12: бегущий разряд по работающим рунам =====
@@ -1149,6 +1167,7 @@ function noticeFor(scroll, item) {
   await paceSectionTests();
   await effectsPanelTests();
   await renunciationTests();
+  await contourNamingTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
