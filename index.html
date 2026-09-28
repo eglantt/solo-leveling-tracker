@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.8.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.8.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1358,7 +1358,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.8.2';
+  const APP_VERSION = '6.8.3';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -1697,11 +1697,11 @@
     "rune_stability": { name: "Руна Стабильности", icon: "🛡️", desc: "Защищает серию дней от срыва один раз.", price: 6500, level: 6 },
     "potion_growth": { name: "Зелье Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 20% до следующего сброса.", price: 3000, level: 9 },
     "shard_limit": { name: "Осколок Предела", icon: "🔹", desc: "Даёт +1 использование Преодоления предела сегодня.", price: 3500, level: 12 },
-    "rune_restoration_charged": { name: "Руна Восстановления (усиленная)", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 4500, level: 15 },
-    "rune_growth_charged": { name: "Руна Роста (усиленная)", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 5000, level: 20 },
+    "rune_restoration_charged": { name: "Руна Восстановления", icon: "⚗️", desc: "Восстанавливает 65% опыта от последнего штрафа.", price: 4500, level: 15 },
+    "rune_growth_charged": { name: "Руна Роста", icon: "🌱", desc: "Увеличивает получаемый опыт на 35% до следующего сброса.", price: 5000, level: 20 },
     "rune_redemption": { name: "Руна Искупления", icon: "🔮", desc: "Восстанавливает 55% опыта от последнего штрафа, удаляет один штраф из Летописи и статистики прогресса.", price: 5500, level: 20 },
-    "rune_protection_charged": { name: "Руна Защиты (усиленная)", icon: "📜", desc: "Полностью защищает от штрафа за провал следующего цикла и сохраняет серию дней. При активации возвращает опыт, потерянный из-за последнего штрафа.", effectDesc: "При провале дневного задания штраф будет полностью предотвращён. Серия дней сохранится.", price: 9600, level: 25 },
-    "rune_limit_charged": { name: "Руна Предела (усиленная)", icon: "🛡️", desc: "Даёт +3 использования Преодоления предела сегодня.", price: 9000, level: 30 },
+    "rune_protection_charged": { name: "Руна Надёжной Защиты", icon: "📜", desc: "Полностью защищает от штрафа за провал следующего цикла и сохраняет серию дней. При активации возвращает опыт, потерянный из-за последнего штрафа.", effectDesc: "При провале дневного задания штраф будет полностью предотвращён. Серия дней сохранится.", price: 9600, level: 25 },
+    "rune_limit_charged": { name: "Руна Преодоления Предела", icon: "🛡️", desc: "Даёт +3 использования Преодоления предела сегодня.", price: 9000, level: 30 },
     "crystal_clarity": { name: "Кристалл Ясности", icon: "🔷", desc: "Увеличивает получаемый опыт на 55% до следующего сброса.", price: 8000, level: 40 },
     "scroll_renunciation": { name: "Свиток Отречения", icon: "📜", desc: "Отключает накопленные сборкой преимущества от характеристик, титула и артефактов до завершения дневного задания. Штраф при срыве — обычный.", price: 2600, level: 12 },
     "scroll_transfer": { name: "Свиток Переноса", icon: "📜", desc: "Снимает одно выбранное упражнение дневного задания — без цели, без награды. Оставшиеся четыре получают +30% к цели, а при использовании подряд эта надбавка растёт ещё на 10% за каждый день.", price: 2000, level: 4 },
@@ -1726,7 +1726,7 @@
     "rune_fate_cleansing": { name: "Руна Очищения Судьбы", icon: "🔮", desc: "Стирает 3 штрафа из памяти Системы и возвращает 3× последнюю известную потерю опыта." },
     "rune_cleansing_full": { name: "Руна Полного Очищения", icon: "🔮", desc: "Стирает 5 штрафов из памяти Системы." },
     "potion_restoration_full": { name: "Зелье Полного Восстановления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа." },
-    "shard_limit_double": { name: "Осколок Двойного Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
+    "shard_limit_double": { name: "Осколок Преодоления Предела", icon: "🔮", desc: "Даёт +2 использования Преодоления предела сегодня." },
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа и защита серии дней, одновременно — действует до первого провала, сколько бы дней до этого ни прошло." },
     "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса. Бремя Аномалии не снимает, но облегчает его тяжесть.", effectDesc: "Дневная нагрузка снижена на 25% до следующего сброса." },
     "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает получаемый опыт на 15% до следующего сброса." },
@@ -1854,8 +1854,8 @@
   // Группа усилений опыта: та же логика поглощения/блокировки.
   const EXP_BOOST_RATE = { rune_return: 0.15, potion_growth: 0.20, rune_growth_charged: 0.35, crystal_impulse: 0.35, crystal_clarity: 0.55 };
   const ITEM_GENITIVE = {
-    rune_protection: 'Руны Защиты', rune_protection_charged: 'Руны Защиты (усиленной)', rune_protection_absolute: 'Руны Абсолютной Защиты',
-    rune_return: 'Руны Возврата', potion_growth: 'Зелья Роста', rune_growth_charged: 'Руны Роста (усиленной)',
+    rune_protection: 'Руны Защиты', rune_protection_charged: 'Руны Надёжной Защиты', rune_protection_absolute: 'Руны Абсолютной Защиты',
+    rune_return: 'Руны Возврата', potion_growth: 'Зелья Роста', rune_growth_charged: 'Руны Роста',
     crystal_impulse: 'Кристалла Импульса', crystal_clarity: 'Кристалла Ясности'
   };
   const LIMIT_SHARD_IDS = ['shard_limit', 'shard_limit_double', 'rune_limit_charged'];
@@ -1913,7 +1913,7 @@
     if (id === 'rune_protection_charged') {
       const reason = protectionBlockReason(2);
       if (reason && findReturnRecord(1)) return `Защита сейчас не может быть установлена: ${reason}. Руна сработает только для возврата опыта.`;
-      if (!reason && data.insurance) return `Руна Защиты (усиленная) поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId]}.`;
+      if (!reason && data.insurance) return `Руна Надёжной Защиты поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId]}.`;
       return '';
     }
     if (id === 'rune_protection_absolute') {
@@ -2770,7 +2770,9 @@
       else if (entry.status === 'success' && entry.fixedBy === 'correction') statusLine = 'Задание засчитано Руной Исправления.';
       else if (entry.status === 'success') statusLine = 'Задание выполнено.';
       else if (entry.status === 'penalty') statusLine = 'Задание не выполнено, получен штраф.';
-      else if (entry.status === 'protected') statusLine = 'Задание не выполнено, штраф предотвращён (Руна Защиты).';
+      else if (entry.status === 'protected') statusLine = PROTECTING_RUNES.includes(entry.protectedBy)
+        ? `Задание не выполнено, штраф предотвращён (${getConsumableInfo(entry.protectedBy).name}).`
+        : 'Задание не выполнено, штраф предотвращён.';   // v6.8.3: старые записи — без названия
       else if (entry.status === 'frozen') statusLine = 'Задание заморожено Свитком — без исхода, без штрафа.';
       donePercent = entry.donePercent;
       expGained = entry.expGained || 0;
@@ -3197,6 +3199,7 @@
         else { dayStatus = 'success'; }
       }
       const historyEntry = { status: dayStatus, donePercent };
+      if (dayStatus === 'protected' && PROTECTING_RUNES.includes(lastProtectedBy)) historyEntry.protectedBy = lastProtectedBy;   // v6.8.3
       if (expGainedThatDay > 0) historyEntry.expGained = expGainedThatDay;
       if (expLostThatDay > 0) historyEntry.expLost = expLostThatDay;
       if (completedExercisesThatDay && completedExercisesThatDay.length > 0) {
@@ -3346,8 +3349,13 @@
     return data.insuranceHoldScroll || null;
   }
 
+  // v6.8.3: какая руна предотвратила последний штраф (для Летописи и уведомления Длани).
+  var lastProtectedBy = null;
+  const PROTECTING_RUNES = ['rune_protection_charged', 'rune_protection_absolute'];
   function computePenaltyAndApply(dayKey) {
+    lastProtectedBy = null;
     if (data.insurance && data.insuranceSourceId === 'rune_protection_absolute') {
+      lastProtectedBy = 'rune_protection_absolute';
       data.insurance = false; data.insuranceSourceId = null;
       if (data.streakShieldSourceId === 'rune_protection_absolute') {
         data.streakShield = false; data.streakShieldSourceId = null;
@@ -3365,6 +3373,7 @@
         data.insurance = false; data.insuranceSourceId = null;
       } else if (data.insuranceSourceId === 'rune_protection_charged') {
         data.insurance = false; data.insuranceSourceId = null;
+        lastProtectedBy = 'rune_protection_charged';
         return 'protected';
       } else {
         halfBlock = true;
@@ -5303,6 +5312,7 @@
         const entry = s.history[key];
         if (!entry || typeof entry !== 'object' || !VALID_STATUSES.includes(entry.status)) continue;
         const clean = { status: entry.status };
+        if (entry.status === 'protected' && ['rune_protection_charged', 'rune_protection_absolute'].includes(entry.protectedBy)) clean.protectedBy = entry.protectedBy;   // v6.8.3
         const lvl = sanitizeNumber(entry.level, 0, 1);
         if (lvl > 0) clean.level = Math.floor(lvl);
         const donePct = sanitizeNumber(entry.donePercent, -1, 0);
@@ -5926,7 +5936,7 @@
   function applyPenaltyAction() {
     const result = computePenaltyAndApply();
     saveData(); render();
-    if (result === 'protected') { showNotice('Штраф отменён — сработала Абсолютная защита.', 'info'); }
+    if (result === 'protected') { showNotice(`Штраф отменён — сработала ${getConsumableInfo(lastProtectedBy || 'rune_protection_absolute').name}.`, 'info'); }
     else { const { loss, pct, completedExercises, halved } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length, halved); }
   }
 

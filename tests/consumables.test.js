@@ -40,10 +40,10 @@ const fullLoss = w => E(w, `Math.floor(getExpToNext(data.level)*Math.max(0.05,0.
 const results = []; const check = (n, c, i) => results.push((c ? 'OK  ' : 'FAIL') + ' ' + n + (i !== undefined && !c ? '  → ' + i : ''));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const warn = (w, id) => E(w, `getUseWarning('${id}')`);
-const NAME = { rune_protection:'Руна Защиты', rune_protection_charged:'Руна Защиты (усиленная)', rune_protection_absolute:'Руна Абсолютной Защиты',
-  rune_return:'Руна Возврата', potion_growth:'Зелье Роста', rune_growth_charged:'Руна Роста (усиленная)', crystal_impulse:'Кристалл Импульса', crystal_clarity:'Кристалл Ясности' };
-const GEN = { rune_protection:'Руны Защиты', rune_protection_charged:'Руны Защиты (усиленной)', rune_protection_absolute:'Руны Абсолютной Защиты',
-  rune_return:'Руны Возврата', potion_growth:'Зелья Роста', rune_growth_charged:'Руны Роста (усиленной)', crystal_impulse:'Кристалла Импульса', crystal_clarity:'Кристалла Ясности' };
+const NAME = { rune_protection:'Руна Защиты', rune_protection_charged:'Руна Надёжной Защиты', rune_protection_absolute:'Руна Абсолютной Защиты',
+  rune_return:'Руна Возврата', potion_growth:'Зелье Роста', rune_growth_charged:'Руна Роста', crystal_impulse:'Кристалл Импульса', crystal_clarity:'Кристалл Ясности' };
+const GEN = { rune_protection:'Руны Защиты', rune_protection_charged:'Руны Надёжной Защиты', rune_protection_absolute:'Руны Абсолютной Защиты',
+  rune_return:'Руны Возврата', potion_growth:'Зелья Роста', rune_growth_charged:'Руны Роста', crystal_impulse:'Кристалла Импульса', crystal_clarity:'Кристалла Ясности' };
 const setIns = id => id ? `data.insurance=true; data.insuranceSourceId='${id}';` + (id==='rune_protection_absolute' ? ` data.streakShield=true; data.streakShieldSourceId='${id}';` : '') : '';
 const failDayStatus = w => { reset(w); const h = JSON.parse(J(w,'data.history')); const k = Object.keys(h).sort().pop(); return h[k].status; };
 
@@ -75,7 +75,7 @@ for (const a of P) for (const b of [null, ...P]) {
   check('A Абсолютная поглощает подавленную руну (Бремя) и защищает', failDayStatus(w) === 'protected'); }
 { const w = fresh(`data.insurance=true; data.insuranceSourceId='rune_protection_charged'; data.penaltyStack=[{day:'2026-09-01',loss:400,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
   const wr = warn(w,'rune_protection_charged'); const u = use(w,'rune_protection_charged');
-  check('A Усиленная при усиленной, но есть штраф: только возврат', u.spent && !E(w,'findReturnRecord(1)') && wr === 'Защита сейчас не может быть установлена: Руна Защиты (усиленная) уже активна. Руна сработает только для возврата опыта.', wr); }
+  check('A Усиленная при усиленной, но есть штраф: только возврат', u.spent && !E(w,'findReturnRecord(1)') && wr === 'Защита сейчас не может быть установлена: Руна Надёжной Защиты уже активна. Руна сработает только для возврата опыта.', wr); }
 { const w = fresh(`data.insurance=true; data.insuranceSourceId='rune_protection_absolute'; data.penaltyStack=[{day:'2026-09-01',loss:400,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
   const wr = warn(w,'rune_protection_charged'); const u = use(w,'rune_protection_charged');
   check('A Усиленная при Абсолютной, есть штраф: только возврат, Абсолютная цела', u.spent && E(w,'data.insuranceSourceId')==='rune_protection_absolute' && wr.includes('действует Руна Абсолютной Защиты'), wr); }
@@ -311,7 +311,7 @@ const CW = 'Действует Бремя Аномалии: нагрузка и 
 // ===== J. v6.6.11: «увеличение получаемого» вместо «усиления», кредиты значком (19 согласованных текстов) =====
 { const w = fresh(); const t = [
     ['J10 Зелье Роста', 'potion_growth', 'Зелье использовано. Получаемый опыт увеличен до следующего сброса.'],
-    ['J10 Руна Роста (усиленная)', 'rune_growth_charged', 'Руна использована. Получаемый опыт увеличен до следующего сброса.'] ];
+    ['J10 Руна Роста', 'rune_growth_charged', 'Руна использована. Получаемый опыт увеличен до следующего сброса.'] ];
   for (const [label, id, exp] of t) { const w1 = fresh(); const u = use(w1, id); check(label, u.notice === exp, u.notice); }
   const w2 = fresh(); const u2 = use(w2, 'crystal_clarity'); check('J10 Кристалл Ясности', u2.notice === 'Кристалл использован. Получаемый опыт увеличен до следующего сброса.', u2.notice);
   const w3 = fresh(); const u3 = use(w3, 'crystal_impulse'); check('J11 Кристалл Импульса', u3.notice === 'Кристалл использован. Получаемые опыт и кредиты увеличены до следующего сброса.', u3.notice);
@@ -348,12 +348,39 @@ const CW = 'Действует Бремя Аномалии: нагрузка и 
   check('J экранирование в окне подтверждения прежнее, значок на месте', !w9.document.getElementById('evil2') && c2.textContent.includes('<b id="evil2">x</b>') && !!c2.querySelector('.cr-ic'), c2.innerHTML);
   // не изменились
   check('J «Недостаточно кредитов.» осталось словом', /showNotice\("Недостаточно кредитов\.", 'warn', true\)/.test(html));
-  check('J название «Руна Роста (усиленная)» не тронуто', E(w, "getConsumableInfo('rune_growth_charged').name") === 'Руна Роста (усиленная)');
+  check('J название «Руна Роста» (с v6.8.3, без «(усиленная)»)', E(w, "getConsumableInfo('rune_growth_charged').name") === 'Руна Роста');
   // сквозные проверки по всему коду
   const scripts = html.slice(html.indexOf('<script>'));
   const code = scripts.split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
   check('J нигде нет «усиление опыта/кредитов» в текстах', !/[Уу]силени[ея] (опыта|кредитов)/.test(code));
   check('J нигде нет суммы со словом «кредитов»', !/(\$\{[^}]*\}|\d)\s*кредит/.test(code));
+}
+
+
+// ===== K. v6.8.3: переименование рун и осколка, пометка Летописи =====
+{ const w = fresh();
+  const nm = id => E(w, `getConsumableInfo('${id}').name`);
+  const R = { rune_protection_charged:'Руна Надёжной Защиты', rune_growth_charged:'Руна Роста', rune_restoration_charged:'Руна Восстановления', rune_limit_charged:'Руна Преодоления Предела', shard_limit_double:'Осколок Преодоления Предела',
+              rune_protection:'Руна Защиты', rune_protection_absolute:'Руна Абсолютной Защиты', shard_limit:'Осколок Предела' };
+  const badN = Object.entries(R).filter(([id, n]) => nm(id) !== n).map(([id]) => id + '=' + nm(id));
+  check('K1 новые названия пяти предметов, прежние — у трёх', badN.length === 0, badN.join(', '));
+  check('K2 родительный падеж', E(w, "ITEM_GENITIVE.rune_protection_charged") === 'Руны Надёжной Защиты' && E(w, "ITEM_GENITIVE.rune_growth_charged") === 'Руны Роста');
+  const code = html.slice(html.indexOf('<script>')).split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
+  check('K3 в текстах не осталось «(усиленная)», «(усиленной)», «Двойного Предела»', !/\(усиленн|Двойного Предела/.test(code));
+  // Летопись: какая руна предотвратила штраф
+  const chron = (src) => { const w2 = fresh(`data.insurance = true; data.insuranceSourceId = '${src}'; ${src === 'rune_protection_absolute' ? "data.streakShield = true; data.streakShieldSourceId = 'rune_protection_absolute';" : ''}`);
+    reset(w2); const k = E(w2, 'Object.keys(data.history).sort().pop()'); return [E(w2, `data.history['${k}'].status`), E(w2, `data.history['${k}'].protectedBy || ''`), E(w2, `(() => { const e = data.history['${k}']; return e.status === 'protected' ? (PROTECTING_RUNES.includes(e.protectedBy) ? 'Задание не выполнено, штраф предотвращён (' + getConsumableInfo(e.protectedBy).name + ').' : 'Задание не выполнено, штраф предотвращён.') : ''; })()`)]; };
+  const c1 = chron('rune_protection_charged'), c2 = chron('rune_protection_absolute');
+  check('K4 Летопись: штраф предотвращён Руной Надёжной Защиты — её название', c1[0] === 'protected' && c1[1] === 'rune_protection_charged', JSON.stringify(c1));
+  check('K5 Летопись: штраф предотвращён Руной Абсолютной Защиты — её название', c2[0] === 'protected' && c2[1] === 'rune_protection_absolute', JSON.stringify(c2));
+  check('K6 строка дня в Летописи', html.includes("? `Задание не выполнено, штраф предотвращён (${getConsumableInfo(entry.protectedBy).name}).`") && html.includes(": 'Задание не выполнено, штраф предотвращён.';"));
+  const clean = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign(JSON.parse(SEED_JSON), { history: {
+    '2026-09-01': { status: 'protected', protectedBy: 'rune_protection_charged' }, '2026-09-02': { status: 'protected', protectedBy: 'evil' }, '2026-09-03': { status: 'protected' } } }), total: {} }))`.replace('SEED_JSON', JSON.stringify(SEED))));
+  check('K7 бэкап: допустимая руна сохраняется, чужое значение и отсутствие — без поля',
+    clean.state.history['2026-09-01'].protectedBy === 'rune_protection_charged' && !('protectedBy' in clean.state.history['2026-09-02']) && !('protectedBy' in clean.state.history['2026-09-03']));
+  const w3 = fresh(`data.insurance = true; data.insuranceSourceId = 'rune_protection_charged';`);
+  E(w3, `window.__N = []; showNotice = (m) => window.__N.push(m); applyPenaltyAction()`);
+  check('K8 Длань: уведомление называет сработавшую руну', E(w3, 'window.__N[0]') === 'Штраф отменён — сработала Руна Надёжной Защиты.', E(w3, 'window.__N[0]'));
 }
 
 console.log(results.join('\n'));
