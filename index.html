@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.8.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.8.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -316,6 +316,18 @@
 
     /* ===== v6.8.0: перегрев кнопок «+» при контроле темпа — оранжевый, только вид ===== */
     .buttons button.add.pace-hot { border-color: #ffaa44; color: #ffcc88; background: rgba(80,45,0,0.45); box-shadow: 0 0 8px rgba(255,170,68,0.35); }
+
+    /* ===== v6.8.2: панель эффектов — одна строка с прокруткой вбок, без полос прокрутки;
+       запас 12/10px под подсветку, разряд и искры (не обрезаются), затухание по краям (--fl/--fr);
+       точки-метки: голубая — снаряжённый артефакт, зелёная — активный титул. ===== */
+    #effectsRow { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none;
+      padding: 12px 10px; margin: -12px -10px; --fl: 0px; --fr: 0px;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%); }
+    #effectsRow::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    .eff-dot { position: absolute; right: -1px; bottom: -1px; width: 7px; height: 7px; border-radius: 50%; pointer-events: none; }
+    .eff-dot.art { background: #40c0ff; box-shadow: 0 0 4px #40c0ff; }
+    .eff-dot.ttl { background: #40ffaa; box-shadow: 0 0 4px #40ffaa; }
 
     /* ===== v6.6.0: окно «СТАТУС» ===== */
     .st-sec { border: 1px solid #40c0ff44; border-radius: 6px; padding: 10px 12px; margin-top: 12px; text-align: left; }
@@ -755,7 +767,7 @@
     .pulse-glow-special { animation: pulseGlowSpecial var(--dur, 2.4s) ease-in-out infinite; animation-delay: var(--delay, 0s); }
     .effects-container { background: rgba(0,0,0,0.3); border: 1px solid #1a3550; border-radius: 8px; padding: 10px 12px; margin: 15px 20px; }
     .effects-header { font-size: 0.8rem; color: #40c0ff; font-family: 'Orbitron', 'Exo 2', sans-serif; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: bold; }
-    .effects-row { display: flex; flex-wrap: wrap; gap: 16px; }
+    .effects-row { display: flex; flex-wrap: nowrap; gap: 16px; }   /* v6.8.2: одна строка с прокруткой (см. #effectsRow) */
     .effect-icon-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; position: relative; }
     .effect-icon-btn img { width: 32px; height: 32px; object-fit: contain; }
     .effect-icon-btn.active img { filter: drop-shadow(0 0 4px #40c0ff) drop-shadow(0 0 8px #40c0ff); }
@@ -1346,7 +1358,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.8.1';
+  const APP_VERSION = '6.8.2';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2097,7 +2109,13 @@
       effects.push({ icon: 'icons/items/effect_limit_break.png', name: 'Преодоление предела', text: 'Кредиты за упражнения удвоены, пока активен режим.' });
     }
     if (data.activeTitle !== 'Новичок' && TITLE_ICON_IDS[data.activeTitle]) {
-      effects.push({ icon: `icons/items/${TITLE_ICON_IDS[data.activeTitle]}.png`, name: `Титул: ${data.activeTitle}`, text: TITLES_DB[data.activeTitle].desc });
+      effects.push({ icon: `icons/items/${TITLE_ICON_IDS[data.activeTitle]}.png`, name: `Титул: ${data.activeTitle}`, text: TITLES_DB[data.activeTitle].desc, isTitle: true });
+    }
+    // v6.8.2: снаряжённые артефакты — после титула, в порядке контуров.
+    if (Array.isArray(data.equippedArtifacts)) {
+      data.equippedArtifacts.forEach(id => {
+        if (id && ARTEFACTS[id]) effects.push({ icon: `icons/items/${id}.png`, name: `Артефакт: ${ARTEFACTS[id].name}`, text: artifactEffectText(id), isArtifact: true });
+      });
     }
     return effects;
   }
@@ -2178,11 +2196,22 @@
     window.__activeEffectsSignature = signature;
     clearRuneBolts();
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
+      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
     ).join('');
     document.querySelectorAll('#effectsRow .rune-bolt').forEach(scheduleRuneBolt);
+    updateEffectsFade();
     document.getElementById('effectDetail').classList.remove('open');
     openEffectIndex = null;
+  }
+
+  // v6.8.2: затухание по краям строки эффектов — справа, пока правее есть скрытое; слева — когда сдвинули.
+  const EFFECTS_FADE_PX = 26;
+  function updateEffectsFade() {
+    const r = document.getElementById('effectsRow');
+    if (!r) return;
+    const more = r.scrollWidth - r.clientWidth - r.scrollLeft > 2;
+    r.style.setProperty('--fr', more ? EFFECTS_FADE_PX + 'px' : '0px');
+    r.style.setProperty('--fl', r.scrollLeft > 2 ? EFFECTS_FADE_PX + 'px' : '0px');
   }
 
   function toggleActiveEffect(i) {
@@ -3952,14 +3981,16 @@
   // и окна артефакта в «СТАТУСЕ». У артефактов в «Эффект:» — описание без приставки
   // «При размещении в контуре снаряжения:» (она уже сказана строкой «Применение»).
   const ARTIFACT_DESC_PREFIX = 'При размещении в контуре снаряжения: ';
+  // v6.8.2: эффект артефакта без приставки (для строки «Эффект:» превью и подробностей в панели эффектов).
+  function artifactEffectText(id) {
+    let desc = ARTEFACTS[id] ? ARTEFACTS[id].desc : '';
+    if (desc.startsWith(ARTIFACT_DESC_PREFIX)) { desc = desc.slice(ARTIFACT_DESC_PREFIX.length); desc = desc.charAt(0).toUpperCase() + desc.slice(1); }
+    return desc;
+  }
   function itemPreviewText(iconId) {
     const meta = ITEM_META[iconId];
     let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
-    let desc = getItemDesc(iconId);
-    if (desc && ARTEFACTS[iconId] && desc.startsWith(ARTIFACT_DESC_PREFIX)) {
-      desc = desc.slice(ARTIFACT_DESC_PREFIX.length);
-      desc = desc.charAt(0).toUpperCase() + desc.slice(1);
-    }
+    const desc = ARTEFACTS[iconId] ? artifactEffectText(iconId) : getItemDesc(iconId);
     if (desc) text += `\nЭффект: ${desc}`;
     return text;
   }
@@ -4807,6 +4838,7 @@
     checkLimitBreak();
   }
 
+  (() => { const r = document.getElementById('effectsRow'); if (r && !r.dataset.fadeBound) { r.addEventListener('scroll', updateEffectsFade, { passive: true }); window.addEventListener('resize', updateEffectsFade); r.dataset.fadeBound = '1'; } })();
   renderPaceButtons();
   document.querySelectorAll('.add').forEach(btn => {
     btn.onclick = (e) => {
@@ -4962,14 +4994,21 @@
     if (!box) return;
     const open = openContourCount(data.level);
     let html = '';
-    for (let i = 0; i < Math.min(4, open + 1); i++) {
-      if (i >= open) { html += '<div class="eq-slot locked"></div>'; continue; }
+    for (let i = 0; i < 4; i++) {   // v6.8.2: все 4 контура видны всегда
+      if (i >= open) { html += '<div class="eq-slot locked" onclick="onLockedContourClick()"></div>'; continue; }
       const id = data.equippedArtifacts[i];
       html += id
         ? `<div class="eq-slot filled" onclick="onContourClick(${i})"><span class="eq-rk">${artifactRank(id)}</span><img src="icons/items/${id}.png" alt=""></div>`
         : `<div class="eq-slot" onclick="onContourClick(${i})"></div>`;
     }
     box.innerHTML = html;
+  }
+  // v6.8.2: до первого контура нажатие на закрытый — уведомление (без повторов); дальше закрытые не реагируют.
+  const CONTOUR_LOCKED_NOTICE = 'Контур снаряжения недоступен на этом уровне.';
+  function onLockedContourClick() {
+    if (openContourCount(data.level) > 0) return;
+    if (currentNotificationBody === CONTOUR_LOCKED_NOTICE || notificationQueue.some(n => n.body === CONTOUR_LOCKED_NOTICE)) return;
+    showNotice(CONTOUR_LOCKED_NOTICE, 'info');
   }
   function openEquipOverlay(header, body) {
     document.getElementById('equipHeader').textContent = header;

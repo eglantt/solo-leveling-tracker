@@ -180,6 +180,66 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.8.2: артефакты в панели эффектов, четыре контура =====
+async function effectsPanelTests() {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const w = boot(); await sleep(250);
+  const D = w.document, $ = id => D.getElementById(id), cs = el => w.getComputedStyle(el);
+  E(w, `data.level = 80; data.inventory = Object.keys(ARTEFACTS); data.activeScroll = null; data.curseActiveToday = false; data.pendingCurse = false;
+        data.insurance = true; data.insuranceSourceId = 'rune_protection'; data.expBoostToday = 0.55; data.expBoostSourceId = 'crystal_clarity';
+        if (!data.titlesUnlocked.includes('Целеустремлённый')) data.titlesUnlocked.push('Целеустремлённый'); data.activeTitle = 'Целеустремлённый';
+        data.equippedArtifacts = ['crystal_shadow', 'amulet_will', 'crystal_insight', null]; render();`);
+  const names = () => JSON.parse(E(w, 'JSON.stringify(window.__activeEffectsCache.map(e => e.name))'));
+  const n1 = names(), iT = n1.findIndex(n => n.startsWith('Титул: '));
+  check('EP1 порядок: временные → титул → артефакты в порядке контуров',
+    iT > 0 && JSON.stringify(n1.slice(iT + 1)) === JSON.stringify(['Артефакт: Кристалл Теней', 'Артефакт: Амулет Воли', 'Артефакт: Кристалл Прозрения']) && n1.slice(0, iT).every(n => !n.startsWith('Артефакт') && !n.startsWith('Титул')), n1.join(' | '));
+  const btns = [...D.querySelectorAll('#effectsRow .effect-icon-btn')];
+  const dots = btns.map(b => b.querySelector('.eff-dot') ? (b.querySelector('.eff-dot').classList.contains('art') ? 'A' : 'T') : '-').join('');
+  check('EP2 точки: у артефактов голубая, у титула зелёная, у остальных нет', dots === '-'.repeat(iT) + 'TAAA', dots);
+  const d = btns[iT + 1].querySelector('.eff-dot');
+  check('EP3 точка 7px справа снизу, цвета', cs(d).width === '7px' && cs(d).right === '-1px' && cs(d).bottom === '-1px' && cs(d).backgroundColor.replace(/\s/g, '') === 'rgb(64,192,255)'
+    && cs(btns[iT].querySelector('.eff-dot')).backgroundColor.replace(/\s/g, '') === 'rgb(64,255,170)');
+  E(w, `toggleActiveEffect(${iT + 1})`);
+  check('EP4 подробности артефакта: «Артефакт: …» и эффект без приставки', $('effectDetailName').textContent === 'Артефакт: Кристалл Теней'
+    && $('effectDetailText').textContent === E(w, `artifactEffectText('crystal_shadow')`) && !$('effectDetailText').textContent.includes('При размещении'));
+  check('EP5 у артефактов нет разрядов, у руны есть', btns.slice(iT).every(b => !b.querySelector('.rune-bolt')) && btns.some(b => b.querySelector('.rune-bolt')));
+  const row = $('effectsRow'), rs = cs(row);
+  check('EP6 одна строка с прокруткой вбок, без полос прокрутки', rs.flexWrap === 'nowrap' && rs.overflowX === 'auto' && rs.scrollbarWidth === 'none');
+  check('EP7 запас под свечение 12/10px компенсирован (размер панели прежний)', rs.paddingTop === '12px' && rs.paddingLeft === '10px' && rs.marginTop === '-12px' && rs.marginLeft === '-10px');
+  // затухание (jsdom не считает раскладку — подставляем размеры)
+  Object.defineProperty(row, 'scrollWidth', { configurable: true, get: () => 600 }); Object.defineProperty(row, 'clientWidth', { configurable: true, get: () => 300 });
+  row.scrollLeft = 0; E(w, 'updateEffectsFade()');
+  const f1 = [row.style.getPropertyValue('--fl'), row.style.getPropertyValue('--fr')];
+  row.scrollLeft = 120; E(w, 'updateEffectsFade()');
+  const f2 = [row.style.getPropertyValue('--fl'), row.style.getPropertyValue('--fr')];
+  row.scrollLeft = 300; E(w, 'updateEffectsFade()');
+  const f3 = [row.style.getPropertyValue('--fl'), row.style.getPropertyValue('--fr')];
+  Object.defineProperty(row, 'scrollWidth', { configurable: true, get: () => 300 }); row.scrollLeft = 0; E(w, 'updateEffectsFade()');
+  const f4 = [row.style.getPropertyValue('--fl'), row.style.getPropertyValue('--fr')];
+  check('EP8 затухание 26px: в начале — только справа; сдвинули — с обеих сторон; в конце — только слева; без переполнения — нет',
+    f1.join() === '0px,26px' && f2.join() === '26px,26px' && f3.join() === '26px,0px' && f4.join() === '0px,0px', JSON.stringify([f1, f2, f3, f4]));
+  row.scrollLeft = 77; const keep = btns[1];
+  E(w, `toggleActiveEffect(1)`);
+  check('EP9 открытие подробностей не перерисовывает строку (прокрутка сохраняется)', $('effectsRow').querySelectorAll('.effect-icon-btn')[1] === keep && row.scrollLeft === 77);
+  E(w, `extractArtifact('amulet_will')`);
+  check('EP10 извлечённый артефакт исчезает из панели', !names().includes('Артефакт: Амулет Воли'));
+  E(w, `equipArtifact('seal_growth', 1)`);
+  check('EP11 снаряжённый появляется на месте своего контура', JSON.stringify(names().filter(n => n.startsWith('Артефакт'))) === JSON.stringify(['Артефакт: Кристалл Теней', 'Артефакт: Печать Развития', 'Артефакт: Кристалл Прозрения']));
+  E(w, `data.insurance = false; data.insuranceSourceId = null; data.expBoostToday = 0; data.expBoostSourceId = null; data.activeTitle = 'Новичок'; render()`);
+  check('EP12 панель видна, когда временных эффектов нет (только титул и артефакты)', $('effectsContainer').style.display === 'block' && names().every(n => n.startsWith('Артефакт') || n.startsWith('Титул')) && names().some(n => n.startsWith('Артефакт')));
+  // «СТАТУС»: уведомление до 10-го уровня
+  const w2 = boot(); await sleep(250);
+  E(w2, `data.level = 5; data.inventory = []; data.equippedArtifacts = [null,null,null,null]; window.__N = []; const _sn = showNotice; showNotice = (m, t, x, s) => { window.__N.push([m, t]); return _sn(m, t, x, s); }; updateStatusUI();`);
+  const cells = [...w2.document.querySelectorAll('#eqSlots .eq-slot')];
+  cells[2].click(); cells[0].click(); cells[3].click();
+  const N = JSON.parse(E(w2, 'JSON.stringify(window.__N)'));
+  check('EP13 до 10-го: «Контур снаряжения недоступен на этом уровне.», информационный тон, без повторов', N.length === 1 && N[0][0] === 'Контур снаряжения недоступен на этом уровне.' && N[0][1] === 'info', JSON.stringify(N));
+  E(w2, `data.level = 30; data.inventory = Object.keys(ARTEFACTS).filter(k => ARTEFACTS[k].level <= 30); window.__N = []; updateStatusUI();`);
+  w2.document.querySelectorAll('#eqSlots .eq-slot.locked').forEach(c => c.click());
+  check('EP14 с 10-го уровня закрытые контуры не реагируют', JSON.parse(E(w2, 'JSON.stringify(window.__N)')).length === 0 && w2.document.getElementById('equipOverlay').style.display !== 'flex');
+}
+
 // ===== v6.8.1: раздел «Контроль темпа» в Длани =====
 async function paceSectionTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -377,9 +437,9 @@ async function equipmentTests() {
     for (const [lvl, open] of [[5,0],[10,1],[30,2],[50,3],[70,4]]) {
       const w = await mk(lvl); const cells = [...w.document.querySelectorAll('#eqSlots .eq-slot')];
       const locked = cells.filter(c => c.classList.contains('locked')).length;
-      if (cells.length !== Math.min(4, open + 1) || locked !== (open < 4 ? 1 : 0)) bad.push(`${lvl}: ${cells.length}/${locked}`);
+      if (cells.length !== 4 || locked !== 4 - open) bad.push(`${lvl}: ${cells.length}/${locked}`);
     }
-    check('E2 видны открытые контуры и ровно один закрытый (на 70+ — ни одного)', bad.length === 0, bad.join(', ')); }
+    check('E2 (с v6.8.2) видны все 4 контура, закрытые — затемнены', bad.length === 0, bad.join(', ')); }
   // --- нажатия в «СТАТУСЕ» ---
   { const w = await mk(50); const D = w.document;
     E(w, `window.__N = []; const _sn = showNotice; showNotice = (m, t, x) => { window.__N.push(m); return _sn(m, t, x); }`);
@@ -1028,6 +1088,7 @@ function noticeFor(scroll, item) {
   await creditsFloorTests();
   await paceTests();
   await paceSectionTests();
+  await effectsPanelTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
