@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.8.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.8.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -328,6 +328,18 @@
     .eff-dot { position: absolute; right: -1px; bottom: -1px; width: 7px; height: 7px; border-radius: 50%; pointer-events: none; }
     .eff-dot.art { background: #40c0ff; box-shadow: 0 0 4px #40c0ff; }
     .eff-dot.ttl { background: #40ffaa; box-shadow: 0 0 4px #40ffaa; }
+
+    /* ===== v6.8.6: сбой вывода в уведомлениях. Дрожь сдвигает только содержимое (.gp-inner),
+       не само окно — иначе затёрся бы transform анимации появления. ===== */
+    .system-popup .gp-slice { position: absolute; inset: 0; padding: 14px 20px 24px; pointer-events: none; display: none;
+      background: rgba(5,12,25,0.94); background-image: repeating-linear-gradient(0deg, rgba(64,192,255,0.04) 0px, rgba(64,192,255,0.04) 1px, transparent 1px, transparent 3px); }
+    .system-popup .gp-noise { position: absolute; inset: 0; pointer-events: none; display: none; mix-blend-mode: screen; }
+    .system-popup.glitch.gfx-slice .gp-slice, .system-popup.glitch.gfx-noise .gp-noise { display: block; }
+    .system-popup.glitch.gfx-split .system-popup-header, .system-popup.glitch.gfx-split .system-popup-body, .system-popup.glitch.gfx-split .system-popup-sub {
+      text-shadow: calc(-2px * var(--gk, 2)) 0 rgba(255,40,70,0.85), calc(2px * var(--gk, 2)) 0 rgba(0,220,255,0.85); }
+    .system-popup.glitch.gfx-flicker { filter: brightness(var(--gbr, 1.4)) contrast(1.2); }
+    .system-popup.glitch.gfx-shake .gp-inner { transform: translate(var(--gdx, 0px), var(--gdy, 0px)); }
+    .system-popup.gp-anomaly { border-color: #ff5566; box-shadow: 0 0 25px rgba(255,40,70,0.35), inset 0 0 15px rgba(120,0,20,0.2); }
 
     /* ===== v6.6.0: окно «СТАТУС» ===== */
     .st-sec { border: 1px solid #40c0ff44; border-radius: 6px; padding: 10px 12px; margin-top: 12px; text-align: left; }
@@ -1358,7 +1370,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.8.5';
+  const APP_VERSION = '6.8.6';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -3100,14 +3112,20 @@
     else if (tone === 'warn' || tone === 'danger') playSound('denied');
     const p = document.createElement('div');
     p.className = 'system-popup hud-frame';
-    p.innerHTML = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${creditsHtml(body)}</div>` +
+    const content = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${creditsHtml(body)}</div>` +
       (sub ? `<div class="system-popup-sub">${creditsHtml(sub)}</div>` : '');
+    const glitchKind = notificationGlitchKind(body);   // v6.8.6: сбой вывода — Аномалия / перегрев
+    p.innerHTML = glitchKind ? buildGlitchPopupHtml(content, glitchKind) : content;
+    if (glitchKind) p.dataset.glitch = glitchKind;
+    if (glitchKind === 'anomaly') p.classList.add('gp-anomaly');
     document.body.appendChild(p);
+    if (glitchKind) startNotificationGlitch(p, glitchKind);
 
     let dismissed = false;
     const dismiss = () => {
       if (dismissed) return;
       dismissed = true;
+      stopNotificationGlitch(p);
       p.remove();
       notificationActive = false;
       currentNotificationBody = null;
@@ -3115,6 +3133,71 @@
     };
     p.addEventListener('click', dismiss);
     setTimeout(dismiss, 10000);
+  }
+
+  // ===== v6.8.6: СБОЙ ВЫВОДА В УВЕДОМЛЕНИЯХ (демо 58) =====
+  // Бремя Аномалии действует — любое уведомление с «наводкой» (красный); уведомление о недопустимом
+  // темпе без Бремени — «перегрузка» (оранжевый). Только картинка: текст, тон, звук, время показа — прежние.
+  const GLITCH_CFG = {
+    anomaly: { fx: ['split', 'slice', 'noise', 'flicker', 'shake'], k: 2, color: '255,40,70', appearMs: 620, micro: true },
+    pace:    { fx: ['split', 'noise'], k: 2, color: '255,170,68', appearMs: 620, micro: false }
+  };
+  function notificationGlitchKind(body) {
+    if (data.curseActiveToday) return 'anomaly';          // в момент показа; ожидающее Бремя — нет
+    if (body === PACE_NOTICE) return 'pace';
+    return null;
+  }
+  function buildGlitchPopupHtml(content, kind) {
+    const inner = `<div class="gp-inner">${content}</div>`;
+    const slices = GLITCH_CFG[kind].fx.includes('slice') ? [0, 1, 2].map(() => `<div class="gp-slice" aria-hidden="true">${inner}</div>`).join('') : '';
+    return inner + slices + '<div class="gp-noise" aria-hidden="true"></div>';
+  }
+  function stopNotificationGlitch(p) {
+    (p._glitchTimers || []).forEach(clearTimeout);
+    p._glitchTimers = [];
+    p._glitchStopped = true;
+  }
+  function startNotificationGlitch(p, kind) {
+    const cfg = GLITCH_CFG[kind];
+    p._glitchTimers = [];
+    p.style.setProperty('--gk', cfg.k);
+    const later = (fn, ms) => {   // сработавший таймер сам убирается из списка
+      if (p._glitchStopped) return;
+      const id = setTimeout(() => { p._glitchTimers = p._glitchTimers.filter(t => t !== id); fn(); }, ms);
+      p._glitchTimers.push(id);
+    };
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const burst = (dur) => {
+      if (p._glitchStopped) return;
+      p.classList.add('glitch'); cfg.fx.forEach(f => p.classList.add('gfx-' + f));
+      const t0 = Date.now();
+      const step = () => {
+        if (p._glitchStopped) return;
+        if (Date.now() - t0 >= dur) { p.classList.remove('glitch'); cfg.fx.forEach(f => p.classList.remove('gfx-' + f)); return; }
+        p.querySelectorAll('.gp-slice').forEach(sl => {
+          const top = rnd(0, 85), h = rnd(4, 10 + 6 * cfg.k);
+          sl.style.clipPath = `inset(${top.toFixed(1)}% 0 ${Math.max(0, 100 - top - h).toFixed(1)}% 0)`;
+          sl.style.transform = `translateX(${(rnd(-1, 1) * (4 + 6 * cfg.k)).toFixed(1)}px)`;
+          sl.style.boxShadow = `inset 0 0 0 999px rgba(${cfg.color},${0.04 * cfg.k})`;
+        });
+        const n = p.querySelector('.gp-noise');
+        if (n) {
+          n.style.background = `repeating-linear-gradient(0deg, rgba(${cfg.color},${0.12 * cfg.k}) 0 1px, transparent 1px ${Math.round(rnd(3, 7))}px)`;
+          n.style.opacity = rnd(0.3, 0.6 + 0.12 * cfg.k).toFixed(2);
+          n.style.transform = `translateY(${rnd(-6, 6).toFixed(1)}px)`;
+        }
+        p.style.setProperty('--gbr', rnd(1, 1.2 + 0.2 * cfg.k).toFixed(2));
+        p.style.setProperty('--gdx', (rnd(-1, 1) * cfg.k * 1.5).toFixed(1) + 'px');
+        p.style.setProperty('--gdy', (rnd(-1, 1) * cfg.k).toFixed(1) + 'px');
+        later(step, 55);
+      };
+      step();
+    };
+    burst(cfg.appearMs);
+    if (cfg.micro) {
+      const loop = () => later(() => { burst(rnd(90, 150)); loop(); }, rnd(2000, 3200));
+      later(loop, cfg.appearMs);
+    }
   }
 
   function logNotification(text) {

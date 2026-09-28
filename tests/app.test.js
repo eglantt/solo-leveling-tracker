@@ -183,6 +183,50 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.8.6: сбой вывода в уведомлениях =====
+async function glitchTests() {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const w = boot(); await sleep(250);
+  const D = w.document;
+  const show = (body, tone) => { E(w, `displayNotificationNow({ body: ${JSON.stringify(body)}, tone: '${tone || 'info'}', skipLog: false })`); const all = D.querySelectorAll('.system-popup'); return all[all.length - 1]; };
+  const clear = () => D.querySelectorAll('.system-popup').forEach(p => p.click());
+  E(w, `data.curseActiveToday = false; data.pendingCurse = false;`);
+  let p = show('Получен предмет: Руна Роста');
+  check('G1 обычное уведомление — без сбоя', !p.dataset.glitch && !p.querySelector('.gp-noise') && !p.querySelector('.gp-slice'));
+  clear();
+  E(w, `data.pendingCurse = true;`);
+  p = show('Получен предмет: Руна Роста');
+  check('G2 ожидающее Бремя — без сбоя', !p.dataset.glitch);
+  clear();
+  E(w, `data.pendingCurse = false;`);
+  p = show(E(w, 'PACE_NOTICE'), 'warn');
+  check('G3 темп без Бремени — «перегрузка»: оранжевый, без срезов, есть помехи', p.dataset.glitch === 'pace' && !p.classList.contains('gp-anomaly') && !p.querySelector('.gp-slice') && !!p.querySelector('.gp-noise'));
+  const fxP = [...p.classList].filter(c => c.startsWith('gfx-')).sort().join(',');
+  check('G4 у перегрева только расслоение и помехи', fxP === 'gfx-noise,gfx-split', fxP);
+  check('G5 текст и тон не меняются', p.querySelector('.system-popup-body').textContent === E(w, 'PACE_NOTICE') && p.querySelector('.system-popup-body').classList.contains('tone-warn'));
+  await sleep(800);
+  check('G6 перегрев: всплеск снимается, повторов нет', !p.classList.contains('glitch') && p._glitchTimers.length === 0);
+  clear();
+  E(w, `data.curseActiveToday = true;`);
+  p = show('Получен предмет: Руна Роста');
+  check('G7 при действующем Бремени любое уведомление — «наводка»: красная рамка, срезы, помехи', p.dataset.glitch === 'anomaly' && p.classList.contains('gp-anomaly') && p.querySelectorAll('.gp-slice').length === 3 && !!p.querySelector('.gp-noise'));
+  const fxA = [...p.classList].filter(c => c.startsWith('gfx-')).sort().join(',');
+  check('G8 у Аномалии все пять приёмов', fxA === 'gfx-flicker,gfx-noise,gfx-shake,gfx-slice,gfx-split', fxA);
+  await sleep(800);
+  check('G9 Аномалия: всплеск снят, запланированы микросбои', !p.classList.contains('glitch') && p._glitchTimers.length > 0);
+  p.click();
+  check('G10 закрытие останавливает все таймеры сбоя', p._glitchStopped === true && p._glitchTimers.length === 0 && !p.isConnected);
+  p = show(E(w, 'PACE_NOTICE'), 'warn');
+  check('G11 темп во время Бремени — «наводка» Аномалии', p.dataset.glitch === 'anomaly');
+  clear();
+  check('G12 журнал уведомлений — обычный текст', E(w, 'data.notificationLog[0].text') === E(w, 'PACE_NOTICE'));
+  const cs = w.getComputedStyle(D.querySelector('.system-popup') || show('x'));
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('G13 дрожь сдвигает только содержимое, не окно', /\.system-popup\.glitch\.gfx-shake \.gp-inner \{ transform:/.test(css) && !/\.system-popup\.glitch\.gfx-shake \{/.test(css));
+  clear();
+}
+
 // ===== v6.8.5: «Контур снаряжения» =====
 async function contourNamingTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -208,54 +252,54 @@ async function renunciationTests() {
           data.stats.str = 60; data.stats.int = 10; data.stats.agi = 10; data.stats.sta = 10; data.expBoostToday = 0; data.creditBoostToday = 0; data.paceControl = false; ${extra || ''}; render();`); return w; };
   { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', null, null, null]`);
     const exp = (r, eq) => E(w, `(() => { data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.equippedArtifacts = ${eq ? "['crystal_shadow', null, null, null]" : '[null, null, null, null]'}; return getDynamicExp(1000, 1, 'pushups'); })()`);
-    check('R1 опыт: Кристалл Теней (+5%) действует без Отречения и не действует под ним',
+    check('RN1 опыт: Кристалл Теней (+5%) действует без Отречения и не действует под ним',
       exp(false, true) - exp(false, false) === 50 && exp(true, true) === exp(true, false), `${exp(false, true)}-${exp(false, false)} / ${exp(true, true)}-${exp(true, false)}`); }
   { const creds = async r => { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', null, null, null]; data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.activeTitle = 'Новичок';
         data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') - 1 }; data.credits = 0; data.isGoalMet = false;`);
       E(w, `Math.random = () => 0.99; render()`); w.document.querySelector('.quest-item[data-id="pushups"] .add').click(); return E(w, 'data.credits'); };
     const c0 = await creds(false), c1 = await creds(true);
-    check('R2 кредиты: Кристалл Теней (+15%) под Отречением не действует', Math.abs(c0 / c1 - 1.15) < 0.02, `${c0} / ${c1}`); }
+    check('RN2 кредиты: Кристалл Теней (+15%) под Отречением не действует', Math.abs(c0 / c1 - 1.15) < 0.02, `${c0} / ${c1}`); }
   { const box = async r => { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', null, null, null]; data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.boxes = {}; data.isGoalMet = false; data.dailyNotices.complete = false;
         data.completed = {}; document.querySelectorAll('.quest-item').forEach(i => { data.completed[i.dataset.id] = getDynamicTarget(parseInt(i.dataset.target), data.dailyTargetLevel, i.dataset.id); }); data.completed.pushups -= 1;`);
       E(w, `Math.random = () => 0; render()`); w.document.querySelector('.quest-item[data-id="pushups"] .add').click(); return [E(w, "data.boxes['box_obsidian'] || 0"), E(w, 'data.activeScroll')]; };
     const b0 = await box(false), b1 = await box(true);
-    check('R3 шкатулка Кристалла Теней за полный день: без Отречения есть, под Отречением нет (Отречение снято)', b0[0] === 1 && b1[0] === 0 && b1[1] === null, JSON.stringify([b0, b1])); }
+    check('RN3 шкатулка Кристалла Теней за полный день: без Отречения есть, под Отречением нет (Отречение снято)', b0[0] === 1 && b1[0] === 0 && b1[1] === null, JSON.stringify([b0, b1])); }
   { const pen = async (r, eq) => { const w = await mk(`data.equippedArtifacts = ${JSON.stringify(eq)}; data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.exp = 90000;`);
       return E(w, `computePenaltyAndApply('2026-09-01').loss`); };
     const expected = async (useStr, useAmulet) => { const w = await mk(''); return E(w, `(() => { const base = 0.15 - Math.floor(data.level / 20) * 0.03; let p = Math.max(0.05, base - ${useStr ? '(data.stats.str - 10) * 0.0025' : '0'}); ${useAmulet ? 'p *= 0.85;' : ''} return Math.floor(getExpToNext(data.level) * p); })()`); };
     const withAll = await pen(false, ['amulet_will', null, null, null]), renounced = await pen(true, ['amulet_will', null, null, null]);
-    check('R4 штраф без Отречения: Сила и Амулет Воли снижают', withAll === await expected(true, true), `${withAll} vs ${await expected(true, true)}`);
-    check('R5 штраф под Отречением: без Силы и без Амулета Воли', renounced === await expected(false, false), `${renounced} vs ${await expected(false, false)}`); }
+    check('RN4 штраф без Отречения: Сила и Амулет Воли снижают', withAll === await expected(true, true), `${withAll} vs ${await expected(true, true)}`);
+    check('RN5 штраф под Отречением: без Силы и без Амулета Воли', renounced === await expected(false, false), `${renounced} vs ${await expected(false, false)}`); }
   { const w = await mk(`data.equippedArtifacts = ['amulet_will', null, null, null]; data.activeScroll = 'renunciation'; data.isGoalMet = false; data.completed = {}; data.exp = 90000; data.lastReset -= 86400000;`);
     E(w, 'checkMissedDays()');
     const st = JSON.parse(E(w, 'JSON.stringify(data.penaltyStack[data.penaltyStack.length - 1])'));
     const exp = await (async () => { const w2 = await mk(''); return E(w2, `Math.floor(getExpToNext(data.level) * Math.max(0.05, 0.15 - Math.floor(data.level / 20) * 0.03))`); })();
-    check('R6 проваленный день под Отречением: штраф на сбросе без Силы и Амулета Воли', st && st.loss === exp, `${st && st.loss} vs ${exp}`); }
+    check('RN6 проваленный день под Отречением: штраф на сбросе без Силы и Амулета Воли', st && st.loss === exp, `${st && st.loss} vs ${exp}`); }
   { const w = await mk(`data.equippedArtifacts = ['seal_limit', null, null, null]; data.activeScroll = 'renunciation'`);
-    check('R7 Печать Предела под Отречением действует', E(w, 'getDailyLimitBreakCap()') === 2 + E(w, 'data.extraLimitBreaksToday || 0'));
+    check('RN7 Печать Предела под Отречением действует', E(w, 'getDailyLimitBreakCap()') === 2 + E(w, 'data.extraLimitBreaksToday || 0'));
     E(w, `data.equippedArtifacts = ['seal_growth', 'sphere_growth', 'crystal_shadow', null]; data.statPoints = 0; data.exp = getExpToNext(data.level); checkLevelUp()`);
-    check('R8 очки при повышении уровня под Отречением те же (5+3+4+6)', E(w, 'data.statPoints') === 18, E(w, 'data.statPoints')); }
+    check('RN8 очки при повышении уровня под Отречением те же (5+3+4+6)', E(w, 'data.statPoints') === 18, E(w, 'data.statPoints')); }
   { const w = await mk(`data.equippedArtifacts = ['crystal_insight', 'crystal_speed', 'amulet_continuity', null]; data.stats.int = 50`);
     const exp = r => E(w, `(() => { data.activeScroll = ${r ? "'renunciation'" : 'null'}; if (!data.titlesUnlocked.includes('Целеустремлённый')) data.titlesUnlocked.push('Целеустремлённый'); data.activeTitle = 'Целеустремлённый'; return getDynamicExp(1000, 1, 'pushups'); })()`);
-    check('R9 ранее отключаемое (Интеллект, титул, Прозрения, Непрерывности) по-прежнему отключено', exp(true) === 1000 && exp(false) > 1000, `${exp(true)} / ${exp(false)}`); }
+    check('RN9 ранее отключаемое (Интеллект, титул, Прозрения, Непрерывности) по-прежнему отключено', exp(true) === 1000 && exp(false) > 1000, `${exp(true)} / ${exp(false)}`); }
   // панель
   { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', 'seal_growth', 'amulet_will', 'seal_limit']; data.activeScroll = 'renunciation'`);
     const eff = () => JSON.parse(E(w, 'JSON.stringify(window.__activeEffectsCache.map(e => ({ n: e.name, t: e.text, s: !!e.isSuppressed, a: !!e.isArtifact, ti: !!e.isTitle })))'));
     const list = eff(), arts = list.filter(e => e.a), title = list.find(e => e.ti);
-    check('R10 подавлены ровно Кристалл Теней и Амулет Воли; Печать Развития и Печать Предела — обычные',
+    check('RN10 подавлены ровно Кристалл Теней и Амулет Воли; Печать Развития и Печать Предела — обычные',
       JSON.stringify(arts.map(e => [e.n, e.s])) === JSON.stringify([['Артефакт: Кристалл Теней (подавлен)', true], ['Артефакт: Печать Развития', false], ['Артефакт: Амулет Воли (подавлен)', true], ['Артефакт: Печать Предела', false]]), JSON.stringify(arts));
-    check('R11 титул подавлен: «(подавлен)» и строка о Свитке Отречения', !!title && title.s && / \(подавлен\)$/.test(title.n) && title.t.endsWith('\nДействие титула подавляется эффектом Свитка Отречения.'), title && JSON.stringify(title));
-    check('R12 подробности артефакта: эффект, затем строка о Свитке Отречения', arts[0].t === E(w, `artifactEffectText('crystal_shadow')`) + '\nДействие артефакта подавляется эффектом Свитка Отречения.');
+    check('RN11 титул подавлен: «(подавлен)» и строка о Свитке Отречения', !!title && title.s && / \(подавлен\)$/.test(title.n) && title.t.endsWith('\nДействие титула подавляется эффектом Свитка Отречения.'), title && JSON.stringify(title));
+    check('RN12 подробности артефакта: эффект, затем строка о Свитке Отречения', arts[0].t === E(w, `artifactEffectText('crystal_shadow')`) + '\nДействие артефакта подавляется эффектом Свитка Отречения.');
     const btns = [...w.document.querySelectorAll('#effectsRow .effect-icon-btn')];
     const dim = btns.map(b => b.querySelector('img').classList.contains('suppressed') ? 'D' : '.').join(''), dots = btns.filter(b => b.querySelector('.eff-dot')).length;
-    check('R13 тусклые иконки только у подавленных; точки-метки на месте', dim.endsWith('DD.D.') && dots === 5, `${dim}, точек ${dots}`);
-    check('R14 перенос строки в подробностях', w.getComputedStyle(w.document.getElementById('effectDetailText')).whiteSpace === 'pre-line');
+    check('RN13 тусклые иконки только у подавленных; точки-метки на месте', dim.endsWith('DD.D.') && dots === 5, `${dim}, точек ${dots}`);
+    check('RN14 перенос строки в подробностях', w.getComputedStyle(w.document.getElementById('effectDetailText')).whiteSpace === 'pre-line');
     E(w, `data.activeScroll = null; render()`);
-    check('R15 после снятия Отречения всё обычное', eff().every(e => !e.s && !/подавлен/.test(e.n)));
+    check('RN15 после снятия Отречения всё обычное', eff().every(e => !e.s && !/подавлен/.test(e.n)));
     E(w, `data.pendingScroll = 'renunciation'; render()`);
-    check('R16 ожидающее Отречение ничего не подавляет', eff().filter(e => e.a || e.ti).every(e => !e.s)); }
+    check('RN16 ожидающее Отречение ничего не подавляет', eff().filter(e => e.a || e.ti).every(e => !e.s)); }
   { const w = await mk('');
-    check('R17 описание Шкатулки Тёмного Кварца', E(w, `BOX_CATALOG.box_dark_quartz.desc`).includes('включая более сильные версии расходников') && !E(w, `BOX_CATALOG.box_dark_quartz.desc`).includes('усиленн')); }
+    check('RN17 описание Шкатулки Тёмного Кварца', E(w, `BOX_CATALOG.box_dark_quartz.desc`).includes('включая более сильные версии расходников') && !E(w, `BOX_CATALOG.box_dark_quartz.desc`).includes('усиленн')); }
 }
 
 // ===== v6.8.2: артефакты в панели эффектов, четыре контура =====
@@ -1168,6 +1212,7 @@ function noticeFor(scroll, item) {
   await effectsPanelTests();
   await renunciationTests();
   await contourNamingTests();
+  await glitchTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
