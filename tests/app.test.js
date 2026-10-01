@@ -184,6 +184,117 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.9.0: Бремя на карточках, чекбоксы, уведомление о выполнении, Перенос, Реестр =====
+async function v690Tests() {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const w = boot(); await sleep(250);
+  const D = w.document, cs = el => w.getComputedStyle(el);
+  E(w, `data.paceControl = false; data.curseActiveToday = false; data.pendingCurse = false; data.isGoalMet = false; data.completed = {}; render()`);
+  const list = D.querySelector('.quest-list'), item = id => D.querySelector(`.quest-list > .quest-item[data-id="${id}"]`);
+  // --- чекбоксы ---
+  const vis = [...D.querySelectorAll('.quest-list > .quest-item')].filter(i => i.style.display !== 'none');
+  check('V1 у каждой видимой карточки чекбокс слева внизу, 22px', vis.every(i => { const q = i.querySelector(':scope > .qcheck'); return q && cs(q).width === '22px' && cs(q).left === '16px' && cs(q).bottom === '19px'; }));
+  const q0 = item('pushups').querySelector(':scope > .qcheck');
+  check('V2 не выполнено: целый тусклый контур, без галочки', !q0.classList.contains('done') && !!q0.querySelector('.qc-full') && cs(q0.querySelector('.qc-gap')).display === 'none');
+  E(w, `data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') - 1 }; render()`);
+  item('pushups').querySelector('.add').click();
+  const q1 = item('pushups').querySelector(':scope > .qcheck');
+  check('V3 закрытие упражнения: контур с разрывом, галочка, анимация прорисовки', q1.classList.contains('done') && q1.classList.contains('drawing') && cs(q1.querySelector('.qc-gap')).display !== 'none' && cs(q1.querySelector('.qc-full')).display === 'none');
+  check('V4 цвет галочки обычно — зелёный', ['#3dff8f','rgb(61,255,143)'].includes(cs(q1.querySelector('.qc-tick')).stroke.replace(/\s/g, '').toLowerCase()));
+  E(w, `data.activeScroll = 'contract'; render()`);
+  check('V4a под свитком — зелёный', ['#3dff8f','rgb(61,255,143)'].includes(cs(q1.querySelector('.qc-tick')).stroke.replace(/\s/g, '').toLowerCase()));
+  const w2 = boot(); await sleep(250);
+  E(w2, `data.paceControl = false; data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') }; render()`);
+  const q2 = w2.document.querySelector('.quest-list > .quest-item[data-id="pushups"] > .qcheck');
+  check('V5 при открытии приложения выполненное — сразу, без анимации', q2.classList.contains('done') && !q2.classList.contains('drawing'));
+  E(w, `data.activeScroll = null; data.isGoalMet = true; data.limitBreakRoundPending = true; render()`);
+  check('V6 после начала Предела чекбоксов нет', [...D.querySelectorAll('.quest-list > .quest-item > .qcheck')].every(q => q.style.display === 'none'));
+  E(w, `data.isGoalMet = false; data.limitBreakRoundPending = false; data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 3600000; render()`);
+  check('V7 под Заморозкой чекбоксы на месте', [...D.querySelectorAll('.quest-list > .quest-item > .qcheck')].some(q => q.style.display !== 'none'));
+  E(w, `data.activeScroll = 'transfer'; data.transferExerciseId = 'squats'; render()`);
+  check('V8 снятое Переносом упражнение скрыто вместе с чекбоксом', item('squats').style.display === 'none');
+  E(w, `data.activeScroll = null; data.transferExerciseId = null; data.freezeEndTimestamp = null; render()`);
+  // --- Бремя ---
+  check('V9 без Бремени рамки обычные', !list.classList.contains('burden-active'));
+  E(w, `data.pendingCurse = true; render()`);
+  check('V10 ожидающее Бремя — рамки обычные', !list.classList.contains('burden-active'));
+  E(w, `data.pendingCurse = false; data.curseActiveToday = true; render()`);
+  check('V11 при Бремени красные рамки у карточек', list.classList.contains('burden-active') && cs(item('squats')).borderColor.replace(/\s/g, '').startsWith('rgba(255,85,102'));
+  check('V12 галочка под Бременем — красная', ['#ff4d5e','rgb(255,77,94)'].includes(cs(q1.querySelector('.qc-tick')).stroke.replace(/\s/g, '').toLowerCase()));
+  E(w, `data.activeScroll = 'contract'; render()`);
+  check('V12a «Бремя + свиток» — красная', ['#ff4d5e','rgb(255,77,94)'].includes(cs(q1.querySelector('.qc-tick')).stroke.replace(/\s/g, '').toLowerCase()));
+  E(w, `data.activeScroll = null; render()`);
+  item('squats').querySelector('.add').click();
+  await sleep(30);   // сбой запускается после перерисовки
+  const sq = item('squats');
+  check('V13 засчитанное нажатие под Бременем — сбой А (3 полосы карточки) и Б (2 копии числа)', sq.classList.contains('qg-on') && sq.querySelectorAll(':scope > .qg-slice').length === 3 && sq.querySelectorAll('.counter > .qg-num').length === 2);
+  check('V14 копии без повторяющихся id', D.querySelectorAll('#squats').length === 1 && D.querySelectorAll('#pushups').length === 1);
+  await sleep(450);
+  check('V15 после сбоя следов нет', !sq.classList.contains('qg-on') && !sq.querySelector('.qg-slice,.qg-num'));
+  E(w, `data.paceControl = true; data.paceWindow = { start: Date.now(), used: 2, locked: true, hot: [] }; render()`);
+  item('press').querySelector('.add').click();
+  check('V16 отклонённое из-за темпа нажатие — без сбоя карточки', !item('press').classList.contains('qg-on') && !item('press').querySelector('.qg-slice'));
+  E(w, `data.paceControl = false; data.paceWindow = emptyPaceWindow(); burdenGlitchTick()`);
+  check('V17 микросбой запланирован при Бремени', E(w, 'questMicroTimer !== null'));
+  E(w, `data.activeScroll = 'freeze'; burdenGlitchTick()`);
+  check('V18 под Заморозкой микросбоев нет', E(w, 'questMicroTimer === null'));
+  E(w, `data.activeScroll = null; data.curseActiveToday = false; burdenGlitchTick(); render()`);
+  check('V19 Бремя закончилось — таймер снят, рамки обычные', E(w, 'questMicroTimer === null') && !list.classList.contains('burden-active'));
+  // --- уведомление о выполнении ---
+  const show = (body, check) => { E(w, `displayNotificationNow({ body: ${JSON.stringify(body)}, tone: 'info', check: ${check} })`); const a = D.querySelectorAll('.system-popup'); return a[a.length - 1]; };
+  const clear = () => D.querySelectorAll('.system-popup').forEach(p => p.click());
+  const texts = JSON.parse(E(w, 'JSON.stringify(SYSTEM_NOTICES.complete)'));
+  let p = show(texts[3], true);
+  const nc = p.querySelector(':scope > .notice-check, .gp-inner > .notice-check') || p.querySelector('.notice-check');
+  check('V20 уведомление о выполнении: чекбокс 32px по центру под текстом', !!nc && cs(nc).width === '32px' && cs(nc).marginLeft === 'auto' && nc.previousElementSibling.classList.contains('system-popup-body'));
+  const css690 = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('V21 галочка зелёная, прорисовывается после появления (через 0,3 с, за 0,5 с)', !nc.classList.contains('red') && /\.notice-check \.qc-tick \{ animation: qcDraw 0\.5s ease-out 0\.3s both; \}/.test(css690));
+  clear();
+  p = show('Получен предмет: Руна Роста', false);
+  check('V22 в других уведомлениях чекбокса нет', !p.querySelector('.notice-check'));
+  clear();
+  E(w, `data.curseActiveToday = true`);
+  p = show(texts[0], true);
+  check('V23 под Бременем галочка красная, окно со сбоем Аномалии', p.querySelector('.notice-check').classList.contains('red') && p.dataset.glitch === 'anomaly');
+  clear(); E(w, `data.curseActiveToday = false`);
+  // уведомление ставится в очередь именно с чекбоксом и в журнал пишется текстом
+  E(w, `data.completed = {}; data.dailyNotices.complete = false; data.isGoalMet = false; document.querySelectorAll('.quest-item').forEach(i => { data.completed[i.dataset.id] = getDynamicTarget(parseInt(i.dataset.target), data.dailyTargetLevel, i.dataset.id); }); data.completed.press -= 1; render();
+        window.__Q = []; const _enq = enqueueNotification; enqueueNotification = pl => { window.__Q.push(pl); };`);
+  item('press').querySelector('.add').click();
+  await sleep(4700);
+  const Q = JSON.parse(E(w, 'JSON.stringify(window.__Q)')), qc = Q.find(x => x.check);
+  check('V24 при выполнении дня уведомление идёт с чекбоксом, текст из списка выполнения', !!qc && texts.includes(qc.body), JSON.stringify(Q.map(x => [x.body.slice(0, 20), !!x.check])));
+  E(w, `logNotification(${JSON.stringify(texts[1])})`);
+  check('V25 журнал — только текст', E(w, 'data.notificationLog[0].text') === texts[1]);
+  // --- Перенос ---
+  const tr = async (setup) => { const w3 = boot(); await sleep(250); E(w3, `window.__N = []; showNotice = (m) => window.__N.push(m); data.consumables = { scroll_transfer: 1 }; data.activeScroll = null; data.pendingScroll = null; ${setup}; performUseItem('scroll_transfer')`); return E(w3, 'window.__N[0]'); };
+  const t1 = await tr(`data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') }`);
+  const t2 = await tr(`data.completed = { pushups: 1, squats: 1, pullups: 1, press: 1, steps: 100 }`);
+  check('V26 Перенос: причина — упражнение уже выполнено', t1 === 'Свиток Переноса нельзя использовать: одно из упражнений уже выполнено.', t1);
+  check('V27 Перенос: причина — все упражнения уже начаты', t2 === 'Свиток Переноса нельзя использовать: все упражнения уже начаты.', t2);
+  const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
+  check('V28 текста «Свиток нельзя применить сейчас» больше нет', !raw.includes('Свиток нельзя применить сейчас'));
+  // --- Реестр ---
+  const reg = async (setup) => { const w4 = boot(); await sleep(250); E(w4, `window.__S = 0; syncToLeaderboard = () => { window.__S++; }; data.lastSyncPeriod = null; ${setup}`); return w4; };
+  let r = await reg(`data.playerName = 'Сон'; data.history = {}; data.dailyNotices.complete = false; trySyncRegistry()`);
+  check('V29 без выполненного дня — отправки нет, период не потрачен', E(r, 'window.__S') === 0 && E(r, 'data.lastSyncPeriod') === null);
+  r = await reg(`data.playerName = ''; data.history = { '2026-09-01': { status: 'success' } }; trySyncRegistry()`);
+  check('V30 без своего имени — отправки нет', E(r, 'window.__S') === 0);
+  r = await reg(`data.playerName = 'Игрок'; data.history = { '2026-09-01': { status: 'success' } }; trySyncRegistry()`);
+  check('V31 имя «Игрок» — отправки нет', E(r, 'window.__S') === 0);
+  r = await reg(`data.playerName = 'Сон'; data.history = { '2026-09-01': { status: 'success' } }; trySyncRegistry(); trySyncRegistry()`);
+  check('V32 успешный день и своё имя — отправка, один раз за период', E(r, 'window.__S') === 1 && E(r, 'data.lastSyncPeriod') === E(r, 'getCurrentSyncPeriodKey()'));
+  r = await reg(`data.playerName = 'Сон'; data.history = {}; data.dailyNotices.complete = false; data.paceControl = false; data.completed = {}; data.isGoalMet = false;
+    document.querySelectorAll('.quest-item').forEach(i => { data.completed[i.dataset.id] = getDynamicTarget(parseInt(i.dataset.target), data.dailyTargetLevel, i.dataset.id); }); data.completed.press -= 1; render()`);
+  r.document.querySelector('.quest-list > .quest-item[data-id="press"] .add').click();
+  check('V33 отправка сразу при выполнении дневного задания', E(r, 'window.__S') === 1);
+  r = await reg(`data.playerName = ''; data.history = { '2026-09-01': { status: 'success' } }; trySyncRegistry(); backupModalStep = 'editName'; renderBackupModal();`);
+  const inp = r.document.getElementById('editNameInput');
+  if (inp) { inp.value = 'Сон'; E(r, 'submitEditName()'); }
+  check('V34 отправка сразу после задания имени (при выполненном дне)', !!inp && E(r, 'window.__S') === 1);
+}
+
 // ===== v6.8.6: сбой вывода в уведомлениях =====
 async function glitchTests() {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1153,9 +1264,18 @@ async function rulesTests() {
   check('R4 жирное «Кодексе»', D.querySelector('#rulesText strong').textContent === 'Кодексе');
   const ctlPending = () => [...D.querySelectorAll('#rulesOverlay .rules-controls')].every(e => e.classList.contains('pending'));
   check('R5 галочка и кнопка скрыты в начале', ctlPending());
-  await new Promise(r => setTimeout(r, 1200));
+  // v6.9.0: перед печатью — «запуск Системы» (1 с чёрного экрана + ~1,45 с раскрытия)
+  const ov = D.getElementById('rulesOverlay');
+  await new Promise(r => setTimeout(r, 400));
+  check('R5a первый запуск: чёрный экран, окно скрыто, печать не идёт', ov.classList.contains('sys-boot-black') && D.querySelectorAll('#rulesText .rules-ch.on').length === 0);
+  await new Promise(r => setTimeout(r, 1000));
+  const win = ov.querySelector('.status-window');
+  check('R5b затем окно раскрывается с помехами', !ov.classList.contains('sys-boot-black') && win.classList.contains('sys-boot-open') && win.querySelectorAll('.sb-slice').length === 3 && !!win.querySelector('.sb-noise')
+    && D.querySelectorAll('#rulesText .rules-ch.on').length === 0);
+  await new Promise(r => setTimeout(r, 2250));
+  check('R5c после стабилизации следов запуска нет, печать идёт', !win.classList.contains('sys-boot-open') && !win.querySelector('.sb-slice,.sb-noise') && win.querySelectorAll('[id="rulesText"]').length === 1);
   const on1 = D.querySelectorAll('#rulesText .rules-ch.on').length, all = D.querySelectorAll('#rulesText .rules-ch').length;
-  check('R6 через 1.2 с напечатана часть текста', on1 > 0 && on1 < all, `${on1}/${all}`);
+  check('R6 через 1.2 с печати напечатана часть текста', on1 > 0 && on1 < all, `${on1}/${all}`);
   D.getElementById('rulesText').click();
   check('R7 касание: весь текст и управление видны', D.querySelectorAll('#rulesText .rules-ch.on').length === all && !ctlPending());
   check('R8 «Принять» неактивна без галочки', D.getElementById('rulesAcceptBtn').disabled);
@@ -1167,12 +1287,13 @@ async function rulesTests() {
   const t0 = Date.now();
   await new Promise(res => { const iv = setInterval(() => { if (!ctlPending()) { clearInterval(iv); res(); } }, 50); });
   const dt = (Date.now() - t0) / 1000;
-  check('R10 печать целиком ≈ 18 с', dt > 17.5 && dt < 18.8, dt.toFixed(1) + ' с');
+  check('R10 запуск Системы (~2,45 с) и печать целиком (≈ 18 с)', dt > 19.9 && dt < 21.3, dt.toFixed(1) + ' с');
   // Архив
   E(w, `showRulesOverlay('archive')`);
   const aLines = [...D.querySelectorAll('#rulesText .rules-line')].map(l => l.textContent);
   check('R11 Архив: заголовок ПРАВИЛА, 3 абзаца, без «Слабость» и подзаголовка',
     D.getElementById('rulesHeader').textContent === 'ПРАВИЛА' && aLines.length === 3 && aLines[0].startsWith('Протокол задания') && !aLines.some(t => /Слабость|ПРАВИЛА:/.test(t)), aLines.length);
+  check('R12a Архив: без «запуска Системы»', !ov.classList.contains('sys-boot-black') && !ov.querySelector('.status-window').classList.contains('sys-boot-open'));
   check('R12 Архив: без печати, «Закрыть» сразу видна', !D.getElementById('rulesText').classList.contains('rules-typing') && !ctlPending() && D.getElementById('rulesCloseBtn').style.display === 'block' && D.getElementById('rulesCheckboxRow').style.display === 'none');
   check('R13 Архив: «штраф» красный', D.querySelectorAll('#rulesText .rules-pen').length === 2);
   // Напоминания без «Система:»
@@ -1213,6 +1334,7 @@ function noticeFor(scroll, item) {
   await renunciationTests();
   await contourNamingTests();
   await glitchTests();
+  await v690Tests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

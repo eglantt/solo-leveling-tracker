@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.8.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.9.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -929,7 +929,46 @@
     .stats-container .stat-line > span, .stats-caption { font-family: 'Exo 2 Text', sans-serif; font-size: 1.08em; }
     .backup-summary, .restore-link { font-family: 'Exo 2 Text', sans-serif; font-size: 0.81rem; }
     #appVersionTag { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; }
-  </style>
+      /* ===== v6.9.0 (в конце стилей: после базовых правил карточек и окон) ===== */
+    /* ===== v6.9.0: первый запуск Системы ===== */
+    #rulesOverlay.sys-boot-black { background: #000; }
+    #rulesOverlay.sys-boot-black .status-window { visibility: hidden; }
+    @keyframes sysBootOpen { 0% { transform: scaleY(0.004) scaleX(0.2); filter: brightness(4); } 25% { transform: scaleY(0.004) scaleX(1); filter: brightness(3); }
+      100% { transform: scaleY(1) scaleX(1); filter: brightness(1); } }
+    #rulesOverlay .status-window.sys-boot-open { position: relative; overflow: hidden; transform-origin: center; animation: sysBootOpen 1.2s cubic-bezier(.2,.8,.2,1) forwards; }
+    #rulesOverlay .sb-slice { position: absolute; inset: 0; pointer-events: none; background: #0d1a2d; padding: 25px 25px 40px; }
+    #rulesOverlay .sb-noise { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: 0.7; }
+    #rulesOverlay .status-window.sys-boot-glitch .status-header { text-shadow: -4px 0 rgba(255,40,70,0.8), 4px 0 rgba(0,220,255,0.8); }
+
+    /* ===== v6.9.0: карточки под Бременем — красная рамка и сбой (А + Б, «слабо») ===== */
+    .quest-list.burden-active .quest-item { border-color: #ff5566aa; box-shadow: 0 0 8px rgba(255,40,70,0.25); }
+    .quest-item .qg-slice { position: absolute; inset: -1px; pointer-events: none; border-radius: 8px; overflow: hidden; }
+    .quest-item .qg-slice > .quest-item { height: 100%; background: #0b111f; }
+    .quest-item.qg-on .quest-name, .quest-item.qg-on .counter, .quest-item.qg-on .target { text-shadow: -2px 0 rgba(255,40,70,0.85), 2px 0 rgba(0,220,255,0.85) !important; }
+    .quest-item.qg-on::after { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: 8px;
+      background: repeating-linear-gradient(0deg, rgba(255,40,70,0.14) 0 1px, transparent 1px 4px); transform: translateY(var(--qgly, 0)); }
+    .quest-item.qg-on { filter: brightness(var(--qgbr, 1.15)) contrast(1.15); }
+    .counter { position: relative; }
+    .counter .qg-num { position: absolute; inset: 0; pointer-events: none; background: #0b111f; text-shadow: -2px 0 rgba(255,40,70,0.9), 2px 0 rgba(0,220,255,0.9); }
+
+    /* ===== v6.9.0: чекбоксы (стиль первоисточника) — в карточках 22px слева внизу, в уведомлении 32px ===== */
+    .quest-item .qcheck { position: absolute; left: 16px; bottom: 19px; width: 22px; height: 22px; pointer-events: none; }
+    .qcheck svg, .notice-check svg { width: 100%; height: 100%; overflow: visible; display: block; }
+    .qcheck .qc-full, .qcheck .qc-gap, .notice-check .qc-gap { fill: none; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+    .qcheck .qc-full { stroke: rgba(255,255,255,0.32); }
+    .qcheck .qc-gap { display: none; stroke: #ffffff; filter: drop-shadow(0 0 2px #ffffff); }
+    .qcheck.done .qc-full { display: none; }
+    .qcheck.done .qc-gap { display: inline; }
+    .qc-tick { fill: none; stroke: #3dff8f; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 3px #3dff8f); }
+    .qcheck.done .qc-tick { stroke-dashoffset: 0; }
+    .qcheck.done.drawing .qc-tick { animation: qcDraw 0.4s ease-out; }
+    @keyframes qcDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    .quest-list.burden-active .qc-tick, .notice-check.red .qc-tick { stroke: #ff4d5e; filter: drop-shadow(0 0 3px #ff4d5e); }
+    .notice-check { width: 32px; height: 32px; margin: 14px auto 0; }
+    .notice-check .qc-gap { stroke: #ffffff; filter: drop-shadow(0 0 2px #ffffff); }
+    .notice-check .qc-tick { animation: qcDraw 0.5s ease-out 0.3s both; }
+
+</style>
 </head>
 <body>
 <!-- v6.6.10: значок кредитов «печать Системы» (демо 49, С2). Образец один; места ссылаются на #credSeal. -->
@@ -1283,6 +1322,7 @@
       <div class="freeze-tap-catcher" id="freezeTapCatcher" onclick="onFreezeTapCatcherClick()"></div>
       <div class="quest-item" data-id="pushups" data-target="100" data-exp="80">
         <div class="quest-name">Отжимания</div>
+        <div class="qcheck" aria-hidden="true"></div>
         <div class="quest-progress">
           <div class="counter" id="pushups">0</div>
           <div class="target">/ 100</div>
@@ -1297,6 +1337,7 @@
       </div>
       <div class="quest-item" data-id="squats" data-target="120" data-exp="90">
         <div class="quest-name">Приседания</div>
+        <div class="qcheck" aria-hidden="true"></div>
         <div class="quest-progress">
           <div class="counter" id="squats">0</div>
           <div class="target">/ 120</div>
@@ -1311,6 +1352,7 @@
       </div>
       <div class="quest-item" data-id="pullups" data-target="40" data-exp="120">
         <div class="quest-name">Подтягивания</div>
+        <div class="qcheck" aria-hidden="true"></div>
         <div class="quest-progress">
           <div class="counter" id="pullups">0</div>
           <div class="target">/ 40</div>
@@ -1325,6 +1367,7 @@
       </div>
       <div class="quest-item" data-id="press" data-target="100" data-exp="80">
         <div class="quest-name">Пресс</div>
+        <div class="qcheck" aria-hidden="true"></div>
         <div class="quest-progress">
           <div class="counter" id="press">0</div>
           <div class="target">/ 100</div>
@@ -1339,6 +1382,7 @@
       </div>
       <div class="quest-item" data-id="steps" data-target="10000" data-exp="150">
         <div class="quest-name">Бег (шаги)</div>
+        <div class="qcheck" aria-hidden="true"></div>
         <div class="quest-progress">
           <div class="counter" id="steps">0</div>
           <div class="target">/ 10000</div>
@@ -1370,7 +1414,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.8.6';
+  const APP_VERSION = '6.9.0';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2601,6 +2645,7 @@
   }
 
   function stopRulesAnimation() {
+    stopSystemBoot();
     if (rulesAnim && rulesAnim.raf) cancelAnimationFrame(rulesAnim.raf);
     rulesAnim = null;
   }
@@ -2624,7 +2669,42 @@
       document.getElementById('rulesAcceptBtn').disabled = true;
     }
     document.getElementById('rulesOverlay').style.display = 'flex';
-    if (onboarding) startRulesAnimation(chars);
+    if (onboarding) playSystemBoot(() => startRulesAnimation(chars));   // v6.9.0
+  }
+
+  // v6.9.0: первый запуск Системы — 1 с чёрного экрана, затем окно раскрывается из центра за 1,2 с
+  // с голубыми помехами и после стабилизации начинается печать правил.
+  const BOOT_BLACK_MS = 1000, BOOT_OPEN_MS = 1200;
+  let bootTimers = [];
+  function stopSystemBoot() {
+    bootTimers.forEach(clearTimeout); bootTimers = [];
+    const ov = document.getElementById('rulesOverlay'), win = ov && ov.querySelector('.status-window');
+    if (ov) ov.classList.remove('sys-boot-black');
+    if (win) { win.classList.remove('sys-boot-open', 'sys-boot-glitch'); win.querySelectorAll('.sb-slice,.sb-noise').forEach(x => x.remove()); }
+  }
+  function playSystemBoot(done) {
+    stopSystemBoot();
+    const ov = document.getElementById('rulesOverlay'), win = ov.querySelector('.status-window');
+    ov.classList.add('sys-boot-black');
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    bootTimers.push(setTimeout(() => {
+      ov.classList.remove('sys-boot-black');
+      const inner = win.innerHTML;
+      for (let k = 0; k < 3; k++) { const sl = document.createElement('div'); sl.className = 'sb-slice'; sl.setAttribute('aria-hidden', 'true'); sl.innerHTML = inner;
+        sl.querySelectorAll('[id]').forEach(el => el.removeAttribute('id')); win.appendChild(sl); }
+      const n = document.createElement('div'); n.className = 'sb-noise'; n.setAttribute('aria-hidden', 'true'); win.appendChild(n);
+      win.classList.add('sys-boot-open', 'sys-boot-glitch');
+      const t0 = Date.now(), dur = BOOT_OPEN_MS + 250;
+      const step = () => {
+        if (Date.now() - t0 >= dur) { stopSystemBoot(); done(); return; }
+        win.querySelectorAll('.sb-slice').forEach(sl => { const top = rnd(0, 88), h = rnd(3, 14);
+          sl.style.clipPath = `inset(${top.toFixed(1)}% 0 ${Math.max(0, 100 - top - h).toFixed(1)}% 0)`; sl.style.transform = `translateX(${rnd(-14, 14).toFixed(0)}px)`; });
+        n.style.background = `repeating-linear-gradient(0deg, rgba(64,192,255,0.25) 0 1px, transparent 1px ${Math.round(rnd(2, 6))}px)`;
+        n.style.transform = `translateY(${rnd(-8, 8).toFixed(0)}px)`;
+        bootTimers.push(setTimeout(step, 55));
+      };
+      step();
+    }, BOOT_BLACK_MS));
   }
 
   let rulesCheckboxChecked = false;
@@ -3030,6 +3110,71 @@
     if (action) action();
   }
 
+  // ===== v6.9.0: КАРТОЧКИ ПОД БРЕМЕНЕМ (демо 61: А — сбой карточки, Б — сбой числа, сила «слабо») =====
+  const QG_K = 1;
+  function questGlitch(item, dur) {
+    if (!item || item._qg || item.style.display === 'none') return;
+    item._qg = true;
+    const extra = [], rnd = (a, b) => a + Math.random() * (b - a);
+    for (let k = 0; k < 3; k++) {                       // А: копии карточки — полосы сдвигаются вбок
+      const sl = document.createElement('div'); sl.className = 'qg-slice'; sl.setAttribute('aria-hidden', 'true');
+      const c = item.cloneNode(true);
+      c.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));   // без повторяющихся id
+      c.querySelectorAll('.qg-slice,.qg-num').forEach(el => el.remove());
+      c.style.border = 'none'; c.style.margin = '0';
+      sl.appendChild(c); item.appendChild(sl); extra.push(sl);
+    }
+    const counter = item.querySelector('.counter');
+    for (let k = 0; k < 2; k++) {                       // Б: копии числа — полосы числа сдвигаются
+      const n = document.createElement('div'); n.className = 'qg-num'; n.setAttribute('aria-hidden', 'true'); n.textContent = counter.firstChild ? counter.firstChild.nodeValue : counter.textContent;
+      counter.appendChild(n); extra.push(n);
+    }
+    const t0 = Date.now();
+    const step = () => {
+      if (Date.now() - t0 >= dur || !item.isConnected) {
+        extra.forEach(x => x.remove()); item.classList.remove('qg-on'); counter.classList.remove('qg-split'); item._qg = false; return;
+      }
+      item.classList.add('qg-on'); counter.classList.add('qg-split');
+      item.style.setProperty('--qgbr', rnd(1, 1.15 + 0.1 * QG_K).toFixed(2));
+      item.style.setProperty('--qgly', rnd(-4, 4).toFixed(0) + 'px');
+      item.querySelectorAll(':scope > .qg-slice').forEach(sl => { const top = rnd(0, 85), h = rnd(5, 9 + 5 * QG_K);
+        sl.style.clipPath = `inset(${top.toFixed(1)}% 0 ${Math.max(0, 100 - top - h).toFixed(1)}% 0)`;
+        sl.style.transform = `translateX(${(rnd(-1, 1) * (3 + 5 * QG_K)).toFixed(0)}px)`; });
+      counter.querySelectorAll('.qg-num').forEach(n => { const top = rnd(0, 70), h = rnd(15, 40);
+        n.style.clipPath = `inset(${top.toFixed(1)}% 0 ${Math.max(0, 100 - top - h).toFixed(1)}% 0)`;
+        n.style.transform = `translateX(${(rnd(-1, 1) * (2 + 3 * QG_K)).toFixed(0)}px)`; });
+      setTimeout(step, 50);
+    };
+    step();
+  }
+  // Микросбои: раз в 10–20 с на случайной видимой карточке; не в свёрнутом приложении и не под Заморозкой.
+  let questMicroTimer = null;
+  function burdenGlitchTick() {
+    const active = data.curseActiveToday && data.activeScroll !== 'freeze';
+    if (!active) { if (questMicroTimer) { clearTimeout(questMicroTimer); questMicroTimer = null; } return; }
+    if (questMicroTimer) return;
+    questMicroTimer = setTimeout(() => {
+      questMicroTimer = null;
+      if (!data.curseActiveToday || data.activeScroll === 'freeze' || document.hidden) return;
+      const items = [...document.querySelectorAll('.quest-list .quest-item')].filter(i => i.style.display !== 'none');
+      if (items.length) questGlitch(items[Math.floor(Math.random() * items.length)], 160);
+    }, 10000 + Math.random() * 10000);
+  }
+
+  // ===== v6.9.0: ЧЕКБОКСЫ В КАРТОЧКАХ =====
+  // Скрыты после начала Преодоления предела (isGoalMet). Галочка рисуется анимацией только в момент
+  // закрытия упражнения; при открытии приложения выполненное показано сразу.
+  let questCheckDrawId = null;
+  function updateQuestCheck(item, id, done) {
+    const box = item.querySelector(':scope > .qcheck');
+    if (!box) return;
+    if (!box.firstChild) box.innerHTML = CHECK_SVG_QUEST;
+    box.style.display = data.isGoalMet ? 'none' : '';
+    if (done && questCheckDrawId === id) { box.classList.remove('done'); void box.offsetWidth; box.classList.add('drawing'); questCheckDrawId = null; }
+    if (!done) box.classList.remove('drawing');
+    box.classList.toggle('done', done);
+  }
+
   // ===== v6.8.0: КОНТРОЛЬ ТЕМПА =====
   // Окно 2 мин открывается первым засчитанным внесением любого из четырёх упражнений; запас окна —
   // 2 подхода работы (PACE_SET), общий, не копится. Нажатие сверх запаса не засчитывается целиком,
@@ -3097,7 +3242,7 @@
     displayNotificationNow(notificationQueue.shift());
   }
 
-  function displayNotificationNow({ body, sub, tone, skipLog, sound }) {
+  function displayNotificationNow({ body, sub, tone, skipLog, sound, check }) {
     currentNotificationBody = body;
     if (!skipLog) logNotification(sub ? `${body} ${sub}` : body);
 
@@ -3113,7 +3258,8 @@
     const p = document.createElement('div');
     p.className = 'system-popup hud-frame';
     const content = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${creditsHtml(body)}</div>` +
-      (sub ? `<div class="system-popup-sub">${creditsHtml(sub)}</div>` : '');
+      (sub ? `<div class="system-popup-sub">${creditsHtml(sub)}</div>` : '') +
+      (check ? `<div class="notice-check${data.curseActiveToday ? ' red' : ''}" aria-hidden="true">${CHECK_SVG_DONE}</div>` : '');   // v6.9.0
     const glitchKind = notificationGlitchKind(body);   // v6.8.6: сбой вывода — Аномалия / перегрев
     p.innerHTML = glitchKind ? buildGlitchPopupHtml(content, glitchKind) : content;
     if (glitchKind) p.dataset.glitch = glitchKind;
@@ -3134,6 +3280,15 @@
     p.addEventListener('click', dismiss);
     setTimeout(dismiss, 10000);
   }
+
+  // ===== v6.9.0: ЧЕКБОКС В СТИЛЕ ПЕРВОИСТОЧНИКА (демо 61–63) =====
+  // viewBox 24: контур 3..19 × 5..21, скругление 4, тонкие линии; выполнено — средний разрыв (5) в правом
+  // верхнем углу и галочка с коротким вылетом (1); не выполнено — целый тусклый контур.
+  const CHECK_BOX_FULL = 'M7,5 H15 A4,4 0 0 1 19,9 V17 A4,4 0 0 1 15,21 H7 A4,4 0 0 1 3,17 V9 A4,4 0 0 1 7,5 Z';
+  const CHECK_BOX_GAP = 'M14,5 H7 A4,4 0 0 0 3,9 V17 A4,4 0 0 0 7,21 H15 A4,4 0 0 0 19,17 V10';
+  const CHECK_TICK = 'M7,13 L11,17 L20,4';
+  const CHECK_SVG_QUEST = `<svg viewBox="0 0 24 24"><path class="qc-full" d="${CHECK_BOX_FULL}"/><path class="qc-gap" d="${CHECK_BOX_GAP}"/><path class="qc-tick" pathLength="1" d="${CHECK_TICK}"/></svg>`;
+  const CHECK_SVG_DONE = `<svg viewBox="0 0 24 24"><path class="qc-gap" d="${CHECK_BOX_GAP}"/><path class="qc-tick" pathLength="1" d="${CHECK_TICK}"/></svg>`;
 
   // ===== v6.8.6: СБОЙ ВЫВОДА В УВЕДОМЛЕНИЯХ (демо 58) =====
   // Бремя Аномалии действует — любое уведомление с «наводкой» (красный); уведомление о недопустимом
@@ -3207,8 +3362,8 @@
     saveData();
   }
 
-  function showNotice(message, tone, skipLog, sound) {
-    enqueueNotification({ body: message, tone, skipLog, sound });
+  function showNotice(message, tone, skipLog, sound, check) {
+    enqueueNotification({ body: message, tone, skipLog, sound, check: !!check });
   }
 
   function showPenaltyBanner(totalLoss, pct, daysCount, completedCount, runeHalved) {
@@ -3626,6 +3781,7 @@
 
   function updateTimerInner() {
     paceTick();
+    burdenGlitchTick();   // v6.9.0
     const container = document.getElementById('resetTimerContainer');
     const labelEl = container.querySelector('.reset-label');
     if (data.activeScroll === 'freeze') {
@@ -4220,7 +4376,8 @@
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
               const zeroIds = Object.keys(targets).filter(qid => (data.completed[qid] || 0) === 0);
               if (hasAnyClosed || zeroIds.length === 0) {
-                  showNotice("Свиток нельзя применить сейчас.", 'warn', true);
+                  showNotice(hasAnyClosed ? "Свиток Переноса нельзя использовать: одно из упражнений уже выполнено."
+                                          : "Свиток Переноса нельзя использовать: все упражнения уже начаты.", 'warn', true);   // v6.9.0
               } else {
                   showExerciseChoice(zeroIds, (chosenId) => {
                       data.activeScroll = 'transfer';
@@ -4922,6 +5079,8 @@
       if (isTransferred) return;
       const target = getDynamicTarget(parseInt(item.dataset.target), data.dailyTargetLevel, id);
       const current = data.completed[id] || 0;
+      updateQuestCheck(item, id, current >= target);   // v6.9.0
+      item.closest('.quest-list').classList.toggle('burden-active', !!data.curseActiveToday);
       item.querySelector('.counter').textContent = current;
       item.querySelector('.target').textContent = `/ ${target}`;
       const barFill = item.querySelector('.qbar-fill');
@@ -4955,12 +5114,14 @@
         return;
       }
       playSound('tap');
+      if (data.curseActiveToday) setTimeout(() => questGlitch(item, 360), 0);   // v6.9.0: сбой при засчитанном нажатии — после перерисовки (она переписывает число)
       data.completed[id] = current + val;
       totalStats[id] += val;
       const progDayKey = dateKeyFromTimestamp(data.lastReset);
       if (!data.dailyExerciseLog[progDayKey]) data.dailyExerciseLog[progDayKey] = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
       data.dailyExerciseLog[progDayKey][id] = (data.dailyExerciseLog[progDayKey][id] || 0) + val;
       if (data.completed[id] >= target) {
+        questCheckDrawId = id;   // v6.9.0: галочка прорисовывается при следующей отрисовке
         playSound('questDone');
         const expGained = getDynamicExp(parseInt(item.dataset.exp), data.level, id);
         gainExp(expGained);
@@ -5030,7 +5191,8 @@
           }
           playSound('dayComplete');
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
-          setTimeout(() => showNotice(completeText, 'info'), 4500);
+          setTimeout(() => showNotice(completeText, 'info', false, undefined, true), 4500);   // v6.9.0: с чекбоксом
+          trySyncRegistry();   // v6.9.0: первый выполненный день может открыть отправку в Реестр
           if (!renouncedDay && isArtifactEquipped('crystal_shadow')) {
             if (Math.random() < 0.10) {
               data.boxes['box_obsidian'] = (data.boxes['box_obsidian'] || 0) + 1;
@@ -5808,6 +5970,7 @@
     data.playerName = sanitizePlayerName(field ? field.value : '');
     data.nameNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
     saveData();
+    trySyncRegistry();   // v6.9.0
     backupModalStep = 'main';
     renderBackupModal();
     render();
@@ -6170,15 +6333,29 @@
     requestAnimationFrame(step);
   }
 
+  // v6.9.0: в Реестр — только игроки, выполнившие хотя бы одно дневное задание и задавшие своё имя.
+  // Пока условие не выполнено, период синхронизации не тратится.
+  function registryEligible() {
+    const name = (data.playerName || '').trim();
+    if (!name || name === 'Игрок') return false;
+    if (data.dailyNotices && data.dailyNotices.complete) return true;
+    return Object.values(data.history || {}).some(e => e && e.status === 'success');
+  }
+  function trySyncRegistry() {
+    if (!registryEligible()) return false;
+    const currentPeriod = getCurrentSyncPeriodKey();
+    if (data.lastSyncPeriod === currentPeriod) return false;
+    data.lastSyncPeriod = currentPeriod;
+    syncToLeaderboard();
+    saveData();
+    return true;
+  }
+
   function finishInit() {
     checkMissedDays();
     data.opensToday = (data.opensToday || 0) + 1;
     data.totalOpens = (data.totalOpens || 0) + 1;
-    const currentPeriod = getCurrentSyncPeriodKey();
-    if (data.lastSyncPeriod !== currentPeriod) {
-      data.lastSyncPeriod = currentPeriod;
-      syncToLeaderboard();
-    }
+    trySyncRegistry();   // v6.9.0: только если игрок «живой» (выполненный день и своё имя)
     saveData();
     setInterval(updateTimer, 1000);
     schedulePreciseResetCheck();
