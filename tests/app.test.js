@@ -185,6 +185,25 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.9.1: легенда Летописи — для каждого цвета дня есть пункт =====
+async function legendTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const D = w.document;
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  // цвета рамок дней календаря по статусам Летописи
+  const dayColor = st => { const m = css.match(new RegExp('\\.day-cell\\.' + st + ' \\{ border-color: (#[0-9a-f]{6})')); return m ? m[1] : null; };
+  const statuses = JSON.parse(E(w, `(() => { const f = sanitizeImportedData.toString(); const m = f.match(/VALID_STATUSES = (\\[[^\\]]+\\])/); return JSON.stringify(eval(m[1])); })()`));
+  const items = [...D.querySelectorAll('#legendBody > span')].map(sp => ({ text: sp.textContent.trim(), border: (sp.querySelector('.cal-swatch') || {}).getAttribute ? sp.querySelector('.cal-swatch').getAttribute('style') || '' : '' }));
+  const missing = statuses.filter(st => { const c = dayColor(st); return !c || !items.some(i => i.border.includes('2px solid ' + c)); });
+  check('LG1 для каждого статуса дня в календаре есть пункт легенды того же цвета', missing.length === 0, 'нет: ' + missing.join(', ') + ' | статусы: ' + statuses.join(','));
+  const names = items.map(i => i.text);
+  check('LG2 «Заморожено» — сразу после «Защищено»', names.indexOf('Заморожено') === names.indexOf('Защищено') + 1, names.join(' | '));
+  const fr = items.find(i => i.text === 'Заморожено');
+  check('LG3 квадратик «Заморожено»: ледяная рамка со свечением, как у дня', !!fr && fr.border.includes('2px solid #c8f5ff') && fr.border.includes('rgba(200,245,255,0.5)'));
+  check('LG4 слово совпадает с итогами месяца («заморожено»)', /заморожено \$\{frozenCount\}/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8')));
+}
+
 // ===== v6.9.0: Бремя на карточках, чекбоксы, уведомление о выполнении, Перенос, Реестр =====
 async function v690Tests() {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1335,6 +1354,7 @@ function noticeFor(scroll, item) {
   await contourNamingTests();
   await glitchTests();
   await v690Tests();
+  await legendTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
