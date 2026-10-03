@@ -186,6 +186,34 @@ check('15g В разметке нет старой фразы', shopHtml.indexOf
 
 
 
+
+// ===== v6.9.2: выбор в панели эффектов — цвет свечения по группам, чёрточка =====
+async function effectSelectTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const D = w.document, cs = el => w.getComputedStyle(el);
+  E(w, `data.level = 80; data.inventory = Object.keys(ARTEFACTS); data.equippedArtifacts = ['crystal_shadow', null, null, null];
+        data.insurance = true; data.insuranceSourceId = 'rune_protection'; data.activeScroll = 'contract'; data.expBoostToday = 0.55; data.expBoostSourceId = 'crystal_clarity';
+        data.curseActiveToday = false; data.pendingCurse = true; render();`);
+  const btns = () => [...D.querySelectorAll('#effectsRow .effect-icon-btn')];
+  const by = re => btns().find(b => re.test(b.querySelector('img').getAttribute('src')));
+  const rune = by(/rune_protection\.png/), seal = by(/mag_seal_contract/), cryst = by(/crystal_clarity/), art = by(/crystal_shadow/), burden = by(/effect_anomaly_burden/);
+  check('SE1 руна и печать помечены для тёмно-синего свечения, остальные — нет', rune.classList.contains('glow-deep') && seal.classList.contains('glow-deep')
+    && !cryst.classList.contains('glow-deep') && !art.classList.contains('glow-deep') && !burden.classList.contains('glow-deep'));
+  const glowOf = b => { const i = btns().indexOf(b); E(w, `toggleActiveEffect(${i})`); const f = cs(b.querySelector('img')).filter; E(w, `toggleActiveEffect(${i})`); return f; };
+  const fr = glowOf(rune), fs = glowOf(seal), fc = glowOf(cryst);
+  check('SE2 свечение: у руны и печати тёмно-синее (4px и 8px), у кристалла голубое', /#0d2f8f/i.test(fr) && /4px/.test(fr) && /8px/.test(fr) && /#0d2f8f/i.test(fs) && /#40c0ff/i.test(fc), `${fr} | ${fs} | ${fc}`);
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('SE3 чёрточка: голубая, 2px, на 7px ниже — у всех выбранных (в т. ч. Бремя)', /\.effect-icon-btn\.active::after \{ content: ''; position: absolute; left: 15%; right: 15%; bottom: -7px; height: 2px;[^}]*background: #40c0ff;/.test(css)
+    && !/anomaly-active::after/.test(css));
+  E(w, `toggleActiveEffect(${btns().indexOf(burden)})`);
+  check('SE4 выбрана ровно одна иконка; Бремя сохраняет красное свечение', btns().filter(b => b.classList.contains('active')).length === 1 && burden.classList.contains('active')
+    && /\.effect-icon-btn\.active\.anomaly-active img \{ filter: drop-shadow\(0 0 4px #ff5555\)/.test(css));
+  E(w, `toggleActiveEffect(${btns().indexOf(burden)})`);
+  check('SE5 повторное нажатие снимает выбор (и чёрточку)', btns().every(b => !b.classList.contains('active')));
+  const row = D.getElementById('effectsRow');
+  check('SE6 запас строки снизу (12px) вмещает чёрточку (−7px и 2px)', cs(row).paddingBottom === '12px');
+}
+
 // ===== v6.9.1: легенда Летописи — для каждого цвета дня есть пункт =====
 async function legendTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -1355,6 +1383,7 @@ function noticeFor(scroll, item) {
   await glitchTests();
   await v690Tests();
   await legendTests();
+  await effectSelectTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

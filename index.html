@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.9.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.9.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -968,6 +968,12 @@
     .notice-check .qc-gap { stroke: #ffffff; filter: drop-shadow(0 0 2px #ffffff); }
     .notice-check .qc-tick { animation: qcDraw 0.5s ease-out 0.3s both; }
 
+    /* ===== v6.9.2: выбор в панели эффектов (демо 64–65). Руны и печати свитков — тёмно-синее свечение
+       (те же 4px и 8px): голубое сливалось с их голубыми линиями. Чёрточка под выбранной иконкой —
+       голубая у всех, включая Бремя: информационный маркер выбора. ===== */
+    .effect-icon-btn.active.glow-deep img { filter: drop-shadow(0 0 4px #0d2f8f) drop-shadow(0 0 8px #0d2f8f); }
+    .effect-icon-btn.active::after { content: ''; position: absolute; left: 15%; right: 15%; bottom: -7px; height: 2px; border-radius: 1px;
+      background: #40c0ff; box-shadow: 0 0 6px #40c0ff; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -1415,7 +1421,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.9.1';
+  const APP_VERSION = '6.9.2';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2258,7 +2264,7 @@
     window.__activeEffectsSignature = signature;
     clearRuneBolts();
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
+      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
     ).join('');
     document.querySelectorAll('#effectsRow .rune-bolt').forEach(scheduleRuneBolt);
     updateEffectsFade();
