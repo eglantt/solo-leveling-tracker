@@ -16,7 +16,7 @@
 // установку, ни активацию.
 // ============================================================================
 
-const CACHE_VERSION = 'v6-9-2';
+const CACHE_VERSION = 'v6-10-0';
 const ASSETS_VERSION = 'v1';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;
@@ -39,6 +39,7 @@ const CORE_FILES = [
 // Иконки предметов и шрифты — только для фоновой докачки (офлайн-запас).
 // Файл, забытый в этом списке, всё равно попадёт в кэш при первом показе.
 const ASSET_FILES = [
+  './icons/items/bone_bead.png',
   './icons/items/title_novice.png',
   './icons/items/title_awakened.png',
   './icons/items/title_determined.png',

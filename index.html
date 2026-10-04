@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.9.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -974,6 +974,43 @@
     .effect-icon-btn.active.glow-deep img { filter: drop-shadow(0 0 4px #0d2f8f) drop-shadow(0 0 8px #0d2f8f); }
     .effect-icon-btn.active::after { content: ''; position: absolute; left: 15%; right: 15%; bottom: -7px; height: 2px; border-radius: 1px;
       background: #40c0ff; box-shadow: 0 0 6px #40c0ff; pointer-events: none; }
+    /* ===== v6.10.0: Пелена покоя — звёздная пыль с переливами, лунный серебристо-голубой; размытие на самой пелене ===== */
+    .veil-overlay { position: absolute; inset: 10px 12px; border-radius: 10px; overflow: hidden; z-index: 7; display: none; cursor: pointer;
+      --vrgb: 184,204,255; --vrgb2: 226,234,255; backdrop-filter: blur(var(--vb, 1.5px)); -webkit-backdrop-filter: blur(var(--vb, 1.5px)); }
+    .veil-overlay.active { display: block; }
+    .veil-overlay .vo-base { position: absolute; inset: 0; background: rgba(var(--vrgb), 0.12); }
+    .veil-overlay .vo-shim { position: absolute; inset: -30%; background: linear-gradient(115deg, transparent 15%, rgba(var(--vrgb), .16) 30%, transparent 42%, rgba(var(--vrgb2), .14) 55%, transparent 68%, rgba(var(--vrgb), .16) 80%, transparent 92%);
+      background-size: 220% 220%; filter: blur(16px); animation: veilAur 12s ease-in-out infinite alternate; mix-blend-mode: screen; }
+    @keyframes veilAur { 0% { background-position: 0% 30%; transform: rotate(0deg); } 100% { background-position: 100% 70%; transform: rotate(6deg); } }
+    .veil-overlay .vo-stars { position: absolute; inset: 0; }
+    .veil-overlay .vo-stars i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgb(var(--vrgb2)); box-shadow: 0 0 6px rgb(var(--vrgb));
+      opacity: 0; animation: veilTwinkle var(--d) ease-in-out infinite; animation-delay: var(--dl); }
+    @keyframes veilTwinkle { 0%, 100% { opacity: 0; transform: scale(.6); } 50% { opacity: .9; transform: scale(1); } }
+    @property --vb { syntax: '<length>'; inherits: false; initial-value: 1.5px; }
+    .veil-overlay.leaving { animation: veilUnblur 4.5s ease-in forwards; cursor: default; }
+    @keyframes veilUnblur { to { --vb: 0px; } }
+    .veil-overlay.leaving .vo-stars i { animation: veilStarOut calc(4.5s * .3) ease-out forwards !important; animation-delay: calc(var(--od) * 4.5s) !important; opacity: .9; }
+    @keyframes veilStarOut { 0% { opacity: 1; transform: scale(1.5); } 100% { opacity: 0; transform: scale(.2); } }
+    .veil-overlay.leaving .vo-base, .veil-overlay.leaving .vo-shim { animation: veilFade calc(4.5s * .3) ease-in calc(4.5s * .7) forwards !important; }
+    @keyframes veilFade { to { opacity: 0; } }
+    /* след после досрочного снятия: лунная рамка и редкие звёзды */
+    .quest-list.veil-trace .quest-item { border-color: rgba(184,204,255,0.55); box-shadow: 0 0 8px rgba(184,204,255,0.22); }
+    .veil-rs { position: absolute; width: 2.5px; height: 2.5px; border-radius: 50%; background: #e2eaff; box-shadow: 0 0 5px #b8ccff; opacity: 0; pointer-events: none;
+      animation: veilTwinkle var(--d) ease-in-out infinite; animation-delay: var(--dl); }
+    /* бусина в панели: искорки, рассыпание, остаточные частицы */
+    .bsp { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #f0f4ff; box-shadow: 0 0 4px #e2eaff, 0 0 8px #b8ccff; opacity: 0; z-index: 2; pointer-events: none;
+      animation: beadSpark var(--sd) ease-in-out infinite; animation-delay: var(--sdl); }
+    @keyframes beadSpark { 0%, 62%, 100% { opacity: 0; transform: scale(.3); } 74% { opacity: 1; transform: scale(1.15); } 86% { opacity: 0; transform: scale(.5); } }
+    .effect-icon-btn.bead-out img { animation: beadFadeOut .5s ease-in forwards; }
+    @keyframes beadFadeOut { to { opacity: 0; filter: blur(2px); } }
+    .effect-icon-btn.bead-trace img { opacity: 0; }
+    .bdp { position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; border-radius: 50%; background: #e2eaff; box-shadow: 0 0 5px #b8ccff; z-index: 3; pointer-events: none;
+      animation: beadDustFly var(--dd) ease-out forwards; }
+    @keyframes beadDustFly { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.35); } }
+    /* перенос подписи полосы таймера только на узких экранах */
+    .br-narrow { display: none; }
+    @media (max-width: 400px) { .br-narrow { display: inline; } }
+    .day-cell.veil { border-color: #b8ccff; color: #b8ccff; text-shadow: 0 0 6px rgba(184,204,255,0.5); box-shadow: 0 0 8px rgba(184,204,255,0.35); }
 </style>
 </head>
 <body>
@@ -1052,6 +1089,7 @@
       <span><span class="cal-swatch" style="border:2px solid #ff4444; box-shadow:0 0 5px rgba(255,68,68,0.5);"></span>Штраф</span>
       <span><span class="cal-swatch" style="border:2px solid #40c0ff; box-shadow:0 0 5px rgba(64,192,255,0.5);"></span>Защищено</span>
       <span><span class="cal-swatch" style="border:2px solid #c8f5ff; box-shadow:0 0 5px rgba(200,245,255,0.5);"></span>Заморожено</span>
+      <span><span class="cal-swatch" style="border:2px solid #b8ccff; box-shadow:0 0 5px rgba(184,204,255,0.5);"></span>Пелена покоя</span>
       <span><span class="cal-swatch cal-today-swatch"><span class="cal-tc tl"></span><span class="cal-tc tr"></span><span class="cal-tc bl"></span><span class="cal-tc br2"></span></span>Сегодня</span>
       <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
       <span>⭐ Новый уровень</span>
@@ -1234,6 +1272,7 @@
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, forceFullResetAction)">Принудительный сброс дня</button>
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetChronicleAction)">Сбросить историю Летописи</button>
         <button id="resetFreezePauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.freezeNextAvailableAt = null; saveData(); this.disabled = true; })">Сбросить паузу Заморозки</button>
+        <button id="resetBeadPauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.beadAvailableAt = null; saveData(); this.disabled = true; })">Сбросить паузу Костяной бусины</button>
         <button id="resetNamePauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.nameNextAvailableAt = null; saveData(); this.disabled = true; })">Сбросить паузу смены имени</button>
       </div>
     </div>
@@ -1327,6 +1366,7 @@
     <div class="quest-list">
       <div class="freeze-ice-overlay" id="freezeIceOverlay"></div>
       <div class="freeze-tap-catcher" id="freezeTapCatcher" onclick="onFreezeTapCatcherClick()"></div>
+      <div class="veil-overlay" id="veilOverlay" onclick="onVeilTap()"><div class="vo-base"></div><div class="vo-shim"></div><div class="vo-stars" id="veilStars"></div></div>
       <div class="quest-item" data-id="pushups" data-target="100" data-exp="80">
         <div class="quest-name">Отжимания</div>
         <div class="qcheck" aria-hidden="true"></div>
@@ -1421,7 +1461,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.9.2';
+  const APP_VERSION = '6.10.0';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -1429,7 +1469,7 @@
   const PACE_SET = { pushups: 60, squats: 80, pullups: 40, press: 60 };
   const PACE_WINDOW_MS = 2 * 60 * 1000;
   const PACE_BUDGET = 2;
-  const PACE_NOTICE = 'Зафиксирован недопустимый темп. Последнее внесение не засчитано — Система восстанавливает контроль.';
+  const PACE_NOTICE = 'Зафиксирован недопустимый темп. Последнее внесение не засчитано. Система восстанавливает контроль.';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
@@ -1516,6 +1556,7 @@
         codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"],
         equippedArtifacts: Array.isArray(oldData.equippedArtifacts) ? oldData.equippedArtifacts : [null, null, null, null],
         paceControl: typeof oldData.paceControl === 'boolean' ? oldData.paceControl : true,
+        beadAvailableAt: oldData.beadAvailableAt || null, veilLifted: !!oldData.veilLifted,
         paceWindow: oldData.paceWindow,
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
@@ -1572,6 +1613,7 @@
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats", "equipment"],
         equippedArtifacts: [null, null, null, null],
         paceControl: true, paceWindow: { start: null, used: 0, locked: false, hot: [] },
+        beadAvailableAt: null, veilLifted: false,
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
@@ -1610,6 +1652,9 @@
   if (!data.codexUnlocked.includes('equipment')) data.codexUnlocked.push('equipment');   // v6.7.0: глава «Контур снаряжения» (v6.8.5) — с начала игры
   data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level);
   if (typeof data.paceControl !== 'boolean') data.paceControl = true;   // v6.8.0
+  if (typeof data.beadAvailableAt !== 'number') data.beadAvailableAt = null;   // v6.10.0: Костяная бусина
+  if (typeof data.veilLifted !== 'boolean') data.veilLifted = false;
+  if (data.consumables && data.consumables.bone_bead > 3) data.consumables.bone_bead = 3;
   data.paceWindow = sanitizePaceWindow(data.paceWindow);
   // Догоняющая проверка — та же логика, что уже применена выше к title_probuzhdenny.
   // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
@@ -1783,6 +1828,7 @@
   // Shop (SHOP_CATALOG's generic for-loop in openShop() would otherwise list
   // them for purchase, so they deliberately live in a separate catalog).
   const UNIQUE_CATALOG = {
+    "bone_bead": { name: "Костяная бусина", icon: "📿", desc: "Следующий цикл проходит без задания: штрафа нет, серия дней сохраняется. Выдаётся за выполненное дневное задание." },
     "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 70% опыта от последнего штрафа." },
     "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Сбрасывает все вложенные очки характеристик, освобождая их для нового распределения." },
     "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, восстанавливает прерванную им серию дней и засчитывает день в Летописи." },
@@ -1793,7 +1839,7 @@
     "rune_protection_absolute": { name: "Руна Абсолютной Защиты", icon: "🔮", desc: "Защита от штрафа и защита серии дней, одновременно — действует до первого провала, сколько бы дней до этого ни прошло." },
     "rune_burden_release": { name: "Руна Снятия Бремени", icon: "🔮", desc: "Снижает дневную нагрузку на 25% до следующего сброса. Бремя Аномалии не снимает, но облегчает его тяжесть.", effectDesc: "Дневная нагрузка снижена на 25% до следующего сброса." },
     "rune_return": { name: "Руна Возврата", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа и увеличивает получаемый опыт на 15% до следующего сброса." },
-    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает получаемые опыт и кредиты на 35% до следующего сброса." }
+    "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает получаемые опыт и кредиты на 40% до следующего сброса." }
   };
 
   function getConsumableInfo(id) {
@@ -1915,7 +1961,8 @@
   // Более сильная руна поглощает более слабую; равная/слабая не активируется.
   const PROTECTION_TIER = { rune_protection: 1, rune_protection_charged: 2, rune_protection_absolute: 3 };
   // Группа усилений опыта: та же логика поглощения/блокировки.
-  const EXP_BOOST_RATE = { rune_return: 0.15, potion_growth: 0.20, rune_growth_charged: 0.35, crystal_impulse: 0.35, crystal_clarity: 0.55 };
+  const EXP_BOOST_RATE = { rune_return: 0.15, potion_growth: 0.20, rune_growth_charged: 0.35, crystal_impulse: 0.40, crystal_clarity: 0.55 };
+  const CREDIT_BOOST_RATE = { crystal_impulse: 0.40 };   // v6.10.0: Импульс +40% (был +35%, равный Руне Роста)
   const ITEM_GENITIVE = {
     rune_protection: 'Руны Защиты', rune_protection_charged: 'Руны Надёжной Защиты', rune_protection_absolute: 'Руны Абсолютной Защиты',
     rune_return: 'Руны Возврата', potion_growth: 'Зелья Роста', rune_growth_charged: 'Руны Роста',
@@ -1942,7 +1989,7 @@
     const rel = expBoostRelation(rate);
     if (rel.kind !== 'absorb' || !ITEM_GENITIVE[rel.activeId]) return '';
     let w = `${getConsumableInfo(id).name} поглотит действие ${ITEM_GENITIVE[rel.activeId]}: получаемый опыт будет увеличен на ${Math.round(rate * 100)}%`;
-    if (rel.activeId === 'crystal_impulse' && id !== 'crystal_impulse' && data.creditBoostSourceId === 'crystal_impulse') w += ', а увеличение получаемых кредитов на 35% исчезнет';
+    if (rel.activeId === 'crystal_impulse' && id !== 'crystal_impulse' && data.creditBoostSourceId === 'crystal_impulse') w += `, а увеличение получаемых кредитов на ${Math.round(CREDIT_BOOST_RATE.crystal_impulse * 100)}% исчезнет`;
     return w + '.';
   }
 
@@ -2159,6 +2206,14 @@
         spinning: true
       });
     }
+    if (data.pendingScroll === 'veil') {   // v6.10.0
+      effects.push({ icon: 'icons/items/bone_bead.png', name: VEIL_TEXTS.namePending, text: VEIL_TEXTS.descPending, isPending: true, sparkCount: 1 });
+    }
+    if (data.activeScroll === 'veil') {
+      effects.push(data.veilLifted
+        ? { icon: 'icons/items/bone_bead.png', name: VEIL_TEXTS.nameTrace, text: VEIL_TEXTS.descTrace, beadTrace: true }
+        : { icon: 'icons/items/bone_bead.png', name: VEIL_TEXTS.nameActive, text: VEIL_TEXTS.descActive, beadSparks: true });
+    }
     if (data.pendingScroll === 'freeze') {
       effects.push({
         icon: 'icons/items/mag_seal_freeze.png',
@@ -2264,10 +2319,11 @@
     window.__activeEffectsSignature = signature;
     clearRuneBolts();
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
+      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}${e.beadTrace ? ' bead-trace' : ''}${e.beadSparks || e.beadTrace ? ' bead-eff' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${e.beadSparks ? beadSparksHtml() : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
     ).join('');
     document.querySelectorAll('#effectsRow .rune-bolt').forEach(scheduleRuneBolt);
     updateEffectsFade();
+    updateBeadResidual();   // v6.10.0
     document.getElementById('effectDetail').classList.remove('open');
     openEffectIndex = null;
   }
@@ -2415,6 +2471,7 @@
     scroll_renunciation: { title: "Свиток Отречения", content: "При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания. Характеристики, титул и часть артефактов молчат, пока действует эффект. Обычно сегодняшнее усилие и всё, что накоплено прежде, складываются в один результат, неразличимо друг от друга. Свиток на время убирает второе — испытание для самого себя, без «брони», накопленной со временем." },
     scroll_transfer: { title: "Свиток Переноса", content: "Свиток Переноса снимает одно упражнение дневного задания — ни цель, ни награда по нему в этот день не учитываются. Освобождённый вес не исчезает: он ложится на оставшиеся четыре, соразмерно увеличивая их цель. При частом использовании подряд эта компенсация становится заметнее — нагрузка на оставшиеся четыре упражнения растёт с каждым днём непрерывного применения." },
     scroll_contract: { title: "Свиток Договора", content: "Свиток Договора — игрок сам поднимает цели предстоящего дневного задания, зная заранее: полное исполнение будет вознаграждено сверх обычного. Условие названо прежде, чем сделан первый шаг." },
+    bone_bead: { title: "Костяная бусина", content: "Костяная бусина — знак, который Игрок может получить за выполненное дневное задание. Её использование активирует эффект «Пелена покоя»: в следующем цикле Система не назначает упражнений, не начисляет штраф и не прерывает серию, а Игрок может восстановить силы. Бусин немного, и пользоваться ими можно не чаще, чем позволяет ранг: чем сильнее Игрок, тем реже можно применять интервалы между заданиями." },
     scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть. Повторно использовать Свиток Заморозки можно не раньше чем через 30 дней после предыдущей активации." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
@@ -2781,6 +2838,7 @@
     "scroll_transfer": { rank: "E", type: "Свиток", usage: "Одноразовое использование" },
     "scroll_contract": { rank: "C", type: "Свиток", usage: "Одноразовое использование" },
     "scroll_freeze": { rank: "B", type: "Свиток", usage: "Одноразовое использование" },
+    "bone_bead": { rank: "E", type: "Особый расходный предмет", usage: "Одноразовое использование" },
     "rune_burden_release": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_return": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "crystal_impulse": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
@@ -2878,6 +2936,7 @@
         ? `Задание не выполнено, штраф предотвращён (${getConsumableInfo(entry.protectedBy).name}).`
         : 'Задание не выполнено, штраф предотвращён.';   // v6.8.3: старые записи — без названия
       else if (entry.status === 'frozen') statusLine = 'Задание заморожено Свитком — без исхода, без штрафа.';
+      else if (entry.status === 'veil') statusLine = VEIL_TEXTS.dayLine;
       donePercent = entry.donePercent;
       expGained = entry.expGained || 0;
       expLost = entry.expLost || 0;
@@ -3116,6 +3175,143 @@
     closeConfirmModal();
     if (action) action();
   }
+
+  // ===== v6.10.0: КОСТЯНАЯ БУСИНА И «ПЕЛЕНА ПОКОЯ» =====
+  // Бусина: +1 за выполненный день, запас не больше 3; использование — эффект «Пелена покоя» на следующий
+  // цикл (activeScroll/pendingScroll = 'veil'): задания нет, штрафа нет, наград нет, серия не рвётся и не
+  // растёт. Досрочное снятие (veilLifted): задание доступно до сброса, при выполнении — награда, без — без штрафа.
+  const BEAD_MAX = 3;
+  const VEIL_TEXTS = {
+    used: 'Костяная бусина использована. Пелена покоя наступит с началом следующего цикла.',
+    nameActive: 'Костяная бусина', namePending: 'Костяная бусина (ожидает)', nameTrace: 'Костяная бусина (остаточный эффект)',
+    descActive: 'Действует эффект «Пелена покоя»: задание не назначено, штрафа нет, серия дней сохраняется.',
+    descPending: 'Эффект «Пелена покоя» наступит с началом следующего цикла: задания не будет, штрафа нет, серия дней сохраняется.',
+    descTrace: 'Эффект «Пелена покоя» снят досрочно: при выполнении задания Игрок получит награду, при невыполнении штрафа не будет.',
+    confirmLift: 'Действует эффект «Пелена покоя». Снять его досрочно? Задание станет доступно до сброса: при выполнении Игрок получит награду, при невыполнении штрафа не будет. Бусина не возвращается.',
+    lifted: 'Пелена покоя снята. Задание доступно до сброса.',
+    refuseCurse: 'Эффект недоступен, пока действует Бремя Аномалии.',
+    refuseFreeze: 'Эффект недоступен во время Заморозки.',
+    refuseCursePending: 'Следующий цикл уже занят Аномалией.',
+    refuseScrollPending: 'Следующий цикл уже занят ожидающим свитком.',
+    scrollBlocked: 'Следующий цикл уже занят: ожидает Пелена покоя.',
+    timerActive: 'Пелена покоя<br class="br-narrow"> рассеется через',
+    timerTrace: 'До сброса без штрафа',
+    chronicle: 'Пелена покоя',
+    dayLine: 'Действовал эффект «Пелена покоя»: задание не назначалось, штрафа нет.'
+  };
+  const VEIL_STARS = 40, VEIL_OUT_MS = 4500, BEAD_DUST = 30, BEAD_SPARKS = 14;
+  const rnd01 = (a, b) => a + Math.random() * (b - a);
+  // Искорки действующей бусины — много, вокруг, в случайных местах.
+  function beadSparksHtml() {
+    let h = '';
+    for (let k = 0; k < BEAD_SPARKS; k++) {
+      const a = rnd01(0, Math.PI * 2), r = rnd01(17, 22), x = 16 + Math.cos(a) * r, y = 16 + Math.sin(a) * r;
+      h += `<span class="bsp" style="left:${(x - 1.5).toFixed(1)}px;top:${(y - 1.5).toFixed(1)}px;--sd:${rnd01(2.6, 4.6).toFixed(2)}s;--sdl:-${rnd01(0, 4.6).toFixed(2)}s"></span>`;
+    }
+    return h;
+  }
+  // Остаточный вид бусины после досрочного снятия: на её месте до конца цикла рассыпаются частицы.
+  let beadResidualTimer = null;
+  function beadDust(btn, count, r1, r2, dur1, dur2, size) {
+    for (let k = 0; k < count; k++) {
+      const a = rnd01(0, Math.PI * 2), r = rnd01(r1, r2), d = document.createElement('span');
+      d.className = 'bdp';
+      d.style.cssText = `--dx:${(Math.cos(a) * r).toFixed(0)}px;--dy:${(Math.sin(a) * r).toFixed(0)}px;--dd:${rnd01(dur1, dur2).toFixed(2)}s;animation-delay:${count > 1 ? rnd01(0, .3).toFixed(2) : 0}s` + (size ? `;width:${size}px;height:${size}px` : '');
+      btn.appendChild(d); setTimeout(() => d.remove(), (dur2 + .4) * 1000);
+    }
+  }
+  function updateBeadResidual() {
+    const btn = document.querySelector('#effectsRow .bead-trace');
+    if (!btn) { if (beadResidualTimer) { clearInterval(beadResidualTimer); beadResidualTimer = null; } return; }
+    if (beadResidualTimer) return;
+    beadResidualTimer = setInterval(() => {
+      const b = document.querySelector('#effectsRow .bead-trace');
+      if (!b) { clearInterval(beadResidualTimer); beadResidualTimer = null; return; }
+      if (!document.hidden) beadDust(b, 1, 8, 18, 1.1, 1.8, 2.5);
+    }, 130);
+  }
+  // Пелена над карточками: звёзды, переливы, размытие; след после досрочного снятия.
+  let veilLeaving = false;
+  function renderVeil() {
+    const ov = document.getElementById('veilOverlay'), list = document.querySelector('.quest-list');
+    if (!ov || !list) return;
+    const on = isVeilActive();
+    if (on && !veilLeaving) {
+      const st = document.getElementById('veilStars');
+      if (!st.firstChild) {
+        let h = '';
+        for (let k = 0; k < VEIL_STARS; k++) h += `<i style="left:${rnd01(2, 98).toFixed(1)}%;top:${rnd01(3, 97).toFixed(1)}%;--d:${rnd01(4, 8).toFixed(1)}s;--dl:-${rnd01(0, 8).toFixed(1)}s;--od:${rnd01(0, .7).toFixed(2)}"></i>`;
+        st.innerHTML = h;
+      }
+      ov.classList.add('active'); ov.classList.remove('leaving');
+    } else if (!veilLeaving) {
+      ov.classList.remove('active', 'leaving');
+    }
+    const trace = data.activeScroll === 'veil' && data.veilLifted;
+    list.classList.toggle('veil-trace', trace);
+    list.querySelectorAll(':scope > .quest-item').forEach(q => {
+      const has = q.querySelector(':scope > .veil-rs');
+      if (trace && !has) for (let k = 0; k < 3; k++) q.insertAdjacentHTML('beforeend', `<span class="veil-rs" aria-hidden="true" style="left:${rnd01(5, 95).toFixed(0)}%;top:${rnd01(10, 90).toFixed(0)}%;--d:${rnd01(5, 9).toFixed(1)}s;--dl:-${rnd01(0, 9).toFixed(1)}s"></span>`);
+      if (!trace && has) q.querySelectorAll(':scope > .veil-rs').forEach(x => x.remove());
+    });
+  }
+  function onVeilTap() {
+    if (!isVeilActive() || veilLeaving) return;
+    showConfirm(VEIL_TEXTS.confirmLift, liftVeil);
+  }
+  // Досрочное снятие: пелена уходит («звёзды гаснут по одной», 4,5 с), бусина рассыпается звёздной пылью.
+  function liftVeil() {
+    if (!isVeilActive()) return;
+    data.veilLifted = true;
+    data.dailyNotices.morning = true;   // уведомления «Получено задание…» не будет
+    saveData();
+    veilLeaving = true;
+    const ov = document.getElementById('veilOverlay');
+    ov.classList.add('leaving');
+    const btn = document.querySelector('#effectsRow .bead-eff');
+    if (btn) { btn.classList.add('bead-out'); btn.querySelectorAll('.bsp').forEach(x => x.remove()); beadDust(btn, BEAD_DUST, 12, 32, 1, 1.8); }
+    setTimeout(() => {
+      veilLeaving = false;
+      ov.classList.remove('active', 'leaving');
+      document.getElementById('veilStars').innerHTML = '';
+      render();
+      showNotice(VEIL_TEXTS.lifted, 'info');
+    }, VEIL_OUT_MS + 100);
+  }
+
+  // Пауза по рангу (вариант «Б»): E–C 1, B–A 2, S–National 3, SSS 4, Shadow Monarch 6 — тренировочных дней между Пеленами.
+  function beadPauseDays(level) {
+    if (level >= 100) return 6; if (level >= 80) return 4; if (level >= 50) return 3; if (level >= 30) return 2; return 1;
+  }
+  function plural(n, f) { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? f[0] : (a >= 2 && a <= 4 && (b < 10 || b >= 20) ? f[1] : f[2]); }
+  // Меньше суток — в часах, иначе в днях и часах.
+  function formatWaitRu(ms) {
+    const h = Math.max(1, Math.ceil(ms / 3600000)), H = ['час', 'часа', 'часов'], D = ['день', 'дня', 'дней'];
+    if (h < 24) return `${h} ${plural(h, H)}`;
+    const d = Math.floor(h / 24), r = h % 24;
+    return r ? `${d} ${plural(d, D)} и ${r} ${plural(r, H)}` : `${d} ${plural(d, D)}`;
+  }
+  function grantBoneBead() {
+    const have = data.consumables.bone_bead || 0;
+    if (have >= BEAD_MAX) return false;
+    data.consumables.bone_bead = have + 1;
+    setTimeout(() => showNotice('Получен предмет: Костяная бусина', 'info'), 4500);
+    unlockCodexChapter('bone_bead');
+    return true;
+  }
+  // Причина отказа в использовании бусины (или null).
+  function beadRefusal() {
+    if (data.curseActiveToday) return VEIL_TEXTS.refuseCurse;
+    if (data.activeScroll === 'freeze' || data.pendingScroll === 'freeze') return VEIL_TEXTS.refuseFreeze;
+    if (data.pendingCurse) return VEIL_TEXTS.refuseCursePending;
+    if (data.pendingScroll) return VEIL_TEXTS.refuseScrollPending;
+    if (data.beadAvailableAt && Date.now() < data.beadAvailableAt) return `Костяная бусина будет доступна через ${formatWaitRu(data.beadAvailableAt - Date.now())}.`;
+    if (data.activeScroll === 'veil') return `Костяная бусина будет доступна через ${formatWaitRu(getNextCleanReset(Date.now()) - Date.now())}.`;
+    return null;
+  }
+  // Отказ свитку: если на следующий цикл уже назначена Пелена покоя — своё сообщение.
+  function scrollBusyText() { return data.pendingScroll === 'veil' ? VEIL_TEXTS.scrollBlocked : 'Другой свиток уже активен или ожидает.'; }
+  function isVeilActive() { return data.activeScroll === 'veil' && !data.veilLifted; }
 
   // ===== v6.9.0: КАРТОЧКИ ПОД БРЕМЕНЕМ (демо 61: А — сбой карточки, Б — сбой числа, сила «слабо») =====
   const QG_K = 1;
@@ -3425,7 +3621,11 @@
       let expLostThatDay = 0;
       let completedExercisesThatDay = null;
       const scrollWasContractOrTransfer = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
-      if (data.activeScroll === 'freeze') {
+      if (data.activeScroll === 'veil') {   // v6.10.0: Пелена покоя
+        if (data.veilLifted && (data.isGoalMet || allQuestsDone())) { applyPenaltyLogic(); dayStatus = 'success'; }
+        else { dayStatus = 'veil'; data.penaltyStack.forEach(r => { r.chainBroken = true; }); }   // серия не рвётся и не растёт
+        data.veilLifted = false;
+      } else if (data.activeScroll === 'freeze') {
         dayStatus = 'frozen';
         data.consecutiveDays = 0;
         data.penaltyStack.forEach(r => { r.chainBroken = true; });
@@ -3481,6 +3681,8 @@
           // Бремя было активно на момент окончания заморозки — оно
           // наследуется на этот, первый размороженный день без изменений,
           // не пересчитывается заново от pendingCurse.
+        } else if (data.pendingScroll === 'veil') {
+          data.curseActiveToday = false;   // v6.10.0: Бремя ждёт окончания Пелены покоя (pendingCurse сохраняется)
         } else {
           data.curseActiveToday = !!data.pendingCurse;
           data.pendingCurse = false;
@@ -3543,7 +3745,7 @@
     if (penalizedDays > 0) {
       setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny), 3000);
     }
-    if (!data.dailyNotices.morning && data.activeScroll !== 'freeze') {
+    if (!data.dailyNotices.morning && data.activeScroll !== 'freeze' && data.activeScroll !== 'veil') {
       data.dailyNotices.morning = true;
       saveData();
       if (penalizedDays > 0) {
@@ -3800,6 +4002,15 @@
       setDayLine(timeLeft, 7 * 24 * 3600000);
       return;
     }
+    if (data.activeScroll === 'veil') {   // v6.10.0
+      const timeLeft = getNextResetTime() - Date.now();
+      if (timeLeft <= 0) { checkMissedDays(); return; }
+      renderTimerCells(formatTimeLeft(timeLeft));
+      if (labelEl) labelEl.innerHTML = data.veilLifted ? VEIL_TEXTS.timerTrace : VEIL_TEXTS.timerActive;
+      container.classList.remove('warning');
+      setDayLine(timeLeft, 24 * 3600000);
+      return;   // напоминаний о штрафе нет: штрафа в этом цикле не будет
+    }
     if (labelEl) labelEl.textContent = 'Сброс задания через';
     const nextReset = getNextResetTime();
     const timeLeft = nextReset - Date.now();
@@ -3951,14 +4162,14 @@
   // тестирования, бесплатно, без учёта уровня. Артефакты показываются
   // только для просмотра (постоянный пассивный эффект, выдаются
   // автоматически по уровню) — намеренно без кнопки добавления.
-  function catalogCard(id, item, addFn, removeFn, hasNone) {
+  function catalogCard(id, item, addFn, removeFn, hasNone, addDisabled) {
     return `
       <div class="item-card" data-cat-id="${id}">
         <div class="item-icon"><img${glowAttrs(id)} src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
         <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc || ''}</div></div>
         <div class="item-btn-stack">
           <button onclick="${removeFn}('${id}')" class="use-btn sell-btn" ${hasNone ? 'disabled' : ''}>-1</button>
-          <button onclick="${addFn}('${id}')" class="use-btn">+1</button>
+          <button onclick="${addFn}('${id}')" class="use-btn" ${addDisabled ? 'disabled' : ''}>+1</button>
         </div>
       </div>`;
   }
@@ -3981,7 +4192,7 @@
     }
     html += '<div class="section-title">Редкие расходники</div>';
     for (let id in UNIQUE_CATALOG) {
-      html += catalogCard(id, UNIQUE_CATALOG[id], 'devAddItem', 'devRemoveItem', !(data.consumables[id] > 0));
+      html += catalogCard(id, UNIQUE_CATALOG[id], 'devAddItem', 'devRemoveItem', !(data.consumables[id] > 0), id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX);
     }
     html += '<div class="section-title">Ключи</div>';
     for (let id in KEY_CATALOG) {
@@ -4009,6 +4220,7 @@
   }
 
   function devAddItem(id) {
+    if (id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX) return;   // v6.10.0: не больше 3
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('boxOpen');
       data.consumables[id] = (data.consumables[id] || 0) + 1;
@@ -4255,6 +4467,7 @@
     const meta = ITEM_META[iconId];
     let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
     const desc = ARTEFACTS[iconId] ? artifactEffectText(iconId) : getItemDesc(iconId);
+    if (iconId === 'bone_bead') { const n = beadPauseDays(data.level); text += `\nПерерыв между использованиями: ${n} ${plural(n, ['день', 'дня', 'дней'])}`; }   // v6.10.0
     if (desc) text += `\nЭффект: ${desc}`;
     return text;
   }
@@ -4325,7 +4538,15 @@
   function performUseItem(id) {
     flashThenRun(`[data-consumable-id="${id}"]`, () => {
       let used = false;
-      if (id === 'rune_cleansing') {
+      if (id === 'bone_bead') {   // v6.10.0
+          const why = beadRefusal();
+          if (why) { showNotice(why, 'warn', true); }
+          else {
+            data.pendingScroll = 'veil';
+            data.beadAvailableAt = getNextCleanReset(getNextCleanReset(Date.now())) + (beadPauseDays(data.level) - 1) * 24 * 60 * 60 * 1000;
+            used = true; showNotice(VEIL_TEXTS.used, 'info');
+          }
+      } else if (id === 'rune_cleansing') {
           if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
           else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection') {
@@ -4355,7 +4576,7 @@
           else { showNotice("Защита серии уже активна.", 'warn', true); }
       } else if (id === 'scroll_renunciation') {
           if (data.activeScroll || data.pendingScroll) {
-              showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
+              showNotice(scrollBusyText(), 'warn', true);
           } else {
               const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel));
@@ -4377,7 +4598,7 @@
           // функции здесь не должно сработать; вместо этого декремент,
           // сохранение и перерисовка выполняются вручную внутри колбэка.
           if (data.activeScroll || data.pendingScroll) {
-              showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
+              showNotice(scrollBusyText(), 'warn', true);
           } else {
               const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
@@ -4401,7 +4622,7 @@
           }
       } else if (id === 'scroll_contract') {
           if (data.activeScroll || data.pendingScroll) {
-              showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
+              showNotice(scrollBusyText(), 'warn', true);
           } else {
               const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
@@ -4420,7 +4641,7 @@
               const daysLeft = Math.ceil((data.freezeNextAvailableAt - Date.now()) / (24*60*60*1000));
               showNotice(`Активация Свитка Заморозки будет доступна через ${daysLeft} дней.`, 'warn', true);
           } else if (data.activeScroll || data.pendingScroll) {
-              showNotice("Другой свиток уже активен или ожидает.", 'warn', true);
+              showNotice(scrollBusyText(), 'warn', true);
           } else {
               data.freezeNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
               // Выполненный день (в т.ч. без Предела) не замораживается задним
@@ -4602,7 +4823,7 @@
             showNotice(expBoostRefusal(rel), 'warn', true);
           } else {
             useExpBoostItem(EXP_BOOST_RATE.crystal_impulse, 'Кристалл использован', true, id);
-            useCreditBoostItem(0.35, 'Кристалл использован', true, id);
+            useCreditBoostItem(CREDIT_BOOST_RATE.crystal_impulse, 'Кристалл использован', true, id);
             used = true;
             showNotice("Кристалл использован. Получаемые опыт и кредиты увеличены до следующего сброса.", 'info');
           }
@@ -5079,6 +5300,7 @@
     });
     fillStatusBlock('hdr');
     syncPaceCheckbox();
+    renderVeil();   // v6.10.0
     document.querySelectorAll('.quest-item').forEach(item => {
       const id = item.dataset.id;
       const isTransferred = data.activeScroll === 'transfer' && id === data.transferExerciseId;
@@ -5178,6 +5400,7 @@
         }
         if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
+          grantBoneBead();   // v6.10.0: +1 Костяная бусина за выполненный день (не больше 3)
           if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute') {
             // Спящая руна (усыплена Договором/Переносом) переживает успешный
             // день и ждёт следующего цикла. Проверка стоит ДО того, как
@@ -5385,7 +5608,7 @@
     const grid = document.getElementById('calDayGrid');
     grid.innerHTML = '';
 
-    let successCount = 0, penaltyCount = 0, protectedCount = 0, frozenCount = 0;
+    let successCount = 0, penaltyCount = 0, protectedCount = 0, frozenCount = 0, veilCount = 0;
 
     for (let i = 0; i < leadingBlank; i++) {
       const blank = document.createElement('div');
@@ -5409,6 +5632,7 @@
         else if (entry.status === 'penalty') penaltyCount++;
         else if (entry.status === 'protected') protectedCount++;
         else if (entry.status === 'frozen') frozenCount++;
+        else if (entry.status === 'veil') veilCount++;
         detail = buildDayDetail(dateKey, entry, false);
       }
 
@@ -5441,7 +5665,7 @@
     }
 
     document.getElementById('calStreakLine').textContent = `Рекорд серии: ${data.bestStreak} ${pluralDays(data.bestStreak)}`;
-    document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount} · заморожено ${frozenCount}`;
+    document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount} · заморожено ${frozenCount}${veilCount ? ` · пелена покоя ${veilCount}` : ''}`;
   }
 
   function calShowTooltip(cell, text) {
@@ -5566,7 +5790,7 @@
       complete: !!(s.dailyNotices && s.dailyNotices.complete)
     };
 
-    const VALID_STATUSES = ['success', 'penalty', 'protected', 'frozen'];
+    const VALID_STATUSES = ['success', 'penalty', 'protected', 'frozen', 'veil'];
     const cleanHistory = {};
     if (s.history && typeof s.history === 'object') {
       for (const key in s.history) {
@@ -5653,6 +5877,8 @@
       inventory: cleanInventory,
       equippedArtifacts: cleanEquipped,
       paceControl: typeof s.paceControl === 'boolean' ? s.paceControl : true,
+      beadAvailableAt: (typeof s.beadAvailableAt === 'number' && Number.isFinite(s.beadAvailableAt)) ? s.beadAvailableAt : null,
+      veilLifted: s.veilLifted === true && s.activeScroll === 'veil',
       paceWindow: sanitizePaceWindow(s.paceWindow),
       consumables: cleanConsumables,
       insurance: !!s.insurance,
@@ -6126,6 +6352,7 @@
     const freezePauseBtn = document.getElementById('resetFreezePauseBtn');
     const hasPause = data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt;
     freezePauseBtn.disabled = !hasPause || data.activeScroll === 'freeze';
+    document.getElementById('resetBeadPauseBtn').disabled = !(data.beadAvailableAt && Date.now() < data.beadAvailableAt);   // v6.10.0
     const namePauseBtn = document.getElementById('resetNamePauseBtn');
     namePauseBtn.disabled = !(data.nameNextAvailableAt && Date.now() < data.nameNextAvailableAt);
     document.getElementById('sysToolsOverlay').style.display = 'flex';

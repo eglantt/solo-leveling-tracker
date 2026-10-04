@@ -111,8 +111,8 @@ const bannerText = w => E(w, `document.getElementById('penaltyContent').textCont
 
 // ===== D. Усиления опыта: все 25 пар =====
 const X = ['rune_return','potion_growth','rune_growth_charged','crystal_impulse','crystal_clarity'];
-const R = { rune_return:0.15, potion_growth:0.20, rune_growth_charged:0.35, crystal_impulse:0.35, crystal_clarity:0.55 };
-const setBoost = b => `data.expBoostToday=${R[b]}; data.expBoostSourceId='${b}';` + (b==='crystal_impulse' ? ` data.creditBoostToday=0.35; data.creditBoostSourceId='crystal_impulse';` : '');
+const R = { rune_return:0.15, potion_growth:0.20, rune_growth_charged:0.35, crystal_impulse:0.40, crystal_clarity:0.55 };
+const setBoost = b => `data.expBoostToday=${R[b]}; data.expBoostSourceId='${b}';` + (b==='crystal_impulse' ? ` data.creditBoostToday=0.40; data.creditBoostSourceId='crystal_impulse';` : '');
 for (const a of X) for (const b of X) {
   const label = `D ${NAME[a]} при ${NAME[b]}`;
   if (a === 'rune_return') {
@@ -130,7 +130,7 @@ for (const a of X) for (const b of X) {
   const w = fresh(setBoost(b)); const wr = warn(w, a); const u = use(w, a);
   if (R[a] > R[b]) {
     let expW = `${NAME[a]} поглотит действие ${GEN[b]}: получаемый опыт будет увеличен на ${Math.round(R[a]*100)}%`;
-    if (b === 'crystal_impulse') expW += ', а увеличение получаемых кредитов на 35% исчезнет';
+    if (b === 'crystal_impulse') expW += ', а увеличение получаемых кредитов на 40% исчезнет';
     check(label + ': поглощает (предупреждение)', wr === expW + '.', wr);
     check(label + ': поглощает (результат)', u.spent && E(w,'data.expBoostToday')===R[a] && E(w,'data.expBoostSourceId')===a
       && (b !== 'crystal_impulse' || E(w,'data.creditBoostToday')===0), J(w,'{e:data.expBoostToday,s:data.expBoostSourceId,c:data.creditBoostToday}'));
@@ -140,7 +140,7 @@ for (const a of X) for (const b of X) {
   }
 }
 { const w = fresh(); const u = use(w,'crystal_impulse');
-  check('D Импульс без усилений: опыт и кредиты +35%', u.spent && E(w,'data.expBoostToday')===0.35 && E(w,'data.creditBoostToday')===0.35); }
+  check('D Импульс без усилений: опыт и кредиты +40%', u.spent && E(w,'data.expBoostToday')===0.4 && E(w,'data.creditBoostToday')===0.4); }
 { const w = fresh(`data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`); const u = use(w,'rune_return');
   check('D Руна Возврата без усилений: возврат и +15%', u.spent && E(w,'data.expBoostToday')===0.15 && !E(w,'findReturnRecord(1)') && u.notice==='Руна использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса.', u.notice); }
 
@@ -326,7 +326,7 @@ const CW = 'Действует Бремя Аномалии: нагрузка и 
   const n8 = JSON.parse(J(w8, 'window.__N'));
   check('J14 общая функция кредитов: успех', n8[0] === 'Использовано. Получаемые кредиты увеличены до следующего сброса.', n8[0]);
   check('J5 общая функция кредитов: отказ', n8[1] === 'Действует более высокое увеличение получаемых кредитов.', n8[1]);
-  check('J15 описание Кристалла Импульса', E(w, "getConsumableInfo('crystal_impulse').desc") === 'Увеличивает получаемые опыт и кредиты на 35% до следующего сброса.');
+  check('J15 описание Кристалла Импульса', E(w, "getConsumableInfo('crystal_impulse').desc") === 'Увеличивает получаемые опыт и кредиты на 40% до следующего сброса.');
   check('J16 описание Руны Возврата', E(w, "getConsumableInfo('rune_return').desc") === 'Полностью восстанавливает опыт от последнего штрафа и увеличивает получаемый опыт на 15% до следующего сброса.');
   // продажа: подтверждение и уведомление — значок вместо «кредитов»
   const w9 = fresh(`data.consumables={rune_protection:2};`);

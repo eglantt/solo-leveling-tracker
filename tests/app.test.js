@@ -565,7 +565,7 @@ async function paceTests() {
     check('PC5 звук отказа на каждое отклонённое нажатие', E(w, 'window.__denied') === 4, E(w, 'window.__denied'));
     const n = E(w, `(currentNotificationBody === PACE_NOTICE ? 1 : 0) + notificationQueue.filter(x => x.body === PACE_NOTICE).length`);
     check('PC6 уведомление о темпе одно, при нескольких отказах подряд', n === 1, n);
-    check('PC7 текст и тон уведомления', E(w, `PACE_NOTICE`) === 'Зафиксирован недопустимый темп. Последнее внесение не засчитано — Система восстанавливает контроль.'
+    check('PC7 текст и тон уведомления', E(w, `PACE_NOTICE`) === 'Зафиксирован недопустимый темп. Последнее внесение не засчитано. Система восстанавливает контроль.'
       && E(w, `(notificationQueue.find(x => x.body === PACE_NOTICE) || { tone: 'warn' }).tone`) === 'warn');
     tap(w, 'steps', 1000, 80);
     check('PC8 шаги без ограничений: вся норма разом, запас окна не тратится', cnt(w, 'steps') >= E(w, `getDynamicTarget(10000, data.dailyTargetLevel, 'steps')`) && !hot(w, 'steps'));
