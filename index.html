@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1461,7 +1461,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.0';
+  const APP_VERSION = '6.10.1';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2246,7 +2246,7 @@
   let openEffectIndex = null;
   // ---- v6.6.12: бегущий разряд по работающим рунам ----
   const RUNE_BOLT_INTERVAL = [8000, 15000];   // у каждой руны свой случайный интервал, мс
-  const RUNE_BOLT_DURATION = 900;             // пробег от края до края, мс
+  const RUNE_BOLT_DURATION = 1200;            // пробег от края до края, мс (v6.10.1: было 900, демо 72)
   let runeBoltTimers = [];
   // Работающая руна: иконка предмета-руны, не «ожидает» и не «подавлена».
   function isWorkingRune(e) {

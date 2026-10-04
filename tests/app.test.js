@@ -861,8 +861,10 @@ async function runeBoltTests() {
   await sleep(300); const p2 = svg.querySelector('path') && svg.querySelector('path').getAttribute('d');
   check('RB6 разряд появляется и движется', !!p1 && !!p2 && p1 !== p2);
   check('RB7 цвет голубой с белой сердцевиной', svg.querySelectorAll('path')[0].getAttribute('stroke') === '#40c0ff' && svg.querySelectorAll('path')[1].getAttribute('stroke') === '#ffffff');
-  await sleep(700);
-  check('RB8 через 0,9 с разряд исчезает', !svg.querySelector('path') && E(w, 'RUNE_BOLT_DURATION') === 900);
+  await sleep(500);   // ~0,95 с от запуска
+  check('RB8a (v6.10.1) через ~1 с разряд ещё идёт', !!svg.querySelector('path'));
+  await sleep(450);   // ~1,4 с от запуска
+  check('RB8 к 1,3–1,4 с разряд погас; длительность 1,2 с', !svg.querySelector('path') && E(w, 'RUNE_BOLT_DURATION') === 1200);
   check('RB9 видимость ограничена кругом иконки', !!svg.querySelector('clipPath circle') && svg.querySelector('g').getAttribute('clip-path').startsWith('url(#runeBoltClip'));
   const dirs = new Set(JSON.parse(E(w, `JSON.stringify(Array.from({length: 400}, () => Math.round(pickRuneBoltDirection() / (Math.PI / 4) * 1000) / 1000))`)));
   check('RB10 направления — только 8 допустимых', [...dirs].every(x => Number.isInteger(x) && x >= 0 && x <= 7) && dirs.size === 8, [...dirs].join(','));
