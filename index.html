@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1272,7 +1272,7 @@
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, forceFullResetAction)">Принудительный сброс дня</button>
         <button class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetChronicleAction)">Сбросить историю Летописи</button>
         <button id="resetFreezePauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.freezeNextAvailableAt = null; saveData(); this.disabled = true; })">Сбросить паузу Заморозки</button>
-        <button id="resetBeadPauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.beadAvailableAt = null; saveData(); this.disabled = true; })">Сбросить паузу Костяной бусины</button>
+        <button id="resetBeadPauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.beadBlockUntil = null; saveData(); this.disabled = true; })">Сбросить паузу Костяной бусины</button>
         <button id="resetNamePauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.nameNextAvailableAt = null; saveData(); this.disabled = true; })">Сбросить паузу смены имени</button>
       </div>
     </div>
@@ -1461,7 +1461,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.1';
+  const APP_VERSION = '6.10.2';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -1556,7 +1556,7 @@
         codexUnlocked: oldData.codexUnlocked || ["daily_quota", "penalty", "chronicle", "shop", "boxes", "archive", "stats"],
         equippedArtifacts: Array.isArray(oldData.equippedArtifacts) ? oldData.equippedArtifacts : [null, null, null, null],
         paceControl: typeof oldData.paceControl === 'boolean' ? oldData.paceControl : true,
-        beadAvailableAt: oldData.beadAvailableAt || null, veilLifted: !!oldData.veilLifted,
+        beadStreak: 0, beadBlockUntil: null, veilLifted: !!oldData.veilLifted,
         paceWindow: oldData.paceWindow,
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
@@ -1613,7 +1613,7 @@
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats", "equipment"],
         equippedArtifacts: [null, null, null, null],
         paceControl: true, paceWindow: { start: null, used: 0, locked: false, hot: [] },
-        beadAvailableAt: null, veilLifted: false,
+        beadStreak: 0, beadBlockUntil: null, veilLifted: false,
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
         targetDiscountToday: false, targetDiscountRate: 0, expBoostToday: 0, creditBoostToday: 0, streakShield: false,
@@ -1652,7 +1652,10 @@
   if (!data.codexUnlocked.includes('equipment')) data.codexUnlocked.push('equipment');   // v6.7.0: глава «Контур снаряжения» (v6.8.5) — с начала игры
   data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level);
   if (typeof data.paceControl !== 'boolean') data.paceControl = true;   // v6.8.0
-  if (typeof data.beadAvailableAt !== 'number') data.beadAvailableAt = null;   // v6.10.0: Костяная бусина
+  // v6.10.2: пауза ранга при использовании (beadAvailableAt, v6.10.0) заменена скрытым счётчиком получения и блоком после снятия
+  delete data.beadAvailableAt;
+  if (!Number.isInteger(data.beadStreak) || data.beadStreak < 0) data.beadStreak = 0;
+  if (typeof data.beadBlockUntil !== 'number' || !Number.isFinite(data.beadBlockUntil)) data.beadBlockUntil = null;
   if (typeof data.veilLifted !== 'boolean') data.veilLifted = false;
   if (data.consumables && data.consumables.bone_bead > 3) data.consumables.bone_bead = 3;
   data.paceWindow = sanitizePaceWindow(data.paceWindow);
@@ -1828,7 +1831,7 @@
   // Shop (SHOP_CATALOG's generic for-loop in openShop() would otherwise list
   // them for purchase, so they deliberately live in a separate catalog).
   const UNIQUE_CATALOG = {
-    "bone_bead": { name: "Костяная бусина", icon: "📿", desc: "Следующий цикл проходит без задания: штрафа нет, серия дней сохраняется. Выдаётся за выполненное дневное задание." },
+    "bone_bead": { name: "Костяная бусина", icon: "📿", desc: "Следующий цикл проходит без задания: наград и штрафа нет, серия дней не прерывается и не растёт. Может быть получена за выполненное дневное задание." },
     "crystal_restoration": { name: "Кристалл Восстановления", icon: "💠", desc: "Восстанавливает 70% опыта от последнего штрафа." },
     "tablet_of_reassessment": { name: "Скрижаль Пересмотра", icon: "🪧", desc: "Сбрасывает все вложенные очки характеристик, освобождая их для нового распределения." },
     "rune_correction": { name: "Руна Исправления", icon: "🔮", desc: "Полностью восстанавливает опыт от последнего штрафа, восстанавливает прерванную им серию дней и засчитывает день в Летописи." },
@@ -2471,7 +2474,7 @@
     scroll_renunciation: { title: "Свиток Отречения", content: "При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания. Характеристики, титул и часть артефактов молчат, пока действует эффект. Обычно сегодняшнее усилие и всё, что накоплено прежде, складываются в один результат, неразличимо друг от друга. Свиток на время убирает второе — испытание для самого себя, без «брони», накопленной со временем." },
     scroll_transfer: { title: "Свиток Переноса", content: "Свиток Переноса снимает одно упражнение дневного задания — ни цель, ни награда по нему в этот день не учитываются. Освобождённый вес не исчезает: он ложится на оставшиеся четыре, соразмерно увеличивая их цель. При частом использовании подряд эта компенсация становится заметнее — нагрузка на оставшиеся четыре упражнения растёт с каждым днём непрерывного применения." },
     scroll_contract: { title: "Свиток Договора", content: "Свиток Договора — игрок сам поднимает цели предстоящего дневного задания, зная заранее: полное исполнение будет вознаграждено сверх обычного. Условие названо прежде, чем сделан первый шаг." },
-    bone_bead: { title: "Костяная бусина", content: "Костяная бусина — знак, который Игрок может получить за выполненное дневное задание. Её использование активирует эффект «Пелена покоя»: в следующем цикле Система не назначает упражнений, не начисляет штраф и не прерывает серию, а Игрок может восстановить силы. Бусин немного, и пользоваться ими можно не чаще, чем позволяет ранг: чем сильнее Игрок, тем реже можно применять интервалы между заданиями." },
+    bone_bead: { title: "Костяная бусина", content: "Костяная бусина — знак, который Игрок может получить за выполненное дневное задание. Её использование активирует на следующий цикл эффект «Пелена покоя»: пока он действует, Система не назначает упражнений, не выдаёт наград и не начисляет штраф, а серия не прерывается и не растёт — Игрок может восстановить силы. Бусин немного: чем дальше путь Игрока, тем реже они ему попадаются." },
     scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть. Повторно использовать Свиток Заморозки можно не раньше чем через 30 дней после предыдущей активации." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
@@ -3184,11 +3187,11 @@
   const VEIL_TEXTS = {
     used: 'Костяная бусина использована. Пелена покоя наступит с началом следующего цикла.',
     nameActive: 'Костяная бусина', namePending: 'Костяная бусина (ожидает)', nameTrace: 'Костяная бусина (остаточный эффект)',
-    descActive: 'Действует эффект «Пелена покоя»: задание не назначено, штрафа нет, серия дней сохраняется.',
-    descPending: 'Эффект «Пелена покоя» наступит с началом следующего цикла: задания не будет, штрафа нет, серия дней сохраняется.',
+    descActive: 'Действует эффект «Пелена покоя»: задание не назначено, наград и штрафа нет, серия дней не прерывается и не растёт.',
+    descPending: 'Эффект «Пелена покоя» наступит с началом следующего цикла: задания не будет, наград и штрафа нет, серия дней не прерывается и не растёт.',
     descTrace: 'Эффект «Пелена покоя» снят досрочно: при выполнении задания Игрок получит награду, при невыполнении штрафа не будет.',
     confirmLift: 'Действует эффект «Пелена покоя». Снять его досрочно? Задание станет доступно до сброса: при выполнении Игрок получит награду, при невыполнении штрафа не будет. Бусина не возвращается.',
-    lifted: 'Пелена покоя снята. Задание доступно до сброса.',
+    lifted: 'Пелена покоя снята. Задание доступно до сброса. Следующая активация Костяной бусины будет доступна через два дня.',
     refuseCurse: 'Эффект недоступен, пока действует Бремя Аномалии.',
     refuseFreeze: 'Эффект недоступен во время Заморозки.',
     refuseCursePending: 'Следующий цикл уже занят Аномалией.',
@@ -3264,6 +3267,7 @@
     if (!isVeilActive()) return;
     data.veilLifted = true;
     data.dailyNotices.morning = true;   // уведомления «Получено задание…» не будет
+    data.beadBlockUntil = getNextCleanReset(Date.now()) + 24 * 60 * 60 * 1000;   // v6.10.2: следующий цикл активация закрыта
     saveData();
     veilLeaving = true;
     const ov = document.getElementById('veilOverlay');
@@ -3279,9 +3283,10 @@
     }, VEIL_OUT_MS + 100);
   }
 
-  // Пауза по рангу (вариант «Б»): E–C 1, B–A 2, S–National 3, SSS 4, Shadow Monarch 6 — тренировочных дней между Пеленами.
-  function beadPauseDays(level) {
-    if (level >= 100) return 6; if (level >= 80) return 4; if (level >= 50) return 3; if (level >= 30) return 2; return 1;
+  // v6.10.2: бусина — за каждый N-й выполненный день «подряд без штрафа» (скрытый счётчик beadStreak).
+  // E–B — каждый, A — 2-й, S и National — 3-й, SSS — 4-й, Shadow Monarch — 5-й (ранг на момент выполнения).
+  function beadEvery(level) {
+    if (level >= 100) return 5; if (level >= 80) return 4; if (level >= 50) return 3; if (level >= 40) return 2; return 1;
   }
   function plural(n, f) { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? f[0] : (a >= 2 && a <= 4 && (b < 10 || b >= 20) ? f[1] : f[2]); }
   // Меньше суток — в часах, иначе в днях и часах.
@@ -3292,6 +3297,10 @@
     return r ? `${d} ${plural(d, D)} и ${r} ${plural(r, H)}` : `${d} ${plural(d, D)}`;
   }
   function grantBoneBead() {
+    if (data.activeScroll === 'veil') return false;   // день со снятой Пеленой не считается: ни шага, ни бусины
+    data.beadStreak = (data.beadStreak || 0) + 1;
+    if (data.beadStreak < beadEvery(data.level)) return false;
+    data.beadStreak = 0;                               // порог достигнут — счётчик заново, даже если запас полон
     const have = data.consumables.bone_bead || 0;
     if (have >= BEAD_MAX) return false;
     data.consumables.bone_bead = have + 1;
@@ -3304,9 +3313,10 @@
     if (data.curseActiveToday) return VEIL_TEXTS.refuseCurse;
     if (data.activeScroll === 'freeze' || data.pendingScroll === 'freeze') return VEIL_TEXTS.refuseFreeze;
     if (data.pendingCurse) return VEIL_TEXTS.refuseCursePending;
+    if (data.pendingScroll === 'veil') return VEIL_TEXTS.scrollBlocked;
     if (data.pendingScroll) return VEIL_TEXTS.refuseScrollPending;
-    if (data.beadAvailableAt && Date.now() < data.beadAvailableAt) return `Костяная бусина будет доступна через ${formatWaitRu(data.beadAvailableAt - Date.now())}.`;
-    if (data.activeScroll === 'veil') return `Костяная бусина будет доступна через ${formatWaitRu(getNextCleanReset(Date.now()) - Date.now())}.`;
+    if (data.activeScroll === 'veil') return `Активация Костяной бусины будет доступна через ${formatWaitRu(getNextCleanReset(Date.now()) - Date.now())}.`;
+    if (data.beadBlockUntil && Date.now() < data.beadBlockUntil) return `Активация Костяной бусины будет доступна через ${formatWaitRu(data.beadBlockUntil - Date.now())}.`;
     return null;
   }
   // Отказ свитку: если на следующий цикл уже назначена Пелена покоя — своё сообщение.
@@ -3623,7 +3633,7 @@
       const scrollWasContractOrTransfer = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
       if (data.activeScroll === 'veil') {   // v6.10.0: Пелена покоя
         if (data.veilLifted && (data.isGoalMet || allQuestsDone())) { applyPenaltyLogic(); dayStatus = 'success'; }
-        else { dayStatus = 'veil'; data.penaltyStack.forEach(r => { r.chainBroken = true; }); }   // серия не рвётся и не растёт
+        else { dayStatus = 'veil'; }   // серия не рвётся и не растёт; метку chainBroken не ставим — её ставит только Заморозка (v6.10.2)
         data.veilLifted = false;
       } else if (data.activeScroll === 'freeze') {
         dayStatus = 'frozen';
@@ -3650,6 +3660,7 @@
       }
       const historyEntry = { status: dayStatus, donePercent };
       if (dayStatus === 'protected' && PROTECTING_RUNES.includes(lastProtectedBy)) historyEntry.protectedBy = lastProtectedBy;   // v6.8.3
+      if (dayStatus === 'penalty' || dayStatus === 'protected') data.beadStreak = 0;   // v6.10.2: срыв (и прикрытый руной) обрывает путь к бусине
       if (expGainedThatDay > 0) historyEntry.expGained = expGainedThatDay;
       if (expLostThatDay > 0) historyEntry.expLost = expLostThatDay;
       if (completedExercisesThatDay && completedExercisesThatDay.length > 0) {
@@ -4467,7 +4478,6 @@
     const meta = ITEM_META[iconId];
     let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
     const desc = ARTEFACTS[iconId] ? artifactEffectText(iconId) : getItemDesc(iconId);
-    if (iconId === 'bone_bead') { const n = beadPauseDays(data.level); text += `\nПерерыв между использованиями: ${n} ${plural(n, ['день', 'дня', 'дней'])}`; }   // v6.10.0
     if (desc) text += `\nЭффект: ${desc}`;
     return text;
   }
@@ -4543,7 +4553,6 @@
           if (why) { showNotice(why, 'warn', true); }
           else {
             data.pendingScroll = 'veil';
-            data.beadAvailableAt = getNextCleanReset(getNextCleanReset(Date.now())) + (beadPauseDays(data.level) - 1) * 24 * 60 * 60 * 1000;
             used = true; showNotice(VEIL_TEXTS.used, 'info');
           }
       } else if (id === 'rune_cleansing') {
@@ -5332,6 +5341,7 @@
   document.querySelectorAll('.add').forEach(btn => {
     btn.onclick = (e) => {
       if (data.activeScroll === 'freeze') return;
+      if (isVeilActive()) return;   // v6.10.2: не только слой поверх карточек
       const item = e.target.closest('.quest-item');
       const id = item.dataset.id;
       const val = parseInt(e.target.dataset.value);
@@ -5877,7 +5887,8 @@
       inventory: cleanInventory,
       equippedArtifacts: cleanEquipped,
       paceControl: typeof s.paceControl === 'boolean' ? s.paceControl : true,
-      beadAvailableAt: (typeof s.beadAvailableAt === 'number' && Number.isFinite(s.beadAvailableAt)) ? s.beadAvailableAt : null,
+      beadStreak: (Number.isInteger(s.beadStreak) && s.beadStreak >= 0 && s.beadStreak < 100) ? s.beadStreak : 0,
+      beadBlockUntil: (typeof s.beadBlockUntil === 'number' && Number.isFinite(s.beadBlockUntil)) ? s.beadBlockUntil : null,
       veilLifted: s.veilLifted === true && s.activeScroll === 'veil',
       paceWindow: sanitizePaceWindow(s.paceWindow),
       consumables: cleanConsumables,
@@ -6352,7 +6363,7 @@
     const freezePauseBtn = document.getElementById('resetFreezePauseBtn');
     const hasPause = data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt;
     freezePauseBtn.disabled = !hasPause || data.activeScroll === 'freeze';
-    document.getElementById('resetBeadPauseBtn').disabled = !(data.beadAvailableAt && Date.now() < data.beadAvailableAt);   // v6.10.0
+    document.getElementById('resetBeadPauseBtn').disabled = !(data.beadBlockUntil && Date.now() < data.beadBlockUntil);   // v6.10.2: блок после снятия
     const namePauseBtn = document.getElementById('resetNamePauseBtn');
     namePauseBtn.disabled = !(data.nameNextAvailableAt && Date.now() < data.nameNextAvailableAt);
     document.getElementById('sysToolsOverlay').style.display = 'flex';

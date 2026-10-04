@@ -40,101 +40,143 @@ const fullLoss = w => E(w, `Math.floor(getExpToNext(data.level)*Math.max(0.05,0.
 const results = []; const check = (n, c, i) => results.push((c ? 'OK  ' : 'FAIL') + ' ' + n + (i !== undefined && !c ? '  → ' + i : ''));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const N = w => E(w, 'window.__N.join(" / ")');
+// бусина: «потрачена» — если стало на одну меньше (без подкладывания лишней)
+const useB = w => { let b = E(w, 'data.consumables.bone_bead || 0'); if (!b) { E(w, 'data.consumables.bone_bead = 1'); b = 1; }
+  E(w, "window.__N = []; flashThenRun = (sel, fn) => fn(); performUseItem('bone_bead')"); return { notice: N(w), spent: E(w, 'data.consumables.bone_bead || 0') === b - 1 }; };
+const lastDay = w => { const k = Object.keys(E(w, 'data.history')).sort().pop(); return E(w, `data.history['${k}'].status`); };
 (async () => {
-// ===== v6.10.0: Костяная бусина и «Пелена покоя» =====
+// ===== v6.10.0 / v6.10.2: Костяная бусина и «Пелена покоя» =====
+// --- предмет и тексты ---
 { const w = fresh();
   check('B1 предмет: название, ранг E, тип, не продаётся и не выпадает из шкатулок',
     E(w, "getConsumableInfo('bone_bead').name") === 'Костяная бусина' && E(w, "ITEM_META.bone_bead.rank") === 'E' && E(w, "ITEM_META.bone_bead.type") === 'Особый расходный предмет'
-    && E(w, "!SHOP_CATALOG.bone_bead") && E(w, "!JSON.stringify(Object.values(typeof BOX_CONTENTS !== 'undefined' ? BOX_CONTENTS : {})).includes('bone_bead')") && !require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8').match(/"box_[a-z_]+": \[[^\]]*bone_bead/));
-  check('B2 описание', E(w, "getConsumableInfo('bone_bead').desc") === 'Следующий цикл проходит без задания: штрафа нет, серия дней сохраняется. Выдаётся за выполненное дневное задание.');
+    && E(w, "!SHOP_CATALOG.bone_bead") && !require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8').match(/"box_[a-z_]+": \[[^\]]*bone_bead/));
+  check('B2 описание (v6.10.2)', E(w, "getConsumableInfo('bone_bead').desc") === 'Следующий цикл проходит без задания: наград и штрафа нет, серия дней не прерывается и не растёт. Может быть получена за выполненное дневное задание.');
   const pv = E(w, "itemPreviewText('bone_bead')");
-  check('B3 превью: «Одноразовое использование», перерыв в днях по рангу', pv.includes('Применение: Одноразовое использование') && pv.includes('Перерыв между использованиями: 1 день') && pv.includes('Эффект: Следующий цикл проходит без задания'), pv);
-  const pd = J(w, "[1,9,29,30,49,50,79,80,99,100,140].map(beadPauseDays)");
-  check('B4 пауза по рангу (вариант Б) на границах', pd === '[1,1,1,2,2,3,3,4,4,6,6]', pd);
+  check('B3 превью: «Одноразовое использование», без строки перерыва', pv.includes('Применение: Одноразовое использование') && !pv.includes('Перерыв') && pv.includes('Эффект: Следующий цикл проходит без задания'), pv);
   const fw = J(w, "[1,14,22,24,38,101].map(h => formatWaitRu(h * 3600000))");
   check('B5 формат ожидания: часы до суток, дальше дни и часы', fw === JSON.stringify(['1 час', '14 часов', '22 часа', '1 день', '1 день и 14 часов', '4 дня и 5 часов']), fw);
-  E(w, "data.level = 35"); check('B6 превью на 35 ур.: 2 дня', E(w, "itemPreviewText('bone_bead')").includes('Перерыв между использованиями: 2 дня'));
-  check('B7 глава Кодекса — текст', E(w, "CODEX_CHAPTERS.bone_bead.content") === 'Костяная бусина — знак, который Игрок может получить за выполненное дневное задание. Её использование активирует эффект «Пелена покоя»: в следующем цикле Система не назначает упражнений, не начисляет штраф и не прерывает серию, а Игрок может восстановить силы. Бусин немного, и пользоваться ими можно не чаще, чем позволяет ранг: чем сильнее Игрок, тем реже можно применять интервалы между заданиями.'); }
-// --- выдача ---
-{ const w = fresh("data.codexUnlocked = data.codexUnlocked.filter(c => c !== 'bone_bead'); render();");
+  check('B7 глава Кодекса (v6.10.2)', E(w, "CODEX_CHAPTERS.bone_bead.content") === 'Костяная бусина — знак, который Игрок может получить за выполненное дневное задание. Её использование активирует на следующий цикл эффект «Пелена покоя»: пока он действует, Система не назначает упражнений, не выдаёт наград и не начисляет штраф, а серия не прерывается и не растёт — Игрок может восстановить силы. Бусин немного: чем дальше путь Игрока, тем реже они ему попадаются.');
+  check('B7a панель: описания «действует» и «ожидает» (v6.10.2)', E(w, 'VEIL_TEXTS.descActive') === 'Действует эффект «Пелена покоя»: задание не назначено, наград и штрафа нет, серия дней не прерывается и не растёт.'
+    && E(w, 'VEIL_TEXTS.descPending') === 'Эффект «Пелена покоя» наступит с началом следующего цикла: задания не будет, наград и штрафа нет, серия дней не прерывается и не растёт.'); }
+// --- получение: порог по рангу, «подряд без штрафа» ---
+{ const w = fresh();
+  const need = J(w, `(() => { const r = []; for (const lv of [1, 39, 40, 49, 50, 79, 80, 99, 100, 140]) { data.level = lv; data.beadStreak = 0; data.consumables.bone_bead = 0; data.activeScroll = null; let n = 1; while (!grantBoneBead()) n++; r.push(n); } return r; })()`);
+  check('C1 порог по рангу: E–B каждый, A 2-й, S/National 3-й, SSS 4-й, Monarch 5-й', need === '[1,1,2,2,3,3,4,4,5,5]', need); }
+{ const w = fresh("data.level = 1; data.codexUnlocked = data.codexUnlocked.filter(c => c !== 'bone_bead'); data.consumables.bone_bead = 0; data.beadStreak = 0; render();");
   complete(w); await sleep(4700);
-  check('B8 за выполненный день +1 бусина, уведомление и глава Кодекса', E(w, "data.consumables.bone_bead") === 1 && N(w).includes('Получен предмет: Костяная бусина') && E(w, "data.codexUnlocked.includes('bone_bead')"), N(w));
-  const w2 = fresh("data.consumables.bone_bead = 3;"); complete(w2); await sleep(4700);
-  check('B9 при запасе 3 — не выдаётся и без уведомления', E(w2, "data.consumables.bone_bead") === 3 && !N(w2).includes('Костяная бусина')); }
-// --- использование и отказы ---
-{ const w = fresh(); const u = use(w, 'bone_bead');
-  check('B10 использование: ожидает следующего цикла, текст, бусина потрачена', E(w, "data.pendingScroll") === 'veil' && u.spent && u.notice === 'Костяная бусина использована. Пелена покоя наступит с началом следующего цикла.', u.notice);
-  check('B11 пауза: конец Пелены + (N−1) дней', E(w, "data.beadAvailableAt === getNextCleanReset(getNextCleanReset(Date.now()))"));
+  check('C2 E–B: бусина за выполненный день, уведомление, глава Кодекса', E(w, 'data.consumables.bone_bead') === 1 && N(w).includes('Получен предмет: Костяная бусина') && E(w, "data.codexUnlocked.includes('bone_bead')") && E(w, 'data.beadStreak') === 0, N(w)); }
+{ const w = fresh('data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;');
+  complete(w); const a1 = E(w, 'data.consumables.bone_bead'), s1 = E(w, 'data.beadStreak'); reset(w);
+  complete(w); const a2 = E(w, 'data.consumables.bone_bead');
+  check('C3 A-ранг: за первый день нет, за второй подряд — есть', a1 === 0 && s1 === 1 && a2 === 1 && E(w, 'data.beadStreak') === 0, `${a1}/${s1}/${a2}`); }
+{ const w = fresh('data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;');
+  complete(w); reset(w); reset(w);
+  check('C4 штраф обнуляет счётчик', lastDay(w) === 'penalty' && E(w, 'data.beadStreak') === 0); }
+{ const w = fresh("data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;");
+  complete(w); reset(w); E(w, "data.insurance = true; data.insuranceSourceId = 'rune_protection_charged'"); reset(w);
+  check('C5 срыв, прикрытый руной, тоже обнуляет', lastDay(w) === 'protected' && E(w, 'data.beadStreak') === 0); }
+{ const w = fresh("data.level = 45; data.consumables.bone_bead = 1; data.beadStreak = 0;");
+  complete(w); useB(w); reset(w); const s0 = E(w, 'data.beadStreak');
+  reset(w); const sAfterVeil = E(w, 'data.beadStreak');
+  complete(w);
+  check('C6 Пелена (не снята) счётчик не трогает: путь к бусине продолжается', s0 === 1 && sAfterVeil === 1 && lastDay(w) === 'veil' && E(w, 'data.consumables.bone_bead') === 1 && E(w, 'data.beadStreak') === 0, `${s0}/${sAfterVeil}`); }
+{ const w = fresh("data.level = 45; data.consumables.bone_bead = 1; data.beadStreak = 0;");
+  complete(w); useB(w); reset(w); await sleep(3200); E(w, 'liftVeil()'); await sleep(4800);
+  const before = E(w, 'data.consumables.bone_bead'); complete(w); await sleep(4700);
+  check('C7 снятая и выполненная Пелена: шага нет, бусины нет', E(w, 'data.beadStreak') === 1 && E(w, 'data.consumables.bone_bead') === before, `${E(w, 'data.beadStreak')}`);
+  const exp = E(w, 'data.exp'); reset(w);
+  check('C7a … и день — успех, серия +1', lastDay(w) === 'success'); }
+{ const w = fresh("data.level = 45; data.consumables.bone_bead = 1; data.beadStreak = 0;");
+  complete(w); useB(w); reset(w); await sleep(3200); E(w, 'liftVeil()'); await sleep(4800); reset(w);
+  check('C8 снятая и не выполненная Пелена: без штрафа и без сброса счётчика', lastDay(w) === 'veil' && E(w, 'data.beadStreak') === 1); }
+{ const w = fresh("data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;");
+  complete(w); reset(w);
+  E(w, "data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 3 * 86400000; data.freezeStartTimestamp = Date.now();"); reset(w); reset(w);
+  check('C9 Заморозка счётчик не трогает', E(w, 'data.beadStreak') === 1); }
+{ const w = fresh("data.level = 1; data.consumables.bone_bead = 3; data.beadStreak = 0;"); complete(w); await sleep(4700);
+  check('C10 запас полный: бусины нет, счётчик всё равно заново, без уведомления', E(w, 'data.consumables.bone_bead') === 3 && E(w, 'data.beadStreak') === 0 && !N(w).includes('Костяная бусина')); }
+{ const w = fresh("data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;");
+  complete(w); reset(w); reset(w); const s0 = E(w, 'data.beadStreak');
+  E(w, "data.consumables.rune_correction = 1"); use(w, 'rune_correction');
+  check('C11 исправление дня руной счётчик не возвращает', s0 === 0 && E(w, 'data.beadStreak') === 0 && lastDay(w) === 'success'); }
+// --- использование ---
+{ const w = fresh('data.consumables.bone_bead = 1;'); const u = useB(w);
+  check('U1 использование: ожидает следующего цикла, текст, бусина потрачена', E(w, 'data.pendingScroll') === 'veil' && u.spent && u.notice === 'Костяная бусина использована. Пелена покоя наступит с началом следующего цикла.', u.notice);
   const r = [['data.curseActiveToday = true;', 'Эффект недоступен, пока действует Бремя Аномалии.'], ["data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 1e8;", 'Эффект недоступен во время Заморозки.'],
-    ['data.pendingCurse = true;', 'Следующий цикл уже занят Аномалией.'], ["data.pendingScroll = 'contract';", 'Следующий цикл уже занят ожидающим свитком.']];
-  const bad = r.filter(([setup, txt]) => { const x = fresh(setup); const v = use(x, 'bone_bead'); return v.spent || v.notice !== txt; }).map(x => x[1]);
-  check('B12 отказы: Бремя, Заморозка, Аномалия назначена, свиток ожидает — бусина не тратится', bad.length === 0, bad.join(' | '));
-  const x = fresh('data.beadAvailableAt = Date.now() + 38 * 3600000 - 60000;'); const v = use(x, 'bone_bead');
-  check('B13 отказ во время паузы — время в днях и часах', !v.spent && v.notice === 'Костяная бусина будет доступна через 1 день и 14 часов.', v.notice);
-  const y = fresh("data.activeScroll = 'contract';"); const vy = use(y, 'bone_bead');
-  check('B14 при действующем свитке — можно, эффект ожидает', vy.spent && E(y, "data.pendingScroll") === 'veil' && E(y, "data.activeScroll") === 'contract');
-  const z = fresh("data.pendingScroll = 'veil';"); const vz = use(z, 'scroll_contract');
-  check('B15 свиток при ожидающей Пелене — отказ с её названием', !vz.spent && vz.notice === 'Следующий цикл уже занят: ожидает Пелена покоя.', vz.notice); }
-// --- цикл с Пеленой ---
-{ const w = fresh(); complete(w); use(w, 'bone_bead'); const streak = E(w, 'data.consecutiveDays');
-  E(w, 'window.__N = []'); reset(w); await sleep(3200);
-  const days = () => Object.keys(E(w, 'data.history')).sort();
-  check('B16 сброс: день выполнен (успех), наступает Пелена, без уведомления о задании', E(w, "data.activeScroll") === 'veil' && E(w, "data.pendingScroll") === null
-    && E(w, `data.history['${days().pop()}'].status`) === 'success' && !N(w).includes(E(w, 'STARTUP_NOTICE_TEXT')), N(w));
-  const s2 = E(w, 'data.consecutiveDays'), exp = E(w, 'data.exp'), pen = E(w, 'data.totalPenalties');
-  check('B17 пелена над карточками: 40 звёзд, переливы', E(w, "document.getElementById('veilOverlay').classList.contains('active')") && E(w, "document.querySelectorAll('#veilStars i').length") === 40 && E(w, "!!document.querySelector('#veilOverlay .vo-shim')"));
-  E(w, 'updateTimerInner()');
-  check('B18 полоса таймера: «Пелена покоя рассеется через» с переносом на узких', E(w, "document.querySelector('#resetTimerContainer .reset-label').innerHTML") === 'Пелена покоя<br class="br-narrow"> рассеется через');
-  const fx = JSON.parse(J(w, "window.__activeEffectsCache.filter(e => /bone_bead/.test(e.icon)).map(e => ({ n: e.name, t: e.text }))"));
-  check('B19 панель: «Костяная бусина» и описание эффекта, много искорок', fx.length === 1 && fx[0].n === 'Костяная бусина' && fx[0].t === 'Действует эффект «Пелена покоя»: задание не назначено, штрафа нет, серия дней сохраняется.'
-    && E(w, "document.querySelectorAll('#effectsRow .bead-eff .bsp').length") === 14, JSON.stringify(fx));
-  E(w, 'window.__N = []'); reset(w); await sleep(3200);
-  check('B20 конец Пелены: день «Пелена покоя», без штрафа, серия не рвётся и не растёт, затем обычное задание',
-    E(w, `data.history['${days().pop()}'].status`) === 'veil' && E(w, 'data.exp') === exp && E(w, 'data.totalPenalties') === pen && E(w, 'data.consecutiveDays') === s2
-    && E(w, "data.activeScroll") === null && N(w).includes(E(w, 'STARTUP_NOTICE_TEXT')), `${s2} → ${E(w, 'data.consecutiveDays')}; ${N(w)}`);
-  check('B21 серия на сбросе с выполненным днём выросла, а на дне Пелены — нет', s2 === streak + 1); }
-{ const w = fresh(); complete(w); use(w, 'bone_bead'); E(w, 'data.pendingCurse = true;'); reset(w);
-  check('B22 Бремя, выпавшее при ожидающей Пелене, ждёт её окончания', E(w, 'data.activeScroll') === 'veil' && !E(w, 'data.curseActiveToday') && E(w, 'data.pendingCurse'));
-  reset(w); check('B23 после Пелены Бремя наступает', E(w, 'data.curseActiveToday') === true && E(w, 'data.activeScroll') === null); }
-// --- досрочное снятие ---
-{ const w = fresh(); complete(w); use(w, 'bone_bead'); reset(w); await sleep(3200);
+    ['data.pendingCurse = true;', 'Следующий цикл уже занят Аномалией.'], ["data.pendingScroll = 'contract';", 'Следующий цикл уже занят ожидающим свитком.'], ["data.pendingScroll = 'veil';", 'Следующий цикл уже занят: ожидает Пелена покоя.']];
+  const bad = r.filter(([setup, txt]) => { const x = fresh('data.consumables.bone_bead = 1; ' + setup); const v = useB(x); return v.spent || v.notice !== txt; }).map(x => x[1]);
+  check('U2 отказы и их тексты, бусина не тратится', bad.length === 0, bad.join(' | '));
+  const y = fresh("data.consumables.bone_bead = 1; data.activeScroll = 'contract';"); const vy = useB(y);
+  check('U3 при действующем свитке — можно, эффект ожидает', vy.spent && E(y, 'data.pendingScroll') === 'veil' && E(y, 'data.activeScroll') === 'contract');
+  const z = fresh("data.pendingScroll = 'veil'; data.consumables.scroll_contract = 1;"); const vz = use(z, 'scroll_contract');
+  check('U4 свиток при ожидающей Пелене — отказ с её названием', !vz.spent && vz.notice === 'Следующий цикл уже занят: ожидает Пелена покоя.', vz.notice); }
+{ const w = fresh('data.level = 85; data.consumables.bone_bead = 2;'); complete(w); useB(w); reset(w);
+  const during = useB(w);
+  check('U5 во время Пелены — «Активация … будет доступна через …»', !during.spent && /^Активация Костяной бусины будет доступна через /.test(during.notice), during.notice);
+  reset(w); const after = useB(w);
+  check('U6 паузы ранга нет: на следующий обычный день можно сразу (даже SSS)', after.spent && E(w, 'data.pendingScroll') === 'veil'); }
+// --- досрочное снятие и блок ---
+{ const w = fresh('data.consumables.bone_bead = 1;'); complete(w); useB(w); reset(w); await sleep(3200);
   E(w, `window.__C = null; showConfirm = (m, ok) => { window.__C = m; window.__OK = ok; }; onVeilTap()`);
-  check('B24 касание пелены — подтверждение с текстом', E(w, 'window.__C') === 'Действует эффект «Пелена покоя». Снять его досрочно? Задание станет доступно до сброса: при выполнении Игрок получит награду, при невыполнении штрафа не будет. Бусина не возвращается.');
+  check('L1 касание пелены — подтверждение (текст без изменений)', E(w, 'window.__C') === 'Действует эффект «Пелена покоя». Снять его досрочно? Задание станет доступно до сброса: при выполнении Игрок получит награду, при невыполнении штрафа не будет. Бусина не возвращается.');
   E(w, 'window.__N = []; window.__OK()');
-  check('B25 снятие: пелена уходит, бусина рассыпается пылью (30 частиц)', E(w, "document.getElementById('veilOverlay').classList.contains('leaving')") && E(w, "document.querySelector('#effectsRow .bead-eff').classList.contains('bead-out')")
-    && E(w, "document.querySelectorAll('#effectsRow .bead-eff .bdp').length") === 30 && E(w, 'data.veilLifted') && E(w, 'data.dailyNotices.morning'));
-  const css = E(w, "[...document.querySelectorAll('style')].map(x => x.textContent).join('')");
-  check('B26 пелена уходит «звёзды гаснут по одной» за 4,5 с, размытие уходит вместе с ней', /\.veil-overlay\.leaving \{ animation: veilUnblur 4\.5s/.test(css) && /\.veil-overlay\.leaving \.vo-stars i \{ animation: veilStarOut/.test(css));
+  check('L2 блок активации: до границы 05:00 после следующего цикла', E(w, 'data.beadBlockUntil === getNextCleanReset(Date.now()) + 86400000'));
+  check('L3 снятие: пелена уходит, бусина рассыпается пылью (30)', E(w, "document.getElementById('veilOverlay').classList.contains('leaving')") && E(w, "document.querySelectorAll('#effectsRow .bead-eff .bdp').length") === 30);
   await sleep(4800);
-  check('B27 после снятия: уведомление, без «Получено задание», след — лунная рамка и звёзды, остаточные частицы',
-    N(w).includes('Пелена покоя снята. Задание доступно до сброса.') && !N(w).includes(E(w, 'STARTUP_NOTICE_TEXT')) && E(w, "document.querySelector('.quest-list').classList.contains('veil-trace')")
-    && E(w, "document.querySelectorAll('.quest-list > .quest-item .veil-rs').length") >= 12 && E(w, "!!document.querySelector('#effectsRow .bead-trace')") && E(w, 'beadResidualTimer !== null'), N(w));
-  E(w, 'updateTimerInner()');
-  check('B28 полоса: «До сброса без штрафа»; панель: остаточный эффект', E(w, "document.querySelector('#resetTimerContainer .reset-label').innerHTML") === 'До сброса без штрафа'
-    && E(w, "window.__activeEffectsCache.some(e => e.name === 'Костяная бусина (остаточный эффект)' && e.text === 'Эффект «Пелена покоя» снят досрочно: при выполнении задания Игрок получит награду, при невыполнении штрафа не будет.')"));
-  const exp = E(w, 'data.exp'), pen = E(w, 'data.totalPenalties'); reset(w);
-  const last = Object.keys(E(w, 'data.history')).sort().pop();
-  check('B29 снята и не выполнена — без штрафа, день «Пелена покоя», след убран', E(w, `data.history['${last}'].status`) === 'veil' && E(w, 'data.exp') >= exp && E(w, 'data.totalPenalties') === pen && !E(w, "document.querySelector('.quest-list').classList.contains('veil-trace')")); }
-{ const w = fresh(); complete(w); use(w, 'bone_bead'); reset(w); await sleep(3200); E(w, 'liftVeil()'); await sleep(4800);
-  const streak = E(w, 'data.consecutiveDays'), beads = E(w, 'data.consumables.bone_bead || 0');
-  complete(w); await sleep(4700); reset(w);
-  const last = Object.keys(E(w, 'data.history')).sort().pop();
-  check('B30 снята и выполнена — успех, серия +1, новая бусина', E(w, `data.history['${last}'].status`) === 'success' && E(w, 'data.consecutiveDays') === streak + 1 && E(w, 'data.consumables.bone_bead') === beads + 1); }
+  check('L4 уведомление после снятия — с фразой о двух днях', N(w).includes('Пелена покоя снята. Задание доступно до сброса. Следующая активация Костяной бусины будет доступна через два дня.') && !N(w).includes(E(w, 'STARTUP_NOTICE_TEXT')), N(w));
+  E(w, 'data.consumables.bone_bead = 1'); reset(w);
+  const blocked = useB(w);
+  check('L5 на следующий день активация закрыта', !blocked.spent && /^Активация Костяной бусины будет доступна через /.test(blocked.notice), blocked.notice);
+  E(w, 'const _now = data.beadBlockUntil + 60000; Date.now = () => _now;');
+  const open = useB(w);
+  check('L6 после границы блока — снова можно', open.spent); }
+{ const w = fresh('data.consumables.bone_bead = 1;'); complete(w); useB(w);
+  check('L7 без снятия блока нет', E(w, 'data.beadBlockUntil') === null); }
+// --- день Пелены без снятия ---
+{ const w = fresh('data.level = 1; data.consumables.bone_bead = 1; data.beadStreak = 0;'); complete(w); useB(w); E(w, 'window.__N = []'); reset(w); await sleep(3200);
+  check('P1 сброс: наступает Пелена без уведомления о задании', E(w, 'data.activeScroll') === 'veil' && !N(w).includes(E(w, 'STARTUP_NOTICE_TEXT')));
+  check('P2 пелена: 40 звёзд, переливы; полоса «Пелена покоя рассеется через»', E(w, "document.querySelectorAll('#veilStars i').length") === 40 && E(w, "!!document.querySelector('#veilOverlay .vo-shim')")
+    && (E(w, 'updateTimerInner()'), E(w, "document.querySelector('#resetTimerContainer .reset-label').innerHTML")) === 'Пелена покоя<br class="br-narrow"> рассеется через');
+  check('P3 панель: «Костяная бусина», 14 искорок', E(w, "window.__activeEffectsCache.some(e => e.name === 'Костяная бусина' && e.text === VEIL_TEXTS.descActive)") && E(w, "document.querySelectorAll('#effectsRow .bead-eff .bsp').length") === 14);
+  const add = E(w, "(() => { const b = document.querySelector('.quest-item[data-id=\"pushups\"] .add'); b.onclick({ target: b }); return data.completed.pushups || 0; })()");
+  check('P4 «+» в обход пелены не засчитывается', add === 0, add);
+  const exp = E(w, 'data.exp'), pen = E(w, 'data.totalPenalties'), streak = E(w, 'data.consecutiveDays'), beads = E(w, 'data.consumables.bone_bead');
+  E(w, 'window.__N = []'); reset(w); await sleep(3200);
+  check('P5 конец Пелены: день «Пелена покоя», ни награды, ни штрафа, серия на месте, бусины нет, затем обычное задание',
+    lastDay(w) === 'veil' && E(w, 'data.exp') === exp && E(w, 'data.totalPenalties') === pen && E(w, 'data.consecutiveDays') === streak && E(w, 'data.consumables.bone_bead') === beads && N(w).includes(E(w, 'STARTUP_NOTICE_TEXT')));
+  complete(w); await sleep(4700);
+  check('P6 следующий обычный выполненный день бусину снова даёт', E(w, 'data.consumables.bone_bead') === beads + 1); }
+{ const w = fresh('data.consumables.bone_bead = 1;'); complete(w); useB(w); E(w, 'data.pendingCurse = true;'); reset(w);
+  check('P7 Бремя, выпавшее при ожидающей Пелене, ждёт её окончания', E(w, 'data.activeScroll') === 'veil' && !E(w, 'data.curseActiveToday') && E(w, 'data.pendingCurse'));
+  reset(w); check('P8 после Пелены Бремя наступает', E(w, 'data.curseActiveToday') === true); }
+{ const w = fresh('data.consumables.bone_bead = 1;'); complete(w); useB(w); reset(w); await sleep(3200); E(w, 'liftVeil()'); await sleep(4800);
+  const add = E(w, "(() => { const b = document.querySelector('.quest-item[data-id=\"pushups\"] .add'); b.onclick({ target: b }); return data.completed.pushups || 0; })()");
+  check('P9 после снятия «+» засчитывается; след и полоса «До сброса без штрафа»', add > 0 && E(w, "document.querySelector('.quest-list').classList.contains('veil-trace')")
+    && (E(w, 'updateTimerInner()'), E(w, "document.querySelector('#resetTimerContainer .reset-label').innerHTML")) === 'До сброса без штрафа', add); }
+// --- метка на старых штрафах ---
+{ const mk = (status) => { const w = fresh("data.penaltyStack = [{ day: '2026-09-01', loss: 100, returned: 0, fixedBy: null, brokeStreak: true, streakBefore: 5, streakHandled: false, chainBroken: false }];"); return w; };
+  const w = mk(); E(w, "data.consumables.bone_bead = 1"); complete(w); useB(w); reset(w); reset(w);
+  check('G1 день Пелены не ставит метку на старых штрафах (Руна Исправления сможет склеить серию)', lastDay(w) === 'veil' && E(w, 'data.penaltyStack[0].chainBroken') === false && E(w, 'canGlueStreak(data.penaltyStack[0])') === true);
+  const w2 = mk(); E(w2, "data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 3 * 86400000; data.freezeStartTimestamp = Date.now();"); reset(w2);
+  check('G2 Заморозка метку по-прежнему ставит', E(w2, 'data.penaltyStack[0].chainBroken') === true); }
 // --- Летопись, бэкап, Длань, старое сохранение ---
 { const w = fresh();
-  check('B31 Летопись: статус «Пелена покоя» допустим в бэкапе, цвет дня и пункт легенды', E(w, "sanitizeImportedData.toString()").includes("'frozen', 'veil'")
+  check('B31 Летопись: статус «Пелена покоя» допустим в бэкапе, пункт легенды', E(w, "sanitizeImportedData.toString()").includes("'frozen', 'veil'")
     && E(w, "[...document.querySelectorAll('#legendBody > span')].some(s => s.textContent.trim() === 'Пелена покоя' && s.querySelector('.cal-swatch').getAttribute('style').includes('#b8ccff'))"));
-  const clean = JSON.parse(J(w, `sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { history: { '2026-09-01': { status: 'veil' } }, beadAvailableAt: 'x', veilLifted: true, activeScroll: null }), total: {} })`));
-  check('B32 бэкап: день «veil» сохраняется, неверная пауза → null, «снята» без Пелены → нет', clean.state.history['2026-09-01'].status === 'veil' && clean.state.beadAvailableAt === null && clean.state.veilLifted === false);
+  const clean = JSON.parse(J(w, `sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { history: { '2026-09-01': { status: 'veil' } }, beadStreak: -3, beadBlockUntil: 'x', veilLifted: true, activeScroll: null }), total: {} })`));
+  check('B32 бэкап: день «veil» сохраняется, неверный счётчик → 0, неверный блок → null, «снята» без Пелены → нет', clean.state.history['2026-09-01'].status === 'veil' && clean.state.beadStreak === 0 && clean.state.beadBlockUntil === null && clean.state.veilLifted === false);
   E(w, "data.consumables.bone_bead = 3; openFullCatalog()");
   const card = E(w, "(() => { const c = document.querySelector('[data-cat-id=\"bone_bead\"]'); return c ? [...c.querySelectorAll('button')].map(b => b.textContent + (b.disabled ? ':off' : ':on')).join(',') : null; })()");
   E(w, "devAddItem('bone_bead')");
   check('B33 Длань: «+1» неактивна на 3, больше 3 не добавить', card === '-1:on,+1:off' && E(w, 'data.consumables.bone_bead') === 3, card);
-  E(w, "data.beadAvailableAt = Date.now() + 1e7; openSysTools && openSysTools()");
-  check('B34 Длань: кнопка сброса паузы бусины', !!E(w, "document.getElementById('resetBeadPauseBtn')"));
-  const legacy = JSON.parse(SEED); delete legacy.beadAvailableAt; delete legacy.veilLifted; legacy.consumables = { bone_bead: 9 };
+  E(w, "sysToolsAuthorized = true; data.beadBlockUntil = Date.now() + 1e7; openSysTools()");
+  check('B34 Длань: «Сбросить паузу Костяной бусины» снимает блок после снятия', !E(w, "document.getElementById('resetBeadPauseBtn').disabled") && (E(w, "data.beadBlockUntil = null; openSysTools()"), E(w, "document.getElementById('resetBeadPauseBtn').disabled")));
+  const legacy = JSON.parse(SEED); legacy.beadAvailableAt = Date.now() + 5e8; delete legacy.beadStreak; delete legacy.beadBlockUntil; legacy.consumables = { bone_bead: 9 };
   const saved = SEED; SEED = JSON.stringify(legacy); const w2 = boot(); SEED = saved;
-  check('B35 старое сохранение: поля по умолчанию, запас обрезан до 3', E(w2, 'data.beadAvailableAt') === null && E(w2, 'data.veilLifted') === false && E(w2, 'data.consumables.bone_bead') === 3); }
+  check('B35 сохранение 6.10.0: прежняя пауза снята, счётчик 0, блока нет, запас обрезан до 3', E(w2, "data.beadAvailableAt === undefined") && E(w2, 'data.beadStreak') === 0 && E(w2, 'data.beadBlockUntil') === null && E(w2, 'data.consumables.bone_bead') === 3);
+  const u = useB(w2);
+  check('B36 после перехода бусину можно использовать сразу', u.spent); }
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
