@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1461,7 +1461,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.2';
+  const APP_VERSION = '6.10.3';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -3298,6 +3298,7 @@
   }
   function grantBoneBead() {
     if (data.activeScroll === 'veil') return false;   // день со снятой Пеленой не считается: ни шага, ни бусины
+    if ((data.consumables.bone_bead || 0) >= BEAD_MAX) { data.beadStreak = 0; return false; }   // v6.10.3: карман полон — находки не копятся
     data.beadStreak = (data.beadStreak || 0) + 1;
     if (data.beadStreak < beadEvery(data.level)) return false;
     data.beadStreak = 0;                               // порог достигнут — счётчик заново, даже если запас полон
@@ -5716,6 +5717,40 @@
     return btoa(binary);
   }
 
+  // ===== v6.10.3: подписанный бэкап =====
+  // Код и файл .slbackup — одна строка base64 от {fmt:'slb1', payload:'<JSON>', sig}. Подпись — хеш секретной
+  // строки и payload: правка цифр в раскодированном бэкапе её ломает. Старые бэкапы без подписи (JSON-файлы
+  // и коды) принимаются до 5.11.2026 включительно, затем — отказ (после этой даты код приёма можно убрать).
+  const BACKUP_FMT = 'slb1';
+  const BACKUP_SALT = 'SL-System::bone-bead::veil-of-rest::6.10.3';
+  const LEGACY_BACKUP_UNTIL = new Date(2026, 10, 6, 0, 0, 0).getTime();   // 06.11.2026 00:00 по часам устройства
+  function backupSig(str) {   // cyrb53 — быстрый 53-битный хеш; дважды с разным зерном → 106 бит в hex
+    const h = seed => { let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+      for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0'); };
+    return h(1) + h(7);
+  }
+  function buildSignedBackupCode() {
+    const payload = JSON.stringify({ state: data, total: totalStats });
+    return bytesToBase64(JSON.stringify({ fmt: BACKUP_FMT, payload, sig: backupSigOf(payload) }));
+  }
+  function backupSigOf(payload) { return backupSig(BACKUP_SALT + '|' + payload); }
+  // Разбор текста бэкапа (файл или код) → { state, total } или null.
+  function parseBackupText(text) {
+    let obj = null;
+    const t = String(text || '').trim();
+    try { obj = JSON.parse(t); } catch (e) { try { obj = JSON.parse(base64ToString(t)); } catch (e2) { return null; } }
+    if (!obj || typeof obj !== 'object') return null;
+    if (obj.fmt === BACKUP_FMT) {
+      if (typeof obj.payload !== 'string' || typeof obj.sig !== 'string' || obj.sig !== backupSigOf(obj.payload)) return null;
+      try { return JSON.parse(obj.payload); } catch (e) { return null; }
+    }
+    if (Date.now() >= LEGACY_BACKUP_UNTIL) return null;   // старый бэкап без подписи — только до 5.11.2026
+    return obj;
+  }
+
   function base64ToString(base64Code) {
     const binary = atob(base64Code);
     const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
@@ -5974,7 +6009,7 @@
     const pad = n => String(n).padStart(2, '0');
     const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const timePart = `${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
-    return `solo-leveling-backup_${datePart}_${timePart}.json`;
+    return `solo-leveling-backup_${datePart}_${timePart}.slbackup`;
   }
 
   function currentSummaryHtml() {
@@ -6051,7 +6086,7 @@
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Импорт</div>
-          <input type="file" id="backupFileInput" accept="application/json,.json" onchange="handleBackupFileSelected(event)">
+          <input type="file" id="backupFileInput" accept=".slbackup,.json,application/json,application/octet-stream,text/plain" onchange="handleBackupFileSelected(event)">
           <button class="backup-action-btn" onclick="document.getElementById('backupFileInput').click()">Выбрать файл</button>
           <span class="restore-link" onclick="startImportCodeFlow()">Через код</span>
         </div>
@@ -6167,9 +6202,7 @@
 
   function exportDataFile() {
     try {
-      const fullData = { state: data, total: totalStats };
-      const jsonString = JSON.stringify(fullData, null, 2);
-      const blob = new Blob([jsonString], { type: 'application/json' });
+      const blob = new Blob([buildSignedBackupCode()], { type: 'application/octet-stream' });   // v6.10.3: .slbackup — подписанный код
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -6190,8 +6223,8 @@
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const imported = JSON.parse(reader.result);
-        const clean = sanitizeImportedData(imported);
+        const imported = parseBackupText(reader.result);   // v6.10.3: .slbackup (подпись) или старый .json
+        const clean = imported && sanitizeImportedData(imported);
         if (!clean) throw new Error("Invalid Format");
         pendingImport = clean;
         backupModalStep = 'importConfirm';
@@ -6231,10 +6264,8 @@
 
   // Legacy fallback: clipboard code, kept for devices where file download/picking misbehaves.
   async function exportDataCode() {
-    const fullData = { state: data, total: totalStats };
     try {
-        const jsonString = JSON.stringify(fullData);
-        const base64Code = bytesToBase64(jsonString);
+        const base64Code = buildSignedBackupCode();   // v6.10.3: тот же код, что в файле .slbackup
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(base64Code);
         } else {
@@ -6263,9 +6294,8 @@
     const code = field ? field.value.trim() : '';
     if (!code) return;
     try {
-        const jsonString = base64ToString(code);
-        const imported = JSON.parse(jsonString);
-        const clean = sanitizeImportedData(imported);
+        const imported = parseBackupText(code);   // v6.10.3: подписанный код или старый (до 5.11.2026)
+        const clean = imported && sanitizeImportedData(imported);
         if (!clean) throw new Error("Invalid Format");
         pendingImport = clean;
         backupModalStep = 'importConfirm';
