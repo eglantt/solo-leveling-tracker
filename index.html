@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1012,7 +1012,13 @@
     @media (max-width: 400px) { .br-narrow { display: inline; } }
     .day-cell.veil { border-color: #b8ccff; color: #b8ccff; text-shadow: 0 0 6px rgba(184,204,255,0.5); box-shadow: 0 0 8px rgba(184,204,255,0.35); }
     /* ===== v6.10.4: Длань — текущие значения и пары кнопок «Отнять / Добавить» ===== */
-    .sys-current { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: 0.9rem; color: #88ddff; text-align: center; margin: 2px 0 6px; }
+    .sys-current { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: 0.9rem; color: #88ddff; text-align: right; margin: 2px 0 6px; }
+    /* v6.10.5: цвета значений — как в шапке; подпись «Уровень» — как подписи в шапке */
+    .sys-current .sl { font-family: 'Exo 2 Text', sans-serif; font-weight: 400; font-size: 0.84rem; color: #88ddff; }
+    .sys-current .sv.exp { color: #88ffcc; }
+    .sys-current .sv.exp.debt { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
+    .sys-current .sv.lvl { color: var(--rk); }
+    .sys-current .sv.cr { color: #ffd700; text-shadow: 0 0 8px rgba(255,215,0,0.4); }
     .sys-btn-pair { display: flex; gap: 10px; margin-top: 8px; }
     .sys-btn-pair .backup-action-btn { flex: 1 1 0; min-width: 0; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
     .sys-btn-pair .cr-ic { vertical-align: -1px; }
@@ -1475,7 +1481,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.4';
+  const APP_VERSION = '6.10.5';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -6441,9 +6447,11 @@
   function updateSysCurrent() {
     const e = document.getElementById('sysExpNow');
     if (!e) return;
-    e.textContent = data.expDebt > 0 ? `Долг −${Math.floor(data.expDebt)} EXP` : `${Math.floor(data.exp)} / ${getExpToNext(data.level)} EXP`;
-    document.getElementById('sysLevelNow').textContent = `Уровень ${data.level}`;
-    document.getElementById('sysCreditsNow').innerHTML = creditsHtml(Math.floor(data.credits) + ' ◈');
+    // v6.10.5: цвета как в шапке — опыт мятный (долг красный), уровень в цвет ранга, кредиты золотые; цвет — только у значения
+    const debt = data.expDebt > 0;
+    e.innerHTML = `<span class="sv exp${debt ? ' debt' : ''}">${debt ? `Долг −${Math.floor(data.expDebt)} EXP` : `${Math.floor(data.exp)} / ${getExpToNext(data.level)} EXP`}</span>`;
+    document.getElementById('sysLevelNow').innerHTML = `<span class="sl">Уровень</span> <span class="sv lvl rk-${getRank(data.level).class}">${data.level}</span>`;
+    document.getElementById('sysCreditsNow').innerHTML = `<span class="sv cr">${creditsHtml(Math.floor(data.credits) + ' ◈')}</span>`;
   }
   function addExpAction() {
     const val = sysInputAmount('sysExpInput');
