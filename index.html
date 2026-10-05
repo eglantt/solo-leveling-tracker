@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1481,7 +1481,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.6';
+  const APP_VERSION = '6.10.7';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -6106,17 +6106,6 @@
           <div class="backup-summary" style="margin-top:8px;">Данные хранятся локально. Резервная копия доступна в разделе «Экспорт».</div>
         </div>
         <div class="backup-section">
-          <div class="backup-section-title">Настройки</div>
-          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-            <span>Звуковые сигналы Системы: ${data.soundEnabled ? 'включены' : 'выключены'}.</span>
-            <div class="sound-checkbox-zone" onclick="toggleSound()"><div class="sound-checkbox ${data.soundEnabled ? 'on' : ''}">✓</div></div>
-          </div>
-          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
-            <span>Уведомления Системы: ${data.notificationsEnabled ? 'включены' : 'выключены'}.</span>
-            <div class="sound-checkbox-zone" onclick="toggleNotifications()"><div class="sound-checkbox ${data.notificationsEnabled ? 'on' : ''}">✓</div></div>
-          </div>
-        </div>
-        <div class="backup-section">
           <div class="backup-section-title">Игрок</div>
           <div class="backup-summary">Имя: <strong>${escapeHtml(data.playerName || 'Игрок')}</strong></div>
           <div class="backup-summary">Возможность изменения имени доступна раз в 30 дней.</div>
@@ -6126,6 +6115,17 @@
           <div class="backup-section-title">Уведомления</div>
           <div class="backup-summary">Журнал сообщений Системы за сегодняшний день.</div>
           <button class="backup-action-btn" onclick="showNotificationLog()">Уведомления системы</button>
+        </div>
+        <div class="backup-section">
+          <div class="backup-section-title">Настройки</div>
+          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <span>Звуковые сигналы Системы: ${data.soundEnabled ? 'включены' : 'выключены'}.</span>
+            <div class="sound-checkbox-zone" onclick="toggleSound()"><div class="sound-checkbox ${data.soundEnabled ? 'on' : ''}">✓</div></div>
+          </div>
+          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
+            <span>Уведомления Системы: ${data.notificationsEnabled ? 'включены' : 'выключены'}.</span>
+            <div class="sound-checkbox-zone" onclick="toggleNotifications()"><div class="sound-checkbox ${data.notificationsEnabled ? 'on' : ''}">✓</div></div>
+          </div>
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Экспорт</div>

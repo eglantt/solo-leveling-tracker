@@ -147,6 +147,22 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   E(w, `sysToolsAuthorized = true; data.level = 49; document.getElementById('sysLevelInput').value = '50'; sysToolsFlashThenRun(document.createElement('button'), setLevelAction)`);
   await sleep(500);
   check('Z5 после «Установить уровень» число перекрашено в новый ранг', D.querySelector('#sysLevelNow .sv.lvl').classList.contains('rk-s') && D.querySelector('#sysLevelNow .sv.lvl').textContent === '50'); }
+
+// ===== v6.10.7: Архив — «Настройки» после «Уведомлений», перед «Экспортом» =====
+{ const w = freshB('data.soundEnabled = true; data.notificationsEnabled = true;'); const D = w.document;
+  E(w, "backupModalStep = 'main'; renderBackupModal()");
+  const titles = [...D.querySelectorAll('#backupOverlay .backup-section-title, .backup-section-title')].map(t => t.textContent.trim());
+  const arch = titles.slice(titles.indexOf('Версия'));
+  const want = ['Версия', 'Правила', 'Игрок', 'Уведомления', 'Настройки', 'Экспорт', 'Импорт', 'Опасная зона'];
+  check('A1 порядок разделов Архива', JSON.stringify(arch.slice(0, 8)) === JSON.stringify(want), arch.join(' | '));
+  check('A2 раздел «Настройки» ровно один', titles.filter(t => t === 'Настройки').length === 1);
+  const rows = () => [...D.querySelectorAll('.backup-section')].find(sec => sec.querySelector('.backup-section-title') && sec.querySelector('.backup-section-title').textContent.trim() === 'Настройки');
+  const txt = () => [...rows().querySelectorAll('.backup-summary span')].map(x => x.textContent).join(' | ');
+  const t0 = txt();
+  E(w, 'toggleSound()'); const t1 = txt(); const snd = E(w, 'data.soundEnabled');
+  E(w, 'toggleNotifications()'); const t2 = txt(); const ntf = E(w, 'data.notificationsEnabled');
+  check('A3 галочки «Настроек» работают и меняют текст', t0 === 'Звуковые сигналы Системы: включены. | Уведомления Системы: включены.' && snd === false && t1.startsWith('Звуковые сигналы Системы: выключены.')
+    && ntf === false && t2.endsWith('Уведомления Системы: выключены.'), `${t0} → ${t1} → ${t2}`); }
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
