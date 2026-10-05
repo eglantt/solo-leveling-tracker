@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1481,7 +1481,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.5';
+  const APP_VERSION = '6.10.6';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2077,7 +2077,7 @@
       return '';
     }
     if (LIMIT_SHARD_IDS.includes(id)) {
-      if (data.activeScroll === 'freeze') return 'Преодоление предела будет доступно после окончания Заморозки и выполнения задания.';
+      if (data.activeScroll === 'freeze' || isVeilActive()) return '';   // v6.10.6: отказ при использовании
       if (!data.dailyNotices.complete && !data.isGoalMet) return 'Преодоление предела будет доступно только после выполнения задания. Неиспользованные попытки исчезнут с началом нового цикла.';
       return '';
     }
@@ -2109,6 +2109,10 @@
       // Работающая руна нагрузки при действующем Бремени: скидка применяется
       // до +40% Бремени, т.е. реально облегчает его.
       if (LOAD_RUNE_IDS.includes(id) && data.curseActiveToday) text += ' Тяжесть Бремени Аномалии облегчена.';
+      if (dayEffectHold() && HOLD_EFFECT_GEN[id]) {   // v6.10.6: ждёт окончания Пелены покоя / Заморозки
+        effects.push({ icon: `icons/items/${id}.png`, name: `${item.name} (ожидает)`, text: holdEffectText(id), isPending: true, sparkCount: 1 });
+        return;
+      }
       effects.push({ icon: `icons/items/${id}.png`, name: item.name, text });
     });
     if (loadRuneHeld) {
@@ -3343,6 +3347,16 @@
   // Отказ свитку: если на следующий цикл уже назначена Пелена покоя — своё сообщение.
   function scrollBusyText() { return data.pendingScroll === 'veil' ? VEIL_TEXTS.scrollBlocked : 'Другой свиток уже активен или ожидает.'; }
   function isVeilActive() { return data.activeScroll === 'veil' && !data.veilLifted; }
+  // v6.10.6: дневные эффекты, которые во время Пелены покоя и Заморозки ждут их окончания (или досрочного снятия).
+  const HOLD_EFFECT_GEN = { potion_growth: 'Зелья Роста', rune_growth_charged: 'Руны Роста', rune_return: 'Руны Возврата', crystal_clarity: 'Кристалла Ясности',
+    crystal_impulse: 'Кристалла Импульса', rune_freedom: 'Руны Освобождения', rune_burden_release: 'Руны Снятия Бремени' };
+  const LIMIT_ITEM_ACC = { shard_limit: 'Осколок Предела', shard_limit_double: 'Осколок Преодоления Предела', rune_limit_charged: 'Руну Преодоления Предела' };
+  // Что сейчас «держит» дневные эффекты: 'veil' | 'freeze' | null.
+  function dayEffectHold() { return isVeilActive() ? 'veil' : (data.activeScroll === 'freeze' ? 'freeze' : null); }
+  function holdEffectText(id) {
+    const h = dayEffectHold();
+    return `Эффект ${HOLD_EFFECT_GEN[id]} начнёт действовать после окончания или досрочного снятия ${h === 'veil' ? 'Пелены покоя' : 'Заморозки'}.`;
+  }
 
   // ===== v6.9.0: КАРТОЧКИ ПОД БРЕМЕНЕМ (демо 61: А — сбой карточки, Б — сбой числа, сила «слабо») =====
   const QG_K = 1;
@@ -3652,6 +3666,7 @@
       let expLostThatDay = 0;
       let completedExercisesThatDay = null;
       const scrollWasContractOrTransfer = data.activeScroll === 'contract' || data.activeScroll === 'transfer';
+      const veilHold = data.activeScroll === 'veil' && !data.veilLifted;   // v6.10.6: дневные эффекты ждали окончания Пелены — не сгорают
       if (data.activeScroll === 'veil') {   // v6.10.0: Пелена покоя
         if (data.veilLifted && (data.isGoalMet || allQuestsDone())) { applyPenaltyLogic(); dayStatus = 'success'; }
         else { dayStatus = 'veil'; }   // серия не рвётся и не растёт; метку chainBroken не ставим — её ставит только Заморозка (v6.10.2)
@@ -3759,17 +3774,19 @@
       data.progressNoticesShown = [];
       if (dayStatus !== 'frozen') {
         data.insuranceHoldScroll = null;
-        const runeHeldThisCycle = LOAD_RUNE_IDS.includes(data.targetDiscountSourceId) && scrollWasContractOrTransfer;
-        if (!runeHeldThisCycle) {
-          data.targetDiscountToday = false;
-          data.targetDiscountRate = 0;
-          data.targetDiscountSourceId = null;
+        if (!veilHold) {
+          const runeHeldThisCycle = LOAD_RUNE_IDS.includes(data.targetDiscountSourceId) && scrollWasContractOrTransfer;
+          if (!runeHeldThisCycle) {
+            data.targetDiscountToday = false;
+            data.targetDiscountRate = 0;
+            data.targetDiscountSourceId = null;
+          }
+          data.expBoostToday = 0;
+          data.expBoostSourceId = null;
+          data.creditBoostToday = 0;
+          data.creditBoostSourceId = null;
+          data.extraLimitBreaksToday = 0;
         }
-        data.expBoostToday = 0;
-        data.expBoostSourceId = null;
-        data.creditBoostToday = 0;
-        data.creditBoostSourceId = null;
-        data.extraLimitBreaksToday = 0;
       }
       nextReset = getNextCleanReset(data.lastReset);
     }
@@ -4569,6 +4586,16 @@
   function performUseItem(id) {
     flashThenRun(`[data-consumable-id="${id}"]`, () => {
       let used = false;
+      const hold = dayEffectHold();   // v6.10.6
+      if (hold && LIMIT_ITEM_ACC[id]) {
+        showNotice(`Использовать ${LIMIT_ITEM_ACC[id]} невозможно, пока действует ${hold === 'veil' ? 'эффект «Пелена покоя»' : 'эффект Свитка Заморозки'}.`, 'warn', true);
+        return;
+      }
+      const holdNotice = hold && HOLD_EFFECT_GEN[id];
+      // Обычное «…до следующего сброса» неверно — эффект ждёт: на время использования пропускаем только отказы.
+      const noticeFn = showNotice;
+      if (holdNotice) showNotice = (m, t, ...rest) => { if (t === 'warn') noticeFn(m, t, ...rest); };
+      try {
       if (id === 'bone_bead') {   // v6.10.0
           const why = beadRefusal();
           if (why) { showNotice(why, 'warn', true); }
@@ -4858,6 +4885,8 @@
             showNotice("Кристалл использован. Получаемые опыт и кредиты увеличены до следующего сброса.", 'info');
           }
       }
+      } finally { showNotice = noticeFn; }
+      if (used && holdNotice) showNotice(holdEffectText(id), 'info');
       if (used) {
         playSound('questDone');
         data.consumables[id]--;

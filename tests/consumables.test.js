@@ -177,8 +177,9 @@ for (const id of ['shard_limit','shard_limit_double','rune_limit_charged']) {
   check(`G ${id}: до выполнения — предупреждение`, warn(w,id) === 'Преодоление предела будет доступно только после выполнения задания. Неиспользованные попытки исчезнут с началом нового цикла.', warn(w,id));
   w = fresh(); complete(w); const u = use(w,id);
   check(`G ${id}: после выполнения — без предупреждения, хвост в уведомлении`, warn(w,id) === '' && u.notice.endsWith(' Неиспользованные попытки исчезнут с началом нового цикла.'), u.notice);
-  w = fresh(`data.activeScroll='freeze';`);
-  check(`G ${id}: во время Заморозки — свой текст`, warn(w,id) === 'Преодоление предела будет доступно после окончания Заморозки и выполнения задания.');
+  w = fresh(`data.activeScroll='freeze'; data.freezeEndTimestamp = Date.now() + 3 * 86400000;`); const uf = use(w,id);
+  const acc = { shard_limit: 'Осколок Предела', shard_limit_double: 'Осколок Преодоления Предела', rune_limit_charged: 'Руну Преодоления Предела' }[id];
+  check(`G ${id}: (v6.10.6) во время Заморозки — без предупреждения, отказ, предмет не тратится`, warn(w,id) === '' && !uf.spent && uf.notice === `Использовать ${acc} невозможно, пока действует эффект Свитка Заморозки.`, uf.notice);
 }
 
 // ===== H. Окно подтверждения =====

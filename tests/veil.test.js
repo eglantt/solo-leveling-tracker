@@ -177,6 +177,58 @@ const lastDay = w => { const k = Object.keys(E(w, 'data.history')).sort().pop();
   check('B35 сохранение 6.10.0: прежняя пауза снята, счётчик 0, блока нет, запас обрезан до 3', E(w2, "data.beadAvailableAt === undefined") && E(w2, 'data.beadStreak') === 0 && E(w2, 'data.beadBlockUntil') === null && E(w2, 'data.consumables.bone_bead') === 3);
   const u = useB(w2);
   check('B36 после перехода бусину можно использовать сразу', u.spent); }
+
+// ===== v6.10.6: дневные эффекты во время Пелены покоя и Заморозки =====
+const warn = (w, id) => E(w, `getUseWarning('${id}')`);
+const HOLD = { potion_growth: ['Зелье Роста', 'Зелья Роста'], rune_growth_charged: ['Руна Роста', 'Руны Роста'], rune_return: ['Руна Возврата', 'Руны Возврата'], crystal_clarity: ['Кристалл Ясности', 'Кристалла Ясности'],
+  crystal_impulse: ['Кристалл Импульса', 'Кристалла Импульса'], rune_freedom: ['Руна Освобождения', 'Руны Освобождения'], rune_burden_release: ['Руна Снятия Бремени', 'Руны Снятия Бремени'] };
+const live = (w, id) => ['rune_freedom', 'rune_burden_release'].includes(id) ? E(w, 'data.targetDiscountToday === true') : E(w, 'data.expBoostToday > 0');
+const intoVeil = async (setup) => { const w = fresh('data.consumables.bone_bead = 1; ' + (setup || '')); complete(w); useB(w); reset(w); await sleep(3200); return w; };
+for (const [id, [nm, gen]] of Object.entries(HOLD)) {
+  const w = await intoVeil();
+  const u = use(w, id);
+  const txt = `Эффект ${gen} начнёт действовать после окончания или досрочного снятия Пелены покоя.`;
+  check(`H ${nm}: во время Пелены — уведомление ожидания`, u.spent && u.notice === txt, u.notice);
+  check(`H ${nm}: в панели «(ожидает)», с искрой, текст ожидания`, E(w, `window.__activeEffectsCache.some(e => e.name === '${nm} (ожидает)' && e.isPending && e.sparkCount === 1 && e.text === ${JSON.stringify(txt)})`));
+  reset(w);
+  check(`H ${nm}: Пелена закончилась — эффект не сгорел и действует (без «ожидает»)`, live(w, id) && E(w, `window.__activeEffectsCache.some(e => e.name === '${nm}')`));
+  reset(w);
+  check(`H ${nm}: на сбросе следующего цикла — сгорел`, !live(w, id));
+}
+{ const w = await intoVeil(); use(w, 'potion_growth'); E(w, 'liftVeil()'); await sleep(4800);
+  check('H досрочное снятие: ожидающий эффект сразу активен', E(w, "window.__activeEffectsCache.some(e => e.name === 'Зелье Роста')") && E(w, "!window.__activeEffectsCache.some(e => /ожидает/.test(e.name) && /Зелье/.test(e.name))"));
+  const before = E(w, 'data.exp'); complete(w); const got = E(w, 'data.exp') - before;
+  reset(w);
+  check('H после снятия задание выполнено — опыт с увеличением; на сбросе сгорел', got > 0 && E(w, 'data.expBoostToday') === 0); }
+{ const w = await intoVeil(); use(w, 'rune_burden_release'); E(w, 'liftVeil()'); await sleep(4800);
+  const tWith = E(w, "getDynamicTarget(100, data.dailyTargetLevel, 'pushups')"); reset(w);
+  check('H после снятия руна нагрузки активна (цель снижена), задание не выполнено — сгорела', E(w, 'data.targetDiscountToday') === false && tWith < E(w, "getDynamicTarget(100, data.dailyTargetLevel, 'pushups')")); }
+{ const w = await intoVeil(); use(w, 'rune_growth_charged'); const warnTxt = warn(w, 'crystal_clarity'); use(w, 'crystal_clarity');
+  check('H старшинство во время Пелены: Ясность поглощает ожидающую Руну Роста с прежним предупреждением', /поглотит действие Руны Роста/.test(warnTxt) && E(w, 'data.expBoostSourceId') === 'crystal_clarity', warnTxt); }
+{ const w = fresh('data.consumables.bone_bead = 1;'); complete(w); use(w, 'potion_growth'); useB(w); reset(w);
+  check('H эффект, использованный в день перед Пеленой, сгорает на своём сбросе', E(w, 'data.activeScroll') === 'veil' && E(w, 'data.expBoostToday') === 0); }
+// --- расходники предела ---
+for (const [id, acc] of [['shard_limit', 'Осколок Предела'], ['shard_limit_double', 'Осколок Преодоления Предела'], ['rune_limit_charged', 'Руну Преодоления Предела']]) {
+  const w = await intoVeil(); const u = use(w, id);
+  check(`H ${id}: во время Пелены — отказ, не тратится`, !u.spent && u.notice === `Использовать ${acc} невозможно, пока действует эффект «Пелена покоя».`, u.notice);
+  E(w, 'liftVeil()'); await sleep(4800); E(w, `data.consumables.${id} = 0`); complete(w); const u2 = use(w, id);
+  check(`H ${id}: после досрочного снятия — работает`, u2.spent);
+}
+{ const w = fresh("data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 3 * 86400000;");
+  const u = use(w, 'shard_limit');
+  check('H расходник предела при Заморозке — отказ', !u.spent && u.notice === 'Использовать Осколок Предела невозможно, пока действует эффект Свитка Заморозки.', u.notice);
+  const w2 = fresh("data.pendingScroll = 'freeze';"); complete(w2); const u2 = use(w2, 'shard_limit');
+  check('H при ожидающей (ещё не наступившей) Заморозке — как обычно', u2.spent); }
+// --- Заморозка: вид ожидания, механика прежняя ---
+{ const w = fresh("data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 3 * 86400000; data.freezeStartTimestamp = Date.now();");
+  const u = use(w, 'crystal_impulse');
+  const txt = 'Эффект Кристалла Импульса начнёт действовать после окончания или досрочного снятия Заморозки.';
+  check('H Заморозка: уведомление и панель — ожидание', u.spent && u.notice === txt && E(w, `window.__activeEffectsCache.some(e => e.name === 'Кристалл Импульса (ожидает)' && e.isPending && e.text === ${JSON.stringify(txt)})`), u.notice);
+  reset(w);
+  check('H Заморозка: эффект доживает до конца Заморозки (не сгорает в замороженные дни)', E(w, 'data.expBoostToday') > 0 && E(w, 'data.creditBoostToday') > 0); }
+// --- руны защиты и Стабильности переживают Пелену ---
+{ const w = await intoVeil(); use(w, 'rune_protection'); use(w, 'rune_stability'); reset(w);
+  check('H руна защиты и Руна Стабильности переживают Пелену', E(w, 'data.insurance') === true && E(w, 'data.streakShield') === true && E(w, 'data.activeScroll') === null); }
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
