@@ -627,11 +627,11 @@ async function paceTests() {
 async function creditsFloorTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
   const D = w.document;
-  const add = v => { D.getElementById('sysCreditsInput').value = String(v); E(w, 'addCreditsAction()'); return E(w, 'data.credits'); };
-  E(w, 'data.credits = 500'); const a = add(-800);
-  E(w, 'data.credits = 500'); const b = add(-300);
-  E(w, 'data.credits = 500'); const c = add(300);
-  check('CF1 Длань: −800 при 500 → 0; −300 → 200; +300 → 800', a === 0 && b === 200 && c === 800, `${a}, ${b}, ${c}`);
+  const act = (fn, v) => { D.getElementById('sysCreditsInput').value = String(v); E(w, fn + '()'); return E(w, 'data.credits'); };
+  E(w, 'data.credits = 500'); const a = act('subCreditsAction', 800);
+  E(w, 'data.credits = 500'); const b = act('subCreditsAction', 300);
+  E(w, 'data.credits = 500'); const c = act('addCreditsAction', 300);
+  check('CF1 (v6.10.4) Длань: отнять 800 при 500 → 0; отнять 300 → 200; добавить 300 → 800', a === 0 && b === 200 && c === 800, `${a}, ${b}, ${c}`);
   const legacy = JSON.parse(SEED); legacy.credits = -1200; const saved = SEED; SEED = JSON.stringify(legacy); const w2 = boot(); SEED = saved;
   await new Promise(r => setTimeout(r, 250));
   check('CF2 отрицательный баланс в сохранении → 0 при загрузке', E(w2, 'data.credits') === 0);

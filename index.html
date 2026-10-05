@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.10.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1011,6 +1011,11 @@
     .br-narrow { display: none; }
     @media (max-width: 400px) { .br-narrow { display: inline; } }
     .day-cell.veil { border-color: #b8ccff; color: #b8ccff; text-shadow: 0 0 6px rgba(184,204,255,0.5); box-shadow: 0 0 8px rgba(184,204,255,0.35); }
+    /* ===== v6.10.4: Длань — текущие значения и пары кнопок «Отнять / Добавить» ===== */
+    .sys-current { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: 0.9rem; color: #88ddff; text-align: center; margin: 2px 0 6px; }
+    .sys-btn-pair { display: flex; gap: 10px; margin-top: 8px; }
+    .sys-btn-pair .backup-action-btn { flex: 1 1 0; min-width: 0; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
+    .sys-btn-pair .cr-ic { vertical-align: -1px; }
 </style>
 </head>
 <body>
@@ -1232,9 +1237,14 @@
     <div class="status-body">
       <div class="backup-section">
         <div class="backup-section-title">Опыт и уровень</div>
+        <div class="sys-current" id="sysExpNow"></div>
         <input type="number" id="sysExpInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во EXP">
-        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addExpAction)">Добавить EXP</button>
-        <input type="number" id="sysLevelInput" class="code-input-area" style="min-height:auto; text-align:center; margin-top:10px;" placeholder="Уровень">
+        <div class="sys-btn-pair">
+          <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, subExpAction)">Отнять EXP</button>
+          <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addExpAction)">Добавить EXP</button>
+        </div>
+        <div class="sys-current" id="sysLevelNow" style="margin-top:10px;"></div>
+        <input type="number" id="sysLevelInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Уровень">
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, setLevelAction)">Установить уровень</button>
         <div class="danger-btn-row" style="margin-top:10px;">
           <button class="confirm-btn-continue" onclick="sysToolsFlashThenRun(this, quickLevelAction)">+1 уровень</button>
@@ -1243,8 +1253,12 @@
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Кредиты</div>
+        <div class="sys-current" id="sysCreditsNow"></div>
         <input type="number" id="sysCreditsInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Кол-во кредитов">
-        <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addCreditsAction)">Добавить кредиты</button>
+        <div class="sys-btn-pair">
+          <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, subCreditsAction)">Отнять <span class="cr-ic" role="img" aria-label="кредитов"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#credSeal"/></svg><span class="gl"></span></span></button>
+          <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addCreditsAction)">Добавить <span class="cr-ic" role="img" aria-label="кредитов"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#credSeal"/></svg><span class="gl"></span></span></button>
+        </div>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Предметы и расходники</div>
@@ -1461,7 +1475,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.3';
+  const APP_VERSION = '6.10.4';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -6390,6 +6404,7 @@
 
   function openSysTools() {
     if (!sysToolsAuthorized) return;
+    updateSysCurrent();   // v6.10.4
     const freezePauseBtn = document.getElementById('resetFreezePauseBtn');
     const hasPause = data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt;
     freezePauseBtn.disabled = !hasPause || data.activeScroll === 'freeze';
@@ -6413,16 +6428,37 @@
     setTimeout(() => {
       btn.classList.remove('sys-tools-btn-flash');
       fn();
+      updateSysCurrent();   // v6.10.4: строки текущих значений — после любого действия Длани
     }, 400);
   }
 
+  // v6.10.4: число в поле берётся по модулю — действие определяет кнопка.
+  function sysInputAmount(id) {
+    const val = parseInt(document.getElementById(id).value, 10);
+    return Number.isFinite(val) ? Math.abs(val) : null;
+  }
+  // Строки текущих значений над полями Длани: опыт — как в шапке (в т. ч. долг), уровень, баланс.
+  function updateSysCurrent() {
+    const e = document.getElementById('sysExpNow');
+    if (!e) return;
+    e.textContent = data.expDebt > 0 ? `Долг −${Math.floor(data.expDebt)} EXP` : `${Math.floor(data.exp)} / ${getExpToNext(data.level)} EXP`;
+    document.getElementById('sysLevelNow').textContent = `Уровень ${data.level}`;
+    document.getElementById('sysCreditsNow').innerHTML = creditsHtml(Math.floor(data.credits) + ' ◈');
+  }
   function addExpAction() {
-    const val = parseInt(document.getElementById('sysExpInput').value, 10);
-    if (!Number.isFinite(val)) return;
-    gainExp(val);
+    const val = sysInputAmount('sysExpInput');
+    if (val === null) return;
+    gainExp(val);   // сначала гасит долг, остаток — в опыт
     checkLevelUp();
     data.dailyTargetLevel = data.level;
-    saveData(); render();
+    saveData(); render(); updateSysCurrent();
+  }
+  // Не штраф: только до нуля, долг не создаёт и не меняет, уровень не меняет.
+  function subExpAction() {
+    const val = sysInputAmount('sysExpInput');
+    if (val === null) return;
+    data.exp = Math.max(0, data.exp - val);
+    saveData(); render(); updateSysCurrent();
   }
 
   function quickExpAction() {
@@ -6458,10 +6494,16 @@
   }
 
   function addCreditsAction() {
-    const val = parseInt(document.getElementById('sysCreditsInput').value, 10);
-    if (!Number.isFinite(val)) return;
-    data.credits = Math.max(0, data.credits + val);   // v6.7.3: не ниже нуля
-    saveData(); render();
+    const val = sysInputAmount('sysCreditsInput');
+    if (val === null) return;
+    data.credits = data.credits + val;
+    saveData(); render(); updateSysCurrent();
+  }
+  function subCreditsAction() {
+    const val = sysInputAmount('sysCreditsInput');
+    if (val === null) return;
+    data.credits = Math.max(0, data.credits - val);   // не ниже нуля
+    saveData(); render(); updateSysCurrent();
   }
 
   function applyPenaltyAction() {

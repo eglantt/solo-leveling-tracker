@@ -93,6 +93,43 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   E(w, `window.__N = []; pendingImport = null; handleBackupFileSelected({ target: { files: [new File([${JSON.stringify(legacyPretty)}], 'old.json')], value: '' } });`);
   await sleep(100);
   check('K15 старый файл .json — принимается молча', E(w, 'pendingImport && pendingImport.state.level') === 37 && !N(w)); }
+
+// ===== v6.10.4: Длань — опыт, кредиты, уровень =====
+{ const w = freshB('data.level = 20; data.exp = 1500; data.expDebt = 0; data.credits = 500; data.totalPenalties = 2; data.consecutiveDays = 7; data.beadStreak = 1;');
+  const D = w.document;
+  const run = (fn, field, v) => { D.getElementById(field).value = String(v); E(w, fn + '(); updateSysCurrent()'); };
+  run('subExpAction', 'sysExpInput', 1000);
+  check('Y1 отнять EXP 1000 при 1500 → 500; уровень, долг, штрафы, серия, счётчик бусины — без изменений',
+    E(w, 'data.exp') === 500 && E(w, 'data.level') === 20 && E(w, 'data.expDebt') === 0 && E(w, 'data.totalPenalties') === 2 && E(w, 'data.consecutiveDays') === 7 && E(w, 'data.beadStreak') === 1);
+  E(w, 'data.exp = 300'); run('subExpAction', 'sysExpInput', -1000);
+  check('Y2 отнять EXP «−1000» при 300 → 0, долг не создаётся', E(w, 'data.exp') === 0 && E(w, 'data.expDebt') === 0);
+  E(w, 'data.exp = 0; data.expDebt = 300'); run('addExpAction', 'sysExpInput', 1000);
+  check('Y3 добавить EXP при долге 300: +1000 → долг 0, опыт +700', E(w, 'data.expDebt') === 0 && E(w, 'data.exp') === 700);
+  E(w, 'data.exp = 0; data.expDebt = 300'); run('addExpAction', 'sysExpInput', -200);
+  check('Y4 добавить EXP «−200» при долге 300 → долг 100, опыт 0 (знак не учитывается)', E(w, 'data.expDebt') === 100 && E(w, 'data.exp') === 0);
+  E(w, 'data.expDebt = 0; data.exp = 0; data.level = 20'); run('addExpAction', 'sysExpInput', E(w, 'getExpToNext(20)') + 5);
+  check('Y5 добавить EXP поднимает уровень', E(w, 'data.level') === 21);
+  E(w, 'data.credits = 500'); run('subCreditsAction', 'sysCreditsInput', 300);
+  const c1 = E(w, 'data.credits'); E(w, 'data.credits = 100'); run('subCreditsAction', 'sysCreditsInput', -300);
+  const c2 = E(w, 'data.credits'); run('addCreditsAction', 'sysCreditsInput', -250);
+  check('Y6 кредиты: отнять 300 при 500 → 200, при 100 → 0, добавить «−250» → +250', c1 === 200 && c2 === 0 && E(w, 'data.credits') === 250, `${c1}/${c2}/${E(w, 'data.credits')}`);
+  const before = E(w, 'JSON.stringify([data.exp, data.credits, data.level])');
+  D.getElementById('sysExpInput').value = ''; D.getElementById('sysCreditsInput').value = 'abc';
+  E(w, 'subExpAction(); addExpAction(); subCreditsAction(); addCreditsAction()');
+  check('Y7 пустое поле и не-число — ничего не происходит', E(w, 'JSON.stringify([data.exp, data.credits, data.level])') === before);
+  E(w, 'data.level = 37; data.exp = 980; data.expDebt = 0; data.credits = 8420; updateSysCurrent()');
+  check('Y8 строки: опыт как в шапке, уровень, баланс со значком', D.getElementById('sysExpNow').textContent === `980 / ${E(w, 'getExpToNext(37)')} EXP`
+    && D.getElementById('sysLevelNow').textContent === 'Уровень 37' && D.getElementById('sysCreditsNow').textContent.trim().startsWith('8420') && !!D.querySelector('#sysCreditsNow .cr-ic'));
+  E(w, 'data.expDebt = 450; updateSysCurrent()');
+  check('Y9 строка опыта при долге — как в шапке', D.getElementById('sysExpNow').textContent === 'Долг −450 EXP');
+  E(w, 'data.expDebt = 0');
+  const btns = [...D.querySelectorAll('.sys-btn-pair')].map(r => [...r.querySelectorAll('button')].map(b => b.textContent.trim()).join(' | '));
+  check('Y10 пары кнопок в одну строку: «Отнять EXP | Добавить EXP», «Отнять ◈ | Добавить ◈» (значок кредитов)',
+    btns[0] === 'Отнять EXP | Добавить EXP' && btns[1] === 'Отнять | Добавить' && D.querySelectorAll('.sys-btn-pair')[1].querySelectorAll('.cr-ic').length === 2
+    && w.getComputedStyle(D.querySelector('.sys-btn-pair')).display === 'flex' && /\.sys-btn-pair \.backup-action-btn \{ flex: 1 1 0; min-width: 0; white-space: nowrap;/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('')), btns.join(' // '));
+  E(w, `sysToolsAuthorized = true; document.getElementById('sysLevelInput').value = '12'; window.__btn = document.createElement('button'); sysToolsFlashThenRun(window.__btn, setLevelAction)`);
+  await sleep(500);
+  check('Y11 после «Установить уровень» строки обновились', E(w, 'data.level') === 12 && D.getElementById('sysLevelNow').textContent === 'Уровень 12'); }
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
