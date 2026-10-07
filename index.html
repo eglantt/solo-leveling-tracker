@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1328,7 +1328,17 @@
     body.theme-sys .sf-win.mwin .theme-seg button { border-color: var(--sl2); box-shadow: none; --bc: #7fa3bf; text-shadow: none; }
     body.theme-sys .sf-win.mwin .theme-seg button.on { border-color: var(--sl) !important; box-shadow: var(--sg), inset 0 0 10px rgba(110,200,255,.25); --bc: #eaf8ff; text-shadow: 0 0 8px #6fd4ff; background: rgba(110,190,255,.14) !important; }
     body.theme-sys #rulesCheckboxRow span { font-family: 'Exo 2 Text', 'Exo 2', sans-serif; font-size: .86rem !important; color: #a9cfee !important; }
-</style>
+
+    /* ===== v7.0.1: правки темы «Система» по проверке на телефоне ===== */
+    /* Окно — отдельным слоем отрисовки всё время, пока открыто. Без этого в конце развёртки браузер телефона перекладывал
+       окно на другой слой и на кадр терял колонны рамки («мигание», если под окном открыто другое окно; демо 86, вариант 2). */
+    body.theme-sys .sf-win.mwin:not(.mscr) { will-change: transform; }
+    /* Недоступная кнопка «Преодоление предела» остаётся серой при наведении и касании: общее правило кнопок темы
+       (сброс наведения) красило её текст и рамку как у доступной. */
+    body.theme-sys .mscr #limitBreakBtn:disabled { color: #6f8296 !important; border-color: var(--sl2) !important; box-shadow: none !important; cursor: not-allowed; }
+    /* Чекбокс на карточке упражнения — 26px (в «Классике» 22px), по оси ряда кнопок. */
+    body.theme-sys .mscr .quest-item .qcheck { width: 26px; height: 26px; bottom: 17px; }
+  </style>
 </head>
 <body>
 <!-- v6.6.10: значок кредитов «печать Системы» (демо 49, С2). Образец один; места ссылаются на #credSeal. -->
@@ -1787,7 +1797,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.0';
+  const APP_VERSION = '7.0.1';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];

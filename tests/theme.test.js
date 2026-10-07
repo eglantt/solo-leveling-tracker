@@ -200,7 +200,16 @@ const w = boot(); const D = w.document; await tick();
   check('T33 главный экран в теме «Система» — до 620px, окна — до 460px', /body\.theme-sys \.quest-panel\.mscr \{ width: min\(620px, 98vw\);/.test(css) && /body\.theme-sys \.sf-win\.mwin \{[^}]*width: min\(460px, 98vw\);/.test(css));
   check('T34 «перегрев» кнопок при недопустимом темпе остаётся оранжевым и в теме «Система» (общее правило кнопок темы его не перекрывает)',
     /body\.theme-sys \.sf-win\.mwin \.buttons button\.add\.pace-hot \{ --bc: #ffcc88; border-color: #ffaa44 !important; background: rgba\(80,45,0,\.45\) !important;/.test(css)
-    && css.indexOf('button.add.pace-hot { --bc') > css.indexOf('body.theme-sys .sf-win.mwin button {')); }
+    && css.indexOf('button.add.pace-hot { --bc') > css.indexOf('body.theme-sys .sf-win.mwin button {'));
+  // v7.0.1
+  check('T35 окно — отдельным слоем отрисовки, пока открыто (на телефоне колонны рамки «мигали» в конце развёртки); главный экран — нет',
+    /body\.theme-sys \.sf-win\.mwin:not\(\.mscr\) \{ will-change: transform; \}/.test(css) && (css.slice(css.indexOf('ТЕМА «СИСТЕМА»')).match(/will-change/g) || []).length === 1);
+  check('T36 недоступная кнопка «Преодоление предела» остаётся серой при наведении и касании (цвет и рамка закреплены поверх общего правила кнопок)',
+    /body\.theme-sys \.mscr #limitBreakBtn:disabled \{ color: #6f8296 !important; border-color: var\(--sl2\) !important; box-shadow: none !important; cursor: not-allowed; \}/.test(css)
+    && /body\.theme-sys \.sf-win\.mwin button:hover \{[^}]*color: var\(--bc\) !important;/.test(css));
+  check('T37 чекбокс на карточке упражнения в теме «Система» — 26px по оси ряда кнопок; в «Классике» — прежние 22px',
+    /body\.theme-sys \.mscr \.quest-item \.qcheck \{ width: 26px; height: 26px; bottom: 17px; \}/.test(css)
+    && /\n    \.quest-item \.qcheck \{ position: absolute; left: 16px; bottom: 19px; width: 22px; height: 22px; pointer-events: none; \}/.test(css)); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
