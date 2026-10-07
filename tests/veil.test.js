@@ -1,6 +1,8 @@
 const { JSDOM } = require('jsdom'); const fs = require('fs');
 const path = require('path');
-const html = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'index.html'), 'utf-8');
+// v7.0.0: «node <набор> --system» — тот же набор в теме «Система» (по умолчанию — «Классика»)
+const SYS_THEME = process.argv.includes('--system') || process.env.SL_THEME === 'system';
+const html = fs.readFileSync(process.argv.slice(2).find(a => !a.startsWith('--')) || path.join(__dirname, '..', 'index.html'), 'utf-8');
 let SEED = null;
 function boot() {
   const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://x.test/',
@@ -13,6 +15,7 @@ function boot() {
       if (SEED) w.localStorage.setItem('sl_daily_v5_5_0', SEED);
     } });
   const w = dom.window;
+  if (!SYS_THEME) w.eval("setTheme('classic')");   // v7.0.0: по умолчанию — классическая тема; механика проверяется в обеих (--system)
   w.eval(`window.__N=[]; showNotice=(m)=>window.__N.push(m);`);
   return w;
 }

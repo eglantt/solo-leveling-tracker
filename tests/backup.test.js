@@ -13,6 +13,7 @@ function boot() {
       if (SEED) w.localStorage.setItem('sl_daily_v5_5_0', SEED);
     } });
   const w = dom.window;
+  if (process.env.SL_THEME !== 'system') w.eval("setTheme('classic')");   // v7.0.0: набор написан под классическую тему; тема «Система» — theme.test.js
   w.eval(`window.__N=[]; showNotice=(m)=>window.__N.push(m);`);
   return w;
 }
@@ -161,25 +162,28 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   const t0 = txt();
   E(w, 'toggleSound()'); const t1 = txt(); const snd = E(w, 'data.soundEnabled');
   E(w, 'toggleNotifications()'); const t2 = txt(); const ntf = E(w, 'data.notificationsEnabled');
-  check('A3 галочки «Настроек» работают и меняют текст', t0 === 'Звуковые сигналы Системы: включены. | Уведомления Системы: включены. | Оформление Системы: выключено.' && snd === false && t1.startsWith('Звуковые сигналы Системы: выключены.')
+  check('A3 галочки «Настроек» работают и меняют текст', t0 === 'Звуковые сигналы Системы: включены. | Уведомления Системы: включены. | Оформление' && snd === false && t1.startsWith('Звуковые сигналы Системы: выключены.')
     && ntf === false && t2.includes('Уведомления Системы: выключены.'), `${t0} → ${t1} → ${t2}`); }
 
-// ===== v6.11.0: уведомление в оформлении Системы =====
-{ const w0 = freshB('');
-  check('N1 оформление Системы по умолчанию выключено (новый игрок)', E(w0, 'data.systemDesign') === false);
-  const legacy = JSON.parse(SEED); delete legacy.systemDesign; const saved = SEED; SEED = JSON.stringify(legacy); const wl = boot(); SEED = saved;
-  check('N2 старое сохранение без поля — выключено', E(wl, 'data.systemDesign') === false);
-  const imp = JSON.parse(J(w0, `sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { systemDesign: 'yes' }), total: {} })`));
-  const imp2 = JSON.parse(J(w0, `sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { systemDesign: true }), total: {} })`));
-  const imp3 = JSON.parse(J(w0, `(() => { const st = JSON.parse(${JSON.stringify(SEED)}); delete st.systemDesign; return sanitizeImportedData({ state: st, total: {} }); })()`));
-  check('N3 бэкап: true сохраняется, мусор и отсутствие → выключено', imp2.state.systemDesign === true && imp.state.systemDesign === false && imp3.state.systemDesign === false); }
+// ===== v6.11.0: уведомление в оформлении Системы; v7.0.0: тема «Система» — основная, «Классика» — по выбору =====
+{ const raw = () => { const keep = process.env.SL_THEME; process.env.SL_THEME = 'system'; const w = boot(); if (keep === undefined) delete process.env.SL_THEME; else process.env.SL_THEME = keep; return w; };   // запуск без перевода в классику
+  const savedSeed = SEED; SEED = null; const wn = raw(); SEED = savedSeed;
+  check('N1 новый игрок — тема «Система»', E(wn, 'data.theme') === 'system' && E(wn, 'isSysTheme()') === true && wn.document.body.classList.contains('theme-sys'));
+  const legacy = JSON.parse(SEED); delete legacy.theme; legacy.systemDesign = false; SEED = JSON.stringify(legacy); const wl = raw(); SEED = savedSeed;
+  check('N2 сохранение прежних версий (поля нет, временный переключатель выключен) — «Система»; старое поле убрано', E(wl, 'data.theme') === 'system' && E(wl, "'systemDesign' in data") === false);
+  const cls = JSON.parse(SEED); cls.theme = 'classic'; SEED = JSON.stringify(cls); const wc = raw(); SEED = savedSeed;
+  check('N2а выбранная «Классика» сохраняется между запусками', E(wc, 'data.theme') === 'classic' && !wc.document.body.classList.contains('theme-sys'));
+  const san = st => JSON.parse(J(wn, `sanitizeImportedData({ state: ${JSON.stringify(st)}, total: {} })`)).state;
+  const base = JSON.parse(SEED);
+  const i1 = san(Object.assign({}, base, { theme: 'classic' })), i2 = san(Object.assign({}, base, { theme: 'yes' })), i3 = san((() => { const x = Object.assign({}, base); delete x.theme; x.systemDesign = false; return x; })());
+  check('N3 бэкап: «Классика» сохраняется; мусор, отсутствие поля и старые бэкапы → «Система»', i1.theme === 'classic' && i2.theme === 'system' && i3.theme === 'system' && !('systemDesign' in i3), `${i1.theme}/${i2.theme}/${i3.theme}`); }
 { const w = freshB('data.curseActiveToday = false; data.notificationsEnabled = true;'); const D = w.document;
   const show = (body, extra) => { E(w, `document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); displayNotificationNow(Object.assign({ body: ${JSON.stringify(body)}, tone: 'info', skipLog: false }, ${JSON.stringify(extra || {})}))`); return D.querySelector('.sys-notice') || D.querySelector('.system-popup'); };
   let p = show('Получен предмет: Руна Роста');
-  check('N4 выключено — прежнее уведомление', p.classList.contains('system-popup') && !D.querySelector('.sys-notice'));
-  E(w, 'data.systemDesign = true');
+  check('N4 «Классика» — прежнее уведомление', p.classList.contains('system-popup') && !D.querySelector('.sys-notice'));
+  E(w, "setTheme('system')");
   p = show('Получен предмет: Руна Роста');
-  check('N5 включено — окно Системы: рамка, фон, панель, табличка, текст', p.classList.contains('sys-notice') && p.classList.contains('sn-blue') && !D.querySelector('.system-popup')
+  check('N5 «Система» — окно Системы: рамка, фон, панель, табличка, текст', p.classList.contains('sys-notice') && p.classList.contains('sn-blue') && !D.querySelector('.system-popup')
     && p.querySelectorAll(':scope > svg.sf-under').length === 1 && p.querySelectorAll(':scope > svg.sf-over').length === 1 && !!p.querySelector(':scope > .sf-screen .sf-shim')
     && p.querySelector('.sn-tt').textContent === 'УВЕДОМЛЕНИЕ' && !!p.querySelector('.sn-ic svg') && p.querySelector('.sf-panel > .gp-inner .sn-body').textContent === 'Получен предмет: Руна Роста'
     && p.querySelectorAll('.sf-energy').length === 2 && !p.dataset.glitch);
@@ -218,12 +222,18 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   check('N19 уведомления выключены — окна нет', !D.querySelector('.sys-notice'));
   E(w, 'data.notificationsEnabled = true');
   const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
-  check('N20 появление — развёртка; размер рамки без учёта анимации (offsetWidth)', /\.sys-notice \{[^}]*animation: snUnfold \.65s[^}]*backwards/.test(css) && /const w = win\.offsetWidth, s = w \/ G\.W;/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8')));
-  // переключатель в Архиве → Настройки
-  E(w, "data.systemDesign = false; backupModalStep = 'main'; renderBackupModal()");
-  const row = () => [...D.querySelectorAll('.backup-summary span')].find(x => x.textContent.startsWith('Оформление Системы'));
-  const t0 = row().textContent; E(w, 'toggleSystemDesign()'); const t1 = row().textContent;
-  check('N21 Архив → Настройки: «Оформление Системы» переключается', t0 === 'Оформление Системы: выключено.' && t1 === 'Оформление Системы: включено.' && E(w, 'data.systemDesign') === true); }
+  check('N20 появление — развёртка; размер рамки без учёта анимации (offsetWidth)', /\.sys-notice \{[^}]*animation: snUnfold \.65s[^}]*backwards/.test(css) && /const w = win\.offsetWidth, s = Math\.min\(w, /.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8')));
+  // выбор оформления в Архиве → Настройки
+  E(w, "setTheme('system'); backupModalStep = 'main'; openBackupModal()");
+  const seg = () => [...D.querySelectorAll('#backupContent .theme-row .theme-seg button')];
+  const st = () => seg().map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|');
+  const lbl = D.querySelector('#backupContent .theme-row span').textContent, t0 = st();
+  seg()[1].click(); const t1 = st(), th1 = E(w, 'data.theme'), body1 = D.body.classList.contains('theme-sys'), open1 = D.getElementById('backupOverlay').style.display;
+  seg()[0].click(); const t2 = st(), th2 = E(w, 'data.theme'), body2 = D.body.classList.contains('theme-sys');
+  check('N21 Архив → Настройки: «Оформление» — «Система» / «Классика», тема меняется на месте, Архив остаётся открытым',
+    lbl === 'Оформление' && t0 === 'Система*|Классика' && t1 === 'Система|Классика*' && th1 === 'classic' && body1 === false && open1 === 'flex' && t2 === 'Система*|Классика' && th2 === 'system' && body2 === true,
+    `${lbl} ${t0} → ${t1} (${th1}) → ${t2} (${th2})`);
+  check('N22 выбор темы сохраняется', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).theme === 'system' && !D.querySelector('#backupContent .sound-checkbox-zone[onclick*="Design"]')); }
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);

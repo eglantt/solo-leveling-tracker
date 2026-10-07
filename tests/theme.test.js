@@ -1,0 +1,208 @@
+// v7.0.0: тема «Система» — разметка окон и главного экрана, значок «!», красные схемы, возврат к «Классике»,
+// геометрия рамки (выравнивание краёв, тонкие колонны, повтор зубцов, предел утолщения), стили полос и Заморозки.
+// Механика в теме «Система» проверяется прежними наборами: node consumables.test.js --system, node veil.test.js --system.
+const { JSDOM } = require('jsdom'); const fs = require('fs');
+const path = require('path');
+const html = fs.readFileSync(process.argv.slice(2).find(a => !a.startsWith('--')) || path.join(__dirname, '..', 'index.html'), 'utf-8');
+let SEED = null;
+function boot() {
+  const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://x.test/',
+    beforeParse(w) {
+      w.AudioContext = function(){ return { currentTime:0, destination:{}, state:'running', resume(){},
+        createOscillator(){return {connect(){},start(){},stop(){},frequency:{setValueAtTime(){},exponentialRampToValueAtTime(){}},type:''}},
+        createGain(){return {connect(){},gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}}}} }; };
+      w.fetch = () => Promise.resolve({ json: () => Promise.resolve({}) });
+      w.crypto.randomUUID = () => 'u'; w.scrollTo = () => {};
+      if (SEED) w.localStorage.setItem('sl_daily_v5_5_0', SEED);
+    } });
+  return dom.window;
+}
+const E = (w, c) => w.eval(c);
+const J = (w, c) => E(w, `JSON.stringify(${c})`);
+const results = []; const check = (n, c, i) => results.push((c ? 'OK  ' : 'FAIL') + ' ' + n + (i !== undefined && !c ? '  → ' + i : ''));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const tick = () => sleep(15);   // окна «одеваются» по слежению за стилем оверлея — отложенно
+{ const w0 = boot(); SEED = E(w0, `JSON.stringify(Object.assign({}, data, {level:37, exp:2220, credits:9000, rulesAcknowledged:true, playerName:'T', lastReset: getLastResetThreshold(Date.now()), dailyTargetLevel:37, dailyNotices:{morning:true, complete:false}}))`); }
+const closeAll = w => E(w, `document.querySelectorAll('.status-overlay').forEach(o => { if (o.style.display === 'flex') o.style.display = 'none'; })`);
+// «подпись» разметки окна: порядок и классы прямых потомков (без служебных классов темы)
+const SIG = `(() => { const sig = el => [...el.children].map(c => c.tagName + '.' + [...c.classList].sort().join('.') + (c.id ? '#' + c.id : '')).join(' > ');
+  const o = { main: sig(document.querySelector('.quest-panel')), mainCls: document.querySelector('.quest-panel').className, title: sig(document.querySelector('.header-top-row')) };
+  document.querySelectorAll('.status-overlay').forEach(ov => { const win = ov.firstElementChild; o[ov.id] = win.className + ' :: ' + sig(win); });
+  return o; })()`;
+
+(async () => {
+const w = boot(); const D = w.document; await tick();
+
+// ===== главный экран =====
+{ const mw = D.querySelector('.quest-panel');
+  check('T1 запуск: тема «Система» применена до отрисовки, «ожидание темы» снято',
+    D.body.classList.contains('theme-sys') && !D.documentElement.classList.contains('theme-pending') && E(w, 'data.theme') === 'system');
+  check('T2 главный экран — окно Системы: .sf-win.mwin.mscr > .sf-content > .sf-panel.mw, всё прежнее содержимое внутри панели',
+    mw.classList.contains('sf-win') && mw.classList.contains('mwin') && mw.classList.contains('mscr') && mw.children.length === 1
+    && !!mw.querySelector(':scope > .sf-content > .sf-panel.mw > .header') && !!mw.querySelector('.sf-panel.mw > .quest-list') && !!mw.querySelector('.sf-panel.mw > .sub-menu-grid'));
+  const tt = mw.querySelector('.header-top-row > .mw-hdr > .title.mw-tt');
+  check('T3 заголовок «ЕЖЕДНЕВНОЕ ЗАДАНИЕ» — табличка без значка «!»', !!tt && tt.textContent === 'ЕЖЕДНЕВНОЕ ЗАДАНИЕ' && !mw.querySelector('.header-top-row .sn-ic'));
+  check('T4 в jsdom размеров нет — рамка не рисуется и ошибок нет (рисование проверяется снимками в браузере)', !mw.querySelector(':scope > svg.sf-frm'));
+}
+
+// ===== модальные окна =====
+{ E(w, 'openShop()'); await tick();
+  const win = D.querySelector('#shopOverlay > .status-window');
+  check('T5 окно при открытии: рамочная разметка, заголовок в табличке, развёртка',
+    win.classList.contains('sf-win') && win.classList.contains('mwin') && win.classList.contains('mw-in') && !win.classList.contains('mscr')
+    && win.querySelector(':scope > .sf-content > .sf-panel.mw > .mw-hdr > .status-header.mw-tt').textContent === 'МАГАЗИН СИСТЕМЫ'
+    && !!win.querySelector('.sf-panel.mw > .status-body #shopContent .item-card') && !!win.querySelector('.sf-panel.mw > .close-status'));
+  check('T6 у обычного окна значка «!» нет (класс mw-ic не ставится)', !win.classList.contains('mw-ic') && !!win.querySelector('.mw-hdr > .sn-ic'));
+  const before = E(w, 'data.credits'); win.querySelector('#shopContent .item-card .item-price').click(); await sleep(700);
+  check('T7 покупка в «одетом» окне работает', E(w, 'data.credits') < before, `${before} → ${E(w, 'data.credits')}`);
+  closeAll(w); await tick(); E(w, 'openShop()'); await tick();
+  check('T8 повторное открытие: разметка не удваивается', win.querySelectorAll('.sf-content').length === 1 && win.querySelectorAll('.mw-hdr').length === 1 && win.querySelectorAll('.status-header').length === 1);
+  closeAll(w); await tick(); }
+
+{ const ic = async (js, id) => { closeAll(w); await tick(); E(w, js); await tick(); const win = D.getElementById(id).firstElementChild; return win.classList.contains('mw-ic') + '/' + win.classList.contains('sn-red'); };
+  const r = {
+    confirm: await ic("showConfirm('Вопрос?', () => {})", 'confirmOverlay'),
+    choice: await ic("showExerciseChoice(['pushups', 'squats'], () => {})", 'exerciseChoiceOverlay'),
+    name: await ic("document.getElementById('nameOverlay').style.display = 'flex'", 'nameOverlay'),
+    auth: await ic('openSysToolsAuth()', 'sysToolsAuthOverlay'),
+    rulesArchive: await ic("showRulesOverlay('archive')", 'rulesOverlay'),
+    penalty: await ic('showPenaltyBanner(420, 10, 1, 2, false)', 'penaltyOverlay'),
+    inv: await ic('openInv()', 'invOverlay'), status: await ic("document.getElementById('rankInfoBtn').click()", 'statusOverlay'),
+    codex: await ic('openCodex()', 'codexOverlay'), archive: await ic('openBackupModal()', 'backupOverlay'), chron: await ic('openChronicle()', 'chronicleOverlay'),
+    progress: await ic('openProgressModal()', 'progressOverlay')
+  };
+  check('T9 значок «!» — у «Запроса решения», «Запроса выбора», ввода имени и «Авторизации»',
+    r.confirm === 'true/false' && r.choice === 'true/false' && r.name === 'true/false' && r.auth === 'true/false', JSON.stringify(r));
+  check('T10 у правил из Архива, Инвентаря, Статуса, Кодекса, Архива, Летописи и Прогресса значка нет',
+    [r.rulesArchive, r.inv, r.status, r.codex, r.archive, r.chron, r.progress].every(x => x === 'false/false'), JSON.stringify(r));
+  check('T11 «Штраф Системы»: красная схема, без значка', r.penalty === 'false/true', r.penalty);
+  closeAll(w); await tick();
+  // правила при первом входе: окно-уведомление со значком; раскрывает его запуск Системы, а не развёртка окна
+  E(w, "showRulesOverlay('onboarding')"); await tick();
+  const rw = D.querySelector('#rulesOverlay > .status-window');
+  check('T12 правила при первом входе: значок «!», своя развёртка не включается (окно раскрывает запуск Системы)',
+    rw.classList.contains('mw-ic') && !rw.classList.contains('mw-in') && D.getElementById('rulesOverlay').classList.contains('sys-boot-black') && rw.querySelector('.mw-tt').textContent === 'УВЕДОМЛЕНИЕ');
+  E(w, 'stopRulesAnimation(); stopSystemBoot(); closeRulesOverlay()'); await tick(); }
+
+{ E(w, "const id = Object.keys(SHOP_CATALOG)[0]; showItemPreview(id, SHOP_CATALOG[id].name)"); await tick();
+  const box = D.querySelector('#itemPreviewOverlay > .item-preview-box'), p = box.querySelector('.sf-panel.mw');
+  check('T13 окно предмета: название — табличкой вверху, затем картинка и сведения',
+    box.classList.contains('mwin') && p.children[0].classList.contains('mw-hdr') && !!p.children[0].querySelector('.item-preview-name.mw-tt') && p.children[1].tagName === 'IMG' && p.children[2].classList.contains('item-preview-meta'));
+  closeAll(w); await tick();
+  E(w, "showStatLore('str')"); await tick();
+  const lore = D.querySelector('#statLoreOverlay > .stat-lore-box');
+  check('T14 окно характеристики тоже в рамке', lore.classList.contains('mwin') && !!lore.querySelector('.sf-panel.mw > .mw-hdr > .stat-lore-header.mw-tt') && !!lore.querySelector('.sf-panel.mw > .stat-lore-text'));
+  closeAll(w); await tick(); }
+
+// ===== карточки и настройки =====
+{ E(w, "data.consumables = { bone_bead: 1 }; const k = Object.keys(SHOP_CATALOG)[0]; data.consumables[k] = 1; openInv()"); await tick();
+  const stacks = [...D.querySelectorAll('#invContent .item-card[data-consumable-id] .item-btn-stack')].map(s => s.closest('.item-card').dataset.consumableId + ':' + [...s.children].map(b => b.textContent).join('+'));
+  check('T15 Инвентарь: у продаваемого предмета две кнопки, у Костяной бусины — одна «Использовать» (в теме «Система» встаёт справа)',
+    stacks.some(x => /:ПРОДАТЬ\+ИСПОЛЬЗОВАТЬ$/.test(x)) && stacks.includes('bone_bead:ИСПОЛЬЗОВАТЬ'), stacks.join(' '));
+  closeAll(w); await tick();
+  E(w, 'openChronicle()'); await tick();
+  let err = ''; try { E(w, "calShowTooltip(document.querySelector('#calDayGrid .day-cell'), 'x')"); } catch (e) { err = String(e); }
+  check('T16 подсказка Летописи показывается без ошибок', err === '' && D.getElementById('calTooltip').style.display === 'block', err);
+  closeAll(w); await tick(); }
+
+// ===== Аномалия =====
+{ E(w, 'data.curseActiveToday = true; render()');
+  const red = D.body.classList.contains('sys-anom');
+  const qb = [...D.querySelectorAll('.quest-item .qbar')].every(q => q.classList.contains('t-cursed'));
+  E(w, 'openShop()'); await tick();
+  const shopRed = D.querySelector('#shopOverlay > .status-window').classList.contains('sn-red');
+  closeAll(w); E(w, 'data.curseActiveToday = false; render()');
+  check('T17 Бремя Аномалии: главный экран красный (body.sys-anom), окна остаются синими; без Бремени — снова обычный',
+    red && !shopRed && !D.body.classList.contains('sys-anom'));
+  check('T18 цвет полосы упражнения — классом на самой полосе (обводка в цвет заливки)', qb && ![...D.querySelectorAll('.quest-item .qbar')].some(q => q.classList.contains('t-cursed')));
+  await tick(); }
+
+// ===== «Классика» и обратно =====
+{ const wc = boot(); E(wc, "setTheme('classic')"); await tick();
+  const base = JSON.parse(J(wc, SIG));          // классическая разметка, ни разу не «одетая»
+  // в теме «Система» открываем все окна, затем уходим в «Классику»
+  for (const js of ['openShop()', 'openInv()', "document.getElementById('rankInfoBtn').click()", 'openCodex()', 'openChronicle()', 'openBackupModal()', 'openProgressModal()',
+    "showConfirm('?', () => {})", "showExerciseChoice(['pushups'], () => {})", 'showPenaltyBanner(1, 1, 1, 1, false)', "showStatLore('str')", "showRulesOverlay('archive')",
+    "const id = Object.keys(SHOP_CATALOG)[0]; showItemPreview(id, 'x')", 'openSysToolsAuth()', 'sysToolsAuthorized = true; openSysTools()', 'openFullCatalog()',
+    "document.getElementById('nameOverlay').style.display = 'flex'", "document.getElementById('leaderboardOverlay').style.display = 'flex'", 'onContourClick(0)']) {
+    try { E(w, js); } catch (e) {} await tick(); closeAll(w); await tick(); }
+  const dressed = [...D.querySelectorAll('.status-overlay')].filter(o => o.firstElementChild.classList.contains('mwin')).length;
+  E(w, 'openBackupModal()'); await tick();
+  E(w, "setTheme('classic')"); await tick();
+  const back = JSON.parse(J(w, SIG));   // уведомление, уже показанное в виде окна Системы, досматривается как есть — его разметка в сверку не входит
+  const diff = Object.keys(base).filter(k => base[k] !== back[k]);
+  check('T19 «Классика»: разметка главного экрана и всех окон возвращается к исходной (сверка с ни разу не «одетой»)',
+    dressed >= 18 && diff.length === 0 && !D.body.classList.contains('theme-sys') && !D.querySelector('.quest-panel .sf-content, .status-overlay .sf-content, .mw-hdr, .mw-tt, .mwin, .quest-panel svg.sf-frm, .status-overlay svg.sf-frm'), `одето ${dressed}; расхождения: ${diff.join(', ')}`);
+  check('T20 Архив при смене темы остаётся открытым и уже в классическом виде', D.getElementById('backupOverlay').style.display === 'flex' && !D.querySelector('#backupOverlay .mwin'));
+  E(w, "setTheme('system')"); await tick();
+  check('T21 обратно в «Систему»: главный экран и открытый Архив снова в рамке',
+    D.querySelector('.quest-panel').classList.contains('mscr') && D.querySelector('#backupOverlay > .status-window').classList.contains('mwin') && D.querySelectorAll('.quest-panel .sf-content').length === 1);
+  closeAll(w); await tick();
+  // уведомление по теме
+  E(w, "document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); notificationActive = false; data.notificationsEnabled = true; displayNotificationNow({ body: 'x', tone: 'info', skipLog: true })");
+  const sysN = !!D.querySelector('.sys-notice') && !D.querySelector('.system-popup');
+  E(w, "document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); notificationActive = false; setTheme('classic'); displayNotificationNow({ body: 'x', tone: 'info', skipLog: true })");
+  const clsN = !!D.querySelector('.system-popup') && !D.querySelector('.sys-notice');
+  check('T22 уведомление: в «Системе» — окно Системы, в «Классике» — прежнее', sysN && clsN);
+  E(w, "document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); notificationActive = false; setTheme('system')"); await tick(); }
+
+// ===== рамка: геометрия (размеры в jsdom подставляются вручную) =====
+{ const mk = (wd, ht) => { const el = D.createElement('div'); el.className = 'sf-win'; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
+    Object.defineProperty(el, 'offsetWidth', { value: wd }); Object.defineProperty(el, 'offsetHeight', { value: ht }); D.body.appendChild(el); return el; };
+  const clip = el => el.querySelector('.sf-screen').style.clipPath.replace(/^polygon\(|\)$/g, '').split(',').map(p => p.trim().split(' ').map(parseFloat));
+  const pad = el => el.querySelector('.sf-content').style.padding.split(' ').map(parseFloat);
+  // уведомление: как раньше — без параметров
+  const n1 = mk(350, 190); E(w, 'window.__el = null'); w.__el = n1; E(w, "SysFrame.render(__el, 'blue')");
+  const c1 = clip(n1), ys1 = c1.map(p => p[1]);
+  const topY = Math.min(...ys1), botY = Math.max(...ys1);
+  check('T23 края контура выровнены: верх и низ подложки строго горизонтальны',
+    c1.filter(p => Math.abs(p[1] - topY) < 0.06).length === 2 && c1.filter(p => Math.abs(p[1] - botY) < 0.06).length === 2 && c1.length === 40, `точек ${c1.length}`);
+  const pN = pad(n1);
+  // окно: тонкие колонны и отступы
+  const m1 = mk(350, 190); w.__el = m1; E(w, "SysFrame.render(__el, 'blue', { side: 0.45, gap: 0.45 })");
+  const pM = pad(m1);
+  check('T24 тонкая рамка: боковые отступы содержимого — 45% от отступов уведомления', Math.abs(pM[3] / pN[3] - 0.45) < 0.01 && Math.abs(pM[1] / pN[1] - 0.45) < 0.01 && pM[0] < pN[0], `${pN.join('/')} → ${pM.join('/')}`);
+  // высокое окно: зубцы повторяются (нечётное число повторов), а не растягиваются
+  const t1 = mk(390, 1600); w.__el = t1; E(w, "SysFrame.render(__el, 'blue', { side: 0.45, gap: 0.45 })");
+  const t0 = mk(390, 1600); w.__el = t0; E(w, "SysFrame.render(__el, 'blue', { side: 0.45, gap: 0.45, tile: false })");
+  const nT = clip(t1).length, nS = clip(t0).length, polysT = t1.querySelectorAll('svg.sf-under polygon').length, polysS = t0.querySelectorAll('svg.sf-under polygon').length;
+  const reps = nT / 40;
+  check('T25 высокое окно: рисунок колонн повторяется нечётное число раз; с tile: false — растягивается, как раньше',
+    nS === 40 && polysS === 4 && Number.isInteger(reps) && reps >= 3 && reps % 2 === 1 && polysT > 4 * reps - 1, `точек ${nT} (повторов ${reps}), фигур ${polysT} / ${polysS}`);
+  const cT = clip(t1), xsL = cT.slice(0, nT / 2).map(p => p[0]);
+  check('T26 повторы стыкуются: левая кромка подложки идёт сверху вниз без разрывов и возвратов', cT.slice(0, nT / 2).every((p, i, a) => i === 0 || p[1] >= a[i - 1][1] - 0.06) && Math.max(...xsL) < 390 * 0.2);
+  // шире 460px рамка не утолщается
+  const a460 = mk(460, 900); w.__el = a460; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
+  const a620 = mk(620, 900); w.__el = a620; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
+  const b620 = mk(620, 900); w.__el = b620; E(w, "SysFrame.render(__el, 'blue', { side: 0.45, gap: 0.45 })");
+  const pa = pad(a460), pb = pad(a620), pc = pad(b620);
+  check('T27 главный экран шире 460px: отступы и толщина рамки те же, что на 460px (без предела — толще)',
+    pa.every((v, i) => Math.abs(v - pb[i]) < 0.01) && pc[0] > pb[0] * 1.3 && Math.max(...clip(a620).map(p => p[0])) > 600, `${pa.join('/')} | ${pb.join('/')} | ${pc.join('/')}`);
+  check('T28 полосы рамки — в отдельных группах с фильтром (бегущая энергия не пересчитывает размытие всего окна)',
+    a620.querySelectorAll('svg.sf-over > g[filter]').length === 2 && a620.querySelectorAll('svg.sf-over .sf-energy').length === 2);
+  [n1, m1, t1, t0, a460, a620, b620].forEach(x => x.remove()); }
+
+// ===== стили =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('T29 полосы темы «Система»: одна толщина — капсула 11px, зазор 3px (заливка 3px), обводка в цвет заливки',
+    /body\.theme-sys \.sf-win\.mwin \.sc-bar, body\.theme-sys \.sf-win\.mwin \.dayline, body\.theme-sys \.sf-win\.mwin \.qbar \{ --f: #eaf8ff; box-sizing: border-box; height: 11px; padding: 3px;\s+border: 1px solid var\(--f\); border-radius: 999px;/.test(css)
+    && !/body\.theme-sys[^{]*\.(qbar|dayline|sc-bar) \{[^}]*height: 1[2-9]px/.test(css));
+  check('T30 Заморозка (обе темы): размытие подо льдом 1,5px — как у Пелены покоя; рисунок льда в ::before с прежней прозрачностью',
+    /\.freeze-ice-overlay\.active \{ opacity: 1; display: block; -webkit-backdrop-filter: blur\(1\.5px\); backdrop-filter: blur\(1\.5px\); \}/.test(css)
+    && /\.freeze-ice-overlay::before \{[^}]*ice_layer_freeze\.png[^}]*opacity: 0\.4;/.test(css) && /--vb, 1\.5px/.test(css));
+  check('T31 цифра уровня вместо шестиугольника; у SSS и Монарха — компактная пульсация (старая отключена)',
+    /body\.theme-sys \.sf-win\.mwin \.sc-hex \{ width: auto; height: auto; clip-path: none; background: none; \}/.test(css)
+    && /body\.theme-sys \.sf-win\.mwin \.rk-sss \.sc-hexw, body\.theme-sys \.sf-win\.mwin \.rk-monarch \.sc-hexw \{ animation: none; filter: none; \}/.test(css) && /@keyframes lvPulse/.test(css));
+  check('T32 все правила темы привязаны к body.theme-sys (в «Классике» не действуют), кроме выбора оформления',
+    (() => { const i = css.indexOf('ТЕМА «СИСТЕМА»'); const block = css.slice(i); const sels = [...block.matchAll(/(?:^|\})\s*([^{}@/]+)\{/g)].map(m => m[1].trim()).filter(s => s && !/^(\d+%|from|to)(,|$| )/.test(s) && !/^\d/.test(s));
+      const bad = sels.filter(s => s.split(',').some(p => { p = p.trim(); return p && !p.startsWith('body.theme-sys') && !p.startsWith('.theme-') ; }));
+      return i > 0 && sels.length > 150 && bad.length === 0 ? true : (console.log('  T32:', bad.slice(0, 5)), false); })());
+  check('T33 главный экран в теме «Система» — до 620px, окна — до 460px', /body\.theme-sys \.quest-panel\.mscr \{ width: min\(620px, 98vw\);/.test(css) && /body\.theme-sys \.sf-win\.mwin \{[^}]*width: min\(460px, 98vw\);/.test(css));
+  check('T34 «перегрев» кнопок при недопустимом темпе остаётся оранжевым и в теме «Система» (общее правило кнопок темы его не перекрывает)',
+    /body\.theme-sys \.sf-win\.mwin \.buttons button\.add\.pace-hot \{ --bc: #ffcc88; border-color: #ffaa44 !important; background: rgba\(80,45,0,\.45\) !important;/.test(css)
+    && css.indexOf('button.add.pace-hot { --bc') > css.indexOf('body.theme-sys .sf-win.mwin button {')); }
+
+console.log(results.join('\n'));
+console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
+process.exit(0);
+})();

@@ -17,7 +17,9 @@ function boot() {
       if (SEED) w.localStorage.setItem('sl_daily_v5_5_0', SEED);
     }
   });
-  return dom.window;
+  const w = dom.window;
+  if (process.env.SL_THEME !== 'system') w.eval("setTheme('classic')");   // v7.0.0: набор написан под классическую тему; тема «Система» — theme.test.js
+  return w;
 }
 const E = (w, c) => w.eval(c);
 { const w0 = boot(); SEED = w0.eval(`JSON.stringify(Object.assign({}, data, {level:20, exp:5000, rulesAcknowledged:true, playerName:'T', lastReset: getLastResetThreshold(Date.now()), dailyTargetLevel:20}))`); w0.close(); }
@@ -997,7 +999,7 @@ async function completeTests() {
 // ===== v6.6.6: запуск «Г+Д+З», полоса таймера, шрифты карточек упражнений =====
 async function bootTests() {
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
-  check('B1 состояние загрузки заложено в разметке (<html class="booting">)', /<html lang="ru" class="booting">/.test(raw));
+  check('B1 состояние загрузки заложено в разметке (<html class="booting …">)', /<html lang="ru" class="booting theme-pending">/.test(raw));   // v7.0.0: + theme-pending
   const w = boot(); await new Promise(r => setTimeout(r, 300));
   const D = w.document, $ = id => D.getElementById(id);
   check('B2 после первой отрисовки состояние загрузки снято', !D.documentElement.classList.contains('booting'));

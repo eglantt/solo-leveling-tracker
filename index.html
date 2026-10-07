@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru" class="booting">
+<html lang="ru" class="booting theme-pending">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.11.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -471,13 +471,20 @@
       box-shadow: none;
     }
     .quest-list { padding: 16px 18px; position: relative; }
+    /* v7.0.0: под льдом — размытие, как у Пелены покоя (1,5px). Рисунок льда переехал в ::before (прозрачность 0.4 —
+       прежняя), сам слой непрозрачен и размывает то, что под ним. Маска наступления и схода льда остаётся на слое,
+       поэтому размытие приходит и уходит вместе с границей льда. */
     .freeze-ice-overlay {
       position: absolute; inset: 0; pointer-events: none; z-index: 5;
-      background-image: url('icons/items/ice_layer_freeze.png');
-      background-size: 200px 200px; background-repeat: repeat;
       opacity: 0; display: none;
     }
-    .freeze-ice-overlay.active { opacity: 0.4; display: block; }
+    .freeze-ice-overlay::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: url('icons/items/ice_layer_freeze.png');
+      background-size: 200px 200px; background-repeat: repeat;
+      opacity: 0.4;
+    }
+    .freeze-ice-overlay.active { opacity: 1; display: block; -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px); }
     .freeze-tap-catcher {
       position: absolute; inset: 0; z-index: 6; display: none; cursor: pointer;
     }
@@ -1069,6 +1076,258 @@
     .sys-notice.glitch.gfx-split > svg.sf-frm { filter: drop-shadow(-3px 0 rgba(255,40,70,.7)) drop-shadow(3px 0 rgba(0,220,255,.7)); }
     .sys-notice.glitch.gfx-flicker > .sf-screen, .sys-notice.glitch.gfx-flicker .sf-panel { filter: brightness(var(--gbr, 1.3)) contrast(1.15); }
     .sys-notice.glitch.gfx-shake { transform: translate(calc(-50% + var(--gdx, 0px) * 1.4), calc(-50% + var(--gdy, 0px))); }
+    /* v7.0.0: пока тема не применена (первые мгновения загрузки), главный экран скрыт; страховка — как у .booting. */
+    .theme-pending .system-container { visibility: hidden; animation: bootFailsafeVisible 0s 5s forwards; }
+
+    /* ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85). Действует, пока на <body> стоит класс theme-sys; в теме «Классика»
+       класса нет, и ни одно правило ниже (кроме выбора оформления в Архиве) не применяется.
+       Окно в теме «Система»: .sf-win.mwin > .sf-content > .sf-panel.mw, заголовок — табличка .mw-hdr > .mw-tt,
+       рамку рисует SysFrame. Главный экран — то же окно с классом mscr. Разметку переставляет SysTheme. ===== */
+    /* --- окно: рамка, табличка заголовка, развёртка --- */
+    body.theme-sys .sf-win.mwin { background: none; border: 0; border-radius: 0; box-shadow: none; padding: 0; width: min(460px, 98vw); max-width: none; max-height: none; display: block; }
+    body.theme-sys .item-preview-box.sf-win.mwin { width: min(380px, 94vw); cursor: pointer; }
+    body.theme-sys .stat-lore-box.sf-win.mwin { width: min(360px, 92vw); }
+    body.theme-sys .sf-win.mwin::before, body.theme-sys .sf-win.mwin::after { display: none; }
+    body.theme-sys .sf-win.mwin > .sf-content { display: flex; flex-direction: column; max-height: 92vh; box-sizing: border-box; }
+    body.theme-sys .sf-win.mw-scroll .status-body { padding-bottom: 16px; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent); }
+    body.theme-sys .sf-win.mw-scroll.mw-top .status-body { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 16px, #000 calc(100% - 18px), transparent); }
+    body.theme-sys .sf-win.mw-scroll .close-status { margin-top: 2px; }
+    body.theme-sys .sf-panel.mw { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding: 14px 12px 14px; }
+    body.theme-sys .mw-hdr { flex-shrink: 0; margin-bottom: 12px; }
+    body.theme-sys .mw-hdr .mw-tt { border: 1px solid var(--sl, rgba(225,242,255,.8)); padding: 6px 16px; margin: 0; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1rem; letter-spacing: 2px; color: #e8fbff;
+      text-shadow: 0 0 8px var(--hg1, #6fd4ff), 0 0 14px var(--hg2, #3aa0ff); box-shadow: var(--sg, 0 0 5px rgba(160,220,255,.35)); display: flex; align-items: center; text-align: center; }
+    body.theme-sys .mw-hdr .sn-ic { display: none; }
+    body.theme-sys .sf-win.mw-ic .mw-hdr .sn-ic { display: flex; }
+    body.theme-sys .sf-win.mw-in { animation: mwUnfold .65s cubic-bezier(.2,.8,.2,1) backwards; }
+    @keyframes mwUnfold { 0% { transform: scaleY(.01) scaleX(.3); filter: brightness(3); } 30% { transform: scaleY(.01) scaleX(1); filter: brightness(2.4); } 100% { transform: scale(1); filter: brightness(1); } }
+    body.theme-sys .status-overlay { background: rgba(0,4,12,.55); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+    /* красная схема (Штраф Системы) */
+    body.theme-sys .sf-win.mwin.sn-red { --sl: rgba(255,178,188,.9); --sl2: rgba(255,140,152,.35); --sg: 0 0 5px rgba(255,90,110,.4); }
+    body.theme-sys .sn-red .mw-hdr .mw-tt { border-color: #ff8a96; box-shadow: 0 0 5px rgba(255,90,110,.4); }
+
+    /* --- содержимое окон --- */
+    body.theme-sys .sf-win.mwin { --sl: rgba(225,242,255,.82); --sl2: rgba(190,225,255,.3); --sg: 0 0 5px rgba(160,220,255,.35); --tx: #eaf8ff; --tx2: #a9cfee; --acc: #6fd4ff; --accg: rgba(100,200,255,.75); }
+    body.theme-sys .sf-win.mwin .status-body { color: var(--tx2); margin: 0 -7px; padding-left: 7px; padding-right: 7px; }
+
+    /* --- кнопки: прямоугольные, белая рамка, цветная надпись --- */
+    body.theme-sys .sf-win.mwin button { --bc: var(--acc); border-radius: 0; background: rgba(3,9,20,.45); border: 1px solid var(--sl); color: var(--bc);
+      box-shadow: var(--sg); font-family: 'Orbitron', 'Exo 2', sans-serif; text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 0 8px currentColor;
+      transition: background .15s ease, box-shadow .15s ease; }
+    body.theme-sys .sf-win.mwin button:hover { background: rgba(3,9,20,.45) !important; border-color: var(--sl) !important; color: var(--bc) !important; }
+    body.theme-sys .sf-win.mwin button:not(:disabled):active { background: rgba(140,205,255,.2) !important; border-color: #fff !important; color: var(--bc) !important; box-shadow: 0 0 10px rgba(160,220,255,.6); }
+    @media (hover: hover) { body.theme-sys .sf-win.mwin button:not(:disabled):hover { background: rgba(140,205,255,.14) !important; border-color: #fff !important; box-shadow: 0 0 10px rgba(160,220,255,.6); } }
+    body.theme-sys .sf-win.mwin button:disabled { opacity: .35; }
+    body.theme-sys .sf-win.mwin .close-status { margin-top: 12px; padding: 10px; font-size: .8rem; letter-spacing: 3px; }
+    body.theme-sys .sf-win.mwin .backup-action-btn { padding: 9px 8px; font-size: .74rem; }
+    body.theme-sys .sf-win.mwin .use-btn { --bc: #40ffaa; padding: 8px 10px; font-size: .72rem; min-width: 0; }
+    body.theme-sys .sf-win.mwin .sell-btn, body.theme-sys .sf-win.mwin .item-price { --bc: #ffd700; }
+    body.theme-sys .sf-win.mwin .item-price { padding: 8px 10px; font-size: .82rem; letter-spacing: 1px; }
+    body.theme-sys .sf-win.mwin .eq-extract { --bc: #a9cfee; }
+    body.theme-sys .sf-win.mwin .danger-btn-cancel { --bc: #a9c4dc; }
+    body.theme-sys .sf-win.mwin .danger-btn-continue, body.theme-sys .sf-win.mwin .danger-btn-confirm, body.theme-sys .sf-win.mwin .reset-all { --bc: #ff6b6b; }
+    body.theme-sys .sf-win.mwin .reset-all { background: rgba(3,9,20,.45) !important; border-color: var(--sl) !important; color: var(--bc) !important; max-width: none; padding: 9px 8px; font-size: .74rem; }
+    body.theme-sys .sf-win.mwin.sn-red .close-status { --bc: #ff8a8a; }
+    body.theme-sys .sf-win.mwin #equipBody .eq-btn { width: 100%; }
+    body.theme-sys .sf-win.mwin .today-btn { padding: 5px 14px; font-size: .65rem; }
+    body.theme-sys .sf-win.mwin .stat-add-btn { padding: 0; letter-spacing: 0; font-size: 1.25rem; --bc: #eaf8ff; border: 0 !important; background: none !important; box-shadow: none !important; }
+    body.theme-sys .sf-win.mwin .stat-add-btn:disabled { opacity: .22; filter: none; }
+    body.theme-sys .sf-win.mwin #stats button { padding: 9px 16px; font-size: .74rem; }
+    body.theme-sys .sf-win.mwin .danger-btn-row { gap: 10px; }
+
+    /* --- карточка предмета: название сверху, значок слева, описание справа, кнопки снизу --- */
+    body.theme-sys .sf-win.mwin .item-card { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 9px 12px; padding: 10px 12px 12px; margin-bottom: 10px;
+      border-radius: 0; border: 1px solid var(--sl2); background: rgba(3,9,20,.35); }
+    body.theme-sys .sf-win.mwin .item-card.eq-on { border-color: var(--sl); box-shadow: var(--sg); }
+    body.theme-sys .sf-win.mwin .item-info { display: contents; }
+    body.theme-sys .sf-win.mwin .item-name { grid-column: 1 / -1; grid-row: 1; color: var(--tx); text-shadow: 0 0 7px rgba(120,210,255,.7); font-weight: 600; line-height: 1.25; }
+    body.theme-sys .sf-win.mwin .item-icon { grid-column: 1; grid-row: 2; align-self: start; width: 58px; height: 58px; min-width: 0; box-sizing: border-box; border: 1px solid var(--sl);
+      box-shadow: var(--sg), inset 0 0 8px rgba(80,160,255,.18); background: rgba(3,9,20,.5); font-size: 1.6rem; }
+    body.theme-sys .sf-win.mwin .item-icon-img, body.theme-sys .sf-win.mwin .item-icon img { width: 44px; height: 44px; }
+    body.theme-sys .sf-win.mwin .item-desc { grid-column: 2; grid-row: 2; color: var(--tx2); margin-top: 0; line-height: 1.4; }
+    /* кнопки: две — во всю ширину; одна — справа, той же ширины */
+    body.theme-sys .sf-win.mwin .item-btn-stack { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    body.theme-sys .sf-win.mwin .item-btn-stack > button { width: auto; }
+    body.theme-sys .sf-win.mwin .item-btn-stack > button:only-child { grid-column: 2; }
+    body.theme-sys .sf-win.mwin .item-card > button { grid-column: 1 / -1; grid-row: 3; justify-self: end; width: calc(50% - 5px); }
+    /* Реестр: карточка без значка — обычный блок */
+    body.theme-sys .sf-win.mwin #leaderboardContent .item-card { display: block; }
+    body.theme-sys .sf-win.mwin #leaderboardContent .item-info { display: block; }
+    body.theme-sys .sf-win.mwin #leaderboardContent .item-desc { margin-top: 2px; }
+
+    /* --- заголовки разделов: маркер и линия --- */
+    body.theme-sys .sf-win.mwin .section-title, body.theme-sys .sf-win.mwin .backup-section-title, body.theme-sys .sf-win.mwin .st-sec-title, body.theme-sys .sf-win.mwin .codex-chapter-title {
+      border-left: 0; padding-left: 0; display: flex; align-items: center; gap: 9px; font-size: .76rem; letter-spacing: 2px; }
+    body.theme-sys .sf-win.mwin .section-title, body.theme-sys .sf-win.mwin .backup-section-title, body.theme-sys .sf-win.mwin .st-sec-title { color: var(--tx); text-shadow: 0 0 8px #6fd4ff; }
+    body.theme-sys .sf-win.mwin .backup-section-title.danger { color: #ff8a8a; text-shadow: 0 0 8px rgba(255,68,68,.7); }
+    body.theme-sys .sf-win.mwin .section-title::before, body.theme-sys .sf-win.mwin .backup-section-title::before, body.theme-sys .sf-win.mwin .st-sec-title::before, body.theme-sys .sf-win.mwin .codex-chapter-title::before {
+      content: ''; width: 5px; height: 5px; flex: 0 0 5px; border: 1px solid currentColor; transform: rotate(45deg); box-shadow: 0 0 5px currentColor; }
+    body.theme-sys .sf-win.mwin .section-title::after, body.theme-sys .sf-win.mwin .backup-section-title::after, body.theme-sys .sf-win.mwin .st-sec-title::after, body.theme-sys .sf-win.mwin .codex-chapter-title::after {
+      content: ''; flex: 1 1 auto; min-width: 12px; height: 1px; background: linear-gradient(90deg, currentColor, transparent); opacity: .55; }
+    body.theme-sys .sf-win.mwin .section-title:first-child { margin-top: 2px; }
+    body.theme-sys .sf-win.mwin .backup-section, body.theme-sys .sf-win.mwin .codex-chapter { border-bottom: 0; padding-bottom: 6px; }
+    body.theme-sys .sf-win.mwin .backup-summary { color: var(--tx2); opacity: 1; }
+    body.theme-sys .sf-win.mwin .backup-summary strong { color: var(--tx); }
+    body.theme-sys .sf-win.mwin .codex-chapter-text { color: #cfe6fb; }
+    body.theme-sys .sf-win.mwin .restore-link { color: #6fd4ff; }
+    body.theme-sys .sf-win.mwin .eq-state { color: var(--tx2); }
+
+    /* --- флажки и поля ввода --- */
+    body.theme-sys .sf-win.mwin .sound-checkbox { border: 1px solid var(--sl); background: rgba(3,9,20,.45); box-shadow: var(--sg); }
+    body.theme-sys .sf-win.mwin .sound-checkbox.on { background: rgba(3,9,20,.45); border-color: var(--sl); color: #40ffaa; text-shadow: 0 0 8px #40ffaa; box-shadow: var(--sg); }
+    body.theme-sys .sf-win.mwin .code-input-area, body.theme-sys .sf-win.mwin .danger-input { border-radius: 0; border: 1px solid var(--sl); background: rgba(3,9,20,.55); color: var(--tx); box-shadow: inset 0 0 8px rgba(80,160,255,.12); }
+    body.theme-sys .sf-win.mwin .code-input-area::placeholder { color: #6f93b5; }
+    body.theme-sys .sf-win.mwin .danger-text { text-shadow: 0 0 6px rgba(120,210,255,.5); }
+    body.theme-sys .sf-win.mwin.sn-red .danger-text { text-shadow: 0 0 6px rgba(255,68,68,.5); }
+
+    /* --- СТАТУС --- */
+    body.theme-sys .sf-win.mwin .st-sec { border: 1px solid var(--sl2); border-radius: 0; background: rgba(3,9,20,.3); }
+    body.theme-sys .sf-win.mwin .eq-slot { border-radius: 0; border-color: var(--sl2); background: rgba(3,9,20,.45); }
+    body.theme-sys .sf-win.mwin .eq-slot.filled { border-color: var(--sl); box-shadow: var(--sg), inset 0 0 8px rgba(80,160,255,.25); }
+    body.theme-sys .sf-win.mwin .eq-opt { border-radius: 0; border-color: var(--sl2); background: rgba(3,9,20,.35); padding: 7px; }
+    body.theme-sys .sf-win.mwin .eq-opt img { width: 34px; height: 34px; padding: 5px; border: 1px solid var(--sl); box-shadow: var(--sg); background: rgba(3,9,20,.5); }
+    body.theme-sys .sf-win.mwin .eq-opt .nm { color: var(--tx); text-shadow: 0 0 7px rgba(120,210,255,.7); font-weight: 600; }
+    body.theme-sys .sf-win.mwin .eq-big { width: 96px; height: 96px; padding: 10px; border: 1px solid var(--sl); box-shadow: var(--sg), inset 0 0 12px rgba(80,160,255,.2); background: rgba(3,9,20,.5); margin-bottom: 12px; }
+    body.theme-sys .sf-win.mwin .item-preview-meta { color: #cfe6fb; }
+
+    /* --- Летопись, Прогресс, журнал --- */
+    body.theme-sys .sf-win.mwin .day-cell { border-radius: 0; border-width: 1px; }
+    body.theme-sys .sf-win.mwin .cal-swatch { border-radius: 0; }
+    body.theme-sys .sf-win.mwin .cal-month-label { color: var(--tx); text-shadow: 0 0 8px #6fd4ff; letter-spacing: 2px; }
+    body.theme-sys .sf-win.mwin .cal-arrow { color: var(--tx); }
+    body.theme-sys .sf-win.mwin .cal-arrow.disabled { color: #445; }
+    body.theme-sys .sf-win.mwin .legend { border-top-color: var(--sl2); color: var(--tx2); padding-left: 3px; }
+    body.theme-sys .sf-win.mwin .legend-toggle { color: #6fd4ff; opacity: 1; }
+    body.theme-sys .sf-win.mwin .cal-tooltip { border-radius: 0; border-color: var(--sl); background-color: rgba(4,10,22,.97); }
+    body.theme-sys .sf-win.mwin .notif-log-row { border-bottom-color: var(--sl2); }
+    body.theme-sys .sf-win.mwin .notif-log-time { color: #6fd4ff; }
+    body.theme-sys .sf-win.mwin .notif-log-text { color: #cfe6fb; }
+
+    body.theme-sys .sf-win.mwin #stats { font-family: 'Exo 2 Text', 'Exo 2', sans-serif; color: var(--tx2); }
+    body.theme-sys .sf-win.mwin #stats > div:first-child, body.theme-sys .sf-win.mwin #stats .stats-caption { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: .76rem; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--tx); text-shadow: 0 0 8px #6fd4ff; margin: 2px 0 10px; display: flex; align-items: center; gap: 9px; }
+    body.theme-sys .sf-win.mwin #stats > div:first-child::before, body.theme-sys .sf-win.mwin #stats .stats-caption::before { content: ''; width: 5px; height: 5px; flex: 0 0 5px; border: 1px solid currentColor; transform: rotate(45deg); box-shadow: 0 0 5px currentColor; }
+    body.theme-sys .sf-win.mwin #stats .stat-line { justify-content: space-between; border-bottom: 1px solid rgba(190,225,255,.14); padding-bottom: 5px; }
+    body.theme-sys .sf-win.mwin #stats .stat-line span { min-width: 0; }
+    body.theme-sys .sf-win.mwin #stats .stat-line strong { font-family: 'Orbitron', sans-serif; text-shadow: 0 0 8px currentColor; }
+
+    /* --- окно предмета и окно характеристики --- */
+    body.theme-sys .item-preview-box.sf-win.mwin .sf-panel { align-items: center; gap: 12px; }
+    body.theme-sys .item-preview-box.sf-win.mwin img { width: 168px; height: 168px; padding: 14px; box-sizing: border-box; border: 1px solid var(--sl); box-shadow: var(--sg), inset 0 0 14px rgba(80,160,255,.2); background: rgba(3,9,20,.5); }
+    body.theme-sys .item-preview-box.sf-win.mwin .item-preview-meta { align-self: stretch; margin-top: 0; }
+    body.theme-sys .sf-win.mwin .item-preview-name, body.theme-sys .sf-win.mwin .stat-lore-header { margin: 0; }
+    body.theme-sys .sf-win.mwin .stat-lore-text { color: #cfe6fb; }
+
+    /* --- цифра уровня вместо шестиугольника (карточка на главном экране и окно СТАТУС) --- */
+    body.theme-sys .sf-win.mwin .sc-top { gap: 14px; }
+    body.theme-sys .sf-win.mwin #stTop { padding: 20px 4px 2px 10px; }   /* запас под свечение цифры у края прокрутки */
+    body.theme-sys .sf-win.mwin .sc-emb { width: auto; min-width: 92px; gap: 7px; }
+    body.theme-sys .sf-win.mwin .sc-hexw { filter: none; }   /* у SSS и Монарха пульсация остаётся: её задаёт animation */
+    body.theme-sys .sf-win.mwin .sc-hex { width: auto; height: auto; clip-path: none; background: none; }
+    body.theme-sys .sf-win.mwin .sc-hex::before { display: none; }
+    body.theme-sys .sf-win.mwin .sc-hex b { color: #fff; text-shadow: none; filter: drop-shadow(0 0 5px var(--rk)) drop-shadow(0 0 14px var(--rk)); }
+    body.theme-sys .sf-win.mwin .sc-hex b.d1, body.theme-sys .sf-win.mwin .sc-hex b.d2 { font-size: 3.3rem; }
+    body.theme-sys .sf-win.mwin .sc-hex b.d3 { font-size: 2.85rem; }   /* трёхзначный уровень: цифра чуть мельче, колонка шире */
+    body.theme-sys .sf-win.mwin .sc-emb-cap { color: var(--tx2); letter-spacing: 1px; }
+    body.theme-sys .sf-win.mwin .sc-name { color: var(--tx); text-shadow: 0 0 7px var(--accg); }
+    body.theme-sys .sf-win.mwin .sc-title, body.theme-sys .sf-win.mwin .sc-exp .k, body.theme-sys .sf-win.mwin .sc-chip .k { color: var(--tx2); }
+    /* кредиты и серия дней: без рамок, подпись сверху, число снизу справа — как в классической теме */
+    body.theme-sys .sf-win.mwin .sc-chips { gap: 22px; margin-top: 12px; }
+    body.theme-sys .sf-win.mwin .sc-chip { border: 0; border-radius: 0; background: none; padding: 0; }
+    /* характеристики: белые числа, свободные очки — жёлтые */
+    body.theme-sys .sf-win.mwin .st-v { color: #fff; text-shadow: 0 0 9px rgba(120,210,255,.75); }
+    body.theme-sys .sf-win.mwin .st-k { color: var(--tx2); }
+
+    /* --- полосы: капсула с зазором 3, обводка в цвет заливки, заливка градиентом --- */
+    body.theme-sys .sf-win.mwin .sc-bar, body.theme-sys .sf-win.mwin .dayline, body.theme-sys .sf-win.mwin .qbar { --f: #eaf8ff; box-sizing: border-box; height: 11px; padding: 3px;
+      border: 1px solid var(--f); border-radius: 999px; background: rgba(3,9,20,.55); box-shadow: 0 0 5px color-mix(in srgb, var(--f) 45%, transparent); overflow: visible; }
+    body.theme-sys .sf-win.mwin .sc-bar i, body.theme-sys .sf-win.mwin .dayline i, body.theme-sys .sf-win.mwin .qbar-fill { height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--f) 50%, #06101f), var(--f)); box-shadow: 0 0 6px var(--f); }
+    body.theme-sys .sf-win.mwin .dayline i, body.theme-sys .sf-win.mwin .qbar-fill { background: linear-gradient(270deg, color-mix(in srgb, var(--f) 50%, #06101f), var(--f)); }
+    body.theme-sys .sf-win.mwin .sc-bar i[style*="width: 0%"], body.theme-sys .sf-win.mwin .dayline i[style*="width: 0%"], body.theme-sys .sf-win.mwin .qbar-fill[style*="width: 0%"] { box-shadow: none; }
+    body.theme-sys .sf-win.mwin .sc-bar.debt { --f: #ff5555; }
+    body.theme-sys .sf-win.mwin .sc-exp { margin: 12px 0 6px; }
+    body.theme-sys .sf-win.mwin .qbar { --f: #40ffaa; margin: 6px 0 5px auto; }
+    body.theme-sys .sf-win.mwin .qbar.t-cursed, body.theme-sys .sf-win.mwin .qbar.t-cursed-scroll { --f: #ff5555; }
+    body.theme-sys .sf-win.mwin .qbar.t-scroll-tinted { --f: #ffaa00; }
+    body.theme-sys .sf-win.mwin .qbar.t-limit-break, body.theme-sys .sf-win.mwin .qbar.t-limit-scroll { --f: #40c0ff; }
+
+    /* --- таймер: в рамке, полоса внутри рамки с отступом --- */
+    body.theme-sys .sf-win.mwin .tstrip { flex-wrap: wrap; overflow: visible; border: 1px solid var(--sl); border-radius: 0; background: rgba(3,9,20,.35); box-shadow: var(--sg); padding: 12px 14px 13px; }
+    body.theme-sys .sf-win.mwin .tstrip .reset-label, body.theme-sys .sf-win.mwin .tstrip .boot-sync { color: var(--tx2); }
+    body.theme-sys .sf-win.mwin .tbox .tc { color: var(--acc); text-shadow: 0 0 12px var(--accg); }
+    body.theme-sys .sf-win.mwin .dayline { --f: var(--acc); position: static; flex: 0 0 100%; margin-top: 11px; }
+    body.theme-sys .sf-win.mwin .tstrip.warning { background: rgba(60,8,14,.5); border-color: #ff8a96; box-shadow: 0 0 14px rgba(255,68,68,.45); }
+    body.theme-sys .sf-win.mwin .tstrip.warning .tc { color: #ff7777; text-shadow: 0 0 16px #ff4444; }
+    body.theme-sys .sf-win.mwin .tstrip.warning .dayline { --f: #ff5555; }
+
+    /* --- главный экран: рамка вокруг всей страницы --- */
+    body.theme-sys { background: #02060f; background-image: none; }
+    body.theme-sys .system-container { padding: 6px 0 90px; }
+    body.theme-sys .quest-panel.mscr { width: min(620px, 98vw); max-width: none; background: none; border: 0; border-radius: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: visible; }
+    body.theme-sys .quest-panel.mscr > .sf-content { display: block; max-height: none; }
+    body.theme-sys .quest-panel.mscr .sf-panel.mw { display: block; }
+    body.theme-sys .mscr .sf-circ, body.theme-sys .mscr .sf-scr { animation: none; }       /* на длинной странице узор неподвижен: не нагружает прокрутку */
+    body.theme-sys .mscr .header { background: none; padding: 0; border-bottom: 0; gap: 12px; }
+    body.theme-sys .mscr .header-top-row { display: block; }
+    body.theme-sys .mscr .mw-hdr { margin-bottom: 0; }
+    body.theme-sys .mscr .status-card { border: 1px solid var(--sl); border-radius: 0; background: rgba(3,9,20,.35); box-shadow: var(--sg); padding: 14px 14px 14px; }
+    body.theme-sys .mscr .effects-container { margin: 12px 0 0; border: 1px solid var(--sl); border-radius: 0; background: rgba(3,9,20,.35); box-shadow: var(--sg); }
+    body.theme-sys .mscr .effects-header { display: flex; align-items: center; gap: 9px; font-size: .76rem; letter-spacing: 2px; font-weight: 400; color: var(--tx); text-shadow: 0 0 8px var(--accg); }
+    body.theme-sys .mscr .effects-header::before { content: ''; width: 5px; height: 5px; flex: 0 0 5px; margin-left: 2px; border: 1px solid currentColor; transform: rotate(45deg); box-shadow: 0 0 5px currentColor; }
+    body.theme-sys .mscr .effects-header::after { content: ''; flex: 1 1 auto; min-width: 12px; height: 1px; background: linear-gradient(90deg, currentColor, transparent); opacity: .55; }
+    body.theme-sys .mscr .effect-detail-inner { border-top-color: var(--sl2); }
+    body.theme-sys .mscr .effect-detail-name:not(.anomaly-pulse) { color: var(--tx); }
+    body.theme-sys .mscr .effect-detail-text { color: var(--tx2); }
+    body.theme-sys .mscr .quest-list { padding: 0; margin-top: 12px; }
+    body.theme-sys .mscr .quest-item { border-radius: 0; border: 1px solid var(--sl2); background: rgba(3,9,20,.35); }
+    body.theme-sys .mscr .quest-list.burden-active .quest-item { border-color: #ff5566aa; box-shadow: 0 0 8px rgba(255,40,70,.25); }
+    body.theme-sys .mscr .quest-item .qg-slice, body.theme-sys .mscr .quest-item.qg-on::after { border-radius: 0; }
+    body.theme-sys .mscr .quest-item .qg-slice > .quest-item, body.theme-sys .mscr .counter .qg-num { background: #050c18; }
+    body.theme-sys .mscr .quest-name { color: var(--tx); text-shadow: 0 0 7px var(--accg); }
+    body.theme-sys .mscr .buttons button { padding: 8px 12px; font-size: .88rem; letter-spacing: .5px; }
+    /* перегрев при недопустимом темпе — оранжевый, как в «Классике»: общее правило кнопок темы его не перекрывает */
+    body.theme-sys .sf-win.mwin .buttons button.add.pace-hot { --bc: #ffcc88; border-color: #ffaa44 !important; background: rgba(80,45,0,.45) !important; box-shadow: 0 0 8px rgba(255,170,68,.35); text-shadow: 0 0 8px rgba(255,170,68,.6); }
+    body.theme-sys .mscr .limit-break-container { padding: 0 0 2px !important; margin-top: 0 !important; border-bottom: 0 !important; }
+    body.theme-sys .mscr #limitBreakBtn { border-radius: 0; background: rgba(3,9,20,.45); border: 1px solid var(--sl2); color: #6f8296; box-shadow: none; text-shadow: none; opacity: 1; }
+    body.theme-sys .mscr #limitBreakBtn.ready { border-color: var(--sl); color: var(--acc); box-shadow: var(--sg), 0 0 12px var(--accg); text-shadow: 0 0 8px currentColor; }
+    body.theme-sys .mscr .sub-menu-grid { padding: 0; margin-top: 12px; gap: 10px; }
+    body.theme-sys .mscr .sub-menu-grid button { padding: 11px 4px; font-size: .72rem; letter-spacing: 1px; background: rgba(3,9,20,.45); border: 1px solid var(--sl); }
+
+    /* --- Аномалия: главный экран целиком в красной теме (как уведомления Аномалии) --- */
+    body.theme-sys.sys-anom .quest-panel.mscr { --sl: rgba(255,178,188,.9); --sl2: rgba(255,140,152,.35); --sg: 0 0 5px rgba(255,90,110,.4); --tx: #ffe9ec; --tx2: #f0b4bc;
+      --acc: #ff6b7d; --accg: rgba(255,60,90,.75); --hg1: #ff6b7d; --hg2: #ff2d4d; }
+    body.theme-sys.sys-anom .mscr .sf-panel { border-color: #ff8a96; box-shadow: 0 0 8px rgba(255,40,70,.45); }
+    body.theme-sys.sys-anom .mscr .sc-bar:not(.debt) { --f: #ff5d70; }
+    body.theme-sys.sys-anom .mscr .sf-circ, body.theme-sys.sys-anom .mscr .sf-scr { filter: hue-rotate(140deg) saturate(1.3); }
+    body.theme-sys.sys-anom .mscr .sf-shim i { background: radial-gradient(circle, rgba(255,60,90,.26), transparent 65%); }
+    body.theme-sys.sys-anom .mscr .sf-screen .sf-base { background: #12040a; }
+    body.theme-sys.sys-anom .mscr button:not(:disabled):active { background: rgba(255,150,165,.2) !important; box-shadow: 0 0 10px rgba(255,120,140,.6); }
+
+    /* --- SSS и Монарх: компактная пульсация цифры (ореол не шире ~17px, меняется яркость, а не размер) --- */
+    body.theme-sys .sf-win.mwin .rk-sss .sc-hexw, body.theme-sys .sf-win.mwin .rk-monarch .sc-hexw { animation: none; filter: none; }
+    body.theme-sys .sf-win.mwin .rk-sss .sc-hex b { --rk2: #ff66ff; animation: lvPulse 2.4s ease-in-out infinite; }
+    body.theme-sys .sf-win.mwin .rk-monarch .sc-hex b { --rk2: #ff44ff; animation: lvPulse 2.2s ease-in-out infinite; }
+    @keyframes lvPulse { 0%, 100% { filter: drop-shadow(0 0 4px var(--rk)) drop-shadow(0 0 9px var(--rk)); }
+      50% { filter: drop-shadow(0 0 5px var(--rk2)) drop-shadow(0 0 12px var(--rk)) brightness(1.12); } }
+
+    /* --- Пелена покоя и Заморозка поверх списка упражнений --- */
+    body.theme-sys .mscr .veil-overlay { inset: -5px -5px 7px; border-radius: 0; }
+    body.theme-sys .mscr .freeze-ice-overlay, body.theme-sys .mscr .freeze-tap-catcher { inset: -5px -5px 7px; }
+    body.theme-sys .mscr .quest-list.veil-trace .quest-item { border-color: rgba(184,204,255,.55); box-shadow: 0 0 8px rgba(184,204,255,.22); }
+
+    /* --- запуск Системы: копии окна для помех — без собственных отступов и фона --- */
+    body.theme-sys #rulesOverlay .sb-slice { padding: 0; background: #02060f; }
+    body.theme-sys #rulesOverlay .status-window.sys-boot-open { overflow: visible; }
+
+    /* --- выбор оформления в Архиве (обе темы) --- */
+    .theme-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+    .theme-seg { display: flex; gap: 8px; flex-shrink: 0; }
+    .theme-seg button { min-width: 0; padding: 7px 12px; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: .68rem; letter-spacing: 1px; text-transform: uppercase;
+      background: rgba(0,0,0,.25); border: 1px solid #40c0ff44; color: #7fa9c9; border-radius: 6px; }
+    .theme-seg button.on { background: #0d2a45; border-color: #40c0ff; color: #40c0ff; box-shadow: 0 0 10px rgba(64,192,255,.3); }
+    body.theme-sys .sf-win.mwin .theme-seg button { border-color: var(--sl2); box-shadow: none; --bc: #7fa3bf; text-shadow: none; }
+    body.theme-sys .sf-win.mwin .theme-seg button.on { border-color: var(--sl) !important; box-shadow: var(--sg), inset 0 0 10px rgba(110,200,255,.25); --bc: #eaf8ff; text-shadow: 0 0 8px #6fd4ff; background: rgba(110,190,255,.14) !important; }
+    body.theme-sys #rulesCheckboxRow span { font-family: 'Exo 2 Text', 'Exo 2', sans-serif; font-size: .86rem !important; color: #a9cfee !important; }
 </style>
 </head>
 <body>
@@ -1528,7 +1787,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.11.0';
+  const APP_VERSION = '7.0.0';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -1610,7 +1869,7 @@
         limitBreaksCompletedToday: oldData.limitBreaksCompletedToday || 0,
         soundEnabled: (typeof oldData.soundEnabled === 'boolean') ? oldData.soundEnabled : true,
         notificationsEnabled: (typeof oldData.notificationsEnabled === 'boolean') ? oldData.notificationsEnabled : true,
-        systemDesign: oldData.systemDesign === true,
+        theme: 'system',   // v7.0.0
         rulesAcknowledged: (typeof oldData.rulesAcknowledged === 'boolean') ? oldData.rulesAcknowledged : true,
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
@@ -1693,7 +1952,7 @@
         freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false, freezeNextAvailableAt: null,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
-        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, systemDesign: false
+        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, theme: 'system'
       };
     }
   }
@@ -1787,7 +2046,10 @@
   data.limitBreakRoundPending = !!data.limitBreakRoundPending;
   if (typeof data.soundEnabled !== 'boolean') data.soundEnabled = true;
   if (typeof data.notificationsEnabled !== 'boolean') data.notificationsEnabled = true;
-  if (typeof data.systemDesign !== 'boolean') data.systemDesign = false;   // v6.11.0: оформление Системы — по умолчанию выключено
+  // v7.0.0: тема оформления. «Система» — у всех, кто не выбрал «Классику» сам (поле появилось в 7.0.0, поэтому после
+  // обновления все оказываются на «Системе»). Временный переключатель 6.11.0 (systemDesign) больше не используется.
+  if (data.theme !== 'classic') data.theme = 'system';
+  delete data.systemDesign;
   if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
   if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
   if (typeof data.totalItemsSold !== 'number' || data.totalItemsSold < 0) data.totalItemsSold = 0;
@@ -2794,6 +3056,7 @@
     stopRulesAnimation();
     const onboarding = (mode === 'onboarding');
     document.getElementById('rulesHeader').textContent = onboarding ? 'УВЕДОМЛЕНИЕ' : 'ПРАВИЛА';
+    document.getElementById('rulesOverlay').dataset.notice = onboarding ? '1' : '';   // v7.0.0: значок «!» в теме «Система»
     const textEl = document.getElementById('rulesText');
     textEl.classList.toggle('rules-typing', onboarding);
     textEl.style.cursor = onboarding ? 'pointer' : '';
@@ -3553,8 +3816,7 @@
     if (sound) playSound(sound);
     else if (tone === 'warn' || tone === 'danger') playSound('denied');
     const p = document.createElement('div');
-    const sysDesign = !!data.systemDesign;   // v6.11.0
-    if (sysDesign) return displaySystemNotice(p, { body, sub, toneClass, check });
+    if (isSysTheme()) return displaySystemNotice(p, { body, sub, toneClass, check });   // v6.11.0; v7.0.0: по выбранной теме
     p.className = 'system-popup hud-frame';
     const content = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${creditsHtml(body)}</div>` +
       (sub ? `<div class="system-popup-sub">${creditsHtml(sub)}</div>` : '') +
@@ -3712,40 +3974,234 @@
       orange: { bg: ['#7a3a00', '#e07800', '#7a3a00'], ig: ['#ff9a2a', '#ffd9a0', '#ff9a2a'], ng: '#ffe0b8', edge: '#ffa64d', core: '#fff0dc', t1: '#ffe2bd', t2: '#ffc27a', col: 'rgba(255,170,80,.55)' }
     };
     let TEXC = null, TEXS = null;
-    function render(win, scheme) {
+    // Края контуров у верхней и нижней границ середины — строго по горизонтали: иначе на высоком окне наклон обводки
+    // (несколько единиц) растягивается вместе с серединой и подложка встаёт криво.
+    (function levelEdges() {
+      [G.panel, G.stripL, G.lineL].forEach(a => a.forEach(p => { if (Math.abs(p[1] - YT) <= 10) p[1] = YT; else if (Math.abs(p[1] - YB) <= 5) p[1] = YB; }));
+    })();
+    const XL = 330, XR = 2740;   // границы боковых зон (колонны) в координатах обводки
+    // Отсечение многоугольника горизонталью (Сазерленд — Ходжман): below — оставить y >= y0, иначе y <= y0.
+    function clipH(P, y0, below) {
+      const out = [], inside = p => below ? p[1] >= y0 : p[1] <= y0;
+      for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], ia = inside(a), ib = inside(b);
+        if (ia) out.push(a);
+        if (ia !== ib) out.push([a[0] + (b[0] - a[0]) * (y0 - a[1]) / (b[1] - a[1]), y0]); }
+      return out;
+    }
+    const solid = Q => Q.length >= 3 && Math.max(...Q.map(p => p[1])) - Math.min(...Q.map(p => p[1])) > 0.5;
+    // Рёбра многоугольника цепочками, без «стыковых» рёбер (skip) — чтобы на стыках повторов не было поперечных линий.
+    function chains(Q, skip) {
+      const n = Q.length, res = []; let start = 0, cur = null;
+      for (let i = 0; i < n; i++) if (skip(Q[i], Q[(i + 1) % n])) { start = (i + 1) % n; break; }
+      for (let j = 0; j < n; j++) { const i = (start + j) % n, a = Q[i], b = Q[(i + 1) % n];
+        if (skip(a, b)) { cur = null; continue; }
+        if (!cur) { cur = [a]; res.push(cur); }
+        cur.push(b); }
+      return res;
+    }
+    // opt.side / opt.gap — доля ширины колонн и отступов (1 — как в уведомлении); opt.tile === false — растягивать середину,
+    // иначе на высоком окне рисунок колонн повторяется в натуральном размере (каждый второй повтор — зеркально).
+    function render(win, scheme, opt) {
+      const side = (opt && opt.side) || 1, gap = (opt && opt.gap) || 1, tile = !opt || opt.tile !== false;
       const pal = PAL[scheme] || PAL.blue;
       if (TEXC === null) { TEXC = texCircuit(); TEXS = texScratch(); }
       const content = win.querySelector('.sf-content');
-      const w = win.offsetWidth, s = w / G.W;
-      content.style.padding = `${(YT + 70) * s}px ${(G.W - 2760 + 85) * s}px ${(G.H - YB + 70) * s}px ${(360 + 40) * s}px`;
+      // opt.cap — ширина, после которой рамка перестаёт утолщаться: окно шире, полосы и колонны прежние (растёт только середина)
+      const w = win.offsetWidth, s = Math.min(w, (opt && opt.cap) || w) / G.W;
+      content.style.padding = `${(YT + 70 * gap) * s}px ${((G.W - XR) * side + 65 * gap) * s}px ${(G.H - YB + 70 * gap) * s}px ${(XL * side + 70 * gap) * s}px`;
       win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen').forEach(x => x.remove());
-      const h = win.offsetHeight, m = mapperFit(s, h), id = 'sf' + Math.random().toString(36).slice(2, 8);
+      const h = win.offsetHeight, m0 = mapperFit(s, h), id = 'sf' + Math.random().toString(36).slice(2, 8);
+      const lw = XL * s * side, rw = (G.W - XR) * s * side, mw = w - lw - rw;
+      const mx = x => x <= XL ? x * s * side : x >= XR ? w - (G.W - x) * s * side : lw + (x - XL) / (XR - XL) * mw;
+      const m = p => [mx(p[0]), m0(p)[1]];
+      const J = q => q.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+      const STRIPS = [G.stripL, G.stripR, G.lineL, G.lineR], colFill = 'fill="rgba(14,32,70,.75)"';
+      const top = YT * s, bot = (G.H - YB) * s, midPx = h - top - bot, ratio = midPx / ((YB - YT) * s);
+      const N = tile && ratio >= 2 ? 2 * Math.round((ratio - 1) / 2) + 1 : 1;   // нечётное: первый и последний повтор — прямые
+      let panelPx, cols;
+      if (N === 1) {
+        panelPx = G.panel.map(m);
+        cols = STRIPS.map(a => `<polygon points="${J(a.map(m))}" ${colFill} stroke="${pal.col}" stroke-width="1"/>`).join('');
+      } else {
+        const e = []; for (let i = 0; i <= N; i++) e.push(i === 0 ? top : i === N ? h - bot : Math.round(top + midPx * i / N));
+        const ty = (k, y) => k % 2 ? e[k] + (YB - y) / (YB - YT) * (e[k + 1] - e[k]) : e[k] + (y - YT) / (YB - YT) * (e[k + 1] - e[k]);
+        const tm = k => p => [mx(p[0]), ty(k, p[1])];
+        const iB = G.panel.findIndex(p => p[1] === YB), L = G.panel.slice(0, iB + 1), R = G.panel.slice(iB + 1);
+        panelPx = [];
+        for (let k = 0; k < N; k++) (k % 2 ? L.slice().reverse() : L).forEach(p => panelPx.push(tm(k)(p)));
+        for (let k = N - 1; k >= 0; k--) (k % 2 ? R.slice().reverse() : R).forEach(p => panelPx.push(tm(k)(p)));
+        const onY = (a, b, y) => Math.abs(a[1] - y) < .01 && Math.abs(b[1] - y) < .01;
+        let fills = '', lines = '';
+        const put = (Q, map, skip) => { fills += `<polygon points="${J(Q.map(map))}" ${colFill}/>`;
+          chains(Q, skip).forEach(c => { lines += `<polyline points="${J(c.map(map))}" fill="none" stroke="${pal.col}" stroke-width="1"/>`; }); };
+        STRIPS.forEach(P => {
+          const tp = clipH(P, YT, false), md = clipH(clipH(P, YT, true), YB, false), bt = clipH(P, YB, true), hasT = solid(tp), hasB = solid(bt);
+          if (hasT) put(tp, m, (a, b) => onY(a, b, YT));
+          // во внутренних повторах колонна, начинающаяся чуть ниже верхней границы, дотягивается до стыка — без разрывов
+          const mdJ = clipH(clipH(P.map(q => q[1] > YT && q[1] <= YT + 40 ? [q[0], YT] : q), YT, true), YB, false);
+          if (solid(md)) for (let k = 0; k < N; k++) put(k ? mdJ : md, tm(k), (a, b) => (onY(a, b, YT) && !(k === 0 && !hasT)) || (onY(a, b, YB) && !(k === N - 1 && !hasB)));
+          if (hasB) put(bt, m, (a, b) => onY(a, b, YB));
+        });
+        cols = fills + lines;
+      }
       const scr = document.createElement('div'); scr.className = 'sf-screen'; scr.setAttribute('aria-hidden', 'true');
       scr.style.width = w + 'px'; scr.style.height = h + 'px';
-      scr.style.clipPath = `polygon(${G.panel.map(p => m(p).map(v => v.toFixed(1) + 'px').join(' ')).join(',')})`;
+      scr.style.clipPath = `polygon(${panelPx.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')})`;
       scr.innerHTML = `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>`;
       win.insertBefore(scr, content);
       const cg = `<filter id="${id}cg" x="-50%" y="-5%" width="200%" height="110%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
       const under = `<svg class="sf-frm sf-under" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}</defs>
-        <g filter="url(#${id}cg)">${[G.stripL, G.stripR, G.lineL, G.lineR].map(a => `<polygon points="${pts(a, m)}" fill="rgba(14,32,70,.75)" stroke="${pal.col}" stroke-width="1"/>`).join('')}</g></svg>`;
+        <g filter="url(#${id}cg)">${cols}</g></svg>`;
       const bb = arr => { const xs = arr.map(p => m(p)[0]), ys = arr.map(p => m(p)[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...ys)]; };
       const [tx0, ty0, ty1] = bb(G.barTop), [bx0, by0, by1] = bb(G.barBot);
+      // Полосы — каждая в своей группе с фильтром: бегущая энергия не пересчитывает размытие на всю высоту окна.
       const over = `<svg class="sf-frm sf-over" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}
           <filter id="${id}bf" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           <linearGradient id="${id}bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.bg[0]}"/><stop offset=".5" stop-color="${pal.bg[1]}"/><stop offset="1" stop-color="${pal.bg[2]}"/></linearGradient>
           <linearGradient id="${id}ig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.ig[0]}"/><stop offset=".5" stop-color="${pal.ig[1]}"/><stop offset="1" stop-color="${pal.ig[2]}"/></linearGradient>
           <radialGradient id="${id}ng" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".6" stop-color="${pal.ng}" stop-opacity=".5"/><stop offset="1" stop-color="${pal.ng}" stop-opacity="0"/></radialGradient>
           <linearGradient id="${id}eg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-          <clipPath id="${id}ct"><polygon points="${pts(G.barTop, m)}"/></clipPath><clipPath id="${id}cb"><polygon points="${pts(G.barBot, m)}"/></clipPath></defs>
-        <polygon points="${pts(G.panel, m)}" fill="none" stroke="${pal.col}" stroke-width="1" filter="url(#${id}cg)"/>
-        <g filter="url(#${id}bf)">${barFill(G.barTop, m, id + 't', true, w, pal)}${barFill(G.barBot, m, id + 'b', false, w, pal)}
-          <g clip-path="url(#${id}ct)"><rect class="sf-energy" x="${tx0}" y="${ty0}" width="${(w * .16).toFixed(0)}" height="${ty1 - ty0}" fill="url(#${id}eg)"/></g>
+          <clipPath id="${id}ct"><polygon points="${J(G.barTop.map(m))}"/></clipPath><clipPath id="${id}cb"><polygon points="${J(G.barBot.map(m))}"/></clipPath></defs>
+        <polygon points="${J(panelPx)}" fill="none" stroke="${pal.col}" stroke-width="1" filter="url(#${id}cg)"/>
+        <g filter="url(#${id}bf)">${barFill(G.barTop, m, id + 't', true, w, pal)}
+          <g clip-path="url(#${id}ct)"><rect class="sf-energy" x="${tx0}" y="${ty0}" width="${(w * .16).toFixed(0)}" height="${ty1 - ty0}" fill="url(#${id}eg)"/></g></g>
+        <g filter="url(#${id}bf)">${barFill(G.barBot, m, id + 'b', false, w, pal)}
           <g clip-path="url(#${id}cb)"><rect class="sf-energy sf-b" x="${bx0}" y="${by0}" width="${(w * .16).toFixed(0)}" height="${by1 - by0}" fill="url(#${id}eg)"/></g></g></svg>`;
       win.insertAdjacentHTML('afterbegin', under); win.insertAdjacentHTML('beforeend', over);
       win.dataset.sfScheme = scheme;
     }
     return { render, PAL };
   })();
+
+  // ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85) =====
+  // Две темы оформления: «Система» (основная, data.theme = 'system') и «Классика» ('classic').
+  // В теме «Система» окна и главный экран «одеваются» на месте: содержимое окна переносится в .sf-content > .sf-panel,
+  // заголовок — в табличку .mw-hdr > .mw-tt, рамку рисует SysFrame; на <body> ставится класс theme-sys (все стили темы).
+  // В «Классике» разметка возвращается к исходной — классическая тема остаётся такой, какой была.
+  // Окна «одеваются» при открытии (слежение за style оверлея): открываются они из десятков мест, и трогать их не нужно.
+  const isSysTheme = () => data.theme !== 'classic';
+  const SYS_FRAME_OPT = { side: 0.45, gap: 0.45, cap: 460 };   // окна и главный экран: тонкие колонны; шире 460px рамка не утолщается
+  const SysTheme = (() => {
+    const WIN_SEL = ':scope > .status-window, :scope > .item-preview-box, :scope > .stat-lore-box';
+    const HDR_SEL = ':scope > .status-header, :scope > .item-preview-name, :scope > .stat-lore-header';
+    // Значок «!» перед заголовком — только у запросов и уведомлений; правила — когда окно открыто как уведомление (первый вход).
+    const IC_ALWAYS = ['confirmOverlay', 'exerciseChoiceOverlay', 'nameOverlay', 'sysToolsAuthOverlay'];
+    const wins = [];
+    let on = false, mainWin = null, mainTimer = 0;
+    const anomaly = () => document.body.classList.contains('sys-anom');
+    const schemeOf = win => win === mainWin ? (anomaly() ? 'red' : 'blue') : (win.closest('#penaltyOverlay') ? 'red' : 'blue');
+    function skin(win) {
+      if (win.dataset.sk) return;
+      win.dataset.sk = '1';
+      const content = document.createElement('div'); content.className = 'sf-content';
+      const panel = document.createElement('div'); panel.className = 'sf-panel mw';
+      [...win.childNodes].forEach(k => panel.appendChild(k));
+      const box = document.createElement('div'); box.className = 'sn-hdr mw-hdr';
+      const hdr = win === mainWin ? panel.querySelector('.header-top-row .title') : panel.querySelector(HDR_SEL);
+      if (hdr) {
+        hdr._sysNext = hdr.nextElementSibling;   // куда вернуть заголовок в «Классике»
+        if (win === mainWin) hdr.before(box); else { panel.prepend(box); box.insertAdjacentHTML('beforeend', `<div class="sn-ic">${SN_ICON}</div>`); }
+        hdr.classList.add('mw-tt'); box.appendChild(hdr);
+      }
+      content.appendChild(panel); win.appendChild(content);
+      win.classList.add('sf-win', 'mwin');
+      if (win === mainWin) win.classList.add('mscr');
+      if (win.closest('#penaltyOverlay')) win.classList.add('sn-red');
+    }
+    function unskin(win) {
+      if (!win.dataset.sk) return;
+      const panel = win.querySelector(':scope > .sf-content > .sf-panel');
+      const box = panel.querySelector('.mw-hdr');
+      if (box) {
+        const h = box.querySelector('.mw-tt');
+        if (h) { h.classList.remove('mw-tt'); if (h._sysNext && h._sysNext.parentNode) h._sysNext.before(h); else box.before(h); h._sysNext = null; }
+        box.remove();
+      }
+      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen').forEach(x => x.remove());
+      [...panel.childNodes].forEach(k => win.appendChild(k));
+      win.querySelector(':scope > .sf-content').remove();
+      win.classList.remove('sf-win', 'mwin', 'mscr', 'mw-in', 'sn-red', 'mw-ic', 'mw-scroll', 'mw-top');
+      delete win.dataset.sk; delete win.dataset.sz; delete win.dataset.sfScheme;
+    }
+    // Рамка перестраивается, только когда изменились размер окна или схема. Размер — offsetWidth/offsetHeight (без учёта развёртки).
+    function frame(win) {
+      if (!on || !win || !win.dataset.sk || !win.offsetWidth) return;
+      const scheme = schemeOf(win), key = () => win.offsetWidth + 'x' + win.offsetHeight + 'x' + scheme;
+      if (win.dataset.sz === key()) return;
+      if (win !== mainWin) { const b = win.querySelector('.status-body'); win.classList.toggle('mw-scroll', !!b && b.scrollHeight > b.clientHeight + 2); }
+      SysFrame.render(win, scheme, SYS_FRAME_OPT);
+      win.dataset.sz = key();
+    }
+    // Высота главного экрана меняется плавно (описание эффекта, кнопка Предела) — рамка перестраивается после паузы.
+    const frameMain = () => { clearTimeout(mainTimer); mainTimer = setTimeout(() => frame(mainWin), 70); };
+    function dress(ov, win) {
+      skin(win);
+      win.classList.toggle('mw-ic', IC_ALWAYS.includes(ov.id) || (ov.id === 'rulesOverlay' && ov.dataset.notice === '1'));
+      delete win.dataset.sz; frame(win);
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => frame(win));
+    }
+    const isOpen = ov => !!ov.style.display && ov.style.display !== 'none';
+    // Главный экран при Бремени Аномалии — красный целиком; окна остаются синими.
+    function syncAnomaly() {
+      if (!mainWin) return;
+      const a = on && !!data.curseActiveToday;
+      if (a === anomaly()) return;
+      document.body.classList.toggle('sys-anom', a);
+      frame(mainWin);
+    }
+    // Применить выбранную тему: и при запуске, и при смене в Архиве (открытые окна переодеваются на месте).
+    function apply() {
+      if (!mainWin) return;
+      // Перенос содержимого сбрасывает прокрутку открытого окна (смена темы в Архиве) — она запоминается до смены и возвращается.
+      const kept = wins.filter(w => isOpen(w.parentElement)).map(w => { const sb = w.querySelector('.status-body'); return sb && sb.scrollTop ? [sb, sb.scrollTop] : null; }).filter(Boolean);
+      on = isSysTheme();
+      document.body.classList.toggle('theme-sys', on);
+      if (on) {
+        skin(mainWin); syncAnomaly(); delete mainWin.dataset.sz; frame(mainWin);
+        wins.forEach(w => { const ov = w.parentElement; if (isOpen(ov)) dress(ov, w); });
+      } else {
+        wins.forEach(unskin); unskin(mainWin);
+        document.body.classList.remove('sys-anom');
+      }
+      kept.forEach(([sb, y]) => { sb.scrollTop = y; });
+    }
+    function init() {
+      mainWin = document.querySelector('.quest-panel');
+      const ro = typeof ResizeObserver === 'function'
+        ? new ResizeObserver(es => es.forEach(e => { const w = e.target; if (!w.dataset.sk) return; if (w === mainWin) frameMain(); else requestAnimationFrame(() => frame(w)); }))
+        : null;
+      if (ro) ro.observe(mainWin);
+      document.querySelectorAll('.status-overlay').forEach(ov => {
+        const win = ov.querySelector(WIN_SEL);
+        if (!win) return;
+        wins.push(win);
+        if (ro) ro.observe(win);
+        const sb = win.querySelector('.status-body');
+        if (sb) sb.addEventListener('scroll', () => win.classList.toggle('mw-top', sb.scrollTop > 4), { passive: true });
+        let shown = isOpen(ov);
+        new MutationObserver(() => {
+          if (typeof document === 'undefined' || !document) return;   // страница уже закрыта (отложенный вызов)
+          const vis = isOpen(ov);
+          if (vis && !shown && on) {
+            dress(ov, win);
+            win.classList.remove('mw-in'); void win.offsetWidth;
+            if (!ov.classList.contains('sys-boot-black')) win.classList.add('mw-in');   // запуск Системы раскрывает окно сам
+          }
+          shown = vis;
+        }).observe(ov, { attributes: true, attributeFilter: ['style'] });
+      });
+      apply();
+    }
+    return { init, apply, syncAnomaly };
+  })();
+  function setTheme(theme) {
+    const t = theme === 'classic' ? 'classic' : 'system';
+    if (data.theme === t) return;
+    data.theme = t;
+    saveData();
+    SysTheme.apply();
+    if (document.getElementById('backupOverlay').style.display === 'flex') renderBackupModal();
+  }
 
   // ===== v6.9.0: ЧЕКБОКС В СТИЛЕ ПЕРВОИСТОЧНИКА (демо 61–63) =====
   // viewBox 24: контур 3..19 × 5..21, скругление 4, тонкие линии; выполнено — средний разрыв (5) в правом
@@ -5574,12 +6030,13 @@
         ['cursed', 'scroll-tinted', 'cursed-scroll', 'limit-break', 'limit-scroll'].forEach(c => {
           counterEl.classList.toggle(c, c === tintClass);
           if (targetEl && targetEl.classList.contains('target')) targetEl.classList.toggle(c, c === tintClass);
-          if (barFill) barFill.classList.toggle(c, c === tintClass);
+          if (barFill) { barFill.classList.toggle(c, c === tintClass); barFill.parentElement.classList.toggle('t-' + c, c === tintClass); }   // v7.0.0: t-… — цвет обводки полосы
         });
       }
     });
     fillStatusBlock('hdr');
     syncPaceCheckbox();
+    SysTheme.syncAnomaly();   // v7.0.0
     renderVeil();   // v6.10.0
     document.querySelectorAll('.quest-item').forEach(item => {
       const id = item.dataset.id;
@@ -5952,7 +6409,8 @@
   function calShowTooltip(cell, text) {
     const tooltip = document.getElementById('calTooltip');
     document.getElementById('calTooltipText').textContent = text;
-    const root = cell.closest('.status-window');
+    tooltip.style.display = 'block';
+    const root = tooltip.offsetParent || cell.closest('.status-window');   // v7.0.0
     const rootRect = root.getBoundingClientRect();
     const cellRect = cell.getBoundingClientRect();
     let left = cellRect.left - rootRect.left + cellRect.width / 2 - 100;
@@ -6218,7 +6676,7 @@
       limitBreakRoundPending: !!s.limitBreakRoundPending,
       soundEnabled: (typeof s.soundEnabled === 'boolean') ? s.soundEnabled : true,
       notificationsEnabled: (typeof s.notificationsEnabled === 'boolean') ? s.notificationsEnabled : true,
-      systemDesign: s.systemDesign === true,
+      theme: s.theme === 'classic' ? 'classic' : 'system',   // v7.0.0: старые бэкапы — «Система»
       rulesAcknowledged: (typeof s.rulesAcknowledged === 'boolean') ? s.rulesAcknowledged : true,
       earlySaveNoticeShown: (typeof s.earlySaveNoticeShown === 'boolean') ? s.earlySaveNoticeShown : false,
       totalItemsSold: Math.max(0, Math.floor(sanitizeNumber(s.totalItemsSold, 0))),
@@ -6313,12 +6771,6 @@
     renderBackupModal();
   }
 
-  function toggleSystemDesign() {   // v6.11.0: переходный переключатель, пока новое оформление не доделано
-    data.systemDesign = !data.systemDesign;
-    saveData();
-    renderBackupModal();
-  }
-
   function renderBackupModal() {
     const cont = document.getElementById('backupContent');
     if (backupModalStep === 'main') {
@@ -6354,9 +6806,9 @@
             <span>Уведомления Системы: ${data.notificationsEnabled ? 'включены' : 'выключены'}.</span>
             <div class="sound-checkbox-zone" onclick="toggleNotifications()"><div class="sound-checkbox ${data.notificationsEnabled ? 'on' : ''}">✓</div></div>
           </div>
-          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
-            <span>Оформление Системы: ${data.systemDesign ? 'включено' : 'выключено'}.</span>
-            <div class="sound-checkbox-zone" onclick="toggleSystemDesign()"><div class="sound-checkbox ${data.systemDesign ? 'on' : ''}">✓</div></div>
+          <div class="backup-summary theme-row">
+            <span>Оформление</span>
+            <div class="theme-seg"><button class="${isSysTheme() ? 'on' : ''}" onclick="setTheme('system')">Система</button><button class="${isSysTheme() ? '' : 'on'}" onclick="setTheme('classic')">Классика</button></div>
           </div>
         </div>
         <div class="backup-section">
@@ -6948,6 +7400,8 @@
     updateTimer();
   }
 
+  SysTheme.init();   // v7.0.0: тема применяется до первой отрисовки
+  document.documentElement.classList.remove('theme-pending');
   render();
   if (!data.rulesAcknowledged) {
     showRulesOverlay('onboarding');

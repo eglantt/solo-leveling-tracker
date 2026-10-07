@@ -3,7 +3,7 @@
   "private": true,
   "description": "Автотесты SLDT: симуляция всего приложения (jsdom) и стенд Service Worker",
   "scripts": {
-    "test": "node sw.test.js && node app.test.js && node consumables.test.js && node veil.test.js && node backup.test.js"
+    "test": "node sw.test.js && node app.test.js && node consumables.test.js && node veil.test.js && node backup.test.js && node theme.test.js && node consumables.test.js --system && node veil.test.js --system"
   },
   "devDependencies": {
     "jsdom": "^24.0.0"
