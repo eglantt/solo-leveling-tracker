@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v6.10.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v6.11.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1022,6 +1022,53 @@
     .sys-btn-pair { display: flex; gap: 10px; margin-top: 8px; }
     .sys-btn-pair .backup-action-btn { flex: 1 1 0; min-width: 0; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
     .sys-btn-pair .cr-ic { vertical-align: -1px; }
+    /* ===== v6.11.0: оформление Системы — рамка (SysFrame) и уведомление ===== */
+    .sf-win { position: relative; --sf-pat: .55; }
+    .sf-win > svg.sf-frm { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+    .sf-win > svg.sf-under { z-index: 0; } .sf-win > svg.sf-over { z-index: 3; }
+    .sf-screen { position: absolute; left: 0; top: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+    .sf-screen .sf-base { position: absolute; inset: 0; background: #030914; }
+    .sf-bg { position: absolute; inset: 0; pointer-events: none; opacity: var(--sf-pat); }
+    .sf-circ { background-repeat: repeat; background-size: 300px 300px; opacity: calc(var(--sf-pat) * .9); animation: sfDriftA 55s linear infinite; }
+    .sf-scr { background-repeat: repeat; background-size: 320px 320px; opacity: calc(var(--sf-pat) * .85); animation: sfDriftB 44s linear infinite; }
+    .sf-shim { mix-blend-mode: screen; }
+    .sf-shim i { position: absolute; width: 75%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(70,150,255,.32), transparent 65%); filter: blur(10px); animation: sfShim 9s ease-in-out infinite; }
+    .sf-shim i:nth-child(1) { left: -15%; top: -10%; } .sf-shim i:nth-child(2) { right: -20%; top: 30%; animation-delay: -3.1s; } .sf-shim i:nth-child(3) { left: 15%; bottom: -25%; animation-delay: -6.3s; }
+    @keyframes sfShim { 0%, 100% { opacity: .25; transform: translate(0,0) scale(.85); } 50% { opacity: 1; transform: translate(8%,6%) scale(1.15); } }
+    @keyframes sfDriftA { to { background-position: 300px 150px; } }
+    @keyframes sfDriftB { to { background-position: -320px 320px; } }
+    .sf-energy { animation: sfEnergy 8.8s ease-in-out infinite; } .sf-energy.sf-b { animation-delay: -4.4s; }
+    @keyframes sfEnergy { 0% { transform: translateX(-25%); } 60%, 100% { transform: translateX(125%); } }
+    .sf-content { position: relative; z-index: 2; }
+    .sf-panel { position: relative; overflow: hidden; border: 1px solid rgba(225,242,255,.85); box-shadow: 0 0 6px rgba(160,220,255,.45); background: rgba(3,9,20,.45); }
+    .sf-panel > .gp-inner, .sf-panel .gp-slice > .gp-inner { padding: 14px 12px 20px; }
+    .sys-notice { position: fixed; top: 58%; left: 50%; width: min(350px, 94vw); transform: translate(-50%, -50%); z-index: 2000; cursor: pointer; text-align: center;
+      animation: snUnfold .65s cubic-bezier(.2,.8,.2,1) backwards; }
+    @keyframes snUnfold { 0% { transform: translate(-50%,-50%) scaleY(.01) scaleX(.3); filter: brightness(3); } 30% { transform: translate(-50%,-50%) scaleY(.01) scaleX(1); filter: brightness(2.4); } 100% { transform: translate(-50%,-50%) scale(1); filter: brightness(1); } }
+    .sys-notice.sn-out { animation: snOut .35s ease-in forwards; pointer-events: none; }
+    @keyframes snOut { to { opacity: 0; transform: translate(-50%,-52%) scale(.97); } }
+    .sn-hdr { display: flex; gap: 7px; align-items: stretch; justify-content: center; margin-bottom: 14px; }
+    .sn-ic { width: 34px; flex: 0 0 34px; border: 1px solid rgba(225,242,255,.8); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(160,220,255,.35); }
+    .sn-ic svg { width: 22px; height: 22px; filter: drop-shadow(0 0 3px #9fe6ff); }
+    .sn-tt { border: 1px solid rgba(225,242,255,.8); padding: 6px 12px; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: .9rem; letter-spacing: 2px; color: #e8fbff;
+      text-shadow: 0 0 8px #6fd4ff, 0 0 14px #3aa0ff; display: flex; align-items: center; box-shadow: 0 0 5px rgba(160,220,255,.35); }
+    .sn-body { font-family: 'Exo 2 Text', 'Exo 2', sans-serif; font-size: .93rem; line-height: 1.6; color: #eaf8ff; text-shadow: 0 0 6px rgba(120,210,255,.75); white-space: pre-line; }
+    .sn-body.tone-warn { color: #ffcc88; text-shadow: 0 0 6px rgba(255,170,68,.7); }
+    .sn-body.tone-danger { color: #ff8a8a; text-shadow: 0 0 6px rgba(255,68,68,.7); }
+    .sn-sub { font-family: 'Exo 2 Text', 'Exo 2', sans-serif; font-size: .78rem; color: #9fd8ff; opacity: .9; margin-top: 4px; }
+    .sys-notice .notice-check .qc-tick { animation-delay: .95s; }
+    .sn-red .sf-panel, .sn-red .sn-ic, .sn-red .sn-tt { border-color: #ff8a96; }
+    .sn-red .sf-panel { box-shadow: 0 0 8px rgba(255,40,70,.45); }
+    .sn-orange .sf-panel, .sn-orange .sn-ic, .sn-orange .sn-tt { border-color: #ffc27a; }
+    .sn-orange .sf-panel { box-shadow: 0 0 8px rgba(255,150,40,.45); }
+    /* сбой всего окна (6.8.6 в оформлении Системы) */
+    .sys-notice .gp-slice { position: absolute; inset: 0; pointer-events: none; display: none; background: #040b18; overflow: hidden; }
+    .sys-notice > .gp-noise { position: absolute; inset: 0; pointer-events: none; display: none; mix-blend-mode: screen; z-index: 5; }
+    .sys-notice.glitch.gfx-slice .gp-slice, .sys-notice.glitch.gfx-noise > .gp-noise { display: block; }
+    .sys-notice.glitch.gfx-split .sn-tt, .sys-notice.glitch.gfx-split .sn-body { text-shadow: -4px 0 rgba(255,40,70,.85), 4px 0 rgba(0,220,255,.85) !important; }
+    .sys-notice.glitch.gfx-split > svg.sf-frm { filter: drop-shadow(-3px 0 rgba(255,40,70,.7)) drop-shadow(3px 0 rgba(0,220,255,.7)); }
+    .sys-notice.glitch.gfx-flicker > .sf-screen, .sys-notice.glitch.gfx-flicker .sf-panel { filter: brightness(var(--gbr, 1.3)) contrast(1.15); }
+    .sys-notice.glitch.gfx-shake { transform: translate(calc(-50% + var(--gdx, 0px) * 1.4), calc(-50% + var(--gdy, 0px))); }
 </style>
 </head>
 <body>
@@ -1481,7 +1528,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '6.10.7';
+  const APP_VERSION = '6.11.0';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -1563,6 +1610,7 @@
         limitBreaksCompletedToday: oldData.limitBreaksCompletedToday || 0,
         soundEnabled: (typeof oldData.soundEnabled === 'boolean') ? oldData.soundEnabled : true,
         notificationsEnabled: (typeof oldData.notificationsEnabled === 'boolean') ? oldData.notificationsEnabled : true,
+        systemDesign: oldData.systemDesign === true,
         rulesAcknowledged: (typeof oldData.rulesAcknowledged === 'boolean') ? oldData.rulesAcknowledged : true,
         titlesUnlocked: oldData.titlesUnlocked || ["Новичок"],
         playerName: oldData.playerName || "",
@@ -1645,7 +1693,7 @@
         freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false, freezeNextAvailableAt: null,
         dailyTargetLevel: 1, expDebt: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
-        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true
+        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, systemDesign: false
       };
     }
   }
@@ -1739,6 +1787,7 @@
   data.limitBreakRoundPending = !!data.limitBreakRoundPending;
   if (typeof data.soundEnabled !== 'boolean') data.soundEnabled = true;
   if (typeof data.notificationsEnabled !== 'boolean') data.notificationsEnabled = true;
+  if (typeof data.systemDesign !== 'boolean') data.systemDesign = false;   // v6.11.0: оформление Системы — по умолчанию выключено
   if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
   if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
   if (typeof data.totalItemsSold !== 'number' || data.totalItemsSold < 0) data.totalItemsSold = 0;
@@ -3504,6 +3553,8 @@
     if (sound) playSound(sound);
     else if (tone === 'warn' || tone === 'danger') playSound('denied');
     const p = document.createElement('div');
+    const sysDesign = !!data.systemDesign;   // v6.11.0
+    if (sysDesign) return displaySystemNotice(p, { body, sub, toneClass, check });
     p.className = 'system-popup hud-frame';
     const content = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${creditsHtml(body)}</div>` +
       (sub ? `<div class="system-popup-sub">${creditsHtml(sub)}</div>` : '') +
@@ -3528,6 +3579,173 @@
     p.addEventListener('click', dismiss);
     setTimeout(dismiss, 10000);
   }
+
+  // ===== v6.11.0: УВЕДОМЛЕНИЕ В ОФОРМЛЕНИИ СИСТЕМЫ (демо 77) =====
+  // Рамка SysFrame; появление — развёртка из линии; Бремя — всё окно красное, сбой всего окна;
+  // недопустимый темп без Бремени — всё окно оранжевое, сбой всего окна (расслоение и помехи).
+  const SN_APPEAR_MS = 650;
+  const SN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#eaf8ff" stroke-width="1.6"/><rect x="11" y="5.5" width="2" height="9" rx="1" fill="#eaf8ff"/><circle cx="12" cy="17.6" r="1.3" fill="#eaf8ff"/></svg>';
+  function displaySystemNotice(p, { body, sub, toneClass, check }) {
+    const glitchKind = notificationGlitchKind(body);
+    const scheme = glitchKind === 'anomaly' ? 'red' : (glitchKind === 'pace' ? 'orange' : 'blue');
+    const inner = `<div class="sn-hdr"><div class="sn-ic">${SN_ICON}</div><div class="sn-tt">УВЕДОМЛЕНИЕ</div></div>` +
+      `<div class="sn-body ${toneClass}">${creditsHtml(body)}</div>` +
+      (sub ? `<div class="sn-sub">${creditsHtml(sub)}</div>` : '') +
+      (check ? `<div class="notice-check${data.curseActiveToday ? ' red' : ''}" aria-hidden="true">${CHECK_SVG_DONE}</div>` : '');
+    const slices = glitchKind && GLITCH_CFG[glitchKind].fx.includes('slice') ? [0, 1, 2].map(() => `<div class="gp-slice" aria-hidden="true"><div class="gp-inner">${inner}</div></div>`).join('') : '';
+    p.className = `sys-notice sf-win sn-${scheme}`;
+    p.innerHTML = `<div class="sf-content"><div class="sf-panel"><div class="gp-inner">${inner}</div>${slices}</div></div>` + (glitchKind ? '<div class="gp-noise" aria-hidden="true"></div>' : '');
+    document.body.appendChild(p);
+    SysFrame.render(p, scheme);
+    if (glitchKind) { p.dataset.glitch = glitchKind; startNotificationGlitch(p, glitchKind, SN_APPEAR_MS); }
+    let dismissed = false;
+    const dismiss = () => {
+      if (dismissed) return;
+      dismissed = true;
+      stopNotificationGlitch(p);
+      p.classList.add('sn-out');
+      setTimeout(() => p.remove(), 350);
+      notificationActive = false;
+      currentNotificationBody = null;
+      setTimeout(processNotificationQueue, 2000);
+    };
+    p.addEventListener('click', dismiss);
+    setTimeout(dismiss, 10000);
+  }
+
+
+  // ===== v6.11.0: РАМКА СИСТЕМЫ (демо 73–77, контуры — векторная обводка пользователя SL_Panel_Design) =====
+  // Один компонент для всех окон оформления «Система»: полосы с «начинкой» и бегущей энергией, тёмные колонны,
+  // подвижный фон (дрейф + переливы, узор тише) в рваной панели, светлая внутренняя рамка. Схемы: blue / red / orange.
+  // Размер берётся из offsetWidth/offsetHeight — без учёта анимации появления (иначе рамка строится «сжатой»).
+  const SysFrame = (() => {
+    const G = {"W": 3051, "H": 1793, "barTop": [[3, 3], [3, 51], [648, 51], [754, 135], [2951, 135], [3050, 68], [3050, 3]], "barBot": [[9, 1693], [127, 1789], [3033, 1789], [3033, 1693], [402, 1693], [365, 1718], [210, 1719], [177, 1693]], "panel": [[311, 177], [309, 259], [254, 287], [254, 367], [281, 367], [282, 491], [251, 510], [251, 765], [284, 800], [283, 806], [259, 823], [258, 902], [313, 903], [313, 1052], [293, 1066], [298, 1275], [312, 1287], [312, 1511], [287, 1524], [291, 1642], [2875, 1644], [2875, 1527], [2865, 1525], [2865, 1290], [2834, 1287], [2835, 1078], [2821, 1077], [2822, 1029], [2805, 1010], [2805, 1005], [2824, 985], [2822, 913], [2782, 912], [2781, 517], [2745, 517], [2745, 391], [2759, 388], [2759, 302], [2784, 281], [2781, 185]], "stripL": [[226, 177], [194, 177], [192, 259], [137, 287], [137, 367], [164, 367], [165, 491], [134, 510], [134, 765], [167, 800], [166, 806], [142, 823], [141, 901], [195, 926], [196, 1052], [176, 1066], [181, 1275], [195, 1287], [195, 1511], [170, 1524], [174, 1642], [206, 1642], [203, 1526], [228, 1513], [228, 1286], [213, 1273], [208, 1068], [229, 1054], [228, 900], [174, 899], [174, 825], [204, 803], [166, 763], [166, 513], [198, 493], [196, 364], [170, 363], [169, 290], [224, 262]], "stripR": [[2873, 208], [2874, 313], [2849, 333], [2849, 418], [2835, 422], [2835, 554], [2872, 554], [2873, 948], [2913, 949], [2914, 1017], [2892, 1041], [2912, 1063], [2912, 1113], [2925, 1114], [2924, 1323], [2956, 1327], [2956, 1562], [2966, 1563], [2966, 1677], [2985, 1677], [2985, 1650], [3013, 1644], [3013, 1527], [3003, 1525], [3003, 1290], [2972, 1287], [2973, 1078], [2959, 1077], [2960, 1029], [2943, 1010], [2943, 1005], [2962, 985], [2960, 913], [2920, 912], [2919, 517], [2883, 517], [2883, 391], [2897, 388], [2897, 302], [2922, 281], [2923, 208]], "lineL": [[108, 789], [110, 1643], [162, 1643], [161, 1373], [132, 1372], [132, 789]], "lineR": [[2932, 210], [2932, 519], [2944, 520], [2944, 707], [2979, 708], [2979, 1030], [3003, 1030], [3003, 325], [2979, 325], [2979, 379], [2958, 380], [2957, 210]]};
+    // Холст: в тестовом браузере (jsdom) рисования нет — текстуры пустые.
+    function canvasCtx(c) { if (/jsdom/i.test(navigator.userAgent)) return null; try { return c.getContext('2d'); } catch (e) { return null; } }
+    function rng(seed) { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+    // ---- текстуры фона (рисуются один раз) ----
+    function texCircuit() {
+      const c = document.createElement('canvas'); c.width = c.height = 300; const g = canvasCtx(c), r = rng(7); if (!g) return '';
+      g.strokeStyle = 'rgba(70,150,255,0.22)'; g.lineWidth = .8;
+      for (let k = 0; k < 26; k++) {
+        let x = Math.round(r() * 30) * 10, y = Math.round(r() * 30) * 10; g.beginPath(); g.moveTo(x, y);
+        for (let s = 0; s < 4; s++) { if (r() < .5) x += (r() < .5 ? -1 : 1) * Math.round(2 + r() * 8) * 10; else y += (r() < .5 ? -1 : 1) * Math.round(2 + r() * 8) * 10; g.lineTo(x, y); }
+        g.stroke(); g.fillStyle = 'rgba(120,200,255,0.35)'; g.fillRect(x - 1, y - 1, 2, 2);
+      }
+      return c.toDataURL();
+    }
+    function texScratch() {
+      const c = document.createElement('canvas'); c.width = c.height = 320; const g = canvasCtx(c), r = rng(19); if (!g) return '';
+      for (let k = 0; k < 160; k++) {
+        const x = r() * 320, y = r() * 320, len = 20 + r() * 120, a = (-35 + (r() - .5) * 22) * Math.PI / 180;
+        g.strokeStyle = `rgba(${110 + r() * 60 | 0},${180 + r() * 50 | 0},255,${(0.10 + r() * 0.30).toFixed(2)})`; g.lineWidth = r() < .15 ? 1.4 : .7;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+      }
+      for (let k = 0; k < 14; k++) {   // голографические завихрения — дуги
+        const x = r() * 320, y = r() * 320, rad = 20 + r() * 90, a0 = r() * Math.PI * 2;
+        g.strokeStyle = `rgba(90,170,255,${(0.10 + r() * 0.18).toFixed(2)})`; g.lineWidth = .8;
+        g.beginPath(); g.arc(x, y, rad, a0, a0 + .8 + r() * 1.8); g.stroke();
+      }
+      return c.toDataURL();
+    }
+    const YT = 177, YB = 1645;
+    // Правая сторона: зубцы вдвое мельче (силуэт тот же) — «спрямить колонну».
+    (function straightenRight() {
+      const soften = (arr, x0) => { const xs = arr.filter(p => p[0] >= x0).map(p => p[0]); if (!xs.length) return;
+        const mid = (Math.min(...xs) + Math.max(...xs)) / 2; arr.forEach(p => { if (p[0] >= x0) p[0] = Math.round(mid + (p[0] - mid) * 0.5); }); };
+      soften(G.panel, 2700); soften(G.stripR, 0); soften(G.lineR, 0);
+    })();
+    // Колонны (ломаные линии по бокам панели) — уже, правая — ближе к панели.
+    (function narrowColumns() {
+      const squeeze = (arrs, k, dx) => { const xs = arrs.flat().map(p => p[0]), mid = (Math.min(...xs) + Math.max(...xs)) / 2;
+        arrs.forEach(a => a.forEach(p => { p[0] = Math.round(mid + (p[0] - mid) * k + dx); })); };
+      squeeze([G.stripL, G.lineL], 0.72, 8);
+      squeeze([G.stripR, G.lineR], 0.72, -42);
+    })();
+    function mapper(s, Hpx) {
+      const top = YT * s, bot = (G.H - YB) * s, midSrc = YB - YT, midPx = Math.max(10, Hpx - top - bot);
+      return ([x, y]) => [x * s, y <= YT ? y * s : (y >= YB ? Hpx - (G.H - y) * s : top + (y - YT) / midSrc * midPx)];
+    }
+    const pts = (arr, m) => arr.map(p => m(p).map(v => v.toFixed(1)).join(',')).join(' ');
+    // Вертикальная протяжённость многоугольника на линии x (для толщины полосы в каждой точке).
+    function extentAt(poly, x) {
+      let lo = Infinity, hi = -Infinity;
+      for (let i = 0; i < poly.length; i++) { const [x1, y1] = poly[i], [x2, y2] = poly[(i + 1) % poly.length];
+        if ((x1 <= x && x <= x2) || (x2 <= x && x <= x1)) { if (x1 === x2) { lo = Math.min(lo, y1, y2); hi = Math.max(hi, y1, y2); }
+          else { const y = y1 + (y2 - y1) * (x - x1) / (x2 - x1); lo = Math.min(lo, y); hi = Math.max(hi, y); } } }
+      return lo <= hi ? [lo, hi] : null;
+    }
+    // «Начинка» полосы как в демо 73 по силуэту обводки: слоистая заливка, светлая середина, белая сердцевина,
+    // яркий узел со схемными засечками, тонкая линия по внешнему краю.
+    function barFill(arr, m, key, top, w, pal) {
+      const P = arr.map(m), r = rng(top ? 23 : 51), xs = P.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+      const N = 120, band = [], bandB = [], core = [], edge = [];
+      for (let k = 0; k <= N; k++) { const x = x0 + (x1 - x0) * k / N, e = extentAt(P, x); if (!e) continue; const [a, b] = e, t = b - a;
+        band.push([x, a + t * .28]); bandB.push([x, b - t * .28]); core.push([x, (a + b) / 2]); edge.push([x, top ? a - 3 : b + 3]); }
+      const J = q => q.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+      const cx = x0 + (x1 - x0) * (top ? .56 : .5), ce = extentAt(P, cx) || [0, 10], cy = (ce[0] + ce[1]) / 2, th = ce[1] - ce[0];
+      let ticks = '';
+      for (let k = 0; k < 28; k++) { const x = cx - w * .16 + r() * w * .32, h = 2 + r() * Math.max(2, th - 5); ticks += `<rect class="core" x="${x.toFixed(1)}" y="${(cy - h / 2).toFixed(1)}" width="${(.8 + r() * 1.8).toFixed(1)}" height="${h.toFixed(1)}" fill="#fff" opacity="${(.45 + r() * .55).toFixed(2)}"/>`; }
+      for (let k = 0; k < 18; k++) { const x = x0 + r() * (x1 - x0), e = extentAt(P, x); if (!e) continue; const ww = 2 + r() * 10;
+        ticks += `<rect x="${x.toFixed(1)}" y="${(e[0] + 2).toFixed(1)}" width="${ww.toFixed(1)}" height="1.1" fill="${pal.t1}" opacity=".55"/><rect x="${(x + r() * 16).toFixed(1)}" y="${(e[1] - 3).toFixed(1)}" width="${(ww * .6).toFixed(1)}" height="1" fill="${pal.t2}" opacity=".45"/>`; }
+      const poly = J(P), idc = key + 'clip', mid = key.slice(0, -1);
+      return `<clipPath id="${idc}"><polygon points="${poly}"/></clipPath>
+        <polyline points="${J(edge)}" fill="none" stroke="${pal.edge}" stroke-width="1.1" opacity=".75"/>
+        <polygon points="${poly}" fill="url(#${mid}bg)"/>
+        <g clip-path="url(#${idc})">
+          <polygon points="${J(band.concat(bandB.slice().reverse()))}" fill="url(#${mid}ig)" opacity=".9"/>
+          <polyline points="${J(core)}" fill="none" stroke="${pal.core}" stroke-width="1.4" opacity=".9"/>
+          ${ticks}
+          <ellipse class="core" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${(w * .2).toFixed(1)}" ry="${(th * .6).toFixed(1)}" fill="url(#${mid}ng)"/>
+        </g>
+        <polygon points="${poly}" fill="none" stroke="${pal.core}" stroke-width=".8" opacity=".55"/>`;
+    }
+    function mapperFit(s, Hpx) {
+      const top = YT * s, bot = (G.H - YB) * s, midPx = Math.max(10, Hpx - top - bot), natural = (YB - YT) * s;
+      if (midPx >= natural) return mapper(s, Hpx);
+      const half = midPx / 2 / s, a = YT + half, b = YB - half;
+      return ([x, y]) => [x * s, y <= a ? y * s : y >= b ? Hpx - (G.H - y) * s : (y - a < b - y ? a * s : Hpx - (G.H - b) * s)];
+    }
+    const PAL = {
+      blue:   { bg: ['#0a2c9c', '#1c63e6', '#0a2c9c'], ig: ['#2f8cff', '#8fdcff', '#2f8cff'], ng: '#bff0ff', edge: '#3b8dff', core: '#eafaff', t1: '#cfefff', t2: '#9fdcff', col: 'rgba(90,150,230,.45)' },
+      red:    { bg: ['#7a0a1c', '#d81e3c', '#7a0a1c'], ig: ['#ff3d5a', '#ffb0bc', '#ff3d5a'], ng: '#ffc0ca', edge: '#ff5c74', core: '#ffe6ea', t1: '#ffd0d8', t2: '#ff9fb0', col: 'rgba(255,90,110,.55)' },
+      orange: { bg: ['#7a3a00', '#e07800', '#7a3a00'], ig: ['#ff9a2a', '#ffd9a0', '#ff9a2a'], ng: '#ffe0b8', edge: '#ffa64d', core: '#fff0dc', t1: '#ffe2bd', t2: '#ffc27a', col: 'rgba(255,170,80,.55)' }
+    };
+    let TEXC = null, TEXS = null;
+    function render(win, scheme) {
+      const pal = PAL[scheme] || PAL.blue;
+      if (TEXC === null) { TEXC = texCircuit(); TEXS = texScratch(); }
+      const content = win.querySelector('.sf-content');
+      const w = win.offsetWidth, s = w / G.W;
+      content.style.padding = `${(YT + 70) * s}px ${(G.W - 2760 + 85) * s}px ${(G.H - YB + 70) * s}px ${(360 + 40) * s}px`;
+      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen').forEach(x => x.remove());
+      const h = win.offsetHeight, m = mapperFit(s, h), id = 'sf' + Math.random().toString(36).slice(2, 8);
+      const scr = document.createElement('div'); scr.className = 'sf-screen'; scr.setAttribute('aria-hidden', 'true');
+      scr.style.width = w + 'px'; scr.style.height = h + 'px';
+      scr.style.clipPath = `polygon(${G.panel.map(p => m(p).map(v => v.toFixed(1) + 'px').join(' ')).join(',')})`;
+      scr.innerHTML = `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>`;
+      win.insertBefore(scr, content);
+      const cg = `<filter id="${id}cg" x="-50%" y="-5%" width="200%" height="110%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+      const under = `<svg class="sf-frm sf-under" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}</defs>
+        <g filter="url(#${id}cg)">${[G.stripL, G.stripR, G.lineL, G.lineR].map(a => `<polygon points="${pts(a, m)}" fill="rgba(14,32,70,.75)" stroke="${pal.col}" stroke-width="1"/>`).join('')}</g></svg>`;
+      const bb = arr => { const xs = arr.map(p => m(p)[0]), ys = arr.map(p => m(p)[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...ys)]; };
+      const [tx0, ty0, ty1] = bb(G.barTop), [bx0, by0, by1] = bb(G.barBot);
+      const over = `<svg class="sf-frm sf-over" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}
+          <filter id="${id}bf" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <linearGradient id="${id}bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.bg[0]}"/><stop offset=".5" stop-color="${pal.bg[1]}"/><stop offset="1" stop-color="${pal.bg[2]}"/></linearGradient>
+          <linearGradient id="${id}ig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.ig[0]}"/><stop offset=".5" stop-color="${pal.ig[1]}"/><stop offset="1" stop-color="${pal.ig[2]}"/></linearGradient>
+          <radialGradient id="${id}ng" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".6" stop-color="${pal.ng}" stop-opacity=".5"/><stop offset="1" stop-color="${pal.ng}" stop-opacity="0"/></radialGradient>
+          <linearGradient id="${id}eg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          <clipPath id="${id}ct"><polygon points="${pts(G.barTop, m)}"/></clipPath><clipPath id="${id}cb"><polygon points="${pts(G.barBot, m)}"/></clipPath></defs>
+        <polygon points="${pts(G.panel, m)}" fill="none" stroke="${pal.col}" stroke-width="1" filter="url(#${id}cg)"/>
+        <g filter="url(#${id}bf)">${barFill(G.barTop, m, id + 't', true, w, pal)}${barFill(G.barBot, m, id + 'b', false, w, pal)}
+          <g clip-path="url(#${id}ct)"><rect class="sf-energy" x="${tx0}" y="${ty0}" width="${(w * .16).toFixed(0)}" height="${ty1 - ty0}" fill="url(#${id}eg)"/></g>
+          <g clip-path="url(#${id}cb)"><rect class="sf-energy sf-b" x="${bx0}" y="${by0}" width="${(w * .16).toFixed(0)}" height="${by1 - by0}" fill="url(#${id}eg)"/></g></g></svg>`;
+      win.insertAdjacentHTML('afterbegin', under); win.insertAdjacentHTML('beforeend', over);
+      win.dataset.sfScheme = scheme;
+    }
+    return { render, PAL };
+  })();
 
   // ===== v6.9.0: ЧЕКБОКС В СТИЛЕ ПЕРВОИСТОЧНИКА (демо 61–63) =====
   // viewBox 24: контур 3..19 × 5..21, скругление 4, тонкие линии; выполнено — средний разрыв (5) в правом
@@ -3560,7 +3778,7 @@
     p._glitchTimers = [];
     p._glitchStopped = true;
   }
-  function startNotificationGlitch(p, kind) {
+  function startNotificationGlitch(p, kind, delay) {
     const cfg = GLITCH_CFG[kind];
     p._glitchTimers = [];
     p.style.setProperty('--gk', cfg.k);
@@ -3596,11 +3814,14 @@
       };
       step();
     };
-    burst(cfg.appearMs);
-    if (cfg.micro) {
-      const loop = () => later(() => { burst(rnd(90, 150)); loop(); }, rnd(2000, 3200));
-      later(loop, cfg.appearMs);
-    }
+    const begin = () => {
+      burst(cfg.appearMs);
+      if (cfg.micro) {
+        const loop = () => later(() => { burst(rnd(90, 150)); loop(); }, rnd(2000, 3200));
+        later(loop, cfg.appearMs);
+      }
+    };
+    if (delay) later(begin, delay); else begin();   // v6.11.0: в оформлении Системы — после развёртки окна
   }
 
   function logNotification(text) {
@@ -5997,6 +6218,7 @@
       limitBreakRoundPending: !!s.limitBreakRoundPending,
       soundEnabled: (typeof s.soundEnabled === 'boolean') ? s.soundEnabled : true,
       notificationsEnabled: (typeof s.notificationsEnabled === 'boolean') ? s.notificationsEnabled : true,
+      systemDesign: s.systemDesign === true,
       rulesAcknowledged: (typeof s.rulesAcknowledged === 'boolean') ? s.rulesAcknowledged : true,
       earlySaveNoticeShown: (typeof s.earlySaveNoticeShown === 'boolean') ? s.earlySaveNoticeShown : false,
       totalItemsSold: Math.max(0, Math.floor(sanitizeNumber(s.totalItemsSold, 0))),
@@ -6091,6 +6313,12 @@
     renderBackupModal();
   }
 
+  function toggleSystemDesign() {   // v6.11.0: переходный переключатель, пока новое оформление не доделано
+    data.systemDesign = !data.systemDesign;
+    saveData();
+    renderBackupModal();
+  }
+
   function renderBackupModal() {
     const cont = document.getElementById('backupContent');
     if (backupModalStep === 'main') {
@@ -6125,6 +6353,10 @@
           <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
             <span>Уведомления Системы: ${data.notificationsEnabled ? 'включены' : 'выключены'}.</span>
             <div class="sound-checkbox-zone" onclick="toggleNotifications()"><div class="sound-checkbox ${data.notificationsEnabled ? 'on' : ''}">✓</div></div>
+          </div>
+          <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
+            <span>Оформление Системы: ${data.systemDesign ? 'включено' : 'выключено'}.</span>
+            <div class="sound-checkbox-zone" onclick="toggleSystemDesign()"><div class="sound-checkbox ${data.systemDesign ? 'on' : ''}">✓</div></div>
           </div>
         </div>
         <div class="backup-section">

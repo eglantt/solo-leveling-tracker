@@ -161,8 +161,69 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   const t0 = txt();
   E(w, 'toggleSound()'); const t1 = txt(); const snd = E(w, 'data.soundEnabled');
   E(w, 'toggleNotifications()'); const t2 = txt(); const ntf = E(w, 'data.notificationsEnabled');
-  check('A3 галочки «Настроек» работают и меняют текст', t0 === 'Звуковые сигналы Системы: включены. | Уведомления Системы: включены.' && snd === false && t1.startsWith('Звуковые сигналы Системы: выключены.')
-    && ntf === false && t2.endsWith('Уведомления Системы: выключены.'), `${t0} → ${t1} → ${t2}`); }
+  check('A3 галочки «Настроек» работают и меняют текст', t0 === 'Звуковые сигналы Системы: включены. | Уведомления Системы: включены. | Оформление Системы: выключено.' && snd === false && t1.startsWith('Звуковые сигналы Системы: выключены.')
+    && ntf === false && t2.includes('Уведомления Системы: выключены.'), `${t0} → ${t1} → ${t2}`); }
+
+// ===== v6.11.0: уведомление в оформлении Системы =====
+{ const w0 = freshB('');
+  check('N1 оформление Системы по умолчанию выключено (новый игрок)', E(w0, 'data.systemDesign') === false);
+  const legacy = JSON.parse(SEED); delete legacy.systemDesign; const saved = SEED; SEED = JSON.stringify(legacy); const wl = boot(); SEED = saved;
+  check('N2 старое сохранение без поля — выключено', E(wl, 'data.systemDesign') === false);
+  const imp = JSON.parse(J(w0, `sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { systemDesign: 'yes' }), total: {} })`));
+  const imp2 = JSON.parse(J(w0, `sanitizeImportedData({ state: Object.assign(JSON.parse(${JSON.stringify(SEED)}), { systemDesign: true }), total: {} })`));
+  const imp3 = JSON.parse(J(w0, `(() => { const st = JSON.parse(${JSON.stringify(SEED)}); delete st.systemDesign; return sanitizeImportedData({ state: st, total: {} }); })()`));
+  check('N3 бэкап: true сохраняется, мусор и отсутствие → выключено', imp2.state.systemDesign === true && imp.state.systemDesign === false && imp3.state.systemDesign === false); }
+{ const w = freshB('data.curseActiveToday = false; data.notificationsEnabled = true;'); const D = w.document;
+  const show = (body, extra) => { E(w, `document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); displayNotificationNow(Object.assign({ body: ${JSON.stringify(body)}, tone: 'info', skipLog: false }, ${JSON.stringify(extra || {})}))`); return D.querySelector('.sys-notice') || D.querySelector('.system-popup'); };
+  let p = show('Получен предмет: Руна Роста');
+  check('N4 выключено — прежнее уведомление', p.classList.contains('system-popup') && !D.querySelector('.sys-notice'));
+  E(w, 'data.systemDesign = true');
+  p = show('Получен предмет: Руна Роста');
+  check('N5 включено — окно Системы: рамка, фон, панель, табличка, текст', p.classList.contains('sys-notice') && p.classList.contains('sn-blue') && !D.querySelector('.system-popup')
+    && p.querySelectorAll(':scope > svg.sf-under').length === 1 && p.querySelectorAll(':scope > svg.sf-over').length === 1 && !!p.querySelector(':scope > .sf-screen .sf-shim')
+    && p.querySelector('.sn-tt').textContent === 'УВЕДОМЛЕНИЕ' && !!p.querySelector('.sn-ic svg') && p.querySelector('.sf-panel > .gp-inner .sn-body').textContent === 'Получен предмет: Руна Роста'
+    && p.querySelectorAll('.sf-energy').length === 2 && !p.dataset.glitch);
+  check('N6 журнал — прежний текст', E(w, 'data.notificationLog[0].text') === 'Получен предмет: Руна Роста');
+  p.click();
+  check('N7 касание — плавный уход, окно освобождается, затем удаляется', p.classList.contains('sn-out') && E(w, 'notificationActive') === false);
+  await sleep(420);
+  check('N8 … и удалено из страницы', !p.isConnected);
+  E(w, 'data.curseActiveToday = true');
+  p = show('Получен предмет: Руна Роста');
+  check('N9 Бремя — всё окно красное, «наводка», 3 полосы среза и помехи', p.classList.contains('sn-red') && p.dataset.sfScheme === 'red' && p.dataset.glitch === 'anomaly'
+    && p.querySelectorAll('.sf-panel > .gp-slice').length === 3 && !!p.querySelector(':scope > .gp-noise'));
+  check('N10 сбой начинается после развёртки окна', !p.classList.contains('glitch'));
+  await sleep(760);
+  const fxA = [...p.classList].filter(c => c.startsWith('gfx-')).sort().join(',');
+  check('N11 … затем сбой всего окна: все пять приёмов', p.classList.contains('glitch') && fxA === 'gfx-flicker,gfx-noise,gfx-shake,gfx-slice,gfx-split', fxA);
+  p.click();
+  check('N12 закрытие останавливает таймеры сбоя', p._glitchStopped === true && p._glitchTimers.length === 0);
+  p = show(E(w, 'PACE_NOTICE'), { tone: 'warn' });
+  check('N13 темп во время Бремени — красное', p.classList.contains('sn-red') && p.dataset.glitch === 'anomaly');
+  E(w, 'data.curseActiveToday = false');
+  p = show(E(w, 'PACE_NOTICE'), { tone: 'warn' });
+  check('N14 темп без Бремени — всё окно оранжевое, без срезов, оранжевый текст', p.classList.contains('sn-orange') && p.dataset.glitch === 'pace' && !p.querySelector('.gp-slice')
+    && !!p.querySelector(':scope > .gp-noise') && p.querySelector('.sn-body').classList.contains('tone-warn'));
+  await sleep(760);
+  const fxP = [...p.classList].filter(c => c.startsWith('gfx-')).sort().join(',');
+  check('N15 … сбой: расслоение и помехи', fxP === 'gfx-noise,gfx-split', fxP);
+  await sleep(700);
+  check('N16 … всплеск снят, повторов нет', !p.classList.contains('glitch') && p._glitchTimers.length === 0);
+  p = show(E(w, 'SYSTEM_NOTICES.complete[0]'), { check: true });
+  check('N17 выполнение дня — чекбокс внутри панели, зелёный', !!p.querySelector('.sf-panel > .gp-inner > .notice-check') && !p.querySelector('.notice-check.red'));
+  E(w, 'data.curseActiveToday = true'); p = show(E(w, 'SYSTEM_NOTICES.complete[0]'), { check: true });
+  check('N18 … под Бременем — красная галочка', !!p.querySelector('.sf-panel > .gp-inner > .notice-check.red'));
+  E(w, 'data.curseActiveToday = false; data.notificationsEnabled = false; window.__q = 0; const _pq = processNotificationQueue;');
+  E(w, "document.querySelectorAll('.sys-notice').forEach(n => n.remove()); displayNotificationNow({ body: 'x', tone: 'info', skipLog: true })");
+  check('N19 уведомления выключены — окна нет', !D.querySelector('.sys-notice'));
+  E(w, 'data.notificationsEnabled = true');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('N20 появление — развёртка; размер рамки без учёта анимации (offsetWidth)', /\.sys-notice \{[^}]*animation: snUnfold \.65s[^}]*backwards/.test(css) && /const w = win\.offsetWidth, s = w \/ G\.W;/.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8')));
+  // переключатель в Архиве → Настройки
+  E(w, "data.systemDesign = false; backupModalStep = 'main'; renderBackupModal()");
+  const row = () => [...D.querySelectorAll('.backup-summary span')].find(x => x.textContent.startsWith('Оформление Системы'));
+  const t0 = row().textContent; E(w, 'toggleSystemDesign()'); const t1 = row().textContent;
+  check('N21 Архив → Настройки: «Оформление Системы» переключается', t0 === 'Оформление Системы: выключено.' && t1 === 'Оформление Системы: включено.' && E(w, 'data.systemDesign') === true); }
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
