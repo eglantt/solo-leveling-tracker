@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1836,7 +1836,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.5';
+  const APP_VERSION = '7.0.6';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -7413,7 +7413,7 @@
         <div class="item-info">
           <div class="item-name">#${entry.rank}&nbsp;&nbsp;${escapeHtml(entry.name)}&nbsp;&nbsp;<span style="float:right;">${entry.level} ур.</span></div>
           <div class="item-desc rank ${rank.class}">${rank.name}</div>
-          <div class="item-desc">Серия дней: ${entry.bestStreak || 0}</div>
+          <div class="item-desc">Лучшая серия дней: ${entry.bestStreak || 0}</div>
         </div>
       </div>`;
   }

@@ -269,6 +269,13 @@ const w = boot(); const D = w.document; await tick();
     && /body\.theme-sys \.sf-win\.mwin \.sys-stat-row \.backup-action-btn \{/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n')));
   closeAll(w); await tick(); }
 
+// ===== v7.0.6: Реестр — «Лучшая серия дней» =====
+{ closeAll(w); await tick();
+  E(w, "renderLeaderboard([{ rank: 1, name: 'А', level: 50, bestStreak: 42 }, { rank: 2, name: 'Б', level: 30, bestStreak: 7 }], { rank: 15, name: 'Я', level: 12, bestStreak: 5 })");
+  const lines = [...D.querySelectorAll('#leaderboardContent .item-card')].map(c => [...c.querySelectorAll('.item-desc')].pop().textContent);
+  check('T47 Реестр: в карточках игроков — «Лучшая серия дней: N» (рекорд серии), и у своей карточки ниже топа', lines.join('|') === 'Лучшая серия дней: 42|Лучшая серия дней: 7|Лучшая серия дней: 5', lines.join('|'));
+  check('T48 на главном экране и в «СТАТУСЕ» подпись прежняя — «Серия дней» (текущая серия)', [...D.querySelectorAll('.sc-chip.st .k')].every(k => k.textContent === 'Серия дней') && D.querySelectorAll('.sc-chip.st .k').length === 2); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
