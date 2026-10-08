@@ -263,6 +263,35 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   check('S7 изменения действуют сразу: Выносливость меняет цели заданий', t210 !== t10, `${t210} / ${t10}`);
   check('S8 сохраняется', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).statPoints === 32); }
 
+// ===== v7.0.5: каталог Длани и Магазин не пересобирают окно после нажатия =====
+{ const w = fresh('data.level = 40; data.credits = 100000; data.consumables = { rune_cleansing: 1, bone_bead: 2 }; data.boxes = {}; data.keys = {};'); const D = w.document;
+  E(w, 'sysToolsAuthorized = true; openSysTools(); openFullCatalog()');
+  const card = id => D.querySelector(`#fullCatalogContent [data-cat-id="${id}"]`);
+  const btns = id => [...card(id).querySelectorAll('.item-btn-stack button')].map(b => b.disabled ? 'off' : 'on').join('/');
+  const c0 = card('rune_cleansing'), img0 = c0.querySelector('img'), n0 = D.querySelectorAll('#fullCatalogContent .item-card').length;
+  E(w, "devRemoveItem('rune_cleansing'); devRemoveItem('rune_cleansing')"); await sleep(700);
+  const a = [E(w, 'data.consumables.rune_cleansing || 0'), btns('rune_cleansing')];
+  E(w, "devAddItem('rune_cleansing')"); await sleep(700);
+  const flash1 = c0.className;
+  E(w, "devAddItem('rune_cleansing')"); const flashAgain = c0.classList.contains('item-flash-gold'); await sleep(700);
+  const b = [E(w, 'data.consumables.rune_cleansing'), btns('rune_cleansing')];
+  check('C1 «−1» дважды подряд при 1 шт.: 0 (не в минус), «−1» гаснет; «+1» — снова горит', a.join() === '0,off/on' && b.join() === '2,on/on', `${a.join()} → ${b.join()}`);
+  check('C2 каталог не пересобирается: та же карточка, та же картинка, столько же карточек', card('rune_cleansing') === c0 && c0.querySelector('img') === img0 && D.querySelectorAll('#fullCatalogContent .item-card').length === n0);
+  check('C3 вспышка проигрывается и при повторном нажатии (прежняя снимается)', flash1.includes('item-flash-gold') && flashAgain);
+  E(w, "devAddBox('box_basalt')"); await sleep(700); const bx1 = btns('box_basalt');
+  E(w, "devRemoveBox('box_basalt')"); await sleep(700); const bx2 = btns('box_basalt');
+  E(w, "devAddKey('key_scarlet')"); await sleep(700); const k1 = btns('key_scarlet');
+  E(w, "devRemoveKey('key_scarlet')"); await sleep(700); const k2 = btns('key_scarlet');
+  E(w, "devAddItem('bone_bead')"); await sleep(700); const bd = [E(w, 'data.consumables.bone_bead'), btns('bone_bead')];
+  check('C4 кнопки на месте: шкатулка (+1 → «−1» горит, −1 → гаснет), ключ (есть — «+1» гаснет, нет — «−1» гаснет), бусина на 3 — «+1» гаснет',
+    bx1 === 'on/on' && bx2 === 'off/on' && k1 === 'on/off' && k2 === 'off/on' && bd.join() === '3,on/off', [bx1, bx2, k1, k2, bd.join()].join(' '));
+  check('C5 в каталоге не осталось вызовов пересборки после нажатия', !/openFullCatalog\(\)/.test(['devAddItem', 'devRemoveItem', 'devAddBox', 'devRemoveBox', 'devAddKey', 'devRemoveKey'].map(f => w[f].toString()).join('')));
+  E(w, "document.getElementById('fullCatalogOverlay').style.display = 'none'; openShop()");
+  const sc0 = D.querySelector('#shopContent .item-card'), bal0 = D.getElementById('shopBalance').textContent, id0 = sc0.dataset.shopId, pr = E(w, `SHOP_CATALOG['${id0}'].price`);
+  E(w, `buyItem('${id0}')`); await sleep(700);
+  check('C6 Магазин: после покупки обновился баланс, список товаров тот же (не пересобран)',
+    D.querySelector('#shopContent .item-card') === sc0 && D.getElementById('shopBalance').textContent.includes(String(100000 - pr)) && bal0.includes('100000'), D.getElementById('shopBalance').textContent); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);

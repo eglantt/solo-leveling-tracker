@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1836,7 +1836,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.4';
+  const APP_VERSION = '7.0.5';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -4912,9 +4912,10 @@
     document.getElementById('progressOverlay').style.display = 'flex';
   }
 
+  function updateShopBalance() { document.getElementById('shopBalance').innerHTML = creditsHtml(`Баланс: ${Math.floor(data.credits)} ◈`); }
   function openShop() {
     document.getElementById('shopHeader').textContent = 'МАГАЗИН СИСТЕМЫ';
-    document.getElementById('shopBalance').innerHTML = creditsHtml(`Баланс: ${Math.floor(data.credits)} ◈`);
+    updateShopBalance();
     const cont = document.getElementById('shopContent');
     cont.innerHTML = '';
     for (let id in SHOP_CATALOG) {
@@ -4942,7 +4943,7 @@
     saveData();
     flashThenRun(`[data-shop-id="${id}"]`, () => {
       playSound('boxOpen');
-      render(); openShop();
+      render(); updateShopBalance();   // v7.0.5: список товаров не меняется — окно не пересобирается
     }, 'item-flash-gold');
   }
 
@@ -5007,12 +5008,26 @@
     document.getElementById('fullCatalogOverlay').style.display = 'flex';
   }
 
+  // v7.0.5: после «+1» / «−1» обновляются только кнопки этой карточки. Пересборка всего каталога (≈50 карточек с картинками)
+  // в теме «Система» на телефоне заставляла заново отрисовывать длинное окно-слой — оно пропадало целиком или кусками.
+  function updateCatalogCard(id) {
+    const card = document.querySelector(`#fullCatalogContent [data-cat-id="${id}"]`);
+    if (!card) return;
+    const [minus, plus] = card.querySelectorAll('.item-btn-stack button');
+    let has, addOff = false;
+    if (BOX_CATALOG[id]) has = data.boxes[id] > 0;
+    else if (KEY_CATALOG[id]) { has = data.keys[id] > 0; addOff = has; }
+    else { has = data.consumables[id] > 0; addOff = id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX; }
+    if (minus) minus.disabled = !has;
+    if (plus) plus.disabled = addOff;
+  }
+
   function devAddItem(id) {
     if (id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX) return;   // v6.10.0: не больше 3
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('boxOpen');
       data.consumables[id] = (data.consumables[id] || 0) + 1;
-      saveData(); render(); openFullCatalog();
+      saveData(); render(); updateCatalogCard(id);
     }, 'item-flash-gold');
   }
 
@@ -5023,7 +5038,7 @@
     saveData();
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('tap');
-      render(); openFullCatalog();
+      render(); updateCatalogCard(id);
     }, 'item-flash-orange');
   }
 
@@ -5031,7 +5046,7 @@
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('boxOpen');
       data.boxes[id] = (data.boxes[id] || 0) + 1;
-      saveData(); render(); openFullCatalog();
+      saveData(); render(); updateCatalogCard(id);
     }, 'item-flash-gold');
   }
 
@@ -5042,7 +5057,7 @@
     saveData();
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('tap');
-      render(); openFullCatalog();
+      render(); updateCatalogCard(id);
     }, 'item-flash-orange');
   }
 
@@ -5051,7 +5066,7 @@
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('boxOpen');
       data.keys[id] = 1;
-      saveData(); render(); openFullCatalog();
+      saveData(); render(); updateCatalogCard(id);
     }, 'item-flash-gold');
   }
 
@@ -5060,7 +5075,7 @@
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('tap');
       delete data.keys[id];
-      saveData(); render(); openFullCatalog();
+      saveData(); render(); updateCatalogCard(id);
     }, 'item-flash-orange');
   }
 
@@ -5285,6 +5300,7 @@
   function flashThenRun(selector, callback, flashClass = 'item-flash') {
     const card = document.querySelector(selector);
     if (card) {
+      card.classList.remove('item-flash', 'item-flash-gold', 'item-flash-orange'); void card.offsetWidth;   // v7.0.5
       card.classList.add(flashClass);
       setTimeout(callback, 600);
     } else {
