@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1080,13 +1080,14 @@
     .theme-pending .system-container { visibility: hidden; animation: bootFailsafeVisible 0s 5s forwards; }
 
     /* ===== v7.0.3: Длань — раздел «Характеристики» ===== */
-    .theme-row.sys-stat-step { margin-top: 2px; }
     .sys-stat-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
     .sys-stat-row .ssn { flex: 1 1 auto; min-width: 0; font-family: 'Exo 2 Text', sans-serif; font-size: 0.86rem; color: #88ddff; }
     .sys-stat-row .ssv { flex: 0 0 auto; min-width: 44px; text-align: right; font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: 0.95rem; color: #eaf8ff; }
     .sys-stat-row.free .ssv { color: #ffd700; text-shadow: 0 0 6px rgba(255,215,0,0.4); }
     .sys-stat-row .backup-action-btn { flex: 0 0 44px; width: 44px; padding: 7px 0; font-size: 1rem; letter-spacing: 0; }
     #sysStatsRefundBtn { margin-top: 12px; }
+    /* v7.0.4: кнопки шага — в столбцах «−» / «+»; выбранная — заливка ярче и светящаяся рамка */
+    .sys-stat-row .sys-step-btn.on { background: rgba(0,140,255,0.45); border-color: #9fdcff; color: #fff; box-shadow: 0 0 10px rgba(64,192,255,0.6); }
     /* ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85). Действует, пока на <body> стоит класс theme-sys; в теме «Классика»
        класса нет, и ни одно правило ниже (кроме выбора оформления в Архиве) не применяется.
        Окно в теме «Система»: .sf-win.mwin > .sf-content > .sf-panel.mw, заголовок — табличка .mw-hdr > .mw-tt,
@@ -1362,6 +1363,9 @@
     /* ===== v7.0.3: Длань — раздел «Характеристики» в теме «Система» ===== */
     body.theme-sys .sf-win.mwin .sys-stat-row .ssn { color: var(--tx2); }
     body.theme-sys .sf-win.mwin .sys-stat-row .backup-action-btn { padding: 7px 0; font-size: 1rem; letter-spacing: 0; }
+
+    /* ===== v7.0.4: Длань — кнопки шага в теме «Система»: выбранная — светлая рамка с подсветкой, как выбранное «Оформление» ===== */
+    body.theme-sys .sf-win.mwin .sys-stat-row .sys-step-btn.on { border-color: #fff !important; box-shadow: var(--sg), inset 0 0 10px rgba(110,200,255,.25); --bc: #eaf8ff; text-shadow: 0 0 8px #6fd4ff; background: rgba(110,190,255,.14) !important; }
   </style>
 </head>
 <body>
@@ -1608,7 +1612,7 @@
       </div>
       <div class="backup-section">   <!-- v7.0.3 -->
         <div class="backup-section-title">Характеристики</div>
-        <div class="backup-summary theme-row sys-stat-step"><span>Шаг</span><div class="theme-seg" id="sysStatStep"><button class="on" onclick="setSysStatStep(1)">1</button><button onclick="setSysStatStep(10)">10</button></div></div>
+        <div class="sys-stat-row sys-stat-step" id="sysStatStep"><span class="ssn">Шаг</span><span class="ssv"></span><button class="backup-action-btn sys-step-btn on" aria-label="Шаг 1" onclick="setSysStatStep(1)">1</button><button class="backup-action-btn sys-step-btn" aria-label="Шаг 10" onclick="setSysStatStep(10)">10</button></div>
         <div class="sys-stat-row free"><span class="ssn">Свободные очки</span><span class="ssv" id="sysStatV_free"></span><button class="backup-action-btn" id="sysStatM_free" aria-label="Свободные очки: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('free', -1))">−</button><button class="backup-action-btn" aria-label="Свободные очки: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('free', 1))">+</button></div>
         <div class="sys-stat-row"><span class="ssn">Сила</span><span class="ssv" id="sysStatV_str"></span><button class="backup-action-btn" id="sysStatM_str" aria-label="Сила: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('str', -1))">−</button><button class="backup-action-btn" aria-label="Сила: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('str', 1))">+</button></div>
         <div class="sys-stat-row"><span class="ssn">Ловкость</span><span class="ssv" id="sysStatV_agi"></span><button class="backup-action-btn" id="sysStatM_agi" aria-label="Ловкость: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('agi', -1))">−</button><button class="backup-action-btn" aria-label="Ловкость: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('agi', 1))">+</button></div>
@@ -1832,7 +1836,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.3';
+  const APP_VERSION = '7.0.4';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];

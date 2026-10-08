@@ -238,7 +238,7 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
 { const w = fresh('data.stats = { str: 12, agi: 10, sta: 18, int: 10, per: 15 }; data.statPoints = 5;'); const D = w.document;
   E(w, 'sysToolsAuthorized = true; openSysTools()');
   const secs = [...D.querySelectorAll('#sysToolsOverlay .backup-section-title')].map(t => t.textContent);
-  const rows = [...D.querySelectorAll('#sysToolsOverlay .sys-stat-row')].map(r => r.querySelector('.ssn').textContent + '=' + r.querySelector('.ssv').textContent);
+  const rows = [...D.querySelectorAll('#sysToolsOverlay .sys-stat-row:not(.sys-stat-step)')].map(r => r.querySelector('.ssn').textContent + '=' + r.querySelector('.ssv').textContent);
   check('S1 раздел «Характеристики» — сразу после «Кредитов»; шаг 1 / 10; шесть строк: свободные очки и пять характеристик с текущими значениями',
     secs.indexOf('Характеристики') === secs.indexOf('Кредиты') + 1 && [...D.querySelectorAll('#sysStatStep button')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|') === '1*|10'
     && rows.join(' ') === 'Свободные очки=5 Сила=12 Ловкость=10 Выносливость=18 Интеллект=10 Восприятие=15', rows.join(' '));
