@@ -5,6 +5,7 @@ const { JSDOM } = require('jsdom'); const fs = require('fs');
 const path = require('path');
 const html = fs.readFileSync(process.argv.slice(2).find(a => !a.startsWith('--')) || path.join(__dirname, '..', 'index.html'), 'utf-8');
 let SEED = null;
+let STORE = null;   // v7.0.2: { ключ: значение } вместо SEED — для проверок памяти браузера
 function boot() {
   const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://x.test/',
     beforeParse(w) {
@@ -13,7 +14,7 @@ function boot() {
         createGain(){return {connect(){},gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}}}} }; };
       w.fetch = () => Promise.resolve({ json: () => Promise.resolve({}) });
       w.crypto.randomUUID = () => 'u'; w.scrollTo = () => {};
-      if (SEED) w.localStorage.setItem('sl_daily_v5_5_0', SEED);
+      if (STORE) Object.keys(STORE).forEach(k => w.localStorage.setItem(k, STORE[k])); else if (SEED) w.localStorage.setItem('sl_daily_v5_5_0', SEED);
     } });
   return dom.window;
 }
@@ -210,6 +211,51 @@ const w = boot(); const D = w.document; await tick();
   check('T37 чекбокс на карточке упражнения в теме «Система» — 26px по оси ряда кнопок; в «Классике» — прежние 22px',
     /body\.theme-sys \.mscr \.quest-item \.qcheck \{ width: 26px; height: 26px; bottom: 17px; \}/.test(css)
     && /\n    \.quest-item \.qcheck \{ position: absolute; left: 16px; bottom: 19px; width: 22px; height: 22px; pointer-events: none; \}/.test(css)); }
+
+// ===== v7.0.2 =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('T38 стартовое окно в теме «Система»: тёмный фон как в «Классике» (95% и размытие 10px), чёрная пауза — чёрная; правила из Архива — обычное затемнение',
+    /body\.theme-sys #rulesOverlay\[data-notice="1"\] \{ background: rgba\(0,5,15,\.95\); -webkit-backdrop-filter: blur\(10px\); backdrop-filter: blur\(10px\); \}/.test(css)
+    && /body\.theme-sys #rulesOverlay\[data-notice="1"\]\.sys-boot-black \{ background: #000; \}/.test(css));
+  check('T39 стабилизация видна: полосы-копии и помехи поверх панели, расслоение рамки и заголовка',
+    /#rulesOverlay \.status-window > \.sb-slice \{ z-index: 4; background: none; \}/.test(css) && /#rulesOverlay \.status-window > \.sb-noise \{ z-index: 5; \}/.test(css)
+    && /#rulesOverlay \.status-window\.sys-boot-glitch > svg\.sf-frm \{ filter: drop-shadow/.test(css)); }
+{ closeAll(w); await tick();
+  E(w, "showRulesOverlay('onboarding')"); await tick();
+  const ov = D.getElementById('rulesOverlay'), rw = ov.firstElementChild;
+  const black = ov.classList.contains('sys-boot-black') && ov.dataset.notice === '1' && E(w, 'BOOT_BLACK_MS') === 1000;
+  await sleep(1300);
+  const mid = rw.classList.contains('sys-boot-glitch') && /px/.test(rw.style.translate) && /brightness/.test(rw.querySelector(':scope > .sf-content > .sf-panel').style.filter) && rw.querySelectorAll(':scope > .sb-slice').length === 3;
+  await sleep(1500);
+  const after = !rw.classList.contains('sys-boot-glitch') && rw.style.translate === '' && rw.querySelector(':scope > .sf-content > .sf-panel').style.filter === '' && !rw.querySelector('.sb-slice, .sb-noise');
+  check('T40 первый запуск в теме «Система»: пауза 1 с, затем стабилизация с дрожью и мерцанием; после неё окно чистое', black && mid && after, `${black} ${mid} ${after}`);
+  E(w, 'stopRulesAnimation(); closeRulesOverlay()'); await tick();
+  E(w, "showRulesOverlay('archive')"); await tick();
+  check('T41 правила из Архива — без пометки стартового окна (обычное затемнение темы)', ov.dataset.notice === '' && !ov.classList.contains('sys-boot-black'));
+  closeAll(w); await tick(); }
+// тема переживает «Сбросить всё»
+{ const thm = async (store) => { STORE = store; const x = boot(); await tick(); const r = [J(x, 'data.theme'), x.document.body.classList.contains('theme-sys'), x.localStorage.getItem('sl_theme')]; STORE = null; return JSON.stringify(r); };
+  const fresh = await thm({}), freshClassic = await thm({ sl_theme: 'classic' }), oldSave = await thm({ sl_theme: 'classic', sl_daily_v5_5_0: SEED });
+  check('T42 новый игрок — «Система»; после сброса — тема, выбранная до него; у сохранённого игрока — его тема, отдельная запись выравнивается по ней',
+    fresh === '["\\"system\\"",true,"system"]' && freshClassic === '["\\"classic\\"",false,"classic"]' && oldSave === '["\\"system\\"",true,"system"]', `${fresh} | ${freshClassic} | ${oldSave}`);
+  STORE = null; const x = boot(); await tick();
+  E(x, "setTheme('classic')"); const k1 = x.localStorage.getItem('sl_theme');
+  E(x, 'clearAppStorage()'); const k2 = x.localStorage.getItem('sl_theme'), gone = x.localStorage.getItem('sl_daily_v5_5_0') === null;
+  check('T43 выбор в Архиве записывается отдельно, и «Сбросить всё» эту запись не стирает', k1 === 'classic' && k2 === 'classic' && gone, `${k1} ${k2} ${gone}`); }
+// уведомления ждут печать свитка
+{ closeAll(w); await tick();
+  E(w, "document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); notificationQueue.length = 0; notificationActive = false; data.notificationsEnabled = true; data.consumables.scroll_contract = 1; data.activeScroll = null; data.pendingScroll = null; data.completed = {}; render()");
+  E(w, "performUseItem('scroll_contract')");
+  await sleep(1000);
+  const seal = D.getElementById('fullscreenSealOverlay').classList.contains('show'), during = !D.querySelector('.sys-notice'), queued = E(w, 'notificationQueue.length') === 1;
+  await sleep(2400);
+  const n = D.querySelector('.sys-notice');
+  check('T44 активация свитка: пока на экране печать (2,5 с), уведомление ждёт в очереди; после неё — показывается',
+    seal && during && queued && !!n && /Цели повышены/.test(n.textContent) && !D.getElementById('fullscreenSealOverlay').classList.contains('show'), `${seal} ${during} ${queued} ${!!n}`);
+  const css = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  const order = ['renunciation', 'contract', 'freeze', 'transfer'].every(k => { const i = css.indexOf(`showFullscreenSeal('${k}'`); const j = css.indexOf('showNotice(', i); return i > 0 && j > i && css.lastIndexOf(`showFullscreenSeal('${k}'`) === i; });
+  check('T45 у всех четырёх свитков печать запускается раньше уведомления о свитке', order);
+  E(w, "document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); notificationQueue.length = 0; notificationActive = false;"); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);

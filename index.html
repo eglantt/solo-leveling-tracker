@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1338,6 +1338,18 @@
     body.theme-sys .mscr #limitBreakBtn:disabled { color: #6f8296 !important; border-color: var(--sl2) !important; box-shadow: none !important; cursor: not-allowed; }
     /* Чекбокс на карточке упражнения — 26px (в «Классике» 22px), по оси ряда кнопок. */
     body.theme-sys .mscr .quest-item .qcheck { width: 26px; height: 26px; bottom: 17px; }
+
+    /* ===== v7.0.2: первый запуск в теме «Система» (демо 87) ===== */
+    /* Стартовое окно — на тёмном фоне, как в «Классике» (95% и сильное размытие); чёрная пауза остаётся чёрной. Только стартовое окно:
+       у правил из Архива и у окна имени — обычное затемнение темы. */
+    body.theme-sys #rulesOverlay[data-notice="1"] { background: rgba(0,5,15,.95); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+    body.theme-sys #rulesOverlay[data-notice="1"].sys-boot-black { background: #000; }
+    /* Стабилизация видна: копии окна целиком (рамка и панель), сдвинутые полосами, и помехи — поверх панели окна Системы. */
+    body.theme-sys #rulesOverlay .status-window > .sb-slice { z-index: 4; background: none; }
+    body.theme-sys #rulesOverlay .status-window > .sb-noise { z-index: 5; }
+    /* и сбой рамки: расслоение рамки и заголовка, как у уведомлений Системы (дрожь и мерцание — в playSystemBoot) */
+    body.theme-sys #rulesOverlay .status-window.sys-boot-glitch > svg.sf-frm { filter: drop-shadow(-3px 0 rgba(255,40,70,.7)) drop-shadow(3px 0 rgba(0,220,255,.7)); }
+    body.theme-sys #rulesOverlay .status-window.sys-boot-glitch .mw-tt { text-shadow: -4px 0 rgba(255,40,70,.85), 4px 0 rgba(0,220,255,.85) !important; }
   </style>
 </head>
 <body>
@@ -1797,7 +1809,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.1';
+  const APP_VERSION = '7.0.2';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -1808,6 +1820,9 @@
   const PACE_NOTICE = 'Зафиксирован недопустимый темп. Последнее внесение не засчитано. Система восстанавливает контроль.';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
+  // v7.0.2: выбранная тема — ещё и в отдельной записи. «Сбросить всё» стирает только прогресс и статистику, поэтому после сброса
+  // первый запуск идёт в той теме, что игрок выбрал до него; у нового игрока записи нет — «Система».
+  const THEME_KEY = 'sl_theme';
   const PREV_KEYS = ['sl_daily_v5_4_0', 'sl_daily_v5_3_3', 'sl_daily_v5_1_9', 'sl_daily_v5_1_8', 'sl_daily_v5_1_7', 'sl_daily_v5_1_6', 'sl_daily_v5_1_5', 'sl_daily_v5_1_4', 'sl_daily_v5_1_3', 'sl_daily_v5_1_2', 'sl_daily_v5_1_1', 'sl_daily_v5_0_0'];
   const PREV_STATS_KEYS = ['sl_total_stats_v5_4_0', 'sl_total_stats_v5_3_3', 'sl_total_stats_v5_1_9', 'sl_total_stats_v5_1_8'];
 
@@ -2059,6 +2074,7 @@
   // v7.0.0: тема оформления. «Система» — у всех, кто не выбрал «Классику» сам (поле появилось в 7.0.0, поэтому после
   // обновления все оказываются на «Системе»). Временный переключатель 6.11.0 (systemDesign) больше не используется.
   if (data.theme !== 'classic') data.theme = 'system';
+  try { if (isFreshInstall && localStorage.getItem(THEME_KEY) === 'classic') data.theme = 'classic'; localStorage.setItem(THEME_KEY, data.theme); } catch (e) {}   // v7.0.2
   delete data.systemDesign;
   if (typeof data.rulesAcknowledged !== 'boolean') data.rulesAcknowledged = true;
   if (typeof data.earlySaveNoticeShown !== 'boolean') data.earlySaveNoticeShown = false;
@@ -3093,7 +3109,8 @@
     bootTimers.forEach(clearTimeout); bootTimers = [];
     const ov = document.getElementById('rulesOverlay'), win = ov && ov.querySelector('.status-window');
     if (ov) ov.classList.remove('sys-boot-black');
-    if (win) { win.classList.remove('sys-boot-open', 'sys-boot-glitch'); win.querySelectorAll('.sb-slice,.sb-noise').forEach(x => x.remove()); }
+    if (win) { win.classList.remove('sys-boot-open', 'sys-boot-glitch'); win.querySelectorAll('.sb-slice,.sb-noise').forEach(x => x.remove());
+      win.style.translate = ''; win.querySelectorAll(':scope > .sf-screen, :scope > .sf-content > .sf-panel').forEach(el => { el.style.filter = ''; }); }
   }
   function playSystemBoot(done) {
     stopSystemBoot();
@@ -3114,6 +3131,10 @@
           sl.style.clipPath = `inset(${top.toFixed(1)}% 0 ${Math.max(0, 100 - top - h).toFixed(1)}% 0)`; sl.style.transform = `translateX(${rnd(-14, 14).toFixed(0)}px)`; });
         n.style.background = `repeating-linear-gradient(0deg, rgba(64,192,255,0.25) 0 1px, transparent 1px ${Math.round(rnd(2, 6))}px)`;
         n.style.transform = `translateY(${rnd(-8, 8).toFixed(0)}px)`;
+        if (isSysTheme()) {   // v7.0.2: в теме «Система» — ещё дрожь окна и мерцание панели (демо 87)
+          win.style.translate = `${rnd(-3, 3).toFixed(1)}px ${rnd(-1.5, 1.5).toFixed(1)}px`;
+          win.querySelectorAll(':scope > .sf-screen, :scope > .sf-content > .sf-panel').forEach(el => { el.style.filter = `brightness(${rnd(1, 1.5).toFixed(2)}) contrast(1.15)`; });
+        }
         bootTimers.push(setTimeout(step, 55));
       };
       step();
@@ -3799,6 +3820,8 @@
   // Every system message (short banners, title/rank/codex announcements) goes through
   // this single queue so overlapping events never render on screen at the same time.
   let notificationQueue = [];
+  // v7.0.2: пока на экране печать свитка (2 с и 0,5 с угасания), уведомления ждут в очереди — первое показывается после неё.
+  var sealBusyUntil = 0;
   let notificationActive = false;
 
   function enqueueNotification(payload) {
@@ -3808,6 +3831,7 @@
 
   function processNotificationQueue() {
     if (notificationActive) return;
+    if (Date.now() < sealBusyUntil) return;   // v7.0.2
     if (notificationQueue.length === 0) return;
     displayNotificationNow(notificationQueue.shift());
   }
@@ -4209,6 +4233,7 @@
     if (data.theme === t) return;
     data.theme = t;
     saveData();
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) {}   // v7.0.2: переживает «Сбросить всё»
     SysTheme.apply();
     if (document.getElementById('backupOverlay').style.display === 'flex') renderBackupModal();
   }
@@ -5214,6 +5239,7 @@
     document.getElementById('itemPreviewOverlay').style.display = 'flex';
   }
 
+  const SEAL_SHOW_MS = 2500;   // печать: 2 с на экране и 0,5 с угасания
   function showFullscreenSeal(id, color) {
     const overlay = document.getElementById('fullscreenSealOverlay');
     const img = document.getElementById('fullscreenSealImg');
@@ -5221,6 +5247,8 @@
     img.style.color = color;
     img.classList.add('spin');
     overlay.classList.add('show');
+    sealBusyUntil = Date.now() + SEAL_SHOW_MS;   // v7.0.2: уведомления — после печати
+    setTimeout(processNotificationQueue, SEAL_SHOW_MS + 20);
     setTimeout(() => {
       overlay.classList.remove('show');
       setTimeout(() => { img.classList.remove('spin'); }, 500);
@@ -5324,6 +5352,7 @@
           } else {
               const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel));
+              showFullscreenSeal('renunciation', '#aaaaaa');   // v7.0.2: сначала печать, уведомление ждёт её
               if (!hasAnyClosed && !data.isGoalMet) {
                   data.activeScroll = 'renunciation';
                   showNotice("При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания.", 'info');
@@ -5332,7 +5361,6 @@
                   showNotice("Свиток вступит в силу со следующим циклом дневного задания.", 'info');
               }
               used = true;
-              showFullscreenSeal('renunciation', '#aaaaaa');
           }
       } else if (id === 'scroll_transfer') {
           // Асинхронная активация — в отличие от всех прочих предметов, здесь
@@ -5359,8 +5387,8 @@
                       if (data.consumables[id] <= 0) delete data.consumables[id];
                       playSound('questDone');
                       saveData(); render(); openInv();
+                      showFullscreenSeal('transfer', '#40c0ff');   // v7.0.2: сначала печать, уведомление ждёт её
                       showNotice(`${QUEST_DISPLAY_NAMES[chosenId]} снято на сегодня — его вес лёг на оставшиеся четыре.`, 'info');
-                      showFullscreenSeal('transfer', '#40c0ff');
                   });
               }
           }
@@ -5370,6 +5398,7 @@
           } else {
               const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
+              showFullscreenSeal('contract', '#ff3333');   // v7.0.2: сначала печать, уведомление ждёт её
               if (!hasAnyClosed && !data.isGoalMet) {
                   data.activeScroll = 'contract';
                   showNotice("Цели повышены. Награда — за полное исполнение.", 'info');
@@ -5378,7 +5407,6 @@
                   showNotice("Свиток вступит в силу со следующим циклом дневного задания.", 'info');
               }
               used = true;
-              showFullscreenSeal('contract', '#ff3333');
           }
       } else if (id === 'scroll_freeze') {
           if (data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt) {
@@ -5390,6 +5418,7 @@
               data.freezeNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
               // Выполненный день (в т.ч. без Предела) не замораживается задним
               // числом — Заморозка начнётся со следующего цикла.
+              showFullscreenSeal('freeze', '#c8f5ff');   // v7.0.2: сначала печать, уведомление ждёт её
               if (data.isGoalMet || data.dailyNotices.complete || allQuestsDone()) {
                   data.pendingScroll = 'freeze';
                   showNotice("Заморозка вступит в силу со следующего цикла.", 'info');
@@ -5400,7 +5429,6 @@
                   showNotice("Задание заморожено на 7 циклов.", 'info');
               }
               used = true;
-              showFullscreenSeal('freeze', '#c8f5ff');
           }
       } else if (id === 'potion_growth') {
           used = useExpBoostItem(0.20, 'Зелье использовано', false, id);
