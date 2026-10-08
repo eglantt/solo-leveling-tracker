@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1079,6 +1079,14 @@
     /* v7.0.0: пока тема не применена (первые мгновения загрузки), главный экран скрыт; страховка — как у .booting. */
     .theme-pending .system-container { visibility: hidden; animation: bootFailsafeVisible 0s 5s forwards; }
 
+    /* ===== v7.0.3: Длань — раздел «Характеристики» ===== */
+    .theme-row.sys-stat-step { margin-top: 2px; }
+    .sys-stat-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .sys-stat-row .ssn { flex: 1 1 auto; min-width: 0; font-family: 'Exo 2 Text', sans-serif; font-size: 0.86rem; color: #88ddff; }
+    .sys-stat-row .ssv { flex: 0 0 auto; min-width: 44px; text-align: right; font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: 0.95rem; color: #eaf8ff; }
+    .sys-stat-row.free .ssv { color: #ffd700; text-shadow: 0 0 6px rgba(255,215,0,0.4); }
+    .sys-stat-row .backup-action-btn { flex: 0 0 44px; width: 44px; padding: 7px 0; font-size: 1rem; letter-spacing: 0; }
+    #sysStatsRefundBtn { margin-top: 12px; }
     /* ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85). Действует, пока на <body> стоит класс theme-sys; в теме «Классика»
        класса нет, и ни одно правило ниже (кроме выбора оформления в Архиве) не применяется.
        Окно в теме «Система»: .sf-win.mwin > .sf-content > .sf-panel.mw, заголовок — табличка .mw-hdr > .mw-tt,
@@ -1350,6 +1358,10 @@
     /* и сбой рамки: расслоение рамки и заголовка, как у уведомлений Системы (дрожь и мерцание — в playSystemBoot) */
     body.theme-sys #rulesOverlay .status-window.sys-boot-glitch > svg.sf-frm { filter: drop-shadow(-3px 0 rgba(255,40,70,.7)) drop-shadow(3px 0 rgba(0,220,255,.7)); }
     body.theme-sys #rulesOverlay .status-window.sys-boot-glitch .mw-tt { text-shadow: -4px 0 rgba(255,40,70,.85), 4px 0 rgba(0,220,255,.85) !important; }
+
+    /* ===== v7.0.3: Длань — раздел «Характеристики» в теме «Система» ===== */
+    body.theme-sys .sf-win.mwin .sys-stat-row .ssn { color: var(--tx2); }
+    body.theme-sys .sf-win.mwin .sys-stat-row .backup-action-btn { padding: 7px 0; font-size: 1rem; letter-spacing: 0; }
   </style>
 </head>
 <body>
@@ -1594,6 +1606,17 @@
           <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addCreditsAction)">Добавить <span class="cr-ic" role="img" aria-label="кредитов"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#credSeal"/></svg><span class="gl"></span></span></button>
         </div>
       </div>
+      <div class="backup-section">   <!-- v7.0.3 -->
+        <div class="backup-section-title">Характеристики</div>
+        <div class="backup-summary theme-row sys-stat-step"><span>Шаг</span><div class="theme-seg" id="sysStatStep"><button class="on" onclick="setSysStatStep(1)">1</button><button onclick="setSysStatStep(10)">10</button></div></div>
+        <div class="sys-stat-row free"><span class="ssn">Свободные очки</span><span class="ssv" id="sysStatV_free"></span><button class="backup-action-btn" id="sysStatM_free" aria-label="Свободные очки: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('free', -1))">−</button><button class="backup-action-btn" aria-label="Свободные очки: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('free', 1))">+</button></div>
+        <div class="sys-stat-row"><span class="ssn">Сила</span><span class="ssv" id="sysStatV_str"></span><button class="backup-action-btn" id="sysStatM_str" aria-label="Сила: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('str', -1))">−</button><button class="backup-action-btn" aria-label="Сила: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('str', 1))">+</button></div>
+        <div class="sys-stat-row"><span class="ssn">Ловкость</span><span class="ssv" id="sysStatV_agi"></span><button class="backup-action-btn" id="sysStatM_agi" aria-label="Ловкость: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('agi', -1))">−</button><button class="backup-action-btn" aria-label="Ловкость: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('agi', 1))">+</button></div>
+        <div class="sys-stat-row"><span class="ssn">Выносливость</span><span class="ssv" id="sysStatV_sta"></span><button class="backup-action-btn" id="sysStatM_sta" aria-label="Выносливость: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('sta', -1))">−</button><button class="backup-action-btn" aria-label="Выносливость: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('sta', 1))">+</button></div>
+        <div class="sys-stat-row"><span class="ssn">Интеллект</span><span class="ssv" id="sysStatV_int"></span><button class="backup-action-btn" id="sysStatM_int" aria-label="Интеллект: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('int', -1))">−</button><button class="backup-action-btn" aria-label="Интеллект: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('int', 1))">+</button></div>
+        <div class="sys-stat-row"><span class="ssn">Восприятие</span><span class="ssv" id="sysStatV_per"></span><button class="backup-action-btn" id="sysStatM_per" aria-label="Восприятие: меньше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('per', -1))">−</button><button class="backup-action-btn" aria-label="Восприятие: больше" onclick="sysToolsFlashThenRun(this, () => sysStatChange('per', 1))">+</button></div>
+        <button class="backup-action-btn" id="sysStatsRefundBtn" onclick="sysToolsFlashThenRun(this, refundStatsAction)">Вернуть всё в свободные очки</button>
+      </div>
       <div class="backup-section">
         <div class="backup-section-title">Предметы и расходники</div>
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, openFullCatalog)">Полный каталог</button>
@@ -1809,7 +1832,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.2';
+  const APP_VERSION = '7.0.3';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -7203,6 +7226,42 @@
     e.innerHTML = `<span class="sv exp${debt ? ' debt' : ''}">${debt ? `Долг −${Math.floor(data.expDebt)} EXP` : `${Math.floor(data.exp)} / ${getExpToNext(data.level)} EXP`}</span>`;
     document.getElementById('sysLevelNow').innerHTML = `<span class="sl">Уровень</span> <span class="sv lvl rk-${getRank(data.level).class}">${data.level}</span>`;
     document.getElementById('sysCreditsNow').innerHTML = `<span class="sv cr">${creditsHtml(Math.floor(data.credits) + ' ◈')}</span>`;
+    updateSysStats();   // v7.0.3
+  }
+  // v7.0.3: Длань — характеристики. Изменение прямое: свободные очки не тратит и не возвращает (иначе при нуле очков ничего не добавить).
+  // Характеристики — не ниже 10 (стартовое значение, от него считаются все бонусы), свободные очки — не ниже 0; верхней границы нет.
+  let sysStatStep = 1;
+  const SYS_STAT_KEYS = ['free', 'str', 'agi', 'sta', 'int', 'per'];
+  const sysStatValue = k => k === 'free' ? data.statPoints : data.stats[k];
+  function setSysStatStep(n) {
+    sysStatStep = n === 10 ? 10 : 1;
+    playSound('tap');
+    updateSysStats();
+  }
+  function updateSysStats() {
+    const box = document.getElementById('sysStatStep');
+    if (!box) return;
+    box.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.textContent === sysStatStep));
+    SYS_STAT_KEYS.forEach(k => {
+      const v = sysStatValue(k);
+      document.getElementById('sysStatV_' + k).textContent = v;
+      document.getElementById('sysStatM_' + k).disabled = v <= (k === 'free' ? 0 : 10);
+    });
+    document.getElementById('sysStatsRefundBtn').disabled = !Object.values(data.stats).some(v => v > 10);
+  }
+  function sysStatChange(k, dir) {
+    const d = dir * sysStatStep;
+    if (k === 'free') data.statPoints = Math.max(0, data.statPoints + d);
+    else data.stats[k] = Math.max(10, data.stats[k] + d);
+    saveData(); render();
+  }
+  // Как Скрижаль Пересмотра, но без предмета: все характеристики — к 10, разница — в свободные очки.
+  function refundStatsAction() {
+    const refunded = Object.values(data.stats).reduce((sum, v) => sum + Math.max(0, v - 10), 0);
+    if (!refunded) return;
+    data.stats = { str: 10, agi: 10, sta: 10, int: 10, per: 10 };
+    data.statPoints += refunded;
+    saveData(); render();
   }
   function addExpAction() {
     const val = sysInputAmount('sysExpInput');

@@ -234,6 +234,35 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
     lbl === 'Оформление' && t0 === 'Система*|Классика' && t1 === 'Система|Классика*' && th1 === 'classic' && body1 === false && open1 === 'flex' && t2 === 'Система*|Классика' && th2 === 'system' && body2 === true,
     `${lbl} ${t0} → ${t1} (${th1}) → ${t2} (${th2})`);
   check('N22 выбор темы сохраняется', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).theme === 'system' && !D.querySelector('#backupContent .sound-checkbox-zone[onclick*="Design"]')); }
+// ===== v7.0.3: Длань — раздел «Характеристики» =====
+{ const w = fresh('data.stats = { str: 12, agi: 10, sta: 18, int: 10, per: 15 }; data.statPoints = 5;'); const D = w.document;
+  E(w, 'sysToolsAuthorized = true; openSysTools()');
+  const secs = [...D.querySelectorAll('#sysToolsOverlay .backup-section-title')].map(t => t.textContent);
+  const rows = [...D.querySelectorAll('#sysToolsOverlay .sys-stat-row')].map(r => r.querySelector('.ssn').textContent + '=' + r.querySelector('.ssv').textContent);
+  check('S1 раздел «Характеристики» — сразу после «Кредитов»; шаг 1 / 10; шесть строк: свободные очки и пять характеристик с текущими значениями',
+    secs.indexOf('Характеристики') === secs.indexOf('Кредиты') + 1 && [...D.querySelectorAll('#sysStatStep button')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|') === '1*|10'
+    && rows.join(' ') === 'Свободные очки=5 Сила=12 Ловкость=10 Выносливость=18 Интеллект=10 Восприятие=15', rows.join(' '));
+  check('S2 «−» выключен на нижней границе (характеристика 10, свободные очки 0), «Вернуть всё» — включён, пока есть вложенные очки',
+    D.getElementById('sysStatM_agi').disabled && !D.getElementById('sysStatM_str').disabled && !D.getElementById('sysStatM_free').disabled && !D.getElementById('sysStatsRefundBtn').disabled);
+  const tap = async (k, dir) => { E(w, `sysToolsFlashThenRun(document.createElement('button'), () => sysStatChange('${k}', ${dir}))`); await sleep(450); };
+  await tap('str', 1); await tap('free', 1);
+  const a = [E(w, 'data.stats.str'), E(w, 'data.statPoints'), D.getElementById('sysStatV_str').textContent];
+  E(w, 'setSysStatStep(10)'); await tap('per', 1); await tap('free', -1); await tap('free', -1);
+  const b = [E(w, 'data.stats.per'), E(w, 'data.statPoints'), D.getElementById('sysStatM_free').disabled, D.querySelector('#sysStatStep button.on').textContent];
+  await tap('sta', -1);
+  const c = [E(w, 'data.stats.sta')];
+  check('S3 шаг 1: «+» у Силы → 13, свободные очки не тратятся (+1 у очков → 6); строка обновилась', a.join() === '13,6,13', a.join());
+  check('S4 шаг 10: Восприятие 15 → 25; свободные очки 6 → 0 (не ниже нуля), «−» у них выключается', b.join() === '25,0,true,10', b.join());
+  check('S5 характеристика не опускается ниже 10: Выносливость 18, «−» с шагом 10 → 10', c.join() === '10', c.join());
+  E(w, 'data.stats = { str: 13, agi: 10, sta: 18, int: 12, per: 25 }; data.statPoints = 4; updateSysStats()');
+  E(w, `sysToolsFlashThenRun(document.createElement('button'), refundStatsAction)`); await sleep(450);
+  check('S6 «Вернуть всё в свободные очки»: характеристики — к 10, вложенное (3+8+2+15=28) — в свободные очки (4+28=32); кнопка выключается',
+    J(w, 'data.stats') === '{"str":10,"agi":10,"sta":10,"int":10,"per":10}' && E(w, 'data.statPoints') === 32 && D.getElementById('sysStatsRefundBtn').disabled);
+  E(w, 'data.stats.sta = 210; render()'); const t210 = E(w, "document.querySelector('.quest-item[data-id=\"pullups\"] .target').textContent");
+  E(w, 'data.stats.sta = 10; render()'); const t10 = E(w, "document.querySelector('.quest-item[data-id=\"pullups\"] .target').textContent");
+  check('S7 изменения действуют сразу: Выносливость меняет цели заданий', t210 !== t10, `${t210} / ${t10}`);
+  check('S8 сохраняется', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).statPoints === 32); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
