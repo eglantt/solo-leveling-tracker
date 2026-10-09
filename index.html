@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.8 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1366,6 +1366,49 @@
 
     /* ===== v7.0.4: Длань — кнопки шага в теме «Система»: выбранная — светлая рамка с подсветкой, как выбранное «Оформление» ===== */
     body.theme-sys .sf-win.mwin .sys-stat-row .sys-step-btn.on { border-color: #fff !important; box-shadow: var(--sg), inset 0 0 10px rgba(110,200,255,.25); --bc: #eaf8ff; text-shadow: 0 0 8px #6fd4ff; background: rgba(110,190,255,.14) !important; }
+    /* ===== v7.0.8: свечение всех текстов в теме «Система» (демо 90; выбор пользователя: сила 60%, размер 1.2×, 4 слоя как в образце,
+       цвет свечения = цвет надписи, буквы как есть, тусклые подписи слабее, своё свечение не трогать, под Бременем — красное).
+       Задаётся на <body> и наследуется: currentColor в наследуемом свечении берётся у каждой надписи свой. У кого есть своё
+       свечение (заголовки, числа, таймер, кнопки), остаётся своё — прямое правило сильнее унаследованного. ===== */
+    body.theme-sys {
+      --tg: 0 0 .096em color-mix(in srgb, currentColor 54%, transparent), 0 0 .264em color-mix(in srgb, currentColor 54%, transparent),
+            0 0 .54em color-mix(in srgb, currentColor 54%, transparent), 0 0 1.08em color-mix(in srgb, currentColor 42%, transparent);
+      --tgd: 0 0 .096em color-mix(in srgb, currentColor 30%, transparent), 0 0 .264em color-mix(in srgb, currentColor 30%, transparent),
+            0 0 .54em color-mix(in srgb, currentColor 30%, transparent), 0 0 1.08em color-mix(in srgb, currentColor 23%, transparent);
+      --tgr: 0 0 .096em rgba(255,200,205,.54), 0 0 .264em rgba(255,120,130,.54), 0 0 .54em rgba(255,70,90,.54), 0 0 1.08em rgba(220,50,70,.42);
+      text-shadow: var(--tg);
+    }
+    /* цифра уровня — своё свечение цвета ранга (drop-shadow), общее не нужно */
+    body.theme-sys .sc-hex b, body.theme-sys .sc-hex .sc-idq { text-shadow: none; }
+    /* вместо прежнего слабого — общее: названия упражнений, счётчики и цели (в своём цвете), текст уведомлений */
+    body.theme-sys .mscr .quest-name, body.theme-sys .quest-item .counter, body.theme-sys .quest-item .target, body.theme-sys .sys-notice .sn-body { text-shadow: var(--tg); }
+    /* Бремя Аномалии: белые названия упражнений и текст красного уведомления — красное свечение */
+    body.theme-sys.sys-anom .mscr .quest-name, body.theme-sys .sys-notice.sn-red .sn-body:not(.tone-warn):not(.tone-danger) { text-shadow: var(--tgr); }
+    /* тусклые серые надписи — свечение слабее */
+    body.theme-sys .mscr #limitBreakBtn:not(.ready), body.theme-sys .cal-arrow.disabled, body.theme-sys .day-cell.none { text-shadow: var(--tgd); }
+    /* кнопки «Оформления»: невыбранная прежде была без свечения — теперь общее */
+    body.theme-sys .sf-win.mwin .theme-seg button:not(.on) { text-shadow: var(--tg); }
+    /* Бремя + свиток и Предел + свиток: общее свечение цифр и поверх — прежняя оранжевая пульсация свитка (ритм и размах те же) */
+    body.theme-sys .quest-item .counter.cursed-scroll { animation-name: sysCursedScrollPulse; }
+    body.theme-sys .quest-item .target.cursed-scroll { animation-name: sysCursedScrollPulseTarget; }
+    body.theme-sys .quest-item .counter.limit-scroll { animation-name: sysLimitScrollPulse; }
+    body.theme-sys .quest-item .target.limit-scroll { animation-name: sysLimitScrollPulseTarget; }
+    @keyframes sysCursedScrollPulse {
+      0%, 100% { text-shadow: var(--tg), 0 0 10px rgba(255,150,0,0.55), 0 0 18px rgba(255,150,0,0.3); }
+      50%      { text-shadow: var(--tg), 0 0 14px rgba(255,160,0,0.95), 0 0 28px rgba(255,150,0,0.65); }
+    }
+    @keyframes sysCursedScrollPulseTarget {
+      0%, 100% { text-shadow: var(--tg), 0 0 6px rgba(255,150,0,0.3); }
+      50%      { text-shadow: var(--tg), 0 0 10px rgba(255,160,0,0.6); }
+    }
+    @keyframes sysLimitScrollPulse {
+      0%, 100% { text-shadow: var(--tg), 0 0 10px rgba(255,160,0,0.5), 0 0 18px rgba(255,160,0,0.25); }
+      50%      { text-shadow: var(--tg), 0 0 14px rgba(255,170,0,0.95), 0 0 28px rgba(255,160,0,0.6); }
+    }
+    @keyframes sysLimitScrollPulseTarget {
+      0%, 100% { text-shadow: var(--tg), 0 0 6px rgba(255,160,0,0.3); }
+      50%      { text-shadow: var(--tg), 0 0 10px rgba(255,170,0,0.6); }
+    }
   </style>
 </head>
 <body>
@@ -1836,7 +1879,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.7';
+  const APP_VERSION = '7.0.8';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];

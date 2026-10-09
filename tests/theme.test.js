@@ -284,6 +284,21 @@ const w = boot(); const D = w.document; await tick();
     && !/inset: -5px -5px 7px/.test(css)
     && /\.veil-overlay \{[^}]*inset: 10px 12px;/.test(css)); }
 
+// ===== v7.0.8: свечение всех текстов в теме «Система» =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const i = css.indexOf('v7.0.8: свечение'), blk = i > 0 ? css.slice(i) : '';
+  check('T50 тема «Система»: общее свечение текстов (на body, цвет надписи, 4 слоя 60% / 1.2×), исключения и красное под Бременем',
+    /body\.theme-sys \{\s*--tg: 0 0 \.096em color-mix\(in srgb, currentColor 54%, transparent\)/.test(blk)
+    && /1\.08em color-mix\(in srgb, currentColor 42%, transparent\);/.test(blk)
+    && /text-shadow: var\(--tg\);\s*\}/.test(blk)
+    && /body\.theme-sys \.sc-hex b, body\.theme-sys \.sc-hex \.sc-idq \{ text-shadow: none; \}/.test(blk)
+    && /body\.theme-sys \.mscr \.quest-name, body\.theme-sys \.quest-item \.counter, body\.theme-sys \.quest-item \.target, body\.theme-sys \.sys-notice \.sn-body \{ text-shadow: var\(--tg\); \}/.test(blk)
+    && /body\.theme-sys\.sys-anom \.mscr \.quest-name[^{]*\{ text-shadow: var\(--tgr\); \}/.test(blk)
+    && /@keyframes sysCursedScrollPulse \{\s*0%, 100% \{ text-shadow: var\(--tg\), 0 0 10px rgba\(255,150,0,0\.55\)/.test(blk)
+    && /@keyframes sysLimitScrollPulse/.test(blk)
+    && /body\.theme-sys \.quest-item \.counter\.cursed-scroll \{ animation-name: sysCursedScrollPulse; \}/.test(blk)
+    && /@keyframes cursedScrollPulse \{\s*0%, 100% \{ text-shadow: 0 0 4px rgba\(255,40,40,0\.7\)/.test(css)); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
