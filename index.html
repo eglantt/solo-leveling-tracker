@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.0.9 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1409,6 +1409,18 @@
       0%, 100% { text-shadow: var(--tg), 0 0 6px rgba(255,160,0,0.3); }
       50%      { text-shadow: var(--tg), 0 0 10px rgba(255,170,0,0.6); }
     }
+    /* ===== v7.0.9: общее свечение вместо своего слабого — заголовки разделов и глав, Летопись, Прогресс, названия предметов,
+       имя, ранг, кредиты, характеристики, «АКТИВНЫЕ ЭФФЕКТЫ» (свечение в цвет надписи). Таблички, кнопки, таймер — своё. ===== */
+    body.theme-sys .sf-win.mwin .section-title, body.theme-sys .sf-win.mwin .backup-section-title, body.theme-sys .sf-win.mwin .backup-section-title.danger,
+    body.theme-sys .sf-win.mwin .st-sec-title, body.theme-sys .sf-win.mwin .codex-chapter-title,
+    body.theme-sys .sf-win.mwin #calStreakLine, body.theme-sys .sf-win.mwin .cal-month-label, body.theme-sys .sf-win.mwin .day-cell, body.theme-sys .sf-win.mwin .day-cell.has-data,
+    body.theme-sys .sf-win.mwin #stats > div:first-child, body.theme-sys .sf-win.mwin #stats .stats-caption, body.theme-sys .sf-win.mwin #stats .stat-line strong,
+    body.theme-sys .sf-win.mwin .item-name,
+    body.theme-sys #hdrName, body.theme-sys #stName, body.theme-sys #hdrRank, body.theme-sys #stRank, body.theme-sys #hdrCredits, body.theme-sys #stCredits,
+    body.theme-sys .sf-win.mwin #valStr, body.theme-sys .sf-win.mwin #valAgi, body.theme-sys .sf-win.mwin #valSta, body.theme-sys .sf-win.mwin #valInt, body.theme-sys .sf-win.mwin #valPer,
+    body.theme-sys .sf-win.mwin #btnStr, body.theme-sys .sf-win.mwin #btnAgi, body.theme-sys .sf-win.mwin #btnSta, body.theme-sys .sf-win.mwin #btnInt, body.theme-sys .sf-win.mwin #btnPer,
+    body.theme-sys .sf-win.mwin #statPoints, body.theme-sys .mscr .effects-header { text-shadow: var(--tg); }
+    body.theme-sys .sf-win.mwin .day-cell.none { text-shadow: var(--tgd); }
   </style>
 </head>
 <body>
@@ -1879,7 +1891,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.8';
+  const APP_VERSION = '7.0.9';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];

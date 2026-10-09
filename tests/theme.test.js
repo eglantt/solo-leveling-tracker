@@ -298,6 +298,17 @@ const w = boot(); const D = w.document; await tick();
     && /@keyframes sysLimitScrollPulse/.test(blk)
     && /body\.theme-sys \.quest-item \.counter\.cursed-scroll \{ animation-name: sysCursedScrollPulse; \}/.test(blk)
     && /@keyframes cursedScrollPulse \{\s*0%, 100% \{ text-shadow: 0 0 4px rgba\(255,40,40,0\.7\)/.test(css)); }
+// ===== v7.0.9: общее свечение вместо своего слабого =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  { const i9 = css.indexOf('/* ===== v7.0.9:'), r9 = i9 < 0 ? '' : css.slice(i9, css.indexOf('var(--tgd); }', i9));
+    const kf = css.lastIndexOf('@keyframes', i9), kfEnd = css.indexOf('\n    }', kf);
+    const need = ['.codex-chapter-title', '.section-title', '.backup-section-title.danger', '.st-sec-title', '#calStreakLine', '.cal-month-label', '.day-cell.has-data',
+      '#stats > div:first-child', '#stats .stats-caption', '#stats .stat-line strong', '.item-name', '#hdrName', '#stRank', '#hdrCredits', '#valPer', '#btnStr', '#statPoints', '.mscr .effects-header'];
+    check('T51 тема «Система» (7.0.9): общее свечение у заголовков разделов и глав, Летописи, Прогресса, названий предметов, шапки и «СТАТУСА»; правило вне @keyframes',
+      i9 > 0 && kfEnd > 0 && kfEnd < i9 && need.every(x => r9.includes(x)) && /\{ text-shadow: var\(--tg\); \}/.test(r9)
+      && /body\.theme-sys \.sf-win\.mwin \.day-cell\.none \{ text-shadow: var\(--tgd\); \}/.test(css)
+      && r9.split('\n').filter(l => /^\s*body/.test(l)).every(l => l.trim().startsWith('body.theme-sys'))); } }
+
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
