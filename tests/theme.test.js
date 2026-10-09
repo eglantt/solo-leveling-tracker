@@ -166,7 +166,7 @@ const w = boot(); const D = w.document; await tick();
   // высокое окно: зубцы повторяются (нечётное число повторов), а не растягиваются
   const t1 = mk(390, 1600); w.__el = t1; E(w, "SysFrame.render(__el, 'blue', { side: 0.45, gap: 0.45 })");
   const t0 = mk(390, 1600); w.__el = t0; E(w, "SysFrame.render(__el, 'blue', { side: 0.45, gap: 0.45, tile: false })");
-  const nT = clip(t1).length, nS = clip(t0).length, polysT = t1.querySelectorAll('svg.sf-under polygon').length, polysS = t0.querySelectorAll('svg.sf-under polygon').length;
+  const nT = clip(t1).length, nS = clip(t0).length, polysT = t1.querySelectorAll('svg.sf-under polygon:not([fill="none"])').length, polysS = t0.querySelectorAll('svg.sf-under polygon:not([fill="none"])').length;   // с v7.1.0 у колонн есть внутренние контуры (fill="none")
   const reps = nT / 40;
   check('T25 высокое окно: рисунок колонн повторяется нечётное число раз; с tile: false — растягивается, как раньше',
     nS === 40 && polysS === 4 && Number.isInteger(reps) && reps >= 3 && reps % 2 === 1 && polysT > 4 * reps - 1, `точек ${nT} (повторов ${reps}), фигур ${polysT} / ${polysS}`);
@@ -181,6 +181,15 @@ const w = boot(); const D = w.document; await tick();
     pa.every((v, i) => Math.abs(v - pb[i]) < 0.01) && pc[0] > pb[0] * 1.3 && Math.max(...clip(a620).map(p => p[0])) > 600, `${pa.join('/')} | ${pb.join('/')} | ${pc.join('/')}`);
   check('T28 полосы рамки — в отдельных группах с фильтром (бегущая энергия не пересчитывает размытие всего окна)',
     a620.querySelectorAll('svg.sf-over > g[filter]').length === 2 && a620.querySelectorAll('svg.sf-over .sf-energy').length === 2);
+  { const ov = a620.querySelector('svg.sf-over'), un = a620.querySelector('svg.sf-under');
+    const r1 = mk(390, 700); w.__el = r1; E(w, "SysFrame.render(__el, 'red', SYS_FRAME_OPT)");
+    check('T52 v7.1.0 полосы по образцу (демо 91): энергия только по линиям (маски), нет прежней вспышки и штрих-кода, точки, тёмная линия, стекло; колонны с внутренним контуром; красная схема — красное стекло',
+      ov.querySelectorAll('mask').length === 2 && ov.querySelectorAll('g[mask] .sf-energy').length === 2 && !ov.querySelector('ellipse, rect.core')
+      && ov.querySelectorAll('rect.sf-dot').length >= 1 && ov.querySelectorAll('line').length === 1 && ov.querySelectorAll('polyline').length >= 20
+      && un.querySelectorAll('polygon[fill="none"], polyline').length > 0 && /rgba\(5,16,50,\.7\)/.test(un.innerHTML)
+      && /rgba\(196,28,56,/.test(r1.querySelector('svg.sf-over').innerHTML) && !/rgba\(34,112,236,/.test(r1.querySelector('svg.sf-over').innerHTML)
+      && /\.sf-win > \.sf-pat \{ position: absolute; z-index: 4; pointer-events: none; \}/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n')));
+    r1.remove(); }
   [n1, m1, t1, t0, a460, a620, b620].forEach(x => x.remove()); }
 
 // ===== стили =====

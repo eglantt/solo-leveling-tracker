@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.0.9 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1045,6 +1045,9 @@
     @keyframes sfDriftA { to { background-position: 300px 150px; } }
     @keyframes sfDriftB { to { background-position: -320px 320px; } }
     .sf-energy { animation: sfEnergy 8.8s ease-in-out infinite; } .sf-energy.sf-b { animation-delay: -4.4s; }
+    .sf-win > .sf-pat { position: absolute; z-index: 4; pointer-events: none; }   /* v7.1.0: живой узор в центре полос */
+    .sf-dot { animation: sfDotTw 2.6s ease-in-out infinite; }
+    @keyframes sfDotTw { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
     @keyframes sfEnergy { 0% { transform: translateX(-25%); } 60%, 100% { transform: translateX(125%); } }
     .sf-content { position: relative; z-index: 2; }
     .sf-panel { position: relative; overflow: hidden; border: 1px solid rgba(225,242,255,.85); box-shadow: 0 0 6px rgba(160,220,255,.45); background: rgba(3,9,20,.45); }
@@ -1891,7 +1894,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.0.9';
+  const APP_VERSION = '7.1.0';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -3993,7 +3996,7 @@
 
 
   // ===== v6.11.0: РАМКА СИСТЕМЫ (демо 73–77, контуры — векторная обводка пользователя SL_Panel_Design) =====
-  // Один компонент для всех окон оформления «Система»: полосы с «начинкой» и бегущей энергией, тёмные колонны,
+  // Один компонент для всех окон оформления «Система»: полосы (с v7.1.0 — по кадру первоисточника, демо 91) с живым узором и энергией, тёмные колонны,
   // подвижный фон (дрейф + переливы, узор тише) в рваной панели, светлая внутренняя рамка. Схемы: blue / red / orange.
   // Размер берётся из offsetWidth/offsetHeight — без учёта анимации появления (иначе рамка строится «сжатой»).
   const SysFrame = (() => {
@@ -4053,30 +4056,149 @@
           else { const y = y1 + (y2 - y1) * (x - x1) / (x2 - x1); lo = Math.min(lo, y); hi = Math.max(hi, y); } } }
       return lo <= hi ? [lo, hi] : null;
     }
-    // «Начинка» полосы как в демо 73 по силуэту обводки: слоистая заливка, светлая середина, белая сердцевина,
-    // яркий узел со схемными засечками, тонкая линия по внешнему краю.
-    function barFill(arr, m, key, top, w, pal) {
-      const P = arr.map(m), r = rng(top ? 23 : 51), xs = P.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
-      const N = 120, band = [], bandB = [], core = [], edge = [];
-      for (let k = 0; k <= N; k++) { const x = x0 + (x1 - x0) * k / N, e = extentAt(P, x); if (!e) continue; const [a, b] = e, t = b - a;
-        band.push([x, a + t * .28]); bandB.push([x, b - t * .28]); core.push([x, (a + b) / 2]); edge.push([x, top ? a - 3 : b + 3]); }
-      const J = q => q.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-      const cx = x0 + (x1 - x0) * (top ? .56 : .5), ce = extentAt(P, cx) || [0, 10], cy = (ce[0] + ce[1]) / 2, th = ce[1] - ce[0];
-      let ticks = '';
-      for (let k = 0; k < 28; k++) { const x = cx - w * .16 + r() * w * .32, h = 2 + r() * Math.max(2, th - 5); ticks += `<rect class="core" x="${x.toFixed(1)}" y="${(cy - h / 2).toFixed(1)}" width="${(.8 + r() * 1.8).toFixed(1)}" height="${h.toFixed(1)}" fill="#fff" opacity="${(.45 + r() * .55).toFixed(2)}"/>`; }
-      for (let k = 0; k < 18; k++) { const x = x0 + r() * (x1 - x0), e = extentAt(P, x); if (!e) continue; const ww = 2 + r() * 10;
-        ticks += `<rect x="${x.toFixed(1)}" y="${(e[0] + 2).toFixed(1)}" width="${ww.toFixed(1)}" height="1.1" fill="${pal.t1}" opacity=".55"/><rect x="${(x + r() * 16).toFixed(1)}" y="${(e[1] - 3).toFixed(1)}" width="${(ww * .6).toFixed(1)}" height="1" fill="${pal.t2}" opacity=".45"/>`; }
-      const poly = J(P), idc = key + 'clip', mid = key.slice(0, -1);
-      return `<clipPath id="${idc}"><polygon points="${poly}"/></clipPath>
-        <polyline points="${J(edge)}" fill="none" stroke="${pal.edge}" stroke-width="1.1" opacity=".75"/>
-        <polygon points="${poly}" fill="url(#${mid}bg)"/>
-        <g clip-path="url(#${idc})">
-          <polygon points="${J(band.concat(bandB.slice().reverse()))}" fill="url(#${mid}ig)" opacity=".9"/>
-          <polyline points="${J(core)}" fill="none" stroke="${pal.core}" stroke-width="1.4" opacity=".9"/>
-          ${ticks}
-          <ellipse class="core" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${(w * .2).toFixed(1)}" ry="${(th * .6).toFixed(1)}" fill="url(#${mid}ng)"/>
-        </g>
-        <polygon points="${poly}" fill="none" stroke="${pal.core}" stroke-width=".8" opacity=".55"/>`;
+    // ===== v7.1.0: полосы по кадру первоисточника (демо 91, настройки пользователя) =====
+    // Стекло с контуром, три тонкие линии по нижнему краю (верх) / по низу (низ), яркий скос справа вверху, засечки
+    // слева вверху, ступенчатые дорожки слева внизу, точки под верхней полосой, тёмная линия над нижней, светлая кромка
+    // под нижней; бегущая энергия — только по линиям; в центре обеих полос — живой узор (холст, см. ниже).
+    const NB = { ga: .65, lb: .9, pd: .4, ps: .6, pb: 1, pw: .45, cb: .4 };
+    const NP = {
+      blue:   { glass: [34, 112, 236], top: [16, 66, 170], core: '#e8fbff', glow: '#3aa8ff', mid: '#8fd8ff', dark: '#1a43a8', pcore: '#e6fbff', pglow: '#44b8ff', pg: [160, 225, 255], col: [34, 78, 196], colFill: 'rgba(5,16,50,.7)' },
+      red:    { glass: [196, 28, 56], top: [110, 12, 30], core: '#ffe9ec', glow: '#ff4d66', mid: '#ffa0ae', dark: '#8a1426', pcore: '#ffe6ea', pglow: '#ff5a72', pg: [255, 150, 165], col: [180, 36, 58], colFill: 'rgba(46,5,14,.7)' },
+      orange: { glass: [214, 112, 10], top: [120, 58, 0], core: '#fff2de', glow: '#ffa040', mid: '#ffcf8a', dark: '#8a4a00', pcore: '#fff0dc', pglow: '#ffaa50', pg: [255, 200, 130], col: [190, 110, 26], colFill: 'rgba(46,22,3,.7)' }
+    };
+    const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${Math.max(0, Math.min(1, a)).toFixed(3)})`;
+    const JJ = q => q.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    // колонны: тёмно-синие, приглушённые, второй (внутренний) контур — где колонна шире 3px
+    function colStyle(scheme) {
+      const P = NP[scheme] || NP.blue, k = NB.cb;
+      const one = (q, cx, closed) => { const xs = q.map(p => p[0]); if (Math.max(...xs) - Math.min(...xs) < 3) return '';
+        return `<${closed ? 'polygon' : 'polyline'} points="${JJ(q.map(p => [cx + (p[0] - cx) * .5, p[1]]))}" fill="none" stroke="${rgba(P.col, .45 * k)}" stroke-width=".7"/>`; };
+      return { fill: `fill="${P.colFill}"`, stroke: rgba(P.col, .78 * k),
+        nest: (q, closed) => { const xs = q.map(p => p[0]); return one(q, (Math.min(...xs) + Math.max(...xs)) / 2, closed); },
+        nestAt: (q, cx) => one(q, cx, false) };
+    }
+    function buildBars(c) {
+      const { w, h, m, scheme, id, cg, panelPx, pal } = c;
+      const P = NP[scheme] || NP.blue, ga = NB.ga, lb = NB.lb, r = rng(7 + Math.round(w)), J = JJ;
+      const T = G.barTop.map(m), B = G.barBot.map(m);
+      const [T0, T1, T2, T3, T4, T5, T6] = T;
+      const thin = T1[1] - T0[1], g = Math.max(1.5, Math.min(2.6, thin / 3.2));
+      const topLine = k => [[T1[0] + 3, T1[1] - .8 - k * g], [T2[0] + k * g * .6, T2[1] - .8 - k * g], [T3[0] + k * g * .6, T3[1] - .8 - k * g], [T4[0] - k * g * .4, T4[1] - .8 - k * g], [T5[0] - .5, T5[1] - k * g * 1.1]];
+      const [B0, B1, B2, B3, B4] = B;
+      const bh = B1[1] - B0[1], bg = Math.max(1.5, Math.min(2.6, bh / 5));
+      const yB = k => B1[1] - 1.4 - k * bg;
+      const slope = (B1[0] - B0[0]) / (B1[1] - B0[1]);
+      const botLine = k => {   // ступенчатые дорожки: каждая линия сворачивает по скосу в своём месте, со ступенькой
+        const y = yB(k), xs = B0[0] + (y - B0[1]) * slope + 3 + k * 5, yMid = y - (y - B0[1]) * .45;
+        return [[B2[0], y], [xs + 6, y], [xs + 6 - (y - yMid) * slope, yMid], [xs - 4 - (y - yMid) * slope, yMid], [B0[0] + 1 + k * 3, B0[1] + .8 + k * .6]];
+      };
+      const LW = [1.15, 1, .9], LA = [1, .82, .66];
+      const lines = fn => [0, 1, 2].map(k => `<polyline points="${J(fn(k))}" fill="none" stroke="${P.core}" stroke-width="${LW[k]}" stroke-linejoin="round" opacity="${Math.min(1, LA[k] * lb).toFixed(2)}"/>`).join('');
+      const halo = fn => [0, 1, 2].map(k => `<polyline points="${J(fn(k))}" fill="none" stroke="${P.glow}" stroke-width="${2.6 + .6 * (2 - k)}" stroke-linejoin="round" opacity="${Math.min(1, .55 * lb).toFixed(2)}"/>`).join('');
+      const x0 = T1[0] + .5, yb = T1[1] - .4, ht = Math.max(3, thin - 1.2);
+      const topExtra = `<rect x="${x0.toFixed(1)}" y="${(yb - ht).toFixed(1)}" width="1.3" height="${ht.toFixed(1)}" fill="${P.core}" opacity="${Math.min(1, .95 * lb)}"/>` +
+        `<rect x="${(x0 + 2.6).toFixed(1)}" y="${(yb - ht * .55).toFixed(1)}" width="1" height="${(ht * .55).toFixed(1)}" fill="${P.core}" opacity="${Math.min(1, .8 * lb)}"/>` +
+        `<polyline points="${J([[T4[0] - 2, T4[1] - .6], [T5[0] - .6, T5[1]], [T5[0] - .6, T5[1] - (T5[1] - T6[1]) * .55]])}" fill="none" stroke="${P.core}" stroke-width="1.3" opacity="${Math.min(1, lb)}"/>`;
+      const y1 = B0[1] + bh * .3, x1 = B0[0] + (y1 - B0[1]) * slope + 18;
+      const botExtra = `<polyline points="${J([[x1 + 14, y1], [x1 + 4, y1], [x1 + 4 - bh * .25 * slope, y1 - bh * .25]])}" fill="none" stroke="${P.mid}" stroke-width=".8" opacity="${Math.min(1, .7 * lb)}"/>` +
+        `<polyline points="${J([[x1 + 24, y1 + bh * .14], [x1 + 18, y1 + bh * .14], [x1 + 15, y1 - bh * .1]])}" fill="none" stroke="${P.mid}" stroke-width=".7" opacity="${Math.min(1, .55 * lb)}"/>`;
+      let dots = '';
+      const yd = T4[1] + Math.max(4, (T4[1] - T0[1]) * .32);
+      for (let i = 0; i < 22; i++) { const x = w * .5 + (r() * 2 - 1) * w * .2; if (Math.abs(x - w * .5) < w * .025) continue;
+        const big = r() < .2, a = big ? .9 : .35 + r() * .35;
+        dots += `<rect${big ? ' class="sf-dot"' : ''} style="animation-delay:-${(r() * 2.6).toFixed(2)}s" x="${x.toFixed(1)}" y="${(yd + (r() < .3 ? 2.5 : 0)).toFixed(1)}" width="${big ? 1.6 : 1}" height="${big ? 1.6 : 1}" fill="${big ? P.core : P.mid}" opacity="${a.toFixed(2)}"/>`; }
+      const glass = key => `<linearGradient id="${id}${key}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${rgba(key === 'b' ? P.glass : P.top, 1)}" stop-opacity="${(ga * (key === 'b' ? .95 : .85)).toFixed(3)}"/><stop offset="1" stop-color="${rgba(P.glass, 1)}" stop-opacity="${ga.toFixed(3)}"/></linearGradient>`;
+      const enW = (w * .16).toFixed(0), tY0 = T0[1], tY1 = T4[1] + 2, bY0 = B0[1] - 2, bY1 = B1[1] + 2;
+      const ml = fn => [0, 1, 2].map(k => `<polyline points="${J(fn(k))}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>`).join('');
+      return `<svg class="sf-frm sf-over" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}
+          <filter id="${id}lg" x="-5%" y="-200%" width="110%" height="500%"><feGaussianBlur stdDeviation="1.8"/></filter>
+          <filter id="${id}gb" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+          ${glass('t')}${glass('b')}
+          <linearGradient id="${id}eg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+          <mask id="${id}mt" maskUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}">${ml(topLine)}</mask><mask id="${id}mb" maskUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}">${ml(botLine)}</mask></defs>
+        <polygon points="${J(panelPx)}" fill="none" stroke="${pal.col}" stroke-width="1" filter="url(#${id}cg)"/>
+        <line x1="${(B0[0] + 8).toFixed(1)}" y1="${(B0[1] - 2.6).toFixed(1)}" x2="${B3[0].toFixed(1)}" y2="${(B0[1] - 2.6).toFixed(1)}" stroke="${P.dark}" stroke-width="1.6" opacity=".9"/>
+        <polyline points="${J([[T2[0] + 30, T4[1] + 2.4], [T4[0] - 6, T4[1] + 2.4]])}" fill="none" stroke="${P.dark}" stroke-width="1.1" opacity=".75"/>
+        <polygon points="${J(T)}" fill="${rgba(P.glass, ga * .9)}" filter="url(#${id}gb)" opacity=".8"/>
+        <polygon points="${J(B)}" fill="${rgba(P.glass, ga * .9)}" filter="url(#${id}gb)" opacity=".9"/>
+        <polygon points="${J(T)}" fill="url(#${id}tg)"/><polygon points="${J(B)}" fill="url(#${id}bg)"/>
+        <polygon points="${J(T)}" fill="none" stroke="${P.mid}" stroke-width=".9" stroke-linejoin="round" opacity="${Math.min(1, .7 * lb).toFixed(2)}"/>
+        <polygon points="${J(B)}" fill="none" stroke="${P.mid}" stroke-width=".9" stroke-linejoin="round" opacity="${Math.min(1, .8 * lb).toFixed(2)}"/>
+        <polyline points="${J([[B1[0] + 2, B1[1] + 3], [B2[0], B2[1] + 3]])}" fill="none" stroke="${P.glow}" stroke-width="1.1" opacity=".75"/>
+        <polyline points="${J([T0, T6])}" fill="none" stroke="${P.mid}" stroke-width=".7" opacity="${(.35 * ga + .1).toFixed(2)}"/>
+        <polyline points="${J([B4, B3])}" fill="none" stroke="${P.mid}" stroke-width=".7" opacity="${(.35 * ga + .1).toFixed(2)}"/>
+        ${dots}
+        <g filter="url(#${id}lg)">${halo(topLine)}</g><g filter="url(#${id}lg)">${halo(botLine)}</g>
+        ${lines(topLine)}${lines(botLine)}${topExtra}${botExtra}
+        <g mask="url(#${id}mt)"><rect class="sf-energy" x="0" y="${tY0}" width="${enW}" height="${tY1 - tY0}" fill="url(#${id}eg)"/></g>
+        <g mask="url(#${id}mb)"><rect class="sf-energy sf-b" x="0" y="${bY0}" width="${enW}" height="${bY1 - bY0}" fill="url(#${id}eg)"/></g></svg>`;
+    }
+    // ---- живой узор в центре полос: короткие светящиеся штрихи, ширина «дышит» до 45% окна, к краям гаснет ----
+    const PATS = []; let patRaf = 0, patLast = 0;
+    function hash(n) { let k = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b); k ^= k >>> 13; k = Math.imul(k, 0xc2b2ae35); k ^= k >>> 16; return (k >>> 0) / 4294967295; }
+    function noise(x, sd) { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return (hash(i + (sd % 100000) * 131) * (1 - u) + hash(i + 1 + (sd % 100000) * 131) * u) * 2 - 1; }
+    function addPatterns(win, w, m, scheme) {
+      const P = NP[scheme] || NP.blue, T = G.barTop.map(m), B = G.barBot.map(m), Wmax = w * NB.pw;
+      patMk(win, w * .5, T[0][1] + .4, T[4][1] - .2, Wmax, P);
+      patMk(win, w * .535, B[0][1] + .4, B[1][1] - .2, Wmax, P);
+    }
+    function patMk(win, cx, y0, y1, Wmax, P) {
+      const H = y1 - y0, dpr = Math.min(2, window.devicePixelRatio || 1);
+      const cv = document.createElement('canvas'); cv.className = 'sf-pat'; cv.setAttribute('aria-hidden', 'true');
+      const gx = canvasCtx(cv); if (!gx || H < 2) return;
+      cv.width = Math.round(Wmax * dpr); cv.height = Math.round(H * dpr);
+      cv.style.cssText = `left:${(cx - Wmax / 2).toFixed(1)}px;top:${y0.toFixed(1)}px;width:${Wmax.toFixed(1)}px;height:${H.toFixed(1)}px`;
+      win.appendChild(cv);
+      const Wref = Math.max(16, Wmax * .22);
+      const o = { cv, g: gx, dpr, W: Wmax, Wp: Wref, H, cx: Wmax / 2, P, strokes: [], seed: Math.floor(Math.random() * 90000), r: rng(Math.floor(Math.random() * 1e9)) };
+      const n = Math.max(8, Math.round(Math.min(70, Wref * H / 14) * (Wmax / Wref) * .45 * NB.pd));
+      for (let i = 0; i < n; i++) o.strokes.push(patStroke(o, 0, true));
+      PATS.push(o);
+      if (!patRaf) patRaf = requestAnimationFrame(patLoop);
+    }
+    function patStroke(o, t, init) {
+      const r = o.r, v = r(), u = r() * 2 - 1, vert = r() < .22, pts = [[0, 0]];
+      if (vert) pts.push([(r() - .5) * 1.2, (.25 + r() * .5) * o.H * (v > .5 ? -1 : 1)]);
+      else { let x = 0, y = 0; const n = 2 + Math.floor(r() * 4);
+        for (let i = 0; i < n; i++) { const dirs = [[1, 0], [0, 1], [1, 1], [1, -1], [-1, 1], [0, -1], [1, .4], [.4, 1]], d = dirs[Math.floor(r() * dirs.length)], L = 1.2 + r() * Math.max(2, o.Wp * .16);
+          x += d[0] * L; y += d[1] * L * .7; pts.push([x, y]); } }
+      const life = .5 + r() * 1.7;
+      return { u, v, pts, born: init ? t - r() * life : t, life, sd: Math.floor(r() * 1e5), w: vert ? 1.2 : .7 + r() * .6 };
+    }
+    function patSpread(o, v, t) { return Math.min(1, (.3 + .7 * (.5 + .5 * noise(t * .4, o.seed + 1))) * (1 + .15 * noise(v * 3 + t * .7, o.seed + 2))); }
+    function patDraw(o, t) {
+      const { g, dpr, P } = o, bright = NB.pb, half = o.W / 2;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, o.cv.width, o.cv.height);
+      g.globalCompositeOperation = 'lighter';
+      const sp = patSpread(o, .5, t);
+      g.save(); g.translate(o.cx, o.H * .45); g.scale(Math.max(4, half * sp * .8), o.H * .9);
+      const gr = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+      gr.addColorStop(0, rgba(P.pg, .22 * bright)); gr.addColorStop(1, rgba(P.pg, 0));
+      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 1, 0, Math.PI * 2); g.fill(); g.restore();
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      for (let i = 0; i < o.strokes.length; i++) {
+        let st = o.strokes[i]; let age = (t - st.born) / st.life;
+        if (age >= 1) { o.strokes[i] = st = patStroke(o, t); age = 0; }
+        const k = patSpread(o, st.v, t), fade = Math.exp(-Math.pow(Math.abs(st.u), 3) * 1.4);
+        const fl = .65 + .35 * noise(t * 7 + st.sd, 3), al = Math.pow(Math.sin(Math.PI * age), .6) * fl * bright * fade;
+        if (al <= .02) continue;
+        const bx = o.cx + st.u * half * k, by = st.v * o.H;
+        g.beginPath();
+        st.pts.forEach((p, j) => { const jx = noise(t * 1.3 + st.sd + j * 7, 5) * 1.6, jy = noise(t * 1.3 + st.sd + j * 7, 9) * 1.2;
+          const x = bx + p[0] + jx, y = by + p[1] + jy; j ? g.lineTo(x, y) : g.moveTo(x, y); });
+        g.globalAlpha = Math.min(1, al * .55); g.strokeStyle = P.pglow; g.lineWidth = st.w + 2.2; g.stroke();
+        g.globalAlpha = Math.min(1, al); g.strokeStyle = P.pcore; g.lineWidth = st.w; g.stroke();
+      }
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    }
+    // один цикл на все узоры, ~30 кадров/с; узоры удалённых и скрытых окон не рисуются; без узоров цикл останавливается
+    function patLoop(now) {
+      for (let i = PATS.length - 1; i >= 0; i--) if (!PATS[i].cv.isConnected) PATS.splice(i, 1);
+      if (!PATS.length) { patRaf = 0; return; }
+      patRaf = requestAnimationFrame(patLoop);
+      if (document.hidden || now - patLast < 33) return; patLast = now;
+      const t = now / 1000 * NB.ps;
+      PATS.forEach(o => { if (o.cv.getClientRects().length) patDraw(o, t); });
     }
     function mapperFit(s, Hpx) {
       const top = YT * s, bot = (G.H - YB) * s, midPx = Math.max(10, Hpx - top - bot), natural = (YB - YT) * s;
@@ -4125,19 +4247,19 @@
       // opt.cap — ширина, после которой рамка перестаёт утолщаться: окно шире, полосы и колонны прежние (растёт только середина)
       const w = win.offsetWidth, s = Math.min(w, (opt && opt.cap) || w) / G.W;
       content.style.padding = `${(YT + 70 * gap) * s}px ${((G.W - XR) * side + 65 * gap) * s}px ${(G.H - YB + 70 * gap) * s}px ${(XL * side + 70 * gap) * s}px`;
-      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen').forEach(x => x.remove());
+      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen, :scope > .sf-pat').forEach(x => x.remove());
       const h = win.offsetHeight, m0 = mapperFit(s, h), id = 'sf' + Math.random().toString(36).slice(2, 8);
       const lw = XL * s * side, rw = (G.W - XR) * s * side, mw = w - lw - rw;
       const mx = x => x <= XL ? x * s * side : x >= XR ? w - (G.W - x) * s * side : lw + (x - XL) / (XR - XL) * mw;
       const m = p => [mx(p[0]), m0(p)[1]];
       const J = q => q.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-      const STRIPS = [G.stripL, G.stripR, G.lineL, G.lineR], colFill = 'fill="rgba(14,32,70,.75)"';
+      const STRIPS = [G.stripL, G.stripR, G.lineL, G.lineR], NC = colStyle(scheme), colFill = NC.fill, colStroke = NC.stroke;
       const top = YT * s, bot = (G.H - YB) * s, midPx = h - top - bot, ratio = midPx / ((YB - YT) * s);
       const N = tile && ratio >= 2 ? 2 * Math.round((ratio - 1) / 2) + 1 : 1;   // нечётное: первый и последний повтор — прямые
       let panelPx, cols;
       if (N === 1) {
         panelPx = G.panel.map(m);
-        cols = STRIPS.map(a => `<polygon points="${J(a.map(m))}" ${colFill} stroke="${pal.col}" stroke-width="1"/>`).join('');
+        cols = STRIPS.map(a => { const q = a.map(m); return `<polygon points="${J(q)}" ${colFill} stroke="${colStroke}" stroke-width="1"/>` + NC.nest(q, true); }).join('');
       } else {
         const e = []; for (let i = 0; i <= N; i++) e.push(i === 0 ? top : i === N ? h - bot : Math.round(top + midPx * i / N));
         const ty = (k, y) => k % 2 ? e[k] + (YB - y) / (YB - YT) * (e[k + 1] - e[k]) : e[k] + (y - YT) / (YB - YT) * (e[k + 1] - e[k]);
@@ -4149,7 +4271,8 @@
         const onY = (a, b, y) => Math.abs(a[1] - y) < .01 && Math.abs(b[1] - y) < .01;
         let fills = '', lines = '';
         const put = (Q, map, skip) => { fills += `<polygon points="${J(Q.map(map))}" ${colFill}/>`;
-          chains(Q, skip).forEach(c => { lines += `<polyline points="${J(c.map(map))}" fill="none" stroke="${pal.col}" stroke-width="1"/>`; }); };
+          const QQ = Q.map(map), cxq = (Math.min(...QQ.map(p => p[0])) + Math.max(...QQ.map(p => p[0]))) / 2;
+          chains(Q, skip).forEach(c => { const cc = c.map(map); lines += `<polyline points="${J(cc)}" fill="none" stroke="${colStroke}" stroke-width="1"/>` + NC.nestAt(cc, cxq); }); };
         STRIPS.forEach(P => {
           const tp = clipH(P, YT, false), md = clipH(clipH(P, YT, true), YB, false), bt = clipH(P, YB, true), hasT = solid(tp), hasB = solid(bt);
           if (hasT) put(tp, m, (a, b) => onY(a, b, YT));
@@ -4168,22 +4291,9 @@
       const cg = `<filter id="${id}cg" x="-50%" y="-5%" width="200%" height="110%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
       const under = `<svg class="sf-frm sf-under" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}</defs>
         <g filter="url(#${id}cg)">${cols}</g></svg>`;
-      const bb = arr => { const xs = arr.map(p => m(p)[0]), ys = arr.map(p => m(p)[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...ys)]; };
-      const [tx0, ty0, ty1] = bb(G.barTop), [bx0, by0, by1] = bb(G.barBot);
-      // Полосы — каждая в своей группе с фильтром: бегущая энергия не пересчитывает размытие на всю высоту окна.
-      const over = `<svg class="sf-frm sf-over" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}
-          <filter id="${id}bf" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          <linearGradient id="${id}bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.bg[0]}"/><stop offset=".5" stop-color="${pal.bg[1]}"/><stop offset="1" stop-color="${pal.bg[2]}"/></linearGradient>
-          <linearGradient id="${id}ig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${pal.ig[0]}"/><stop offset=".5" stop-color="${pal.ig[1]}"/><stop offset="1" stop-color="${pal.ig[2]}"/></linearGradient>
-          <radialGradient id="${id}ng" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffffff" stop-opacity=".95"/><stop offset=".6" stop-color="${pal.ng}" stop-opacity=".5"/><stop offset="1" stop-color="${pal.ng}" stop-opacity="0"/></radialGradient>
-          <linearGradient id="${id}eg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-          <clipPath id="${id}ct"><polygon points="${J(G.barTop.map(m))}"/></clipPath><clipPath id="${id}cb"><polygon points="${J(G.barBot.map(m))}"/></clipPath></defs>
-        <polygon points="${J(panelPx)}" fill="none" stroke="${pal.col}" stroke-width="1" filter="url(#${id}cg)"/>
-        <g filter="url(#${id}bf)">${barFill(G.barTop, m, id + 't', true, w, pal)}
-          <g clip-path="url(#${id}ct)"><rect class="sf-energy" x="${tx0}" y="${ty0}" width="${(w * .16).toFixed(0)}" height="${ty1 - ty0}" fill="url(#${id}eg)"/></g></g>
-        <g filter="url(#${id}bf)">${barFill(G.barBot, m, id + 'b', false, w, pal)}
-          <g clip-path="url(#${id}cb)"><rect class="sf-energy sf-b" x="${bx0}" y="${by0}" width="${(w * .16).toFixed(0)}" height="${by1 - by0}" fill="url(#${id}eg)"/></g></g></svg>`;
+      const over = buildBars({ w, h, m, scheme, id, cg, panelPx, pal });
       win.insertAdjacentHTML('afterbegin', under); win.insertAdjacentHTML('beforeend', over);
+      addPatterns(win, w, m, scheme);
       win.dataset.sfScheme = scheme;
     }
     return { render, PAL };
@@ -4233,7 +4343,7 @@
         if (h) { h.classList.remove('mw-tt'); if (h._sysNext && h._sysNext.parentNode) h._sysNext.before(h); else box.before(h); h._sysNext = null; }
         box.remove();
       }
-      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen').forEach(x => x.remove());
+      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen, :scope > .sf-pat').forEach(x => x.remove());
       [...panel.childNodes].forEach(k => win.appendChild(k));
       win.querySelector(':scope > .sf-content').remove();
       win.classList.remove('sf-win', 'mwin', 'mscr', 'mw-in', 'sn-red', 'mw-ic', 'mw-scroll', 'mw-top');
