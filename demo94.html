@@ -7809,6 +7809,7 @@ function D94bake(c) {
     <div class="acts">
       <button class="act" type="button" data-preset="asis">Как в 7.1.2</button>
       <button class="act main" type="button" data-preset="mine">Моё предложение</button>
+      <button class="act" type="button" data-preset="off">Всё выключено</button>
     </div>
     <div id="d94rows"></div>
     <h4>Сохранение демо</h4>
@@ -7822,6 +7823,8 @@ function D94bake(c) {
 (() => {
   const CFG_KEY = 'sl_demo94_cfg';
   const ROWS = [
+    ['h', 'Тема (для сравнения)'],
+    ['th', 'Оформление', [['system', 'Система'], ['classic', 'Классика']]],
     ['h', 'Пауза'],
     ['pu', 'Пауза анимаций под открытым окном', [['0', 'выкл'], ['1', 'вкл']]],
     ['ps', 'Пауза фона и рамки во время прокрутки', [['0', 'выкл'], ['1', 'вкл']]],
@@ -7840,8 +7843,9 @@ function D94bake(c) {
     ['gl', 'Пульс свечения иконок (кристаллы и др.)', [['1', 'как есть'], ['0', 'пауза']]],
     ['tg', 'Свечение текста', [['1', 'как есть'], ['0', 'выкл']]]
   ];
-  const DEF = { pu: '0', ps: '0', bd: '1', bk: '0', sh: 'asis', dr: '1', pt: '33', en: '1', ly: '1', ma: '1', gl: '1', tg: '1' };
-  const PRESETS = { asis: { ...DEF }, mine: { ...DEF, pu: '1', ps: '1', sh: 'nb', bk: '0.6' } };
+  const DEF = { th: 'system', pu: '0', ps: '0', bd: '1', bk: '0', sh: 'asis', dr: '1', pt: '33', en: '1', ly: '1', ma: '1', gl: '1', tg: '1' };
+  const PRESETS = { asis: { ...DEF }, mine: { ...DEF, pu: '1', ps: '1', sh: 'nb', bk: '0.6' },
+    off: { ...DEF, pu: '1', ps: '1', bd: '0', sh: 'off', dr: '0', pt: 'off', en: '0', ma: '0', gl: '0', tg: '0' } };
   let S = { ...DEF };
   try { Object.assign(S, JSON.parse(localStorage.getItem(CFG_KEY)) || {}); } catch (e) {}
   const save = () => { try { localStorage.setItem(CFG_KEY, JSON.stringify(S)); } catch (e) {} };
@@ -7859,6 +7863,7 @@ function D94bake(c) {
     B.classList.toggle('d94-noglow', S.gl === '0');
     B.classList.toggle('d94-notg', S.tg === '0');
     if (S.ps !== '1') B.classList.remove('d94-scr');
+    try { if (typeof setTheme === 'function') setTheme(S.th); } catch (e) {}
     pauseUnder();
   }
 
@@ -7873,7 +7878,7 @@ function D94bake(c) {
     if (k === 'bk' && was !== S.bk) location.reload();
   });
   document.querySelectorAll('#d94panel [data-preset]').forEach(b => b.addEventListener('click', () => {
-    const bk = S.bk; S = { ...PRESETS[b.dataset.preset] }; save(); paint(); applyClasses();
+    const bk = S.bk, th = S.th; S = { ...PRESETS[b.dataset.preset], th }; save(); paint(); applyClasses();
     if (bk !== S.bk) location.reload();
   }));
   const panel = document.getElementById('d94panel');
@@ -7915,18 +7920,19 @@ function D94bake(c) {
 
   // --- счётчик кадров ---
   const fpsEl = document.getElementById('d94fps');
-  let last = 0, frames = 0, acc = 0, base = 1e9; const janks = [];
+  let last = 0, frames = 0, acc = 0, base = 1e9; const janks = [], all = [];
   function tick(now) {
     if (last) {
-      const d = now - last; frames++; acc += d;
+      const d = now - last; frames++; acc += d; all.push(now);
       if (d < base) base = Math.max(6, d);   // обычная длительность кадра (60 или 120 Гц)
       if (d > base * 1.8 + 4 && !document.hidden) janks.push(now);
     }
     last = now;
     if (acc >= 500) {
       while (janks.length && now - janks[0] > 5000) janks.shift();
+      while (all.length && now - all[0] > 5000) all.shift();
       const fps = Math.round(frames * 1000 / acc);
-      fpsEl.textContent = `${fps} к/с · рывков ${janks.length}`;
+      fpsEl.textContent = `${fps} к/с · рывков ${janks.length} из ${all.length} · кадр ${base.toFixed(1)} мс`;
       fpsEl.classList.toggle('bad', janks.length > 5);
       frames = 0; acc = 0;
     }
