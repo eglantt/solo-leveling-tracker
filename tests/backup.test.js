@@ -184,7 +184,7 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   E(w, "setTheme('system')");
   p = show('Получен предмет: Руна Роста');
   check('N5 «Система» — окно Системы: рамка, фон, панель, табличка, текст', p.classList.contains('sys-notice') && p.classList.contains('sn-blue') && !D.querySelector('.system-popup')
-    && p.querySelectorAll(':scope > svg.sf-under').length === 1 && p.querySelectorAll(':scope > svg.sf-over').length === 1 && !!p.querySelector(':scope > .sf-screen .sf-shim')
+    && p.querySelectorAll(':scope > svg.sf-under').length === 1 && p.querySelectorAll(':scope > svg.sf-over').length === 2 && !!p.querySelector(':scope > svg.sf-over.sf-near') && !!p.querySelector(':scope > .sf-screen .sf-shim')
     && p.querySelector('.sn-tt').textContent === 'УВЕДОМЛЕНИЕ' && !!p.querySelector('.sn-ic svg') && p.querySelector('.sf-panel > .gp-inner .sn-body').textContent === 'Получен предмет: Руна Роста'
     && p.querySelectorAll('.sf-energy').length === 2 && !p.dataset.glitch);
   check('N6 журнал — прежний текст', E(w, 'data.notificationLog[0].text') === 'Получен предмет: Руна Роста');

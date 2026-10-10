@@ -185,11 +185,25 @@ const w = boot(); const D = w.document; await tick();
     const r1 = mk(390, 700); w.__el = r1; E(w, "SysFrame.render(__el, 'red', SYS_FRAME_OPT)");
     check('T52 v7.1.0 полосы по образцу (демо 91): энергия только по линиям (маски), нет прежней вспышки и штрих-кода, точки, тёмная линия, стекло; колонны с внутренним контуром; красная схема — красное стекло',
       ov.querySelectorAll('mask').length === 2 && ov.querySelectorAll('g[mask] .sf-energy').length === 2 && !ov.querySelector('ellipse, rect.core')
-      && ov.querySelectorAll('rect.sf-dot').length >= 1 && ov.querySelectorAll('line').length === 1 && ov.querySelectorAll('polyline').length >= 20
+      && ov.querySelectorAll('rect.sf-dot').length >= 1 && ov.querySelectorAll('line').length === 1 && ov.querySelectorAll('polyline').length >= 15
       && un.querySelectorAll('polygon[fill="none"], polyline').length > 0 && /rgba\(5,16,50,\.7\)/.test(un.innerHTML)
       && /rgba\(196,28,56,/.test(r1.querySelector('svg.sf-over').innerHTML) && !/rgba\(34,112,236,/.test(r1.querySelector('svg.sf-over').innerHTML)
-      && /\.sf-win > \.sf-pat \{ position: absolute; z-index: 4; pointer-events: none; \}/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n')));
-    r1.remove(); }
+      && /\.sf-win > \.sf-pat \{ position: absolute; z-index: 3; pointer-events: none; \}/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n')));
+    r1.remove();
+    // v7.1.2 (демо 93): два стекла — среднее (линии, энергия) и ближнее (без линий, сдвинуто), высота ×1,1 наружу, засечек и дорожек нет
+    const svgs = [...a620.querySelectorAll(':scope > svg.sf-over')], near = a620.querySelector(':scope > svg.sf-over.sf-near');
+    const poly = s => s.split(' ').map(q => q.split(',').map(Number));
+    const back = svgs[0], tMid = poly(back.querySelectorAll('polygon[fill^="url"]')[0].getAttribute('points'));
+    const g2 = near.querySelectorAll('g[transform]'), tNear = poly(g2[0].querySelector('polygon').getAttribute('points'));
+    const trT = g2[0].getAttribute('transform').match(/-?[\d.]+/g).map(Number), trB = g2[1].getAttribute('transform').match(/-?[\d.]+/g).map(Number);
+    const tTop = Math.min(...tMid.map(p => p[1])), tBot = Math.max(...tMid.map(p => p[1]));
+    check('T53 v7.1.2 два стекла: среднее с линиями и энергией, ближнее после него (поверх узора), без линий, вверху сдвинуто вверх-вправо, внизу вниз-влево; высота наружу; засечек нет',
+      svgs.length === 2 && svgs[1] === near && near.querySelectorAll('polyline, .sf-energy').length === 0 && near.querySelectorAll('polygon').length === 6
+      && back.querySelectorAll('.sf-energy').length === 2 && JSON.stringify(tNear) === JSON.stringify(tMid)
+      && trT[0] > 0 && trT[1] < 0 && trB[0] < 0 && trB[1] > 0 && Math.abs(trT[1]) > Math.abs(trT[0])
+      && tTop < 0.2 * tBot && !back.querySelector('rect[width="1.3"]') && !!near.querySelector('clipPath')
+      && near.querySelector('g[clip-path]').getAttribute('opacity') === '0.3',
+      `${svgs.length} ${trT} ${trB} ${tTop}/${tBot}`); }
   [n1, m1, t1, t0, a460, a620, b620].forEach(x => x.remove()); }
 
 // ===== стили =====
