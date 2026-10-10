@@ -16,7 +16,7 @@
 // установку, ни активацию.
 // ============================================================================
 
-const CACHE_VERSION = 'v7-1-0';
+const CACHE_VERSION = 'v7-1-1';
 const ASSETS_VERSION = 'v1';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;

@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1894,7 +1894,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.0';
+  const APP_VERSION = '7.1.1';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2485,10 +2485,10 @@
     }
     if (EXP_BOOST_RATE[id]) return expBoostAbsorbWarning(id);
     if (id === 'scroll_contract') {
-      if (data.activeScroll || data.pendingScroll) return '';
       const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
       const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
       const activatesNow = !hasAnyClosed && !data.isGoalMet;
+      if (scrollGate(activatesNow)) return '';
       if ((activatesNow && data.curseActiveToday) || (!activatesNow && data.pendingCurse)) return 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.';
       return '';
     }
@@ -3773,7 +3773,14 @@
     return null;
   }
   // Отказ свитку: если на следующий цикл уже назначена Пелена покоя — своё сообщение.
-  function scrollBusyText() { return data.pendingScroll === 'veil' ? VEIL_TEXTS.scrollBlocked : 'Другой свиток уже активен или ожидает.'; }
+  // v7.1.1: отказ свитку (или null). Пока ждёт Пелена покоя, свиток можно использовать, только если он
+  // включается сразу (действует до ближайшего сброса и с Пеленой не пересекается); в очередь — отказ.
+  function scrollGate(activatesNow) {
+    if (data.activeScroll) return 'Другой свиток уже активен или ожидает.';
+    if (data.pendingScroll === 'veil') return activatesNow ? null : VEIL_TEXTS.scrollBlocked;
+    if (data.pendingScroll) return 'Другой свиток уже активен или ожидает.';
+    return null;
+  }
   function isVeilActive() { return data.activeScroll === 'veil' && !data.veilLifted; }
   // v6.10.6: дневные эффекты, которые во время Пелены покоя и Заморозки ждут их окончания (или досрочного снятия).
   const HOLD_EFFECT_GEN = { potion_growth: 'Зелья Роста', rune_growth_charged: 'Руны Роста', rune_return: 'Руны Возврата', crystal_clarity: 'Кристалла Ясности',
@@ -5555,11 +5562,12 @@
           else if (!data.streakShield) { data.streakShield = true; data.streakShieldSourceId = id; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
           else { showNotice("Защита серии уже активна.", 'warn', true); }
       } else if (id === 'scroll_renunciation') {
-          if (data.activeScroll || data.pendingScroll) {
-              showNotice(scrollBusyText(), 'warn', true);
+          const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+          const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel));
+          const gate = scrollGate(!hasAnyClosed && !data.isGoalMet);
+          if (gate) {
+              showNotice(gate, 'warn', true);
           } else {
-              const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
-              const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel));
               showFullscreenSeal('renunciation', '#aaaaaa');   // v7.0.2: сначала печать, уведомление ждёт её
               if (!hasAnyClosed && !data.isGoalMet) {
                   data.activeScroll = 'renunciation';
@@ -5577,8 +5585,8 @@
           // остаётся false — обычное, синхронное списание в конце этой
           // функции здесь не должно сработать; вместо этого декремент,
           // сохранение и перерисовка выполняются вручную внутри колбэка.
-          if (data.activeScroll || data.pendingScroll) {
-              showNotice(scrollBusyText(), 'warn', true);
+          if (scrollGate(true)) {   // v7.1.1: Перенос всегда включается сразу — ожидающая Пелена ему не мешает
+              showNotice(scrollGate(true), 'warn', true);
           } else {
               const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
@@ -5601,11 +5609,12 @@
               }
           }
       } else if (id === 'scroll_contract') {
-          if (data.activeScroll || data.pendingScroll) {
-              showNotice(scrollBusyText(), 'warn', true);
+          const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+          const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
+          const gate = scrollGate(!hasAnyClosed && !data.isGoalMet);
+          if (gate) {
+              showNotice(gate, 'warn', true);
           } else {
-              const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
-              const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
               showFullscreenSeal('contract', '#ff3333');   // v7.0.2: сначала печать, уведомление ждёт её
               if (!hasAnyClosed && !data.isGoalMet) {
                   data.activeScroll = 'contract';
@@ -5620,8 +5629,8 @@
           if (data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt) {
               const daysLeft = Math.ceil((data.freezeNextAvailableAt - Date.now()) / (24*60*60*1000));
               showNotice(`Активация Свитка Заморозки будет доступна через ${daysLeft} дней.`, 'warn', true);
-          } else if (data.activeScroll || data.pendingScroll) {
-              showNotice(scrollBusyText(), 'warn', true);
+          } else if (scrollGate(false)) {   // v7.1.1: Заморозка длится 7 циклов — при ожидающей Пелене отказ
+              showNotice(scrollGate(false), 'warn', true);
           } else {
               data.freezeNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
               // Выполненный день (в т.ч. без Предела) не замораживается задним

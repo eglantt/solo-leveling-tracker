@@ -37,6 +37,8 @@ const complete = w => {
   const ids = E(w, `Array.from(document.querySelectorAll('.quest-item')).filter(i=>i.style.display!=='none').map(i=>i.dataset.id)`);
   ids.forEach(id => E(w, `document.querySelector('.quest-item[data-id="${id}"] .add').click()`));
 };
+// одно упражнение выполнено (отжимания)
+const complete1 = w => E(w, "data.completed.pushups = getDynamicTarget(100, data.dailyTargetLevel, 'pushups'); render();");
 const J = (w, c) => E(w, `JSON.stringify(${c})`);
 const fullLoss = w => E(w, `Math.floor(getExpToNext(data.level)*Math.max(0.05,0.15-Math.floor(data.level/20)*0.03-Math.max(0,data.stats.str-10)*0.0025)*(data.curseActiveToday?3:1)*(isArtifactEquipped("amulet_will")?0.85:1))`);
 
@@ -112,8 +114,56 @@ const lastDay = w => { const k = Object.keys(E(w, 'data.history')).sort().pop();
   check('U2 отказы и их тексты, бусина не тратится', bad.length === 0, bad.join(' | '));
   const y = fresh("data.consumables.bone_bead = 1; data.activeScroll = 'contract';"); const vy = useB(y);
   check('U3 при действующем свитке — можно, эффект ожидает', vy.spent && E(y, 'data.pendingScroll') === 'veil' && E(y, 'data.activeScroll') === 'contract');
-  const z = fresh("data.pendingScroll = 'veil'; data.consumables.scroll_contract = 1;"); const vz = use(z, 'scroll_contract');
-  check('U4 свиток при ожидающей Пелене — отказ с её названием', !vz.spent && vz.notice === 'Следующий цикл уже занят: ожидает Пелена покоя.', vz.notice); }
+  // v7.1.1: при ожидающей Пелене свиток, который ушёл бы в очередь, — отказ с её названием
+  const z = fresh("data.pendingScroll = 'veil';"); complete1(z); const vz = use(z, 'scroll_contract');
+  check('U4 свиток в очередь при ожидающей Пелене — отказ с её названием', !vz.spent && vz.notice === 'Следующий цикл уже занят: ожидает Пелена покоя.' && E(z, 'data.pendingScroll') === 'veil', vz.notice); }
+// --- v7.1.1: свитки, включающиеся сразу, при ожидающей Пелене ---
+{ const VB = 'Следующий цикл уже занят: ожидает Пелена покоя.';
+  const pick = w => E(w, "showExerciseChoice = (ids, cb) => { window.__CH = ids; cb(ids[0]); }");
+  // Договор: сразу
+  { const w = fresh('data.consumables.bone_bead = 1;'); useB(w); const v = use(w, 'scroll_contract');
+    check('SV1 Договор после бусины, ничего не выполнено — включается сразу', v.spent && E(w, 'data.activeScroll') === 'contract' && E(w, 'data.pendingScroll') === 'veil' && v.notice.includes('Цели повышены'), v.notice);
+    complete(w); await sleep(4700);
+    check('SV2 … выполнен — бонус Договора', N(w).includes('Договор исполнен'), N(w));
+    reset(w);
+    check('SV3 … после сброса — Пелена, свиток снят, день успешен', E(w, 'data.activeScroll') === 'veil' && E(w, 'data.pendingScroll') === null && lastDay(w) === 'success' && E(w, 'isVeilActive()')); }
+  { const w = fresh("data.pendingScroll = 'veil';"); use(w, 'scroll_contract'); const s0 = E(w, 'data.consecutiveDays'); reset(w);
+    check('SV4 Договор не выполнен — штраф, затем Пелена', lastDay(w) === 'penalty' && E(w, 'data.activeScroll') === 'veil' && E(w, 'data.consecutiveDays') === 0, `${lastDay(w)} ${E(w,'data.activeScroll')}`); }
+  // Перенос
+  { const w = fresh("data.pendingScroll = 'veil'; data.transferStreakDays = 0;"); pick(w); E(w, "data.consumables.scroll_transfer = 1; window.__N = []; performUseItem('scroll_transfer')");
+    check('SV5 Перенос при ожидающей Пелене — выбор упражнения и включение', E(w, 'data.activeScroll') === 'transfer' && E(w, '!data.consumables.scroll_transfer') && E(w, 'data.pendingScroll') === 'veil' && E(w, 'data.transferStreakDays') === 1, N(w));
+    complete(w); reset(w);
+    check('SV6 … после сброса — Пелена, день успешен, выбор упражнения снят', E(w, 'data.activeScroll') === 'veil' && lastDay(w) === 'success' && E(w, 'data.transferExerciseId') === null);
+    reset(w);
+    check('SV6a … день Пелены без Переноса — счётчик «подряд» обнулён', E(w, 'data.transferStreakDays') === 0 && lastDay(w) === 'veil'); }
+  { const w = fresh("data.pendingScroll = 'veil';"); pick(w); complete1(w); const v = use(w, 'scroll_transfer');
+    check('SV7 Перенос: упражнение выполнено — прежний отказ', !v.spent && v.notice === 'Свиток Переноса нельзя использовать: одно из упражнений уже выполнено.', v.notice); }
+  // Отречение
+  { const w = fresh("data.pendingScroll = 'veil';"); const v = use(w, 'scroll_renunciation');
+    check('SV8 Отречение при ожидающей Пелене, ничего не выполнено — включается сразу', v.spent && E(w, 'data.activeScroll') === 'renunciation' && E(w, 'data.pendingScroll') === 'veil', v.notice);
+    reset(w); check('SV9 … после сброса — Пелена', E(w, 'data.activeScroll') === 'veil'); }
+  { const w = fresh("data.pendingScroll = 'veil';"); complete1(w); const v = use(w, 'scroll_renunciation');
+    check('SV10 Отречение: упражнение выполнено — отказ с Пеленой, не тратится', !v.spent && v.notice === VB && E(w, 'data.activeScroll') === null && E(w, 'data.pendingScroll') === 'veil', v.notice); }
+  // Предел
+  { const w = fresh("data.pendingScroll = 'veil'; data.isGoalMet = true;");
+    const a = use(w, 'scroll_contract'), b = use(w, 'scroll_renunciation');
+    check('SV11 идёт Преодоление предела — Договор и Отречение: отказ с Пеленой', !a.spent && !b.spent && a.notice === VB && b.notice === VB, a.notice + ' | ' + b.notice); }
+  // Заморозка
+  { const w = fresh("data.pendingScroll = 'veil';"); const v = use(w, 'scroll_freeze');
+    check('SV12 Заморозка при ожидающей Пелене — отказ, не тратится', !v.spent && v.notice === VB && E(w, 'data.pendingScroll') === 'veil' && !E(w, 'data.freezeNextAvailableAt'), v.notice); }
+  // свиток уже действует
+  { const w = fresh("data.activeScroll = 'contract'; data.pendingScroll = 'veil';");
+    const bad = ['scroll_contract', 'scroll_renunciation', 'scroll_transfer', 'scroll_freeze'].filter(id => { const x = fresh("data.activeScroll = 'contract'; data.pendingScroll = 'veil';"); const v = use(x, id); return v.spent || v.notice !== 'Другой свиток уже активен или ожидает.'; });
+    check('SV13 свиток уже действует и ждёт Пелена — «Другой свиток уже активен или ожидает.»', bad.length === 0, bad.join(',')); }
+  // предупреждение о Бремени
+  { const w = fresh("data.pendingScroll = 'veil'; data.curseActiveToday = true;");
+    check('SV14 окно Договора: Договор сразу при Бремени и ожидающей Пелене — предупреждение', E(w, "getUseWarning('scroll_contract')") === 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.');
+    const w2 = fresh("data.pendingScroll = 'veil';"); complete1(w2);
+    check('SV15 … Договор ушёл бы в очередь — без предупреждения', E(w2, "getUseWarning('scroll_contract')") === ''); }
+  // прежнее без Пелены
+  { const w = fresh(); complete1(w); const v = use(w, 'scroll_contract');
+    check('SV16 без Пелены: Договор после выполненного упражнения по-прежнему встаёт в очередь', v.spent && E(w, 'data.pendingScroll') === 'contract' && E(w, 'data.activeScroll') === null); }
+}
 { const w = fresh('data.level = 85; data.consumables.bone_bead = 2;'); complete(w); useB(w); reset(w);
   const during = useB(w);
   check('U5 во время Пелены — «Активация … будет доступна через …»', !during.spent && /^Активация Костяной бусины будет доступна через /.test(during.notice), during.notice);
