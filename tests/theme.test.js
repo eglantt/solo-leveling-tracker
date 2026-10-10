@@ -333,6 +333,45 @@ const w = boot(); const D = w.document; await tick();
       && r9.split('\n').filter(l => /^\s*body/.test(l)).every(l => l.trim().startsWith('body.theme-sys'))); } }
 
 
+// ===== v7.1.3: облегчение для телефонов (демо 94) =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('T54 фон окон неподвижен (без дрейфа), пятна света — без живого размытия и наложения, на главном экране их нет',
+    !/sfDrift/.test(css) && /\.sf-circ \{[^}]*\}/.test(css) && !/\.sf-circ \{[^}]*animation/.test(css) && !/\.sf-scr \{[^}]*animation/.test(css)
+    && /\.sf-shim i \{[^}]*animation: sfShim/.test(css) && !/\.sf-shim i \{[^}]*filter:/.test(css) && !/mix-blend-mode: screen; \}\n\s*\.sf-shim i/.test(css) && !/\.sf-shim \{ mix-blend-mode/.test(css)
+    && /body\.theme-sys \.mscr \.sf-shim \{ display: none; \}/.test(css));
+  check('T55 правила паузы: под окном — обе темы (anim-paused), во время прокрутки — только «Система», фон и рамка',
+    /\.anim-paused, \.anim-paused \*, \.anim-paused \*::before, \.anim-paused \*::after \{ animation-play-state: paused !important; \}/.test(css)
+    && /body\.theme-sys\.sys-scrolling \.sf-screen \*, body\.theme-sys\.sys-scrolling svg\.sf-frm \* \{ animation-play-state: paused !important; \}/.test(css));
+  const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  check('T56 узор рамки не рисуется под окном и во время прокрутки; пробег руны под окном пропускается; текстуры размыты заранее (1,2 px)',
+    /AnimPause\.scrolling\(\) \|\| now - patLast < 33/.test(src) && /o\.cv\.getClientRects\(\)\.length && !o\.cv\.closest\('\.anim-paused'\)/.test(src)
+    && /!document\.hidden && !svg\.closest\('\.anim-paused'\)\) runRuneBolt/.test(src) && /const TEX_BLUR = 1\.2;/.test(src) && (src.match(/return texBake\(c\);/g) || []).length === 2); }
+{ const mk = (cls) => { const el = D.createElement('div'); el.className = cls; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
+    Object.defineProperty(el, 'offsetWidth', { value: 380 }); Object.defineProperty(el, 'offsetHeight', { value: 900 }); D.body.appendChild(el); return el; };
+  const mw = mk('sf-win mwin mscr'), ww = mk('sf-win mwin');
+  w.__el = mw; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)"); w.__el = ww; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
+  const cm = mw.querySelector('.sf-screen').style.clipPath, cw = ww.querySelector('.sf-screen').style.clipPath;
+  check('T57 фон главного экрана не вырезается по форме рамки, у окон — вырезается', cm === '' && /^polygon\(/.test(cw), `${cm.slice(0, 20)} | ${cw.slice(0, 20)}`);
+  mw.remove(); ww.remove();
+  for (const theme of ['system', 'classic']) {
+    E(w, `setTheme('${theme}')`); closeAll(w); await tick();
+    const paused = () => [...D.querySelectorAll('.anim-paused')].map(e => e.id || e.className.split(' ')[0]).sort().join(',');
+    const p0 = paused();
+    E(w, 'openShop()'); await tick(); const p1 = paused();
+    E(w, "showItemPreview('crystal_restoration', 'К')"); await tick(); const p2 = paused();
+    E(w, "document.getElementById('itemPreviewOverlay').style.display = 'none'"); await tick(); const p3 = paused();
+    closeAll(w); await tick(); const p4 = paused();
+    check(`T58 пауза под окном (${theme === 'system' ? '«Система»' : '«Классика»'}): Магазин — замер главный экран; превью поверх — ещё и Магазин; закрыли превью — Магазин ожил; закрыли всё — пауз нет`,
+      p0 === '' && p1 === 'system-container' && p2 === 'shopOverlay,system-container' && p3 === 'system-container' && p4 === '', [p0, p1, p2, p3, p4].join(' | '));
+  }
+  E(w, "setTheme('system')"); await tick();
+  D.dispatchEvent(new w.Event('scroll'));
+  const on1 = D.body.classList.contains('sys-scrolling') && E(w, 'AnimPause.scrolling()');
+  await sleep(380); const off1 = !D.body.classList.contains('sys-scrolling') && !E(w, 'AnimPause.scrolling()');
+  E(w, "setTheme('classic')"); D.dispatchEvent(new w.Event('scroll')); const cls = !D.body.classList.contains('sys-scrolling'); await sleep(380);
+  E(w, "setTheme('system')"); await tick();
+  check('T59 прокрутка в «Системе»: фон и рамка замирают и через 0,3 с после остановки идут дальше; в «Классике» — без изменений', on1 && off1 && cls); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);

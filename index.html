@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1036,20 +1036,21 @@
     .sf-screen { position: absolute; left: 0; top: 0; z-index: 1; overflow: hidden; pointer-events: none; }
     .sf-screen .sf-base { position: absolute; inset: 0; background: #030914; }
     .sf-bg { position: absolute; inset: 0; pointer-events: none; opacity: var(--sf-pat); }
-    .sf-circ { background-repeat: repeat; background-size: 300px 300px; opacity: calc(var(--sf-pat) * .9); animation: sfDriftA 55s linear infinite; }
-    .sf-scr { background-repeat: repeat; background-size: 320px 320px; opacity: calc(var(--sf-pat) * .85); animation: sfDriftB 44s linear infinite; }
-    .sf-shim { mix-blend-mode: screen; }
-    .sf-shim i { position: absolute; width: 75%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(70,150,255,.32), transparent 65%); filter: blur(10px); animation: sfShim 9s ease-in-out infinite; }
+    /* v7.1.3 (демо 94, нагрузка на телефонах): фон неподвижен и размыт заранее (texBake); пятна света — мягкий градиент без живого размытия и наложения */
+    .sf-circ { background-repeat: repeat; background-size: 300px 300px; opacity: calc(var(--sf-pat) * .9); }
+    .sf-scr { background-repeat: repeat; background-size: 320px 320px; opacity: calc(var(--sf-pat) * .85); }
+    .sf-shim i { position: absolute; width: 75%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(70,150,255,.22) 0%, rgba(70,150,255,.12) 30%, rgba(70,150,255,.04) 52%, transparent 70%); animation: sfShim 9s ease-in-out infinite; }
     .sf-shim i:nth-child(1) { left: -15%; top: -10%; } .sf-shim i:nth-child(2) { right: -20%; top: 30%; animation-delay: -3.1s; } .sf-shim i:nth-child(3) { left: 15%; bottom: -25%; animation-delay: -6.3s; }
     @keyframes sfShim { 0%, 100% { opacity: .25; transform: translate(0,0) scale(.85); } 50% { opacity: 1; transform: translate(8%,6%) scale(1.15); } }
-    @keyframes sfDriftA { to { background-position: 300px 150px; } }
-    @keyframes sfDriftB { to { background-position: -320px 320px; } }
     .sf-energy { animation: sfEnergy 8.8s ease-in-out infinite; } .sf-energy.sf-b { animation-delay: -4.4s; }
     .sf-win > .sf-pat { position: absolute; z-index: 3; pointer-events: none; }   /* v7.1.0: живой узор в центре полос; v7.1.2 — под ближним стеклом (тот же слой, ближнее стекло идёт после) */
     .sf-dot { animation: sfDotTw 2.6s ease-in-out infinite; }
     @keyframes sfDotTw { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
     @keyframes sfEnergy { 0% { transform: translateX(-25%); } 60%, 100% { transform: translateX(125%); } }
     .sf-content { position: relative; z-index: 2; }
+    /* v7.1.3: пауза анимаций под открытым окном (обе темы, AnimPause) и фона/рамки во время прокрутки («Система») */
+    .anim-paused, .anim-paused *, .anim-paused *::before, .anim-paused *::after { animation-play-state: paused !important; }
+    body.theme-sys.sys-scrolling .sf-screen *, body.theme-sys.sys-scrolling svg.sf-frm * { animation-play-state: paused !important; }
     .sf-panel { position: relative; overflow: hidden; border: 1px solid rgba(225,242,255,.85); box-shadow: 0 0 6px rgba(160,220,255,.45); background: rgba(3,9,20,.45); }
     .sf-panel > .gp-inner, .sf-panel .gp-slice > .gp-inner { padding: 14px 12px 20px; }
     .sys-notice { position: fixed; top: 58%; left: 50%; width: min(350px, 94vw); transform: translate(-50%, -50%); z-index: 2000; cursor: pointer; text-align: center;
@@ -1278,7 +1279,7 @@
     body.theme-sys .quest-panel.mscr { width: min(620px, 98vw); max-width: none; background: none; border: 0; border-radius: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: visible; }
     body.theme-sys .quest-panel.mscr > .sf-content { display: block; max-height: none; }
     body.theme-sys .quest-panel.mscr .sf-panel.mw { display: block; }
-    body.theme-sys .mscr .sf-circ, body.theme-sys .mscr .sf-scr { animation: none; }       /* на длинной странице узор неподвижен: не нагружает прокрутку */
+    body.theme-sys .mscr .sf-shim { display: none; }       /* v7.1.3: на главном экране пятен света нет — облегчает прокрутку длинной страницы */
     body.theme-sys .mscr .header { background: none; padding: 0; border-bottom: 0; gap: 12px; }
     body.theme-sys .mscr .header-top-row { display: block; }
     body.theme-sys .mscr .mw-hdr { margin-bottom: 0; }
@@ -1311,7 +1312,6 @@
     body.theme-sys.sys-anom .mscr .sf-panel { border-color: #ff8a96; box-shadow: 0 0 8px rgba(255,40,70,.45); }
     body.theme-sys.sys-anom .mscr .sc-bar:not(.debt) { --f: #ff5d70; }
     body.theme-sys.sys-anom .mscr .sf-circ, body.theme-sys.sys-anom .mscr .sf-scr { filter: hue-rotate(140deg) saturate(1.3); }
-    body.theme-sys.sys-anom .mscr .sf-shim i { background: radial-gradient(circle, rgba(255,60,90,.26), transparent 65%); }
     body.theme-sys.sys-anom .mscr .sf-screen .sf-base { background: #12040a; }
     body.theme-sys.sys-anom .mscr button:not(:disabled):active { background: rgba(255,150,165,.2) !important; box-shadow: 0 0 10px rgba(255,120,140,.6); }
 
@@ -1894,7 +1894,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.2';
+  const APP_VERSION = '7.1.3';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2713,7 +2713,7 @@
     const [a, b] = RUNE_BOLT_INTERVAL;
     const t = setTimeout(() => {
       if (!svg.isConnected) return;                       // панель перерисована — таймер больше не нужен
-      if (!document.hidden) runRuneBolt(svg);            // приложение свёрнуто — пропускаем пробег
+      if (!document.hidden && !svg.closest('.anim-paused')) runRuneBolt(svg);   // свёрнуто или под открытым окном (v7.1.3) — пропуск
       scheduleRuneBolt(svg);
     }, a + Math.random() * (b - a));
     runeBoltTimers.push(t);
@@ -4006,12 +4006,59 @@
   // Один компонент для всех окон оформления «Система»: полосы (с v7.1.0 — по кадру первоисточника, демо 91) с живым узором и энергией, тёмные колонны,
   // подвижный фон (дрейф + переливы, узор тише) в рваной панели, светлая внутренняя рамка. Схемы: blue / red / orange.
   // Размер берётся из offsetWidth/offsetHeight — без учёта анимации появления (иначе рамка строится «сжатой»).
+  // ===== v7.1.3: ПАУЗА АНИМАЦИЙ (демо 94 — нагрузка на телефонах) =====
+  // Под открытым окном (обе темы): главный экран и нижние открытые окна получают класс anim-paused — их CSS-анимации
+  // замирают и продолжаются с того же места после закрытия; узоры рамки и пробеги рун под окном не рисуются.
+  // Верхнее окно — открытое с наибольшим z-index (при равных — последнее в разметке). Уведомления не трогаются.
+  // Во время прокрутки (только «Система»): на <body> класс sys-scrolling — замирают фон и рамка, узоры не рисуются;
+  // через SCROLL_IDLE_MS после остановки всё идёт дальше.
+  const AnimPause = (() => {
+    const SCROLL_IDLE_MS = 300;
+    let ovs = [], main = null, scrolling = false, scrollTimer = 0;
+    const isOpen = ov => !!ov.style.display && ov.style.display !== 'none';
+    function update() {
+      const open = ovs.filter(isOpen);
+      let top = null, tz = -Infinity;
+      open.forEach(ov => { const z = parseInt(getComputedStyle(ov).zIndex, 10) || 0; if (z >= tz) { tz = z; top = ov; } });
+      const want = top ? [main, ...open.filter(ov => ov !== top)].filter(Boolean) : [];
+      document.querySelectorAll('.anim-paused').forEach(el => { if (!want.includes(el)) el.classList.remove('anim-paused'); });
+      want.forEach(el => el.classList.add('anim-paused'));
+    }
+    function onScroll() {
+      if (!isSysTheme()) return;
+      if (!scrolling) { scrolling = true; document.body.classList.add('sys-scrolling'); }
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => { scrolling = false; document.body.classList.remove('sys-scrolling'); }, SCROLL_IDLE_MS);
+    }
+    function init() {
+      main = document.querySelector('.system-container');
+      ovs = [...document.querySelectorAll('.status-overlay')];
+      const mo = new MutationObserver(() => { if (typeof document !== 'undefined' && document) update(); });
+      ovs.forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['style'] }));
+      document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+      update();
+    }
+    return { init, update, scrolling: () => scrolling };
+  })();
+
   const SysFrame = (() => {
     const G = {"W": 3051, "H": 1793, "barTop": [[3, 3], [3, 51], [648, 51], [754, 135], [2951, 135], [3050, 68], [3050, 3]], "barBot": [[9, 1693], [127, 1789], [3033, 1789], [3033, 1693], [402, 1693], [365, 1718], [210, 1719], [177, 1693]], "panel": [[311, 177], [309, 259], [254, 287], [254, 367], [281, 367], [282, 491], [251, 510], [251, 765], [284, 800], [283, 806], [259, 823], [258, 902], [313, 903], [313, 1052], [293, 1066], [298, 1275], [312, 1287], [312, 1511], [287, 1524], [291, 1642], [2875, 1644], [2875, 1527], [2865, 1525], [2865, 1290], [2834, 1287], [2835, 1078], [2821, 1077], [2822, 1029], [2805, 1010], [2805, 1005], [2824, 985], [2822, 913], [2782, 912], [2781, 517], [2745, 517], [2745, 391], [2759, 388], [2759, 302], [2784, 281], [2781, 185]], "stripL": [[226, 177], [194, 177], [192, 259], [137, 287], [137, 367], [164, 367], [165, 491], [134, 510], [134, 765], [167, 800], [166, 806], [142, 823], [141, 901], [195, 926], [196, 1052], [176, 1066], [181, 1275], [195, 1287], [195, 1511], [170, 1524], [174, 1642], [206, 1642], [203, 1526], [228, 1513], [228, 1286], [213, 1273], [208, 1068], [229, 1054], [228, 900], [174, 899], [174, 825], [204, 803], [166, 763], [166, 513], [198, 493], [196, 364], [170, 363], [169, 290], [224, 262]], "stripR": [[2873, 208], [2874, 313], [2849, 333], [2849, 418], [2835, 422], [2835, 554], [2872, 554], [2873, 948], [2913, 949], [2914, 1017], [2892, 1041], [2912, 1063], [2912, 1113], [2925, 1114], [2924, 1323], [2956, 1327], [2956, 1562], [2966, 1563], [2966, 1677], [2985, 1677], [2985, 1650], [3013, 1644], [3013, 1527], [3003, 1525], [3003, 1290], [2972, 1287], [2973, 1078], [2959, 1077], [2960, 1029], [2943, 1010], [2943, 1005], [2962, 985], [2960, 913], [2920, 912], [2919, 517], [2883, 517], [2883, 391], [2897, 388], [2897, 302], [2922, 281], [2923, 208]], "lineL": [[108, 789], [110, 1643], [162, 1643], [161, 1373], [132, 1372], [132, 789]], "lineR": [[2932, 210], [2932, 519], [2944, 520], [2944, 707], [2979, 708], [2979, 1030], [3003, 1030], [3003, 325], [2979, 325], [2979, 379], [2958, 380], [2957, 210]]};
     // Холст: в тестовом браузере (jsdom) рисования нет — текстуры пустые.
     function canvasCtx(c) { if (/jsdom/i.test(navigator.userAgent)) return null; try { return c.getContext('2d'); } catch (e) { return null; } }
     function rng(seed) { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
     // ---- текстуры фона (рисуются один раз) ----
+    // v7.1.3: текстура размывается один раз при создании (1,2 px, с повтором краёв — без швов на стыках плиток):
+    // тот же мягкий фон, что дало бы живое размытие, но без пересчёта на каждом кадре (демо 94).
+    const TEX_BLUR = 1.2;
+    function texBake(c) {
+      try {
+        const o = document.createElement('canvas'); o.width = c.width; o.height = c.height;
+        const g = o.getContext('2d'); if (!g || !('filter' in g)) return c.toDataURL();
+        g.filter = `blur(${TEX_BLUR}px)`;
+        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) g.drawImage(c, dx * c.width, dy * c.height);
+        return o.toDataURL();
+      } catch (e) { return c.toDataURL(); }
+    }
     function texCircuit() {
       const c = document.createElement('canvas'); c.width = c.height = 300; const g = canvasCtx(c), r = rng(7); if (!g) return '';
       g.strokeStyle = 'rgba(70,150,255,0.22)'; g.lineWidth = .8;
@@ -4020,7 +4067,7 @@
         for (let s = 0; s < 4; s++) { if (r() < .5) x += (r() < .5 ? -1 : 1) * Math.round(2 + r() * 8) * 10; else y += (r() < .5 ? -1 : 1) * Math.round(2 + r() * 8) * 10; g.lineTo(x, y); }
         g.stroke(); g.fillStyle = 'rgba(120,200,255,0.35)'; g.fillRect(x - 1, y - 1, 2, 2);
       }
-      return c.toDataURL();
+      return texBake(c);
     }
     function texScratch() {
       const c = document.createElement('canvas'); c.width = c.height = 320; const g = canvasCtx(c), r = rng(19); if (!g) return '';
@@ -4034,7 +4081,7 @@
         g.strokeStyle = `rgba(90,170,255,${(0.10 + r() * 0.18).toFixed(2)})`; g.lineWidth = .8;
         g.beginPath(); g.arc(x, y, rad, a0, a0 + .8 + r() * 1.8); g.stroke();
       }
-      return c.toDataURL();
+      return texBake(c);
     }
     const YT = 177, YB = 1645;
     // Правая сторона: зубцы вдвое мельче (силуэт тот же) — «спрямить колонну».
@@ -4211,14 +4258,15 @@
       }
       g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     }
-    // один цикл на все узоры, ~30 кадров/с; узоры удалённых и скрытых окон не рисуются; без узоров цикл останавливается
+    // один цикл на все узоры, ~30 кадров/с; узоры удалённых и скрытых окон не рисуются; без узоров цикл останавливается.
+    // v7.1.3: не рисуются и узоры окон под открытым окном (AnimPause), и все узоры во время прокрутки.
     function patLoop(now) {
       for (let i = PATS.length - 1; i >= 0; i--) if (!PATS[i].cv.isConnected) PATS.splice(i, 1);
       if (!PATS.length) { patRaf = 0; return; }
       patRaf = requestAnimationFrame(patLoop);
-      if (document.hidden || now - patLast < 33) return; patLast = now;
+      if (document.hidden || AnimPause.scrolling() || now - patLast < 33) return; patLast = now;
       const t = now / 1000 * NB.ps;
-      PATS.forEach(o => { if (o.cv.getClientRects().length) patDraw(o, t); });
+      PATS.forEach(o => { if (o.cv.getClientRects().length && !o.cv.closest('.anim-paused')) patDraw(o, t); });
     }
     function mapperFit(s, Hpx) {
       const top = YT * s, bot = (G.H - YB) * s, midPx = Math.max(10, Hpx - top - bot), natural = (YB - YT) * s;
@@ -4305,7 +4353,8 @@
       }
       const scr = document.createElement('div'); scr.className = 'sf-screen'; scr.setAttribute('aria-hidden', 'true');
       scr.style.width = w + 'px'; scr.style.height = h + 'px';
-      scr.style.clipPath = `polygon(${panelPx.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')})`;
+      // v7.1.3: у главного экрана (длинная страница) фон не вырезается по форме рамки — разницы на глаз нет, прокрутка легче
+      if (!win.classList.contains('mscr')) scr.style.clipPath = `polygon(${panelPx.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')})`;
       scr.innerHTML = `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>`;
       win.insertBefore(scr, content);
       const cg = `<filter id="${id}cg" x="-50%" y="-5%" width="200%" height="110%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
@@ -7706,6 +7755,7 @@
   }
 
   SysTheme.init();   // v7.0.0: тема применяется до первой отрисовки
+  AnimPause.init();  // v7.1.3: пауза анимаций под открытым окном и во время прокрутки
   document.documentElement.classList.remove('theme-pending');
   render();
   if (!data.rulesAcknowledged) {
