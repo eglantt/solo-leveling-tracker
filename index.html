@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.10 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.11 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1096,6 +1096,10 @@
     #sysStatsRefundBtn { margin-top: 12px; }
     /* v7.0.4: кнопки шага — в столбцах «−» / «+»; выбранная — заливка ярче и светящаяся рамка */
     .sys-stat-row .sys-step-btn.on { background: rgba(0,140,255,0.45); border-color: #9fdcff; color: #fff; box-shadow: 0 0 10px rgba(64,192,255,0.6); }
+    /* v7.1.11: смена оформления из Архива — через сбой (демо 96, обе темы). Копии окна полосами, помехи в окне и на весь экран. */
+    .tfx-slice { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    .tfx-noise { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; z-index: 6; }
+    #themeFxScr { position: fixed; inset: 0; pointer-events: none; mix-blend-mode: screen; z-index: 1900; display: none; }
     /* ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85). Действует, пока на <body> стоит класс theme-sys; в теме «Классика»
        класса нет, и ни одно правило ниже (кроме выбора оформления в Архиве) не применяется.
        Окно в теме «Система»: .sf-win.mwin > .sf-content > .sf-panel.mw, заголовок — табличка .mw-hdr > .mw-tt,
@@ -1903,7 +1907,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.10';
+  const APP_VERSION = '7.1.11';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -4548,6 +4552,83 @@
     if (document.getElementById('backupOverlay').style.display === 'flex') renderBackupModal();
   }
 
+  // ===== v7.1.11: СМЕНА ОФОРМЛЕНИЯ ЧЕРЕЗ СБОЙ (демо 96) =====
+  // Только по кнопкам «Система» / «Классика» в Архиве; setTheme() остаётся мгновенной (запуск, бэкап, тесты).
+  // 0,9 с: нарастание на старом виде → на середине смена темы (под помехами) → спад на новом. Сила ×1,5.
+  // Приёмы: срез полосами (3 копии окна), помехи в окне и на весь экран, расслоение, мерцание, дрожь.
+  // Цвет помех: в «Систему» — голубой, в «Классику» — белёсый. Пока идёт сбой, кнопки темы не реагируют.
+  const THEME_FX = { dur: 900, at: 0.5, k: 1.5, step: 55, col: { system: '64,192,255', classic: '225,236,255' } };
+  let themeFx = null;   // { to, t0, timer, f, swapped }
+  function themeFxAdd(win) {
+    const f = { win, slices: [], noise: null };
+    const cs = getComputedStyle(win), sys = isSysTheme(), inner = win.innerHTML, osb = win.querySelector('.status-body');
+    for (let i = 0; i < 3; i++) {
+      const sl = document.createElement('div'); sl.className = 'tfx-slice'; sl.setAttribute('aria-hidden', 'true'); sl.innerHTML = inner;
+      sl.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      sl.querySelectorAll('.sf-en, .sf-pat, .sf-vig, .tfx-slice, .tfx-noise').forEach(el => el.remove());
+      sl.style.display = cs.display; sl.style.flexDirection = cs.flexDirection; sl.style.alignItems = cs.alignItems;
+      if (sys) sl.style.zIndex = 4;
+      else { sl.style.backgroundColor = cs.backgroundColor; sl.style.backgroundImage = cs.backgroundImage; sl.style.padding = cs.padding; sl.style.borderRadius = cs.borderRadius; sl.style.zIndex = 5; }
+      sl.style.opacity = 0;
+      win.appendChild(sl);
+      const sb = sl.querySelector('.status-body'); if (sb && osb) sb.scrollTop = osb.scrollTop;
+      f.slices.push(sl);
+    }
+    const n = document.createElement('div'); n.className = 'tfx-noise'; n.setAttribute('aria-hidden', 'true'); win.appendChild(n); f.noise = n;
+    return f;
+  }
+  function themeFxClear(f) {
+    if (!f) return;
+    f.slices.forEach(x => x.remove()); if (f.noise) f.noise.remove();
+    const w = f.win; w.style.translate = ''; w.style.filter = '';
+    w.querySelectorAll('.status-header').forEach(el => el.style.removeProperty('text-shadow'));
+    w.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen, :scope > .sf-content > .sf-panel').forEach(el => { el.style.filter = ''; });
+  }
+  function themeFxScr() {
+    let s = document.getElementById('themeFxScr');
+    if (!s) { s = document.createElement('div'); s.id = 'themeFxScr'; s.setAttribute('aria-hidden', 'true'); document.body.appendChild(s); }
+    return s;
+  }
+  function themeFxFrame(f, a, col) {
+    const k = THEME_FX.k * a, w = f.win, rnd = (x, y) => x + Math.random() * (y - x);
+    f.slices.forEach(sl => { const top = rnd(0, 88), h = rnd(3, 14);
+      sl.style.clipPath = `inset(${top.toFixed(1)}% 0 ${Math.max(0, 100 - top - h).toFixed(1)}% 0)`;
+      sl.style.transform = `translateX(${(rnd(-14, 14) * k).toFixed(0)}px)`; sl.style.opacity = a < 0.12 ? 0 : 1; });
+    const nb = `repeating-linear-gradient(0deg, rgba(${col},${(0.25 * Math.min(1.6, k)).toFixed(2)}) 0 1px, transparent 1px ${Math.round(rnd(2, 6))}px)`;
+    f.noise.style.background = nb; f.noise.style.opacity = Math.min(1, 0.7 * k).toFixed(2); f.noise.style.transform = `translateY(${rnd(-8, 8).toFixed(0)}px)`;
+    const scr = themeFxScr(); scr.style.display = 'block'; scr.style.background = nb; scr.style.opacity = Math.min(0.8, 0.45 * k).toFixed(2); scr.style.transform = `translateY(${rnd(-8, 8).toFixed(0)}px)`;
+    w.style.translate = `${(rnd(-3, 3) * k).toFixed(1)}px ${(rnd(-1.5, 1.5) * k).toFixed(1)}px`;
+    const fl = `brightness(${rnd(1, 1 + 0.5 * k).toFixed(2)}) contrast(1.15)`, parts = w.querySelectorAll(':scope > .sf-screen, :scope > .sf-content > .sf-panel');
+    if (parts.length) parts.forEach(el => { el.style.filter = fl; }); else w.style.filter = fl;
+    const d = (4 * k).toFixed(1), d2 = (3 * k).toFixed(1);
+    w.querySelectorAll('.status-header').forEach(el => el.style.setProperty('text-shadow', `-${d}px 0 rgba(255,40,70,.85), ${d}px 0 rgba(0,220,255,.85)`, 'important'));
+    w.querySelectorAll(':scope > svg.sf-frm').forEach(el => { el.style.filter = `drop-shadow(-${d2}px 0 rgba(255,40,70,.7)) drop-shadow(${d2}px 0 rgba(0,220,255,.7))`; });
+  }
+  function themeFxStop() {
+    if (!themeFx) return;
+    clearTimeout(themeFx.timer); themeFxClear(themeFx.f);
+    const s = document.getElementById('themeFxScr'); if (s) s.style.display = 'none';
+    const fx = themeFx; themeFx = null;
+    if (!fx.swapped) setTheme(fx.to);   // Архив закрыли до пика — тема переключается сразу, без эффекта
+  }
+  function switchThemeFx(theme) {
+    const to = theme === 'classic' ? 'classic' : 'system';
+    if (themeFx || data.theme === to) return;
+    const ov = document.getElementById('backupOverlay'), win = ov && ov.querySelector('.status-window');
+    if (!win || ov.style.display !== 'flex') { setTheme(to); return; }
+    const col = THEME_FX.col[to];
+    themeFx = { to, t0: Date.now(), timer: null, f: themeFxAdd(win), swapped: false };
+    const step = () => {
+      const fx = themeFx; if (!fx) return;
+      const t = Math.min(1, (Date.now() - fx.t0) / THEME_FX.dur), at = THEME_FX.at;
+      if (!fx.swapped && t >= at) { themeFxClear(fx.f); fx.swapped = true; setTheme(to); fx.f = themeFxAdd(win); }
+      if (t >= 1) { themeFxStop(); return; }
+      themeFxFrame(fx.f, Math.max(0.15, t < at ? t / at : (1 - t) / (1 - at)), col);
+      fx.timer = setTimeout(step, THEME_FX.step);
+    };
+    step();
+  }
+
   // ===== v6.9.0: ЧЕКБОКС В СТИЛЕ ПЕРВОИСТОЧНИКА (демо 61–63) =====
   // viewBox 24: контур 3..19 × 5..21, скругление 4, тонкие линии; выполнено — средний разрыв (5) в правом
   // верхнем углу и галочка с коротким вылетом (1); не выполнено — целый тусклый контур.
@@ -7119,6 +7200,7 @@
   }
 
   function closeBackupModal() {
+    themeFxStop();   // v7.1.11: сбой смены оформления не переживает закрытие Архива
     document.getElementById('backupOverlay').style.display = 'none';
     backupModalStep = 'main';
     pendingImport = null;
@@ -7174,7 +7256,7 @@
           </div>
           <div class="backup-summary theme-row">
             <span>Оформление</span>
-            <div class="theme-seg"><button class="${isSysTheme() ? 'on' : ''}" onclick="setTheme('system')">Система</button><button class="${isSysTheme() ? '' : 'on'}" onclick="setTheme('classic')">Классика</button></div>
+            <div class="theme-seg"><button class="${isSysTheme() ? 'on' : ''}" onclick="switchThemeFx('system')">Система</button><button class="${isSysTheme() ? '' : 'on'}" onclick="switchThemeFx('classic')">Классика</button></div>
           </div>
         </div>
         <div class="backup-section">

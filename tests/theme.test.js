@@ -472,6 +472,43 @@ const w = boot(); const D = w.document; await tick();
     && JSON.stringify(again) === JSON.stringify(rings.map(r => r.getAttribute('style'))), JSON.stringify({ delays, minGap }));
   E(w, `getActiveEffects = window.__origGAE; window.__activeEffectsSignature = null; render();`); }
 
+// ===== v7.1.11: смена оформления через сбой =====
+{ closeAll(w); E(w, "setTheme('system'); backupModalStep = 'main'; openBackupModal()"); await tick();
+  const btn = t => [...D.querySelectorAll('#backupContent .theme-seg button')].find(b => b.textContent.trim() === t);
+  const win = D.querySelector('#backupOverlay .status-window');
+  check('T73 кнопки «Система» / «Классика» в Архиве запускают смену через сбой (switchThemeFx), сама setTheme — прежняя',
+    /switchThemeFx\('classic'\)/.test(btn('Классика').getAttribute('onclick')) && /switchThemeFx\('system'\)/.test(btn('Система').getAttribute('onclick')));
+  btn('Классика').click(); await sleep(60);
+  const scr = D.getElementById('themeFxScr');
+  const mid1 = { theme: E(w, 'data.theme'), slices: win.querySelectorAll(':scope > .tfx-slice').length, noise: win.querySelectorAll(':scope > .tfx-noise').length,
+    scr: !!scr && scr.style.display === 'block', col: scr ? scr.style.background : '' };
+  E(w, "switchThemeFx('system')"); const locked = E(w, 'themeFx && themeFx.to');
+  await sleep(520);
+  const mid2 = { theme: E(w, 'data.theme'), saved: w.localStorage.getItem('sl_theme'), body: D.body.classList.contains('theme-sys'), slices: win.querySelectorAll(':scope > .tfx-slice').length };
+  check('T74 до середины — тема прежняя, сбой идёт (3 копии окна, помехи в окне и на весь экран); повторное нажатие во время сбоя не действует',
+    mid1.theme === 'system' && mid1.slices === 3 && mid1.noise === 1 && mid1.scr && locked === 'classic', JSON.stringify(mid1) + ' ' + locked);
+  check('T75 на середине (0,45 с) тема переключается и сохраняется, сбой продолжается на новом виде',
+    mid2.theme === 'classic' && mid2.saved === 'classic' && !mid2.body && mid2.slices === 3, JSON.stringify(mid2));
+  check('T76 цвет помех по направлению: в «Классику» — белёсый', /225,\s*236,\s*255/.test(mid1.col), mid1.col);
+  await sleep(600);
+  const sigFx = E(w, `JSON.stringify(${SIG}.backupOverlay)`);
+  const clean = { fx: E(w, 'themeFx'), left: D.querySelectorAll('.tfx-slice, .tfx-noise').length, scr: D.getElementById('themeFxScr').style.display,
+    tr: win.style.translate, flt: win.style.filter, ts: [...win.querySelectorAll('.status-header')].map(h => h.style.textShadow).join('') };
+  E(w, "setTheme('system'); setTheme('classic')"); await tick();
+  const sigPlain = E(w, `JSON.stringify(${SIG}.backupOverlay)`);
+  check('T77 после 0,9 с слоёв сбоя нет, окно чистое, разметка — как после мгновенной смены темы',
+    clean.fx === null && clean.left === 0 && clean.scr === 'none' && !clean.tr && !clean.flt && !clean.ts && sigFx === sigPlain, JSON.stringify(clean));
+  btn('Система').click(); await sleep(60);
+  const col2 = D.getElementById('themeFxScr').style.background;
+  await sleep(1000);
+  check('T78 обратно в «Систему» — помехи голубые, тема «Система», рамка на месте',
+    /64,\s*192,\s*255/.test(col2) && E(w, 'data.theme') === 'system' && D.body.classList.contains('theme-sys') && !!win.querySelector(':scope > svg.sf-frm, :scope > .sf-content') , col2);
+  btn('Классика').click(); await sleep(100); E(w, 'closeBackupModal()');
+  const cl = { theme: E(w, 'data.theme'), fx: E(w, 'themeFx'), left: D.querySelectorAll('.tfx-slice, .tfx-noise').length, scr: D.getElementById('themeFxScr').style.display };
+  check('T79 Архив закрыт до середины — тема переключается сразу, без эффекта, слоёв не остаётся', cl.theme === 'classic' && cl.fx === null && cl.left === 0 && cl.scr === 'none', JSON.stringify(cl));
+  E(w, "setTheme('system')"); await tick();
+  check('T80 смена темы без кнопки (запуск, бэкап) — мгновенная, без сбоя', E(w, 'data.theme') === 'system' && E(w, 'themeFx') === null && D.querySelectorAll('.tfx-slice').length === 0); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
