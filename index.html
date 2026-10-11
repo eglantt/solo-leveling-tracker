@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.2.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1910,7 +1910,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.0';
+  const APP_VERSION = '7.2.1';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2520,7 +2520,7 @@
     if (id === 'scroll_contract') {
       const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
       const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
-      const activatesNow = !hasAnyClosed && !data.isGoalMet;
+      const activatesNow = !hasAnyClosed && !data.isGoalMet && data.activeScroll !== 'veil';   // v7.2.1: при Пелене — в очередь
       if (scrollGate(activatesNow)) return '';
       if ((activatesNow && data.curseActiveToday) || (!activatesNow && data.pendingCurse)) return 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.';
       return '';
@@ -3723,6 +3723,10 @@
     refuseCursePending: 'Следующий цикл уже занят Аномалией.',
     refuseScrollPending: 'Следующий цикл уже занят ожидающим свитком.',
     scrollBlocked: 'Следующий цикл уже занят: ожидает Пелена покоя.',
+    scrollQueueActive: 'Действует эффект «Пелена покоя». ',   // v7.2.1: начало уведомления — свиток уходит в очередь
+    scrollQueueTrace: 'Действует остаточный эффект «Пелены покоя». ',
+    transferActive: 'Свиток Переноса нельзя использовать, пока действует эффект «Пелена покоя».',
+    transferTrace: 'Свиток Переноса нельзя использовать, пока действует остаточный эффект «Пелены покоя».',
     timerActive: 'Пелена покоя<br class="br-narrow"> рассеется через',
     timerTrace: 'До сброса без штрафа',
     chronicle: 'Пелена покоя',
@@ -3850,12 +3854,19 @@
   // v7.1.1: отказ свитку (или null). Пока ждёт Пелена покоя, свиток можно использовать, только если он
   // включается сразу (действует до ближайшего сброса и с Пеленой не пересекается); в очередь — отказ.
   function scrollGate(activatesNow) {
-    if (data.activeScroll) return 'Другой свиток уже активен или ожидает.';
+    if (data.activeScroll && data.activeScroll !== 'veil') return 'Другой свиток уже активен или ожидает.';   // v7.2.1: Пелена (и её след) — не свиток
+    if (data.activeScroll === 'veil') return data.pendingScroll ? 'Другой свиток уже активен или ожидает.' : null;
     if (data.pendingScroll === 'veil') return activatesNow ? null : VEIL_TEXTS.scrollBlocked;
     if (data.pendingScroll) return 'Другой свиток уже активен или ожидает.';
     return null;
   }
   function isVeilActive() { return data.activeScroll === 'veil' && !data.veilLifted; }
+  // v7.2.1: пока действует Пелена или её остаточный эффект, свиток включается только со следующего цикла —
+  // начало уведомления называет причину ('' — Пелены нет).
+  function veilQueuePrefix() {
+    if (data.activeScroll !== 'veil') return '';
+    return data.veilLifted ? VEIL_TEXTS.scrollQueueTrace : VEIL_TEXTS.scrollQueueActive;
+  }
   // v6.10.6: дневные эффекты, которые во время Пелены покоя и Заморозки ждут их окончания (или досрочного снятия).
   const HOLD_EFFECT_GEN = { potion_growth: 'Зелья Роста', rune_growth_charged: 'Руны Роста', rune_return: 'Руны Возврата', crystal_clarity: 'Кристалла Ясности',
     crystal_impulse: 'Кристалла Импульса', rune_freedom: 'Руны Освобождения', rune_burden_release: 'Руны Снятия Бремени' };
@@ -5835,17 +5846,18 @@
       } else if (id === 'scroll_renunciation') {
           const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
           const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel));
-          const gate = scrollGate(!hasAnyClosed && !data.isGoalMet);
+          const nowR = !hasAnyClosed && !data.isGoalMet && data.activeScroll !== 'veil';   // v7.2.1
+          const gate = scrollGate(nowR);
           if (gate) {
               showNotice(gate, 'warn', true);
           } else {
               showFullscreenSeal('renunciation', '#aaaaaa');   // v7.0.2: сначала печать, уведомление ждёт её
-              if (!hasAnyClosed && !data.isGoalMet) {
+              if (nowR) {
                   data.activeScroll = 'renunciation';
                   showNotice("При активации свитка Система намеренно перестаёт учитывать накопленные сборкой преимущества до завершения дневного задания.", 'info');
               } else {
+                  showNotice(veilQueuePrefix() + "Свиток вступит в силу со следующим циклом дневного задания.", 'info');
                   data.pendingScroll = 'renunciation';
-                  showNotice("Свиток вступит в силу со следующим циклом дневного задания.", 'info');
               }
               used = true;
           }
@@ -5856,7 +5868,9 @@
           // остаётся false — обычное, синхронное списание в конце этой
           // функции здесь не должно сработать; вместо этого декремент,
           // сохранение и перерисовка выполняются вручную внутри колбэка.
-          if (scrollGate(true)) {   // v7.1.1: Перенос всегда включается сразу — ожидающая Пелена ему не мешает
+          if (data.activeScroll === 'veil' && !data.pendingScroll) {   // v7.2.1: Перенос в очередь не встаёт
+              showNotice(data.veilLifted ? VEIL_TEXTS.transferTrace : VEIL_TEXTS.transferActive, 'warn', true);
+          } else if (scrollGate(true)) {   // v7.1.1: Перенос всегда включается сразу — ожидающая Пелена ему не мешает
               showNotice(scrollGate(true), 'warn', true);
           } else {
               const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
@@ -5883,7 +5897,7 @@
           // v7.2.0: как Перенос — сначала выбор упражнения, списание в колбэке (used остаётся false);
           // включается сразу или встаёт в очередь — по правилам Договора.
           const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
-          const focusActivatesNow = () => !data.isGoalMet && !Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
+          const focusActivatesNow = () => data.activeScroll !== 'veil' && !data.isGoalMet && !Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
           const nowAtOpen = focusActivatesNow();
           const gate = scrollGate(nowAtOpen);
           if (gate) {
@@ -5905,23 +5919,24 @@
                   showFullscreenSeal('focus', '#ff8a30');   // сначала печать, уведомление ждёт её
                   showNotice(now
                     ? `${QUEST_DISPLAY_NAMES[chosenId]} — цель повышена на 50%. Награда — за полное исполнение.`
-                    : `Свиток вступит в силу со следующим циклом дневного задания. Выбрано: ${QUEST_DISPLAY_NAMES[chosenId]}.`, 'info');
+                    : `${veilQueuePrefix()}Свиток вступит в силу со следующим циклом дневного задания. Выбрано: ${QUEST_DISPLAY_NAMES[chosenId]}.`, 'info');
               }, 'Какое упражнение усилить?', burden ? 'Действует Бремя Аномалии: цель выбранного упражнения вырастет ещё на 40%.' : '');
           }
       } else if (id === 'scroll_contract') {
           const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
           const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
-          const gate = scrollGate(!hasAnyClosed && !data.isGoalMet);
+          const nowC = !hasAnyClosed && !data.isGoalMet && data.activeScroll !== 'veil';   // v7.2.1
+          const gate = scrollGate(nowC);
           if (gate) {
               showNotice(gate, 'warn', true);
           } else {
               showFullscreenSeal('contract', '#ff3333');   // v7.0.2: сначала печать, уведомление ждёт её
-              if (!hasAnyClosed && !data.isGoalMet) {
+              if (nowC) {
                   data.activeScroll = 'contract';
                   showNotice("Цели повышены. Награда — за полное исполнение.", 'info');
               } else {
+                  showNotice(veilQueuePrefix() + "Свиток вступит в силу со следующим циклом дневного задания.", 'info');
                   data.pendingScroll = 'contract';
-                  showNotice("Свиток вступит в силу со следующим циклом дневного задания.", 'info');
               }
               used = true;
           }
@@ -5936,9 +5951,9 @@
               // Выполненный день (в т.ч. без Предела) не замораживается задним
               // числом — Заморозка начнётся со следующего цикла.
               showFullscreenSeal('freeze', '#c8f5ff');   // v7.0.2: сначала печать, уведомление ждёт её
-              if (data.isGoalMet || data.dailyNotices.complete || allQuestsDone()) {
+              if (data.isGoalMet || data.dailyNotices.complete || allQuestsDone() || data.activeScroll === 'veil') {   // v7.2.1: при Пелене — после неё
+                  showNotice(veilQueuePrefix() + "Заморозка вступит в силу со следующего цикла.", 'info');
                   data.pendingScroll = 'freeze';
-                  showNotice("Заморозка вступит в силу со следующего цикла.", 'info');
               } else {
                   data.activeScroll = 'freeze';
                   data.freezeEndTimestamp = getNextCleanReset(Date.now()) + 6 * 24 * 60 * 60 * 1000;

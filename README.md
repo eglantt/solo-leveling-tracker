@@ -1,6 +1,6 @@
 # Solo Leveling: Daily Training
 
-**Текущая версия: v7.2.0**
+**Текущая версия: v7.2.1**
 
 ![Экраны приложения](screenshots/sldt_screenshots.png)
 
