@@ -387,6 +387,132 @@ const CW = 'Действует Бремя Аномалии: нагрузка и 
   check('K8 Длань: уведомление называет сработавшую руну', E(w3, 'window.__N[0]') === 'Штраф отменён — сработала Руна Надёжной Защиты.', E(w3, 'window.__N[0]'));
 }
 
+// ===== F. Свиток Сосредоточения (v7.2.0) =====
+{
+  const useF = (w, qid) => { E(w, `window.__N=[]; data.consumables.scroll_focus=(data.consumables.scroll_focus||0)+1; performUseItem('scroll_focus')`);
+    const win = E(w, `document.getElementById('exerciseChoiceOverlay').style.display==='flex' ? document.getElementById('exerciseChoiceContent').textContent : ''`);
+    if (qid && win) E(w, `runExerciseChoice('${qid}')`);
+    return { win, notice: E(w,'window.__N.join(" / ")'), spent: E(w, '!data.consumables.scroll_focus') }; };
+  const base = (w, qid, b) => E(w, `(() => { const a = data.activeScroll; data.activeScroll = null; const v = getDynamicTarget(${b}, data.dailyTargetLevel, '${qid}'); data.activeScroll = a; return v; })()`);
+  const tgt = (w, qid, b) => E(w, `getDynamicTarget(${b}, data.dailyTargetLevel, '${qid}')`);
+  const B = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+  { const w = fresh();
+    check('F1 Магазин: 5-й уровень, 2400, описание', E(w, `SHOP_CATALOG.scroll_focus.level===5 && SHOP_CATALOG.scroll_focus.price===2400 && SHOP_CATALOG.scroll_focus.desc==="Повышает цель одного выбранного упражнения дневного задания на 50%. Остальные четыре остаются прежними и обязательны. За полное исполнение — доплата в размере награды за выбранное упражнение. При срыве — обычный штраф, без доплаты."`));
+    check('F2 карточка: ранг D, Свиток', E(w, `ITEM_META.scroll_focus.rank==='D' && ITEM_META.scroll_focus.type==='Свиток' && ITEM_META.scroll_focus.usage==='Одноразовое использование'`));
+    check('F3 Кодекс: глава и текст, открыта на 25-м уровне', E(w, `CODEX_CHAPTERS.scroll_focus.title==='Свиток Сосредоточения' && CODEX_CHAPTERS.scroll_focus.content.startsWith('Свиток Сосредоточения — игрок сам выбирает упражнение') && data.codexUnlocked.includes('scroll_focus')`));
+    check('F4 шкатулки Оникса, Обсидиана, Тёмного Кварца — рядом со свитками', E(w, `['box_onyx','box_obsidian','box_dark_quartz'].every(b => BOX_LOOT_POOLS[b].includes('scroll_focus')) && Object.keys(BOX_LOOT_POOLS).filter(b => BOX_LOOT_POOLS[b].includes('scroll_focus')).length===3`));
+    check('F5 иконки на месте (обычная и маленькая), в кэше воркера', ['items','items-s'].every(d => ['scroll_focus','mag_seal_focus'].every(n => fs.existsSync(path.join(__dirname,'..','icons',d,n+'.png')))) &&
+      ['scroll_focus','mag_seal_focus'].every(n => { const sw = fs.readFileSync(path.join(__dirname,'..','sw.js'),'utf-8'); return sw.includes(`./icons/items/${n}.png`) && sw.includes(`./icons/items-s/${n}.png`); }));
+  }
+  { const w = fresh();
+    const r = useF(w, null);
+    const btns = E(w, `Array.from(document.querySelectorAll('#exerciseChoiceContent button')).map(b=>b.textContent).join('|')`);
+    check('F6 окно выбора: вопрос, пять упражнений, без предупреждения', r.win.includes('Какое упражнение усилить?') && btns === 'Отжимания|Приседания|Подтягивания|Пресс|Бег (шаги)|Отмена' && !r.win.includes('Бремя'), r.win + ' ' + btns);
+    E(w, 'closeExerciseChoiceModal()');
+    check('F7 отмена выбора — свиток не тратится', E(w, 'data.consumables.scroll_focus===1 && !data.activeScroll'));
+  }
+  { const w = fresh('data.curseActiveToday=true;'); const r = useF(w, null);
+    check('F8 предупреждение о Бремени (действует)', r.win.includes('Действует Бремя Аномалии: цель выбранного упражнения вырастет ещё на 40%.'), r.win); }
+  { const w = fresh("data.pendingCurse=true; data.completed={pushups:9999};"); const r = useF(w, null);
+    check('F9 предупреждение о Бремени (ожидает, свиток в очередь)', r.win.includes('Действует Бремя Аномалии: цель выбранного упражнения вырастет ещё на 40%.'), r.win); }
+  { const w = fresh('data.pendingCurse=true;'); const r = useF(w, null);
+    check('F10 ожидающее Бремя при включении сразу — без предупреждения', !r.win.includes('Бремя'), r.win); }
+  // включение сразу
+  { const w = fresh(); const b = base(w,'pullups',40); const r = useF(w, 'pullups');
+    check('F11 сразу: свиток действует, упражнение выбрано, списан', r.spent && E(w, `data.activeScroll==='focus' && data.focusExerciseId==='pullups' && !data.pendingScroll`));
+    check('F12 уведомление', r.notice === 'Подтягивания — цель повышена на 50%. Награда — за полное исполнение.', r.notice);
+    check('F13 цель выбранного ×1,5, остальные прежние', tgt(w,'pullups',40) === Math.floor(b*1.5) && ['pushups','squats','press','steps'].every(q => tgt(w,q,B[q]) === base(w,q,B[q])), tgt(w,'pullups',40)+' / '+b);
+    E(w,'render()');
+    check('F14 подсветка свитка — только у выбранного упражнения', E(w, `document.getElementById('pullups').classList.contains('scroll-tinted') && !['pushups','squats','press','steps'].some(q=>document.getElementById(q).classList.contains('scroll-tinted'))`));
+    check('F15 полоска выбранного — в цвет свитка', E(w, `document.querySelector('.quest-item[data-id="pullups"] .qbar-fill').classList.contains('scroll-tinted') && !document.querySelector('.quest-item[data-id="press"] .qbar-fill').classList.contains('scroll-tinted')`));
+    const eff = JSON.parse(J(w, `getActiveEffects().filter(e=>e.name.startsWith('Свиток Сосредоточения'))`));
+    check('F16 панель: «Свиток Сосредоточения», печать, текст', eff.length===1 && eff[0].icon==='icons/items/mag_seal_focus.png' && eff[0].spinning && eff[0].text==='Цель упражнения «Подтягивания» повышена на 50%. Остальные четыре — без изменений. За полное исполнение — доплата в размере награды за это упражнение.', JSON.stringify(eff));
+  }
+  // в очередь
+  { const w = fresh(); E(w, `data.completed.pushups = getDynamicTarget(100, data.dailyTargetLevel, 'pushups')`);
+    const b = base(w,'squats',120); const r = useF(w, 'squats');
+    check('F17 упражнение закрыто — в очередь, уведомление', r.spent && E(w, `data.pendingScroll==='focus' && !data.activeScroll && data.focusExerciseId==='squats'`) && r.notice === 'Свиток вступит в силу со следующим циклом дневного задания. Выбрано: Приседания.', r.notice);
+    check('F18 сегодня цели не меняются', tgt(w,'squats',120) === b);
+    const eff = JSON.parse(J(w, `getActiveEffects().filter(e=>e.name.startsWith('Свиток Сосредоточения'))`));
+    check('F19 панель: «(ожидает)», искра, текст', eff.length===1 && eff[0].name==='Свиток Сосредоточения (ожидает)' && eff[0].isPending && eff[0].sparkCount===1 && eff[0].text==='Вступит в силу со следующим дневным заданием — цель упражнения «Приседания» вырастет на 50%, а за полное исполнение будет доплата.', JSON.stringify(eff));
+    reset(w);
+    check('F20 после сброса — действует на выбранное упражнение', E(w, `data.activeScroll==='focus' && data.focusExerciseId==='squats'`) && tgt(w,'squats',120) === Math.floor(base(w,'squats',120)*1.5));
+  }
+  { const w = fresh('data.isGoalMet=true;'); const r = useF(w, 'press');
+    check('F21 Предел начат — в очередь', E(w, `data.pendingScroll==='focus'`), r.notice); }
+  // отказы
+  { const w = fresh("data.activeScroll='contract';"); const r = useF(w, 'press');
+    check('F22 при другом свитке — отказ, не тратится, окна нет', !r.win && !r.spent && r.notice === 'Другой свиток уже активен или ожидает.', r.notice); }
+  { const w = fresh("data.activeScroll='freeze'; data.freezeEndTimestamp=Date.now()+86400000;"); const r = useF(w, 'press');
+    check('F23 при Заморозке — отказ', !r.spent && r.notice === 'Другой свиток уже активен или ожидает.', r.notice); }
+  { const w = fresh("data.pendingScroll='veil'; data.completed.pushups=9999;"); const r = useF(w, 'press');
+    check('F24 ждёт Пелена, свиток ушёл бы в очередь — отказ', !r.spent && r.notice === E(w,'VEIL_TEXTS.scrollBlocked'), r.notice); }
+  { const w = fresh("data.pendingScroll='veil';"); const r = useF(w, 'press');
+    check('F25 ждёт Пелена, день не начат — включается сразу', r.spent && E(w, `data.activeScroll==='focus' && data.pendingScroll==='veil'`)); }
+  // доплата
+  { const w = fresh('data.exp=0;'); useF(w, 'pullups');
+    const expR = E(w, `getDynamicExp(120, data.level, 'pullups')`); const credR = 60;
+    const c0 = E(w, 'data.credits');
+    E(w, 'window.__N=[]'); complete(w);
+    const n = E(w, 'window.__N.join(" / ")');
+    check('F26 день выполнен — доплата и уведомление', n.includes(`Условие Свитка Сосредоточения исполнено. Система повторно начисляет награду за упражнение «Подтягивания»: +${expR} EXP и +${credR} ◈.`), n);
+    check('F27 кредиты: за день + доплата', E(w, 'data.credits') - c0 === E(w, 'data.creditsGainedToday') + credR, (E(w,'data.credits')-c0) + ' / ' + E(w,'data.creditsGainedToday'));
+    check('F28 свиток действует до сброса, доплата один раз', E(w, `data.activeScroll==='focus' && data.focusRewardExp===0`));
+    E(w, `document.getElementById('limitBreakBtn').disabled=false; document.getElementById('limitBreakBtn').click()`);
+    E(w, `(() => { const b = document.querySelector('#confirmOverlay .confirm-btn-continue'); if (b && document.getElementById('confirmOverlay').style.display==='flex') b.click(); })()`);
+    const lb = E(w, 'data.isGoalMet && data.limitBreakRoundPending');
+    check('F29 Предел: выбранное упражнение снова +50%', lb && tgt(w,'pullups',40) === Math.floor(base(w,'pullups',40)*1.5), String(lb));
+    E(w, 'window.__N=[]'); complete(w);
+    check('F30 раунд Предела — без повторной доплаты', !E(w, 'window.__N.join(" ")').includes('Сосредоточения'));
+    reset(w);
+    check('F31 сброс снимает свиток', E(w, `!data.activeScroll && data.focusExerciseId===null`));
+  }
+  { const w = fresh(); useF(w, 'steps'); E(w, 'window.__N=[]');
+    const st = failDayStatus(w);
+    check('F32 провал — обычный штраф, без доплаты, свиток снят', st === 'penalty' && !E(w,'window.__N.join(" ")').includes('Сосредоточения') && E(w, `!data.activeScroll && data.focusExerciseId===null`), st); }
+  { const w = fresh('data.curseActiveToday=true;'); useF(w, 'pullups');
+    const raw = E(w, `Math.floor(40 * getTargetGrowthMultiplier(data.dailyTargetLevel) * (1 - Math.min(0.6, Math.min(0.2, Math.max(0, data.stats.sta - 10) * 0.001))))`);
+    check('F33 Бремя: ×1,4 и поверх ×1,5', tgt(w,'pullups',40) === Math.floor(Math.ceil(raw*1.4)*1.5), tgt(w,'pullups',40) + ' / ' + raw); }
+  // руны
+  { const w = fresh(); useF(w, 'press');
+    const a = use(w, 'rune_protection'); check('F34 Руна Защиты — отказ', !a.spent && a.notice === 'Активен Свиток Сосредоточения. Его условия не допускают обычной защиты от штрафа до следующего цикла.', a.notice);
+    const b = use(w, 'rune_freedom'); check('F35 Руна Освобождения — отказ', !b.spent && b.notice === 'Активен Свиток Сосредоточения. Его условия не допускают снижения нагрузки Руной Освобождения. Руну можно будет использовать после выполнения дневного задания.', b.notice);
+    const c = use(w, 'rune_burden_release'); check('F36 Руна Снятия Бремени — отказ', !c.spent && c.notice === 'Активен Свиток Сосредоточения. Его условия не допускают снижения нагрузки Руной Снятия Бремени. Руну можно будет использовать после выполнения дневного задания.', c.notice);
+    const d = use(w, 'rune_protection_charged'); check('F37 Руна Надёжной Защиты — отказ', !d.spent, d.notice);
+    const e = use(w, 'rune_protection_absolute'); check('F38 Руна Абсолютной Защиты — действует', e.spent && E(w, `data.insuranceSourceId==='rune_protection_absolute'`), e.notice);
+    complete(w);
+    use(w, 'rune_freedom'); await sleep(700);   // карточка руны в Инвентаре — действие после вспышки (0,6 с)
+    const fN = E(w, 'window.__N.join(" / ")');
+    check('F39 после выполнения дня руна нагрузки доступна', fN === 'Руна использована. Нагрузка на сегодня снижена.' && E(w, `data.targetDiscountSourceId==='rune_freedom'`), fN);
+  }
+  { const w = fresh(); use(w, 'rune_burden_release'); useF(w, 'pullups');
+    const nd = (q, bb) => E(w, `(() => { const a = data.targetDiscountToday; data.targetDiscountToday = false; data.activeScroll = null; const v = getDynamicTarget(${bb}, data.dailyTargetLevel, '${q}'); data.targetDiscountToday = a; data.activeScroll = 'focus'; return v; })()`);
+    check('F40 руна нагрузки, включённая до свитка, спит (цель без скидки)', E(w, 'isLoadRuneOnHold()') && tgt(w,'pullups',40) === Math.floor(nd('pullups',40)*1.5) && tgt(w,'press',100) === nd('press',100), tgt(w,'pullups',40) + ' / ' + nd('pullups',40));
+    const eff = JSON.parse(J(w, `getActiveEffects().filter(e=>e.name.startsWith('Руна Снятия Бремени'))`));
+    check('F41 панель: «приостановлено до окончания действия Свитка Сосредоточения»', eff.length===1 && eff[0].text === 'Действие руны приостановлено до окончания действия Свитка Сосредоточения.', JSON.stringify(eff));
+    reset(w);
+    check('F42 провал — спящая руна нагрузки переживает цикл', E(w, `data.targetDiscountSourceId==='rune_burden_release'`)); }
+  { const w = fresh(); use(w, 'rune_protection'); useF(w, 'press');
+    const st = failDayStatus(w);
+    check('F43 Руна Защиты спит: провал — полный штраф, руна осталась', st === 'penalty' && E(w, `data.insurance && data.insuranceSourceId==='rune_protection'`), st); }
+  { const w = fresh(); use(w, 'rune_protection'); useF(w, 'press'); complete(w);
+    const eff = JSON.parse(J(w, `getActiveEffects().filter(e=>e.name.startsWith('Руна Защиты'))`));
+    check('F44 день выполнен — Руна Защиты ждёт следующего цикла', E(w, `data.insurance && data.insuranceHoldScroll==='focus'`) && eff.length===1 && eff[0].text === 'Действие руны приостановлено Свитком Сосредоточения до следующего цикла.', JSON.stringify(eff));
+    reset(w);
+    check('F45 … и действует в следующем цикле', E(w, `data.insurance && getInsuranceHoldScroll()===null`)); }
+  // данные
+  { const w = fresh();
+    const clean = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign(JSON.parse(SEED_JSON), { focusExerciseId: 'squats', focusRewardExp: 50, insuranceHoldScroll: 'focus' }), total: {} }))`.replace('SEED_JSON', JSON.stringify(SEED))));
+    const bad = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign(JSON.parse(SEED_JSON), { focusExerciseId: 'evil', focusRewardExp: -5 }), total: {} }))`.replace('SEED_JSON', JSON.stringify(SEED))));
+    check('F46 бэкап: поля свитка сохраняются, мусор отбрасывается', clean.state.focusExerciseId==='squats' && clean.state.focusRewardExp===50 && clean.state.insuranceHoldScroll==='focus' && bad.state.focusExerciseId===null && bad.state.focusRewardExp===0, JSON.stringify([clean.state.focusExerciseId, bad.state.focusExerciseId, bad.state.focusRewardExp]));
+  }
+  { const old = JSON.parse(SEED); delete old.focusExerciseId; old.activeScroll = 'focus';
+    const keep = SEED; SEED = JSON.stringify(old); const w = boot(); SEED = keep;
+    check('F47 старое сохранение: поля по умолчанию, свиток без упражнения снят', E(w, `data.focusExerciseId===null && data.activeScroll===null && data.focusRewardExp===0`)); }
+  { const w = fresh(); E(w, `data.level=6; data.consumables={}`); E(w, 'openInv()');
+    check('F48 Инвентарь: в разделе «Свитки»', (() => { E(w, `data.consumables.scroll_focus=1; openInv()`); return E(w, `(() => { const t = document.getElementById('invContent') ? document.getElementById('invContent').innerHTML : document.body.innerHTML; const i = t.indexOf('Свиток Сосредоточения'); const sc = t.lastIndexOf('Свитки', i); const rs = t.lastIndexOf('Расходники', i); return i > 0 && sc > rs; })()`); })()); }
+}
+
 console.log(results.join('\n'));
 const nFail = results.filter(r => r.startsWith('FAIL')).length;
 console.log(`\nИтого: ${results.length - nFail} OK, ${nFail} FAIL`);

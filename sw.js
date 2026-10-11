@@ -16,7 +16,7 @@
 // установку, ни активацию.
 // ============================================================================
 
-const CACHE_VERSION = 'v7-1-12';
+const CACHE_VERSION = 'v7-2-0';
 const ASSETS_VERSION = 'v1';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;
@@ -101,10 +101,12 @@ const ASSET_FILES = [
   './icons/items/effect_anomaly_burden.png',
   './icons/items/effect_limit_break.png',
   './icons/items/scroll_transfer.png',
+  './icons/items/scroll_focus.png',
   './icons/items/scroll_renunciation.png',
   './icons/items/scroll_contract.png',
   './icons/items/scroll_freeze.png',
   './icons/items/mag_seal_transfer.png',
+  './icons/items/mag_seal_focus.png',
   './icons/items/mag_seal_renunciation.png',
   './icons/items/mag_seal_contract.png',
   './icons/items/mag_seal_freeze.png',
@@ -138,6 +140,7 @@ const ASSET_FILES = [
   './icons/items-s/mag_seal_freeze.png',
   './icons/items-s/mag_seal_renunciation.png',
   './icons/items-s/mag_seal_transfer.png',
+  './icons/items-s/mag_seal_focus.png',
   './icons/items-s/potion_growth.png',
   './icons/items-s/potion_restoration.png',
   './icons/items-s/potion_restoration_full.png',
@@ -160,6 +163,7 @@ const ASSET_FILES = [
   './icons/items-s/scroll_freeze.png',
   './icons/items-s/scroll_renunciation.png',
   './icons/items-s/scroll_transfer.png',
+  './icons/items-s/scroll_focus.png',
   './icons/items-s/seal_growth.png',
   './icons/items-s/seal_limit.png',
   './icons/items-s/shard_limit.png',
