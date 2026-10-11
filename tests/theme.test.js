@@ -186,7 +186,7 @@ const w = boot(); const D = w.document; await tick();
     const r1 = mk(390, 700); w.__el = r1; E(w, "SysFrame.render(__el, 'red', SYS_FRAME_OPT)");
     check('T52 v7.1.0 полосы по образцу (демо 91): энергия только по линиям (маски), нет прежней вспышки и штрих-кода, точки, тёмная линия, стекло; колонны с внутренним контуром; красная схема — красное стекло',
       ov.querySelectorAll('mask').length === 0 && r1.querySelectorAll(':scope > .sf-en').length === 2 && !ov.querySelector('ellipse, rect.core')
-      && ov.querySelectorAll('rect.sf-dot').length >= 1 && ov.querySelectorAll('line').length === 1 && ov.querySelectorAll('polyline').length >= 15
+      && ov.querySelectorAll('rect.sf-dot').length === 0 && ov.querySelectorAll('line').length === 1 && ov.querySelectorAll('polyline').length >= 15
       && un.querySelectorAll('polygon[fill="none"], polyline').length > 0 && /rgba\(5,16,50,\.7\)/.test(un.innerHTML)
       && /rgba\(196,28,56,/.test(r1.querySelector('svg.sf-over').innerHTML) && !/rgba\(34,112,236,/.test(r1.querySelector('svg.sf-over').innerHTML)
       && /\.sf-win > \.sf-pat \{ position: absolute; z-index: 3; pointer-events: none; \}/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n')));
@@ -442,6 +442,17 @@ const w = boot(); const D = w.document; await tick();
   const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf-8'), listed = new Set([...sw.matchAll(/'\.\/icons\/items-s\/([\w.-]+)'/g)].map(m => m[1]));
   check('T69 sw.js: маленькие копии — в фоновой докачке (все файлы папки) и в кэше картинок, а не каркаса',
     [...small].every(f => listed.has(f)) && listed.size === small.size && /pathname\.includes\('\/icons\/items-s\/'\)/.test(sw)); }
+
+// ===== v7.1.9 =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const mk = (ht) => { const el = D.createElement('div'); el.className = 'sf-win mwin'; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
+    Object.defineProperty(el, 'offsetWidth', { value: 390 }); Object.defineProperty(el, 'offsetHeight', { value: ht }); D.body.appendChild(el); return el; };
+  const res = [600, 1700].map(ht => { const e = mk(ht); w.__el = e; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
+    const hs = [...e.querySelectorAll(':scope > .sf-en')].map(d => parseFloat(d.style.height)), tops = [...e.querySelectorAll(':scope > .sf-en')].map(d => parseFloat(d.style.top));
+    const r = { hs, tops, ht, dots: e.querySelectorAll('rect').length && [...e.querySelectorAll('svg.sf-over rect')].filter(x => !x.closest('clipPath')).length }; e.remove(); return r; });
+  check('T70 слой энергии — высотой с полосу (≤ 50px) и у полосы, а не во всё окно (и на длинном главном экране); точек под полосой нет',
+    res.every(r => r.hs.length === 2 && r.hs.every(h => h > 8 && h <= 50) && r.tops[0] < 30 && r.tops[1] > r.ht - 80 && r.dots === 0)
+    && !/sfDotTw|\.sf-dot/.test(css), JSON.stringify(res)); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
