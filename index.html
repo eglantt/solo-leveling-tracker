@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1092,6 +1092,14 @@
     #sysStatsRefundBtn { margin-top: 12px; }
     /* v7.0.4: кнопки шага — в столбцах «−» / «+»; выбранная — заливка ярче и светящаяся рамка */
     .sys-stat-row .sys-step-btn.on { background: rgba(0,140,255,0.45); border-color: #9fdcff; color: #fff; box-shadow: 0 0 10px rgba(64,192,255,0.6); }
+    /* v7.1.4: временная «Проверка нагрузки» в Длани (perfTest) — переключатели и их действие */
+    .perf-note { font-size: 0.72rem; opacity: 0.8; margin-bottom: 6px; }
+    .perf-row { margin-top: 8px; } .perf-lb { font-size: 0.78rem; margin-bottom: 4px; }
+    .perf-row .perf-opt { margin-top: 0; }
+    .perf-row .perf-opt { background: rgba(0,0,0,0.35); }
+    .perf-row .perf-opt.on { background: rgba(255,204,51,0.22); border-color: #ffcc33; color: #ffe08a; box-shadow: 0 0 10px rgba(255,204,51,0.45); }
+    body.perf-ico-s .pulse-glow-special { animation-play-state: paused !important; }
+    body.perf-ico-0 .pulse-glow-special { animation: none !important; filter: none !important; }
     /* ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85). Действует, пока на <body> стоит класс theme-sys; в теме «Классика»
        класса нет, и ни одно правило ниже (кроме выбора оформления в Архиве) не применяется.
        Окно в теме «Система»: .sf-win.mwin > .sf-content > .sf-panel.mw, заголовок — табличка .mw-hdr > .mw-tt,
@@ -1381,6 +1389,16 @@
       --tgr: 0 0 .096em rgba(255,200,205,.54), 0 0 .264em rgba(255,120,130,.54), 0 0 .54em rgba(255,70,90,.54), 0 0 1.08em rgba(220,50,70,.42);
       text-shadow: var(--tg);
     }
+    /* v7.1.4: временная «Проверка нагрузки» — облегчённое свечение текста, без свечения колонн и размытия стекла полос */
+    body.theme-sys.perf-tg-2 {
+      --tg: 0 0 .2em color-mix(in srgb, currentColor 58%, transparent), 0 0 .8em color-mix(in srgb, currentColor 46%, transparent);
+      --tgd: 0 0 .2em color-mix(in srgb, currentColor 32%, transparent), 0 0 .8em color-mix(in srgb, currentColor 25%, transparent);
+      --tgr: 0 0 .2em rgba(255,140,150,.58), 0 0 .8em rgba(230,60,80,.46);
+    }
+    body.theme-sys.perf-tg-0, body.theme-sys.perf-tg-0 * { text-shadow: none !important; }
+    body.theme-sys.perf-col-0 svg.sf-under, body.theme-sys.perf-col-0 svg.sf-under * { filter: none !important; }
+    body.theme-sys.perf-bar-0 svg.sf-over, body.theme-sys.perf-bar-0 svg.sf-over * { filter: none !important; }
+    body.theme-sys .sf-win.mwin .perf-row .perf-opt.on { --bc: #ffe08a; border-color: #ffcc33 !important; color: #ffe08a !important; background: rgba(255,204,51,.16) !important; box-shadow: 0 0 10px rgba(255,204,51,.45), inset 0 0 10px rgba(255,204,51,.2) !important; }
     /* цифра уровня — своё свечение цвета ранга (drop-shadow), общее не нужно */
     body.theme-sys .sc-hex b, body.theme-sys .sc-hex .sc-idq { text-shadow: none; }
     /* вместо прежнего слабого — общее: названия упражнений, счётчики и цели (в своём цвете), текст уведомлений */
@@ -1699,6 +1717,14 @@
           <div class="sound-checkbox-zone" onclick="togglePaceControl()"><div class="sound-checkbox on" id="paceControlCheckbox">✓</div></div>
         </div>
       </div>
+      <div class="backup-section" id="perfTestSection">   <!-- v7.1.4: временно — проверка нагрузки на телефоне -->
+        <div class="backup-section-title">Проверка нагрузки</div>
+        <div class="backup-summary perf-note">Временно, для проверки плавности прокрутки на телефоне. Действует только на этом устройстве, в сохранение и копию не попадает.</div>
+        <div class="perf-row"><div class="perf-lb">Свечение текста</div><div class="sys-btn-pair" data-perf="tg"><button class="backup-action-btn perf-opt" data-v="4">как есть</button><button class="backup-action-btn perf-opt" data-v="2">2 слоя</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
+        <div class="perf-row"><div class="perf-lb">Свечение колонн рамки</div><div class="sys-btn-pair" data-perf="col"><button class="backup-action-btn perf-opt" data-v="1">как есть</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
+        <div class="perf-row"><div class="perf-lb">Размытие стекла полос</div><div class="sys-btn-pair" data-perf="bar"><button class="backup-action-btn perf-opt" data-v="1">как есть</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
+        <div class="perf-row"><div class="perf-lb">Свечение иконок предметов</div><div class="sys-btn-pair" data-perf="ico"><button class="backup-action-btn perf-opt" data-v="1">как есть</button><button class="backup-action-btn perf-opt" data-v="s">без пульса</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
+      </div>
       <div class="backup-section danger-zone">
         <div class="backup-section-title danger">Сбросы</div>
         <button class="reset-all" onclick="sysToolsFlashThenRun(this, resetDailyProgressAction)">Сбросить дневной прогресс</button>
@@ -1894,7 +1920,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.3';
+  const APP_VERSION = '7.1.4';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -7450,6 +7476,28 @@
     namePauseBtn.disabled = !(data.nameNextAvailableAt && Date.now() < data.nameNextAvailableAt);
     document.getElementById('sysToolsOverlay').style.display = 'flex';
   }
+
+  // v7.1.4: временная «Проверка нагрузки» (Длань) — настройки только в памяти этого устройства (не в data, не в копии);
+  // классы на <body>: perf-tg-2/0, perf-col-0, perf-bar-0, perf-ico-s/0. Убрать после выбора постоянного решения.
+  const PERF_KEY = 'sl_perf_test', PERF_DEF = { tg: '4', col: '1', bar: '1', ico: '1' };
+  function perfTestGet() { let v = {}; try { v = JSON.parse(localStorage.getItem(PERF_KEY)) || {}; } catch (e) {} return Object.assign({}, PERF_DEF, v); }
+  function perfTestApply() {
+    const v = perfTestGet(), b = document.body;
+    ['2', '0'].forEach(k => b.classList.toggle('perf-tg-' + k, v.tg === k));
+    b.classList.toggle('perf-col-0', v.col === '0'); b.classList.toggle('perf-bar-0', v.bar === '0');
+    ['s', '0'].forEach(k => b.classList.toggle('perf-ico-' + k, v.ico === k));
+    document.querySelectorAll('#perfTestSection [data-perf]').forEach(g => g.querySelectorAll('.perf-opt').forEach(btn => btn.classList.toggle('on', v[g.dataset.perf] === btn.dataset.v)));
+  }
+  function perfTestSet(key, val) {
+    const v = perfTestGet(); v[key] = val;
+    try { localStorage.setItem(PERF_KEY, JSON.stringify(v)); } catch (e) {}
+    perfTestApply();
+  }
+  document.querySelectorAll('#perfTestSection [data-perf]').forEach(g => g.addEventListener('click', e => {
+    const btn = e.target.closest('.perf-opt'); if (!btn) return;
+    playSound('tap'); perfTestSet(g.dataset.perf, btn.dataset.v);
+  }));
+  perfTestApply();
 
   function closeSysTools() {
     document.getElementById('sysToolsOverlay').style.display = 'none';

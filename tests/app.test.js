@@ -527,7 +527,7 @@ async function paceSectionTests() {
   const D = w.document;
   const titles = [...D.querySelectorAll('.backup-section-title')].map(t => t.textContent.trim());
   const iR = titles.indexOf('Реестр Игроков'), iP = titles.indexOf('Контроль темпа'), iS = titles.indexOf('Сбросы');
-  check('PS1 порядок: «Реестр Игроков» → «Контроль темпа» → «Сбросы»', iR >= 0 && iP === iR + 1 && iS === iP + 1, titles.join(' | '));
+  check('PS1 порядок: «Реестр Игроков» → «Контроль темпа» → «Сбросы» (v7.1.4: между ними — временная «Проверка нагрузки»)', iR >= 0 && iP === iR + 1 && (iS === iP + 1 || (/проверка нагрузки/i.test(titles[iP + 1]) && iS === iP + 2)), titles.join(' | '));
   const tP = [...D.querySelectorAll('.backup-section-title')].find(t => t.textContent.trim() === 'Контроль темпа');
   const tR = [...D.querySelectorAll('.backup-section-title')].find(t => t.textContent.trim() === 'Реестр Игроков');
   const cs = el => w.getComputedStyle(el);

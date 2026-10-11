@@ -372,6 +372,28 @@ const w = boot(); const D = w.document; await tick();
   E(w, "setTheme('system')"); await tick();
   check('T59 прокрутка в «Системе»: фон и рамка замирают и через 0,3 с после остановки идут дальше; в «Классике» — без изменений', on1 && off1 && cls); }
 
+// ===== v7.1.4: временная «Проверка нагрузки» в Длани =====
+{ const sec = D.getElementById('perfTestSection');
+  const click = (k, v) => sec.querySelector(`[data-perf="${k}"] [data-v="${v}"]`).click();
+  const on = () => [...sec.querySelectorAll('.perf-opt.on')].map(b => b.closest('[data-perf]').dataset.perf + '=' + b.dataset.v).join(',');
+  const def = on() === 'tg=4,col=1,bar=1,ico=1' && !/perf-/.test(D.body.className);
+  click('tg', '2'); click('col', '0'); click('bar', '0'); click('ico', 's');
+  const cls1 = ['perf-tg-2', 'perf-col-0', 'perf-bar-0', 'perf-ico-s'].every(c => D.body.classList.contains(c)) && on() === 'tg=2,col=0,bar=0,ico=s';
+  const stored = w.localStorage.getItem('sl_perf_test'), inData = /perf/.test(J(w, 'data'));
+  click('tg', '0'); click('ico', '0');
+  const cls2 = D.body.classList.contains('perf-tg-0') && !D.body.classList.contains('perf-tg-2') && D.body.classList.contains('perf-ico-0') && !D.body.classList.contains('perf-ico-s');
+  click('tg', '4'); click('col', '1'); click('bar', '1'); click('ico', '1');
+  const back = !/perf-/.test(D.body.className) && on() === 'tg=4,col=1,bar=1,ico=1';
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('T60 «Проверка нагрузки» в Длани: по умолчанию «как есть»; переключатели ставят классы и запоминаются на устройстве (не в data); возврат снимает всё',
+    def && cls1 && cls2 && back && JSON.parse(stored).tg === '2' && !inData
+    && /body\.theme-sys\.perf-tg-2 \{\s+--tg:/.test(css) && /body\.theme-sys\.perf-col-0 svg\.sf-under/.test(css) && /body\.perf-ico-0 \.pulse-glow-special \{ animation: none !important; filter: none !important; \}/.test(css),
+    [def, cls1, cls2, back, stored, inData].join(' '));
+  STORE = { 'sl_daily_v5_5_0': SEED, 'sl_perf_test': JSON.stringify({ tg: '0', col: '1', bar: '0', ico: '1' }) };
+  const w2 = boot(); await sleep(40);
+  check('T61 при запуске настройки «Проверки нагрузки» применяются сразу', w2.document.body.classList.contains('perf-tg-0') && w2.document.body.classList.contains('perf-bar-0') && !w2.document.body.classList.contains('perf-col-0'));
+  STORE = null; w2.close(); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
