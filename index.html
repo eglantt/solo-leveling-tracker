@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.2.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -183,8 +183,8 @@
     .sc-hexw { filter: drop-shadow(0 0 5px var(--rk)); }
     .rk-sss .sc-hexw { animation: hexPulseSss 2.4s ease-in-out infinite; }
     .rk-monarch .sc-hexw { animation: hexPulseMonarch 2.2s ease-in-out infinite; }
-    @keyframes hexPulseSss { 0%, 100% { filter: drop-shadow(0 0 6px #cc00ff); } 50% { filter: drop-shadow(0 0 14px #cc00ff) drop-shadow(0 0 4px #ff66ff); } }
-    @keyframes hexPulseMonarch { 0%, 100% { filter: drop-shadow(0 0 8px #aa00ff) drop-shadow(0 0 14px #6600aa); } 50% { filter: drop-shadow(0 0 16px #aa00ff) drop-shadow(0 0 22px #6600aa) drop-shadow(0 0 5px #ff44ff); } }
+    @keyframes hexPulseSss { 0%, 100% { filter: drop-shadow(0 0 3px #cc00ff); } 50% { filter: drop-shadow(0 0 5px #cc00ff) drop-shadow(0 0 1.5px #ff66ff); } }   /* v7.2.3: разлёт меньше (вариант В) */
+    @keyframes hexPulseMonarch { 0%, 100% { filter: drop-shadow(0 0 3px #aa00ff) drop-shadow(0 0 4px #6600aa); } 50% { filter: drop-shadow(0 0 5px #aa00ff) drop-shadow(0 0 6px #6600aa) drop-shadow(0 0 2px #ff44ff); } }
     .sc-hex { width: 72px; height: 80px; position: relative; display: flex; align-items: center; justify-content: center;
       clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--rk); }
     .sc-hex::before { content: ''; position: absolute; inset: 3px; clip-path: inherit; background: radial-gradient(circle at 50% 40%, #10263f, #050c18); }
@@ -361,8 +361,8 @@
        и слева. В окне «СТАТУС» свечение компактнее: наибольший радиус 12px (< запаса 14px). */
     #statusOverlay .rk-sss .sc-hexw { animation-name: hexPulseSssCompact; }
     #statusOverlay .rk-monarch .sc-hexw { animation-name: hexPulseMonarchCompact; }
-    @keyframes hexPulseSssCompact { 0%, 100% { filter: drop-shadow(0 0 5px #cc00ff); } 50% { filter: drop-shadow(0 0 10px #cc00ff) drop-shadow(0 0 3px #ff66ff); } }
-    @keyframes hexPulseMonarchCompact { 0%, 100% { filter: drop-shadow(0 0 6px #aa00ff) drop-shadow(0 0 9px #6600aa); } 50% { filter: drop-shadow(0 0 10px #aa00ff) drop-shadow(0 0 12px #6600aa) drop-shadow(0 0 4px #ff44ff); } }
+    @keyframes hexPulseSssCompact { 0%, 100% { filter: drop-shadow(0 0 3px #cc00ff); } 50% { filter: drop-shadow(0 0 5px #cc00ff) drop-shadow(0 0 1.5px #ff66ff); } }   /* v7.2.3: как в шапке */
+    @keyframes hexPulseMonarchCompact { 0%, 100% { filter: drop-shadow(0 0 3px #aa00ff) drop-shadow(0 0 4px #6600aa); } 50% { filter: drop-shadow(0 0 5px #aa00ff) drop-shadow(0 0 6px #6600aa) drop-shadow(0 0 2px #ff44ff); } }
 
     .status-overlay {
       position: fixed; inset: 0; background: rgba(0,5,15,0.95);
@@ -1925,7 +1925,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.2';
+  const APP_VERSION = '7.2.3';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2488,6 +2488,7 @@
   function protectionBlockReason(tier) {
     if (allQuestsDone() || data.isGoalMet || data.dailyNotices.complete) return 'задание уже выполнено';
     if (data.curseActiveToday) return 'действует Бремя Аномалии';
+    if (data.pendingCurse && runeCarryHold()) return 'ожидает эффект «Бремя Аномалии»';   // v7.2.3: защита перенесётся в цикл Бремени
     if (data.activeScroll === 'contract') return 'активен Свиток Договора';
     if (data.activeScroll === 'transfer') return 'активен Свиток Переноса';
     if (data.activeScroll === 'focus') return 'активен Свиток Сосредоточения';
@@ -2503,6 +2504,7 @@
   function protectionRefusalNotice(tier) {
     if (allQuestsDone() || data.isGoalMet || data.dailyNotices.complete) return "Задание уже выполнено — защита не нужна.";
     if (data.curseActiveToday) return "Обычная защита бессильна против Бремени Аномалии.";
+    if (data.pendingCurse && runeCarryHold()) { const h = runeCarryHold(); return h === 'veil' ? VEIL_TEXTS.protBurdenVeil : h === 'trace' ? VEIL_TEXTS.protBurdenTrace : VEIL_TEXTS.protBurdenFreeze; }
     if (data.activeScroll === 'contract') return "Активен Свиток Договора. Его условия не допускают обычной защиты от штрафа до следующего цикла.";
     if (data.activeScroll === 'transfer') return "Активен Свиток Переноса. Его условия не допускают обычной защиты от штрафа до следующего цикла.";
     if (data.activeScroll === 'focus') return "Активен Свиток Сосредоточения. Его условия не допускают обычной защиты от штрафа до следующего цикла.";
@@ -2513,12 +2515,26 @@
   // Второй абзац окна подтверждения «Использовать …?» — предупреждение о
   // последствиях в текущей ситуации ('' — предупреждать не о чем).
   function getUseWarning(id) {
+    // v7.2.3: руна, использованная во время Пелены (или её следа), перенесётся в цикл свитка-«сделки» из очереди — там она спит.
+    const dealGen = queuedDealGen();
+    const dealProtLine = (dealGen && (runeCarryHold() === 'veil' || runeCarryHold() === 'trace'))
+      ? `Ожидает эффект ${dealGen}: при его действии обычная защита от штрафа будет приостановлена.` : '';
     if (id === 'rune_protection_charged') {
       const reason = protectionBlockReason(2);
-      if (reason && findReturnRecord(1)) return `Защита сейчас не может быть установлена: ${reason}. Руна сработает только для возврата опыта.`;
-      if (!reason && data.insurance) return `Руна Надёжной Защиты поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId]}.`;
+      if (reason && findReturnRecord(1)) return reason === 'ожидает эффект «Бремя Аномалии»'
+        ? `Защита сейчас не может быть использована: ${reason}. Руна сработает только для возврата опыта.`
+        : `Защита сейчас не может быть установлена: ${reason}. Руна сработает только для возврата опыта.`;
+      if (reason) return '';
+      return [data.insurance ? `Руна Надёжной Защиты поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId]}.` : '', dealProtLine].filter(Boolean).join('\n\n');
+    }
+    if (id === 'rune_protection') return protectionBlockReason(1) ? '' : dealProtLine;
+    if (id === 'rune_freedom' || id === 'rune_burden_release') {
+      const rate = id === 'rune_freedom' ? 0.1 : 0.25;
+      if (dealGen && isVeilActive() && (data.targetDiscountRate || 0) < rate)
+        return `Ожидает эффект ${dealGen}: при его действии снижение нагрузки начнёт действовать только после выполнения дневного задания.`;
       return '';
     }
+    if (id === 'scroll_contract' || id === 'scroll_renunciation' || id === 'scroll_freeze') return scrollWindowLines(id).join('\n\n');
     if (id === 'rune_protection_absolute') {
       if (data.insurance && (PROTECTION_TIER[data.insuranceSourceId] || 1) < 3) return `Руна Абсолютной Защиты поглотит действие ${ITEM_GENITIVE[data.insuranceSourceId] || 'текущей защиты'}.`;
       return '';
@@ -2532,14 +2548,6 @@
       return '';
     }
     if (EXP_BOOST_RATE[id]) return expBoostAbsorbWarning(id);
-    if (id === 'scroll_contract') {
-      const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
-      const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
-      const activatesNow = !hasAnyClosed && !data.isGoalMet && data.activeScroll !== 'veil';   // v7.2.1: при Пелене — в очередь
-      if (scrollGate(activatesNow)) return '';
-      if ((activatesNow && data.curseActiveToday) || (!activatesNow && data.pendingCurse)) return 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.';
-      return '';
-    }
     if (id === 'tablet_of_reassessment') {
       const invested = Object.values(data.stats).some(v => v > 10);
       const hasProgress = Object.values(data.completed || {}).some(v => v > 0);
@@ -3675,8 +3683,8 @@
     ).join('');
     document.getElementById('exerciseChoiceContent').innerHTML = `
       <div class="danger-warning-step">
-        <div class="danger-text" style="color:#a8d8ff;">${question || 'Какое упражнение снять на сегодня?'}</div>${warning ? `
-        <div class="danger-text" style="margin-top:10px;">${warning}</div>` : ''}
+        <div class="danger-text" style="color:#a8d8ff;">${question || 'Какое упражнение снять на сегодня?'}</div>${(Array.isArray(warning) ? warning : (warning ? [warning] : [])).map(l => `
+        <div class="danger-text exc-warn" style="margin-top:10px;">${l}</div>`).join('')}
         <div style="margin-top:14px;">${buttons}</div>
         <div class="danger-btn-row">
           <button class="danger-btn-cancel" onclick="closeExerciseChoiceModal()">Отмена</button>
@@ -3740,6 +3748,12 @@
     scrollBlocked: 'Следующий цикл уже занят: ожидает Пелена покоя.',
     scrollQueueActive: 'Действует эффект «Пелена покоя». ',   // v7.2.1: начало уведомления — свиток уходит в очередь
     scrollQueueTrace: 'Действует остаточный эффект «Пелены покоя». ',
+    queueTail: 'Свиток вступит в силу со следующим циклом дневного задания.',   // v7.2.3: строка окна свитка
+    queueTailFreeze: 'Заморозка вступит в силу со следующего цикла.',
+    // v7.2.3: руна защиты во время Пелены / её следа / Заморозки при ожидающем Бремени — отказ
+    protBurdenVeil: 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Пелены покоя.',
+    protBurdenTrace: 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит со следующим циклом.',
+    protBurdenFreeze: 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Заморозки.',
     transferActive: 'Свиток Переноса нельзя использовать, пока действует эффект «Пелена покоя».',
     transferTrace: 'Свиток Переноса нельзя использовать, пока действует остаточный эффект «Пелены покоя».',
     timerActive: 'Пелена покоя<br class="br-narrow"> рассеется через',
@@ -3876,6 +3890,43 @@
     return null;
   }
   function isVeilActive() { return data.activeScroll === 'veil' && !data.veilLifted; }
+  // v7.2.3: единое правило «свиток включится сразу?» — его спрашивают и окно, и само использование.
+  // Сосредоточение, Договор, Отречение — в очередь, если есть выполненное упражнение, начат Предел или действует Пелена;
+  // Заморозка — если задание выполнено, начат Предел или действует Пелена.
+  function scrollActivatesNow(id) {
+    if (id === 'scroll_freeze') return !(data.isGoalMet || data.dailyNotices.complete || allQuestsDone() || data.activeScroll === 'veil');
+    const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
+    const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
+    return !hasAnyClosed && !data.isGoalMet && data.activeScroll !== 'veil';
+  }
+  // v7.2.3: строки окна перед использованием свитка — сначала об очереди (с причиной), затем о Бремени.
+  // Пусто, если свиток включится сразу без Бремени или всё равно получит отказ.
+  function scrollWindowLines(id) {
+    const now = scrollActivatesNow(id);
+    if (id === 'scroll_freeze') {
+      if (data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt) return [];
+      if (scrollGate(false)) return [];
+    } else if (scrollGate(now)) return [];
+    const lines = [];
+    if (!now) lines.push(veilQueuePrefix() + (id === 'scroll_freeze' ? VEIL_TEXTS.queueTailFreeze : VEIL_TEXTS.queueTail));
+    const burdenTail = id === 'scroll_focus' ? 'цель выбранного упражнения вырастет ещё на 40%.'
+      : id === 'scroll_contract' ? 'нагрузка и штраф будут выше обычного.' : null;
+    if (burdenTail) {
+      if (now && data.curseActiveToday) lines.push('Действует эффект «Бремя Аномалии»: ' + burdenTail);
+      else if (!now && data.pendingCurse) lines.push('Ожидает эффект «Бремя Аномалии»: в следующем цикле ' + burdenTail);
+    }
+    return lines;
+  }
+  // v7.2.3: день без задания, чей эффект переносит руну на первый обычный цикл: 'veil' | 'trace' | 'freeze' | null.
+  function runeCarryHold() {
+    if (data.activeScroll === 'veil') return data.veilLifted ? 'trace' : 'veil';
+    if (data.activeScroll === 'freeze') return 'freeze';
+    return null;
+  }
+  // v7.2.3: свиток-«сделка» в очереди (родительный падеж) — в его цикле руны защиты и нагрузки спят.
+  function queuedDealGen() {
+    return data.pendingScroll === 'contract' ? 'Свитка Договора' : data.pendingScroll === 'focus' ? 'Свитка Сосредоточения' : null;
+  }
   // v7.2.1: пока действует Пелена или её остаточный эффект, свиток включается только со следующего цикла —
   // начало уведомления называет причину ('' — Пелены нет).
   function veilQueuePrefix() {
@@ -5834,12 +5885,9 @@
           if (data.totalPenalties > 0) { data.totalPenalties--; used = true; showNotice("Руна использована. Один штраф удалён из истории.", 'info'); }
           else { showNotice("Штрафов для удаления нет.", 'warn', true); }
       } else if (id === 'rune_protection') {
-          if (allQuestsDone() || data.isGoalMet) { showNotice("Задание уже выполнено — защита не нужна.", 'warn', true); }
-          else if (data.curseActiveToday) { showNotice("Обычная защита бессильна против Бремени Аномалии.", 'warn', true); }
-          else if (data.activeScroll === 'contract' || data.activeScroll === 'transfer' || data.activeScroll === 'focus') { showNotice(protectionRefusalNotice(1), 'warn', true); }
-          else if (!data.insurance) { data.insurance = true; data.insuranceSourceId = id; used = true; showNotice("Руна активирована. На следующий цикл штраф за провал будет снижен вдвое.", 'info'); }
-          else if ((PROTECTION_TIER[data.insuranceSourceId] || 1) > 1) { showNotice(`Действует более сильная защита: ${getConsumableInfo(data.insuranceSourceId).name}.`, 'warn', true); }
-          else { showNotice("Защита уже активирована.", 'warn', true); }
+          // v7.2.3: причины отказа — общие с Руной Надёжной Защиты (в т. ч. Бремя, ожидающее за Пеленой / Заморозкой)
+          if (protectionBlockReason(1)) { showNotice(protectionRefusalNotice(1), 'warn', true); }
+          else { data.insurance = true; data.insuranceSourceId = id; used = true; showNotice("Руна активирована. На следующий цикл штраф за провал будет снижен вдвое.", 'info'); }
       } else if (id === 'potion_restoration') {
           used = useRecoveryItem(0.5, 'Зелье использовано', true);
       } else if (id === 'rune_restoration_charged') {
@@ -5859,9 +5907,7 @@
           else if (!data.streakShield) { data.streakShield = true; data.streakShieldSourceId = id; used = true; showNotice("Руна использована. Серия дней защищена от следующего срыва.", 'info'); }
           else { showNotice("Защита серии уже активна.", 'warn', true); }
       } else if (id === 'scroll_renunciation') {
-          const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
-          const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel));
-          const nowR = !hasAnyClosed && !data.isGoalMet && data.activeScroll !== 'veil';   // v7.2.1
+          const nowR = scrollActivatesNow('scroll_renunciation');   // v7.2.3: общее правило с окном
           const gate = scrollGate(nowR);
           if (gate) {
               showNotice(gate, 'warn', true);
@@ -5911,14 +5957,12 @@
       } else if (id === 'scroll_focus') {
           // v7.2.0: как Перенос — сначала выбор упражнения, списание в колбэке (used остаётся false);
           // включается сразу или встаёт в очередь — по правилам Договора.
-          const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
-          const focusActivatesNow = () => data.activeScroll !== 'veil' && !data.isGoalMet && !Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
+          const focusActivatesNow = () => scrollActivatesNow('scroll_focus');   // v7.2.3: общее правило с окном
           const nowAtOpen = focusActivatesNow();
           const gate = scrollGate(nowAtOpen);
           if (gate) {
               showNotice(gate, 'warn', true);
           } else {
-              const burden = (nowAtOpen && data.curseActiveToday) || (!nowAtOpen && data.pendingCurse);
               showExerciseChoice(QUEST_IDS_FOCUS, (chosenId) => {
                   const now = focusActivatesNow();
                   const g = scrollGate(now);
@@ -5935,12 +5979,10 @@
                   showNotice(now
                     ? `${QUEST_DISPLAY_NAMES[chosenId]} — цель повышена на 50%. Награда — за полное исполнение.`
                     : `${veilQueuePrefix()}Свиток вступит в силу со следующим циклом дневного задания. Выбрано: ${QUEST_DISPLAY_NAMES[chosenId]}.`, 'info');
-              }, 'Какое упражнение усилить?', burden ? 'Действует Бремя Аномалии: цель выбранного упражнения вырастет ещё на 40%.' : '');
+              }, 'Какое упражнение усилить?', scrollWindowLines('scroll_focus'));   // v7.2.3: очередь и Бремя — строками под вопросом
           }
       } else if (id === 'scroll_contract') {
-          const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
-          const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
-          const nowC = !hasAnyClosed && !data.isGoalMet && data.activeScroll !== 'veil';   // v7.2.1
+          const nowC = scrollActivatesNow('scroll_contract');   // v7.2.3: общее правило с окном
           const gate = scrollGate(nowC);
           if (gate) {
               showNotice(gate, 'warn', true);
@@ -5966,7 +6008,7 @@
               // Выполненный день (в т.ч. без Предела) не замораживается задним
               // числом — Заморозка начнётся со следующего цикла.
               showFullscreenSeal('freeze', '#c8f5ff');   // v7.0.2: сначала печать, уведомление ждёт её
-              if (data.isGoalMet || data.dailyNotices.complete || allQuestsDone() || data.activeScroll === 'veil') {   // v7.2.1: при Пелене — после неё
+              if (!scrollActivatesNow('scroll_freeze')) {   // v7.2.3: общее правило с окном (при Пелене — после неё)
                   showNotice(veilQueuePrefix() + "Заморозка вступит в силу со следующего цикла.", 'info');
                   data.pendingScroll = 'freeze';
               } else {

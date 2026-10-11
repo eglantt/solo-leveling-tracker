@@ -1132,6 +1132,12 @@ async function limitTintTests() {
   check('G2 в «СТАТУСЕ» используется компактная пульсация, на главном экране — прежняя',
     /#statusOverlay \.rk-sss \.sc-hexw \{ animation-name: hexPulseSssCompact; \}/.test(css) && /#statusOverlay \.rk-monarch \.sc-hexw \{ animation-name: hexPulseMonarchCompact; \}/.test(css)
     && /\n    \.rk-sss \.sc-hexw \{ animation: hexPulseSss 2\.4s/.test(css));
+  // v7.2.3: свечение шестиугольника в «Классике» — вариант В, одинаково в шапке и «СТАТУСЕ»
+  const kf = name => { const m = css.match(new RegExp('@keyframes ' + name + ' \\{([^\\n]*)\\}')); return m ? m[1].replace(/\s+/g, ' ').trim() : null; };
+  const SSS = '0%, 100% { filter: drop-shadow(0 0 3px #cc00ff); } 50% { filter: drop-shadow(0 0 5px #cc00ff) drop-shadow(0 0 1.5px #ff66ff); }';
+  const MON = '0%, 100% { filter: drop-shadow(0 0 3px #aa00ff) drop-shadow(0 0 4px #6600aa); } 50% { filter: drop-shadow(0 0 5px #aa00ff) drop-shadow(0 0 6px #6600aa) drop-shadow(0 0 2px #ff44ff); }';
+  check('G3 SSS: покой 3 px, пик 5 px + розовое 1,5 px — в шапке и «СТАТУСЕ» одинаково (v7.2.3)', kf('hexPulseSss') === SSS && kf('hexPulseSssCompact') === SSS, kf('hexPulseSss'));
+  check('G4 Монарх: покой 3/4 px, пик 5/6 px + розовое 2 px — в шапке и «СТАТУСЕ» одинаково (v7.2.3)', kf('hexPulseMonarch') === MON && kf('hexPulseMonarchCompact') === MON, kf('hexPulseMonarch'));
 }
 
 // ===== v6.6.0: карточка статуса, полоса таймера, окно «СТАТУС» =====

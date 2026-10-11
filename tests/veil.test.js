@@ -157,7 +157,7 @@ const lastDay = w => { const k = Object.keys(E(w, 'data.history')).sort().pop();
     check('SV13 свиток уже действует и ждёт Пелена — «Другой свиток уже активен или ожидает.»', bad.length === 0, bad.join(',')); }
   // предупреждение о Бремени
   { const w = fresh("data.pendingScroll = 'veil'; data.curseActiveToday = true;");
-    check('SV14 окно Договора: Договор сразу при Бремени и ожидающей Пелене — предупреждение', E(w, "getUseWarning('scroll_contract')") === 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.');
+    check('SV14 окно Договора: Договор сразу при Бремени и ожидающей Пелене — предупреждение', E(w, "getUseWarning('scroll_contract')") === 'Действует эффект «Бремя Аномалии»: нагрузка и штраф будут выше обычного.');
     const w2 = fresh("data.pendingScroll = 'veil';"); complete1(w2);
     check('SV15 … Договор ушёл бы в очередь — без предупреждения', E(w2, "getUseWarning('scroll_contract')") === ''); }
   // прежнее без Пелены
@@ -314,8 +314,9 @@ for (const [id, acc] of [['shard_limit', 'Осколок Предела'], ['sha
       check(`SQ ${L}: в очереди уже свиток — прежний отказ`, !u.spent && u.notice === 'Другой свиток уже активен или ожидает.', u.notice); }
     { const w = veilState(st, 'data.pendingCurse=true;');
       E(w, `data.consumables.scroll_focus=1; performUseItem('scroll_focus')`);
-      check(`SQ ${L}: окно Сосредоточения — предупреждение о ждущем Бремени`, E(w, `document.getElementById('exerciseChoiceContent').textContent`).includes('Действует Бремя Аномалии: цель выбранного упражнения вырастет ещё на 40%.'));
-      check(`SQ ${L}: окно Договора — предупреждение о ждущем Бремени`, warn(w, 'scroll_contract') === 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.', warn(w, 'scroll_contract')); }
+      const lines = J(w, "[...document.querySelectorAll('#exerciseChoiceContent .exc-warn')].map(d => d.textContent)");
+      check(`SQ ${L}: окно Сосредоточения — причина очереди, затем ожидающее Бремя (v7.2.3)`, lines === JSON.stringify([PRE[st] + 'Свиток вступит в силу со следующим циклом дневного задания.', 'Ожидает эффект «Бремя Аномалии»: в следующем цикле цель выбранного упражнения вырастет ещё на 40%.']), lines);
+      check(`SQ ${L}: окно Договора — причина очереди, затем ожидающее Бремя (v7.2.3)`, warn(w, 'scroll_contract') === PRE[st] + 'Свиток вступит в силу со следующим циклом дневного задания.\n\nОжидает эффект «Бремя Аномалии»: в следующем цикле нагрузка и штраф будут выше обычного.', warn(w, 'scroll_contract')); }
   }
   // настоящий путь: бусина → Пелена → снятие → свиток в очередь; день следа без штрафа
   { const w = await intoVeil(); const u1 = use(w, 'scroll_contract');
@@ -329,6 +330,103 @@ for (const [id, acc] of [['shard_limit', 'Осколок Предела'], ['sha
   { const w = fresh(); const u = use(w, 'scroll_contract');
     check('SQ без Пелены — как раньше (сразу)', E(w, `data.activeScroll==='contract'`) && u.notice === 'Цели повышены. Награда — за полное исполнение.', u.notice); }
 }
+
+// ===== v7.2.3: строки окон свитков (очередь и Бремя), руны при Пелене / Заморозке =====
+{
+  const Q = 'Свиток вступит в силу со следующим циклом дневного задания.', QF = 'Заморозка вступит в силу со следующего цикла.';
+  const PRE = { active: 'Действует эффект «Пелена покоя». ', trace: 'Действует остаточный эффект «Пелены покоя». ', none: '' };
+  const BF = 'цель выбранного упражнения вырастет ещё на 40%.', BC = 'нагрузка и штраф будут выше обычного.';
+  const st0 = { active: "data.activeScroll='veil'; data.veilLifted=false;", trace: "data.activeScroll='veil'; data.veilLifted=true;", none: 'data.isGoalMet=true;' };
+  const mk = (st, extra) => { const w = fresh(`${st0[st]} ${extra || ''}`); E(w, 'render()'); return w; };
+  const focusLines = w => { E(w, `data.consumables.scroll_focus=1; performUseItem('scroll_focus')`);
+    return JSON.parse(J(w, "document.getElementById('exerciseChoiceOverlay').style.display==='flex' ? [...document.querySelectorAll('#exerciseChoiceContent .exc-warn')].map(d => d.textContent) : null")); };
+  const L = { active: 'Пелена', trace: 'остаточный эффект', none: 'очередь без Пелены' };
+  for (const st of ['active', 'trace', 'none']) {
+    // Договор и Отречение: окно = строка очереди; результат — в очереди
+    for (const [id, sc] of [['scroll_contract', 'contract'], ['scroll_renunciation', 'renunciation']]) {
+      const w = mk(st); const ww = warn(w, id); use(w, id);
+      check(`V3 ${L[st]}: окно ${sc} — строка очереди; свиток действительно в очереди`, ww === PRE[st] + Q && E(w, `data.pendingScroll==='${sc}'`), ww);
+    }
+    { const w = mk(st); const ww = warn(w, 'scroll_freeze'); use(w, 'scroll_freeze');
+      check(`V3 ${L[st]}: окно Заморозки — строка очереди; Заморозка в очереди`, ww === PRE[st] + QF && E(w, `data.pendingScroll==='freeze'`), ww); }
+    { const w = mk(st); const lines = focusLines(w); E(w, `runExerciseChoice('squats')`);
+      check(`V3 ${L[st]}: окно выбора Сосредоточения — строка очереди; свиток в очереди`, JSON.stringify(lines) === JSON.stringify([PRE[st] + Q]) && E(w, `data.pendingScroll==='focus'`), JSON.stringify(lines)); }
+    // ожидающее Бремя — вторая строка (у Отречения и Заморозки её нет)
+    { const w = mk(st, 'data.pendingCurse=true;');
+      const f = focusLines(w);
+      check(`V3 ${L[st]}: ожидающее Бремя — Сосредоточение: очередь, затем «Ожидает…»`, JSON.stringify(f) === JSON.stringify([PRE[st] + Q, 'Ожидает эффект «Бремя Аномалии»: в следующем цикле ' + BF]), JSON.stringify(f));
+      check(`V3 ${L[st]}: ожидающее Бремя — Договор: очередь, затем «Ожидает…»`, warn(w, 'scroll_contract') === PRE[st] + Q + '\n\nОжидает эффект «Бремя Аномалии»: в следующем цикле ' + BC, warn(w, 'scroll_contract'));
+      check(`V3 ${L[st]}: ожидающее Бремя — у Отречения и Заморозки строки Бремени нет`, warn(w, 'scroll_renunciation') === PRE[st] + Q && warn(w, 'scroll_freeze') === PRE[st] + QF, warn(w, 'scroll_renunciation') + ' | ' + warn(w, 'scroll_freeze')); }
+    // отказ — строк нет
+    { const w = mk(st, "data.pendingScroll='contract';");
+      check(`V3 ${L[st]}: в очереди уже свиток — окна без строк`, ['scroll_contract', 'scroll_renunciation', 'scroll_freeze'].every(id => warn(w, id) === '') && E(w, "scrollWindowLines('scroll_focus').length === 0")); }
+  }
+  // включается сразу — строк очереди нет
+  { const w = fresh(); const ww = ['scroll_contract', 'scroll_renunciation', 'scroll_freeze'].map(id => warn(w, id)); const f = focusLines(w);
+    check('V4 включается сразу — ни строки очереди, ни Бремени', ww.every(x => x === '') && JSON.stringify(f) === '[]', JSON.stringify([ww, f])); }
+  { const w = fresh('data.curseActiveToday=true;'); const f = focusLines(w); E(w, `runExerciseChoice('pullups')`);
+    check('V4 действующее Бремя, сразу — Сосредоточение: «Действует…», свиток действует', JSON.stringify(f) === JSON.stringify(['Действует эффект «Бремя Аномалии»: ' + BF]) && E(w, `data.activeScroll==='focus'`), JSON.stringify(f));
+    const w2 = fresh('data.curseActiveToday=true;'); const ww = warn(w2, 'scroll_contract'); use(w2, 'scroll_contract');
+    check('V4 действующее Бремя, сразу — Договор: «Действует…», без строки очереди; действует', ww === 'Действует эффект «Бремя Аномалии»: ' + BC && E(w2, `data.activeScroll==='contract'`), ww); }
+  { const w = fresh('data.pendingCurse=true;'); const f = focusLines(w);
+    check('V4 ожидающее Бремя, свиток сразу — строки Бремени нет', JSON.stringify(f) === '[]' && warn(w, 'scroll_contract') === '', JSON.stringify(f) + ' | ' + warn(w, 'scroll_contract')); }
+  { const w = fresh(); complete1(w); const ww = warn(w, 'scroll_contract'); const f = focusLines(w);
+    check('V4 закрыто одно упражнение — очередь без Пелены (без начала «Действует…»)', ww === Q && JSON.stringify(f) === JSON.stringify([Q]), ww + ' | ' + JSON.stringify(f));
+    check('V4 Заморозка при закрытом упражнении включается сразу — строк нет', warn(w, 'scroll_freeze') === ''); }
+  { const w = fresh('data.freezeNextAvailableAt = Date.now() + 5*86400000; data.activeScroll=\'veil\';');
+    check('V4 Заморозка на перерыве — окно без строк', warn(w, 'scroll_freeze') === '', warn(w, 'scroll_freeze')); }
+
+  // ---- руны: отказ при ожидающем Бремени во время Пелены / следа / Заморозки ----
+  const HOLDS = { veil: ["data.activeScroll='veil'; data.veilLifted=false;", 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Пелены покоя.'],
+    trace: ["data.activeScroll='veil'; data.veilLifted=true;", 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит со следующим циклом.'],
+    freeze: ["data.activeScroll='freeze'; data.freezeEndTimestamp = Date.now() + 3*86400000;", 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Заморозки.'] };
+  const STACK = "data.penaltyStack=[{day:'2026-09-01',loss:400,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];";
+  for (const [h, [setup, txt]] of Object.entries(HOLDS)) {
+    for (const id of ['rune_protection', 'rune_protection_charged']) {
+      const w = fresh(setup + ' data.pendingCurse=true;'); const ww = warn(w, id); const u = use(w, id);
+      check(`V5 ${h}: ${id} при ожидающем Бремени — отказ, не тратится, защиты нет`, !u.spent && u.notice === txt && ww === '' && E(w, '!data.insurance'), u.notice);
+    }
+    { const w = fresh(setup + ' data.pendingCurse=true; ' + STACK); const ww = warn(w, 'rune_protection_charged'); const exp0 = E(w, 'data.exp'); const u = use(w, 'rune_protection_charged');
+      check(`V5 ${h}: Руна Надёжной Защиты при возврате — окно «использована», только возврат`, ww === 'Защита сейчас не может быть использована: ожидает эффект «Бремя Аномалии». Руна сработает только для возврата опыта.'
+        && u.spent && !E(w, 'data.insurance') && E(w, 'data.exp') > exp0, ww); }
+  }
+  { const w = fresh("data.activeScroll='veil'; data.veilLifted=false;"); const u = use(w, 'rune_protection');
+    check('V5 Пелена без Бремени — Руна Защиты действует, как раньше', u.spent && E(w, 'data.insurance === true'), u.notice); }
+  { const w = fresh('data.pendingCurse=true;'); const u = use(w, 'rune_protection');
+    check('V5 обычный день, Бремя ожидает — Руна Защиты действует, как раньше', u.spent && E(w, 'data.insurance === true'), u.notice); }
+  { const w = fresh("data.activeScroll='veil'; data.veilLifted=false; data.pendingCurse=true;"); use(w, 'rune_protection_absolute');
+    check('V5 Руна Абсолютной Защиты при Пелене и ожидающем Бремени — действует', E(w, "data.insurance === true && data.insuranceSourceId === 'rune_protection_absolute'")); }
+  { const w = fresh('data.curseActiveToday=true;');
+    check('V5 Бремя уже действует — прежний текст', use(w, 'rune_protection').notice === 'Обычная защита бессильна против Бремени Аномалии.'); }
+  { const w = fresh("data.activeScroll='veil'; data.veilLifted=false; data.pendingCurse=true;"); use(w, 'rune_protection_charged'); reset(w);
+    check('V5 руна не потрачена → на сбросе после Пелены защиты нет, Бремя наступило', E(w, 'data.curseActiveToday === true && !data.insurance && data.consumables.rune_protection_charged === 1')); }
+
+  // ---- руны: предупреждение о свитке-«сделке» в очереди ----
+  const DEAL = { contract: 'Свитка Договора', focus: 'Свитка Сосредоточения' };
+  for (const [sc, gen] of Object.entries(DEAL)) {
+    const prot = `Ожидает эффект ${gen}: при его действии обычная защита от штрафа будет приостановлена.`;
+    const load = `Ожидает эффект ${gen}: при его действии снижение нагрузки начнёт действовать только после выполнения дневного задания.`;
+    for (const st of ['active', 'trace']) {
+      const w = fresh(`${st0[st]} data.pendingScroll='${sc}'; data.focusExerciseId='pullups';`);
+      check(`V6 ${L[st]}, в очереди ${sc}: Руна Защиты и Надёжной Защиты — предупреждение`, warn(w, 'rune_protection') === prot && warn(w, 'rune_protection_charged') === prot, warn(w, 'rune_protection'));
+      const u = use(w, 'rune_protection');
+      check(`V6 ${L[st]}, в очереди ${sc}: руна используется (тратится, защита стоит)`, u.spent && E(w, 'data.insurance === true'), u.notice);
+      const lf = warn(w, 'rune_freedom'), lb = warn(w, 'rune_burden_release');
+      check(`V6 ${L[st]}, в очереди ${sc}: руны нагрузки — ${st === 'active' ? 'предупреждение' : 'без предупреждения (след)'}`, st === 'active' ? (lf === load && lb === load) : (lf === '' && lb === ''), lf + ' | ' + lb);
+    }
+    { const w = fresh(`${st0.active} data.pendingScroll='${sc}'; data.focusExerciseId='pullups'; data.insurance=true; data.insuranceSourceId='rune_protection';`);
+      check(`V6 в очереди ${sc}, обычная защита уже стоит: Надёжная — поглощение + предупреждение`, warn(w, 'rune_protection_charged') === 'Руна Надёжной Защиты поглотит действие Руны Защиты.\n\n' + prot, warn(w, 'rune_protection_charged')); }
+  }
+  { const w = fresh(`${st0.active} data.pendingScroll='contract'; data.targetDiscountRate=0.25; data.targetDiscountToday=true; data.targetDiscountSourceId='rune_burden_release';`);
+    check('V6 скидка уже не ниже — у Руны Освобождения предупреждения нет', warn(w, 'rune_freedom') === ''); }
+  { const w = fresh(st0.active);
+    check('V6 Пелена без свитка в очереди — у рун предупреждений нет', ['rune_protection', 'rune_protection_charged', 'rune_freedom', 'rune_burden_release'].every(id => warn(w, id) === '')); }
+  { const w = fresh("data.pendingScroll='freeze'; data.isGoalMet=true;");
+    check('V6 без Пелены (обычный день), в очереди Заморозка — предупреждений нет', ['rune_protection', 'rune_freedom'].every(id => warn(w, id) === '')); }
+  { const w = fresh(`${st0.active} data.pendingScroll='contract';`); use(w, 'rune_protection'); reset(w);
+    check('V6 после Пелены действует Договор — руна действительно спит', E(w, "data.activeScroll==='contract' && data.insurance === true && getInsuranceHoldScroll() === 'contract'")); }
+}
+
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);

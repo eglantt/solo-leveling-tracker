@@ -289,10 +289,11 @@ const tw = (extra) => { const w = fresh(extra); clock(w); return w; };
   check('I23 Исправление → Искупление: отказ, не тратится', !r.spent && r.notice === 'Исправлять нечего: последний штраф уже исправлен.', r.notice); }
 
 // --- Договор при Бремени ---
-const CW = 'Действует Бремя Аномалии: нагрузка и штраф будут выше обычного.';
+const CW = 'Действует эффект «Бремя Аномалии»: нагрузка и штраф будут выше обычного.';   // v7.2.3
+const CQ = 'Свиток вступит в силу со следующим циклом дневного задания.';
 { const w = fresh(`data.curseActiveToday=true;`); check('I24 Договор сразу при действующем Бремени — предупреждение', warn(w,'scroll_contract') === CW); }
-{ const w = fresh(`data.pendingCurse=true;`); complete(w); check('I25 Договор в очередь при ожидающем Бремени — предупреждение', warn(w,'scroll_contract') === CW); }
-{ const w = fresh(`data.curseActiveToday=true;`); complete(w); check('I26 Договор в очередь, Бремя только сегодня — без предупреждения', warn(w,'scroll_contract') === ''); }
+{ const w = fresh(`data.pendingCurse=true;`); complete(w); check('I25 Договор в очередь при ожидающем Бремени — строка очереди и «Ожидает эффект…» (v7.2.3)', warn(w,'scroll_contract') === CQ + '\n\nОжидает эффект «Бремя Аномалии»: в следующем цикле нагрузка и штраф будут выше обычного.', warn(w,'scroll_contract')); }
+{ const w = fresh(`data.curseActiveToday=true;`); complete(w); check('I26 Договор в очередь, Бремя только сегодня — только строка очереди (v7.2.3)', warn(w,'scroll_contract') === CQ, warn(w,'scroll_contract')); }
 { const w = fresh(`data.curseActiveToday=true; data.activeScroll='transfer';`); check('I27 Другой свиток активен — без предупреждения', warn(w,'scroll_contract') === ''); }
 { const w = fresh(); check('I28 Без Бремени — без предупреждения', warn(w,'scroll_contract') === ''); }
 
@@ -412,9 +413,9 @@ const CW = 'Действует Бремя Аномалии: нагрузка и 
     check('F7 отмена выбора — свиток не тратится', E(w, 'data.consumables.scroll_focus===1 && !data.activeScroll'));
   }
   { const w = fresh('data.curseActiveToday=true;'); const r = useF(w, null);
-    check('F8 предупреждение о Бремени (действует)', r.win.includes('Действует Бремя Аномалии: цель выбранного упражнения вырастет ещё на 40%.'), r.win); }
+    check('F8 предупреждение о Бремени (действует)', r.win.includes('Действует эффект «Бремя Аномалии»: цель выбранного упражнения вырастет ещё на 40%.') && !r.win.includes('вступит в силу'), r.win); }
   { const w = fresh("data.pendingCurse=true; data.completed={pushups:9999};"); const r = useF(w, null);
-    check('F9 предупреждение о Бремени (ожидает, свиток в очередь)', r.win.includes('Действует Бремя Аномалии: цель выбранного упражнения вырастет ещё на 40%.'), r.win); }
+    check('F9 очередь и ожидающее Бремя — две строки по порядку (v7.2.3)', (() => { const a = r.win.indexOf('Свиток вступит в силу со следующим циклом дневного задания.'), b = r.win.indexOf('Ожидает эффект «Бремя Аномалии»: в следующем цикле цель выбранного упражнения вырастет ещё на 40%.'); return a >= 0 && b > a; })(), r.win); }
   { const w = fresh('data.pendingCurse=true;'); const r = useF(w, null);
     check('F10 ожидающее Бремя при включении сразу — без предупреждения', !r.win.includes('Бремя'), r.win); }
   // включение сразу
