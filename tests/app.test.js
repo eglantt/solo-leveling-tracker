@@ -742,13 +742,13 @@ async function equipmentTests() {
     const st = () => D.querySelector('#invContent .eq-state').textContent;
     check('E8 строка «Контур снаряжения: 0 из 3»', st() === 'Контур снаряжения: 0 из 3', st());
     const eqBtns = () => [...D.querySelectorAll('#invContent .eq-btn')];
-    check('E9 у каждого артефакта кнопка «СНАРЯДИТЬ», ширина одинаковая', eqBtns().length === 5 && eqBtns().every(b => b.textContent === 'СНАРЯДИТЬ' && w.getComputedStyle(b).width === '96px'));
+    check('E9 у каждого артефакта кнопка «СНАРЯДИТЬ», ширина одинаковая (с 7.2.2 — полстроки, как вторая из двух кнопок)', eqBtns().length === 5 && eqBtns().every(b => b.textContent === 'СНАРЯДИТЬ' && w.getComputedStyle(b).width === 'calc(50% - 5px)'));
     const lastBtn = eqBtns()[4]; const lastId = lastBtn.getAttribute('onclick').match(/'([a-z_]+)'/)[1];
     lastBtn.click();
     const firstCard = D.querySelector('#invContent .eq-state').nextElementSibling;
     check('E10 снаряжённый — первым, голубая рамка, «●», кнопка «ИЗВЛЕЧЬ» той же ширины',
       firstCard.classList.contains('eq-on') && firstCard.querySelector('.item-name').textContent.endsWith(' ●') && firstCard.querySelector('.eq-btn').textContent === 'ИЗВЛЕЧЬ'
-      && w.getComputedStyle(firstCard.querySelector('.eq-btn')).width === '96px' && E(w, `isArtifactEquipped('${lastId}')`) && st() === 'Контур снаряжения: 1 из 3');
+      && w.getComputedStyle(firstCard.querySelector('.eq-btn')).width === 'calc(50% - 5px)' && E(w, `isArtifactEquipped('${lastId}')`) && st() === 'Контур снаряжения: 1 из 3');
     eqBtns().filter(b => b.textContent === 'СНАРЯДИТЬ').slice(0, 2).forEach(b => b.click());
     check('E11 заполнены все три открытых контура', st() === 'Контур снаряжения: 3 из 3');
     D.querySelector('#invContent .eq-btn:not(.eq-extract)').click();

@@ -521,6 +521,36 @@ const w = boot(); const D = w.document; await tick();
   E(w, "setTheme('system')"); await tick();
   check('T80 смена темы без кнопки (запуск, бэкап) — мгновенная, без сбоя', E(w, 'data.theme') === 'system' && E(w, 'themeFx') === null && D.querySelectorAll('.tfx-slice').length === 0); }
 
+// v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (сетка), Реестр — прежний вид
+{ const x = boot(); await tick(); const XD = x.document; const cs = el => x.getComputedStyle(el);
+  E(x, "setTheme('classic')"); closeAll(x); E(x, 'data.consumables = { rune_cleansing: 2 }; data.boxes = { box_basalt: 1 }; openShop()'); await tick();
+  const sc = XD.querySelector('#shopContent .item-card'), sp = sc.querySelector('.item-price');
+  const s = { disp: cs(sc).display, gap: cs(sc).gap, pad: cs(sc).paddingTop, info: cs(sc.querySelector('.item-info')).display,
+    name: cs(sc.querySelector('.item-name')).gridColumn, img: cs(sc.querySelector('.item-icon-img')).width, frame: cs(sc.querySelector('.item-icon')).borderTopStyle,
+    pCol: cs(sp).gridColumn, pJs: cs(sp).justifySelf, pW: cs(sp).width, pPad: cs(sp).paddingTop };
+  check('T85 «Классика», Магазин: сетка (название / иконка 44 px без рамки + описание / цена), строки через 4 px, поля карточки прежние 12 px; цена справа на месте второй кнопки, размер прежний',
+    s.disp === 'grid' && s.gap === '4px 10px' && s.pad === '12px' && s.info === 'contents' && /1 \/ -1/.test(s.name) && s.img === '44px' && s.frame !== 'solid'
+    && /1 \/ -1/.test(s.pCol) && s.pJs === 'end' && /calc\(50% - 5px\)/.test(s.pW) && s.pPad === '5px', JSON.stringify(s));
+  closeAll(x); E(x, 'openInv()'); await tick();
+  const stack = XD.querySelector('#invContent [data-consumable-id] .item-btn-stack'), one = XD.querySelector('#invContent [data-box-id] > button');
+  const u = stack.querySelector('.use-btn');
+  const i = { st: cs(stack).display, cols: cs(stack).gridTemplateColumns, gap: cs(stack).gap, uPad: cs(u).paddingTop, uFs: cs(u).fontSize,
+    oneJs: cs(one).justifySelf, oneW: cs(one).width };
+  check('T86 «Классика», Инвентарь: две кнопки — строкой пополам через 10 px, одна («ОТКРЫТЬ») — справа в полстроки (как вторая из двух); размер кнопок прежний (6 px, 0.7rem)',
+    i.st === 'grid' && /1fr 1fr/.test(i.cols) && i.gap === '10px' && i.uPad === '6px' && i.uFs === '0.7rem' && i.oneJs === 'end' && /calc\(50% - 5px\)/.test(i.oneW), JSON.stringify(i));
+  closeAll(x); XD.getElementById('leaderboardContent').innerHTML = '<div class="item-card"><div class="item-info"><div class="item-name">A</div></div></div>';
+  E(x, "document.getElementById('leaderboardOverlay').style.display = 'flex'"); await tick();
+  const lb = XD.querySelector('#leaderboardContent .item-card');
+  check('T87 Реестр игроков в «Классике» — прежний вид карточки (flex), правило 7.2.2 его не касается', cs(lb).display === 'flex', cs(lb).display);
+  E(x, "document.getElementById('leaderboardOverlay').style.display = 'none'; setTheme('system')"); closeAll(x); E(x, 'openShop()'); await tick();
+  const ss = XD.querySelector('#shopContent .item-card');
+  check('T88 «Система» не изменилась: карточка Магазина — 9 / 12 px, иконка в рамке 58 px', cs(ss).gap === '9px 12px' && cs(ss.querySelector('.item-icon')).width === '58px',
+    cs(ss).gap + ' ' + cs(ss.querySelector('.item-icon')).width);
+  check('T89 правила 7.2.2 стоят до блока темы «Система» и все ограничены «Классикой» (body:not(.theme-sys))',
+    (() => { const c = XD.querySelector('style').textContent; const a = c.indexOf('v7.2.2: карточки'), b = c.indexOf('ТЕМА «СИСТЕМА»');
+      const blk = c.slice(a, b).split('\n').filter(l => /\{/.test(l) && !/^\s*\/\*/.test(l));
+      return a > 0 && a < b && blk.length >= 10 && blk.every(l => /^\s*body:not\(\.theme-sys\)/.test(l)); })()); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
