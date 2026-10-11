@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.9 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.10 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1236,7 +1236,7 @@
 
     /* --- цифра уровня вместо шестиугольника (карточка на главном экране и окно СТАТУС) --- */
     body.theme-sys .sf-win.mwin .sc-top { gap: 14px; }
-    body.theme-sys .sf-win.mwin #stTop { padding: 20px 4px 2px 10px; }   /* запас под свечение цифры у края прокрутки */
+    body.theme-sys .sf-win.mwin #stTop { padding: 0 4px 2px 10px; }   /* v7.1.10: верх 0 — промежуток до карточки как в «Классике» */
     body.theme-sys .sf-win.mwin .sc-emb { width: auto; min-width: 92px; gap: 7px; }
     body.theme-sys .sf-win.mwin .sc-hexw { filter: none; }   /* у SSS и Монарха пульсация остаётся: её задаёт animation */
     body.theme-sys .sf-win.mwin .sc-hex { width: auto; height: auto; clip-path: none; background: none; }
@@ -1903,7 +1903,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.9';
+  const APP_VERSION = '7.1.10';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2789,8 +2789,10 @@
     if (signature === window.__activeEffectsSignature) return;
     window.__activeEffectsSignature = signature;
     clearRuneBolts();
+    let sparkN = 0;   // v7.1.10: каждое кольцо искр стартует со своего места на круге (шаг «золотого сечения»), скорость общая
+    const sparkPhase = () => `animation-delay:-${(((sparkN++) * 0.618034) % 1 * 0.84).toFixed(3)}s`;
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}${e.beadTrace ? ' bead-trace' : ''}${e.beadSparks || e.beadTrace ? ' bead-eff' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${smallIconSrc(e.icon)}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${e.beadSparks ? beadSparksHtml() : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
+      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}${e.beadTrace ? ' bead-trace' : ''}${e.beadSparks || e.beadTrace ? ' bead-eff' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}" style="${sparkPhase()}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${smallIconSrc(e.icon)}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${e.beadSparks ? beadSparksHtml() : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
     ).join('');
     document.querySelectorAll('#effectsRow .rune-bolt').forEach(scheduleRuneBolt);
     updateEffectsFade();

@@ -454,6 +454,24 @@ const w = boot(); const D = w.document; await tick();
     res.every(r => r.hs.length === 2 && r.hs.every(h => h > 8 && h <= 50) && r.tops[0] < 30 && r.tops[1] > r.ht - 80 && r.dots === 0)
     && !/sfDotTw|\.sf-dot/.test(css), JSON.stringify(res)); }
 
+// ===== v7.1.10 =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const m = css.match(/body\.theme-sys \.sf-win\.mwin #stTop \{ padding: ([^;]+); \}/);
+  check('T71 «Система»: у шапки Статуса нет верхнего запаса 20px (промежуток до карточки как в «Классике»), боковые и нижний прежние',
+    !!m && m[1].trim() === '0 4px 2px 10px', m && m[1]);
+  E(w, `window.__origGAE = getActiveEffects; getActiveEffects = () => [1,2,3,4,5].map(k => ({ icon: 'icons/items/rune_freedom.png', name: 'P' + k, text: 't', isPending: true, sparkCount: k === 1 ? 3 : 1 })); window.__activeEffectsSignature = null; renderActiveEffects();`);
+  const rings = [...D.querySelectorAll('#effectsRow .spark-ring-wrap')];
+  const delays = rings.map(r => parseFloat((r.getAttribute('style') || '').replace(/.*animation-delay:\s*-?/, '')));
+  const phases = delays.map(d => d / 0.84);
+  const minGap = Math.min(...phases.flatMap((a, i) => phases.slice(i + 1).map(b => { const g = Math.abs(a - b) % 1; return Math.min(g, 1 - g); })));
+  const ruleOk = /\.spark-ring-wrap \{[^}]*animation: sparkSpin 0\.84s linear infinite;/.test(css);
+  E(w, `window.__activeEffectsSignature = null; renderActiveEffects();`);
+  const again = [...D.querySelectorAll('#effectsRow .spark-ring-wrap')].map(r => r.getAttribute('style'));
+  check('T72 искры ожидающих эффектов: у каждого кольца свой сдвиг по кругу (≥ 0,1 оборота друг от друга), скорость общая 0,84 с, сдвиг постоянный при перерисовке',
+    rings.length === 5 && delays[0] === 0 && delays.every(d => d >= 0 && d < 0.84) && minGap >= 0.1 && ruleOk
+    && JSON.stringify(again) === JSON.stringify(rings.map(r => r.getAttribute('style'))), JSON.stringify({ delays, minGap }));
+  E(w, `getActiveEffects = window.__origGAE; window.__activeEffectsSignature = null; render();`); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
