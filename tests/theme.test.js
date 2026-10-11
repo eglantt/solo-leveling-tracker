@@ -383,6 +383,17 @@ const w = boot(); const D = w.document; await tick();
     && /body\.theme-sys\.sys-anom \.mscr \.sf-vig \{ background: linear-gradient\(90deg, #12040a, rgba\(18,4,10,0\) 16px/.test(css)
     && !D.getElementById('perfTestSection') && !/perf-tg|perf-col|perf-ico|perfTest/.test(css + src) && /localStorage\.removeItem\('sl_perf_test'\)/.test(src)); }
 
+// ===== v7.1.6 =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  check('T61 фон главного экрана — одна картинка размером с экран (узоры с прежней прозрачностью, виньетка 16px, красная под Бременем), «прилипает» к экрану; без холста — прежние слои',
+    /body\.theme-sys \.mscr > \.sf-screen \{ overflow: clip; \}/.test(css) && /body\.theme-sys \.mscr \.sf-mbg \{ position: sticky; top: 0; display: block; \}/.test(css)
+    && /const MBG_PAT = 0\.55, MBG_VIG = 16;/.test(src) && /\[\[TEXC_CV, MBG_PAT \* \.9\], \[TEXS_CV, MBG_PAT \* \.85\]\]/.test(src)
+    && /const base = red \? '#12040a' : '#030914'/.test(src) && /hue-rotate\(140deg\) saturate\(1\.3\)/.test(src) && /mbg = mainBg\(w, L, R, scheme === 'red'\);/.test(src)
+    && /if \(mbg\) scr\.appendChild\(mbg\);\s+else scr\.innerHTML = `<div class="sf-base">/.test(src));
+  const pool = J(w, 'SYSTEM_NOTICES.complete');
+  check('T62 уведомление о выполнении задания: «Задание выполнено в полном объёме.» вместо «исполнено»',
+    JSON.parse(pool).includes('Задание выполнено в полном объёме.') && !/Задание исполнено/.test(pool) && new Set(JSON.parse(pool)).size === 9, pool); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
