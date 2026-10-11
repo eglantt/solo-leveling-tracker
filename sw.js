@@ -16,7 +16,7 @@
 // установку, ни активацию.
 // ============================================================================
 
-const CACHE_VERSION = 'v7-1-7';
+const CACHE_VERSION = 'v7-1-8';
 const ASSETS_VERSION = 'v1';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;
@@ -109,6 +109,76 @@ const ASSET_FILES = [
   './icons/items/mag_seal_contract.png',
   './icons/items/mag_seal_freeze.png',
   './icons/items/ice_layer_freeze.png',
+  // v7.1.8: маленькие копии 128×128 для списков и панели эффектов (имена — как у оригиналов)
+  './icons/items-s/amulet_continuity.png',
+  './icons/items-s/amulet_will.png',
+  './icons/items-s/bone_bead.png',
+  './icons/items-s/box_anomaly.png',
+  './icons/items-s/box_basalt.png',
+  './icons/items-s/box_crimson.png',
+  './icons/items-s/box_dark_quartz.png',
+  './icons/items-s/box_obsidian.png',
+  './icons/items-s/box_onyx.png',
+  './icons/items-s/box_purple.png',
+  './icons/items-s/box_scarlet.png',
+  './icons/items-s/box_shadow.png',
+  './icons/items-s/crystal_clarity.png',
+  './icons/items-s/crystal_impulse.png',
+  './icons/items-s/crystal_insight.png',
+  './icons/items-s/crystal_restoration.png',
+  './icons/items-s/crystal_shadow.png',
+  './icons/items-s/crystal_speed.png',
+  './icons/items-s/effect_anomaly_burden.png',
+  './icons/items-s/effect_limit_break.png',
+  './icons/items-s/key_crimson.png',
+  './icons/items-s/key_purple.png',
+  './icons/items-s/key_scarlet.png',
+  './icons/items-s/key_shadow.png',
+  './icons/items-s/mag_seal_contract.png',
+  './icons/items-s/mag_seal_freeze.png',
+  './icons/items-s/mag_seal_renunciation.png',
+  './icons/items-s/mag_seal_transfer.png',
+  './icons/items-s/potion_growth.png',
+  './icons/items-s/potion_restoration.png',
+  './icons/items-s/potion_restoration_full.png',
+  './icons/items-s/rune_burden_release.png',
+  './icons/items-s/rune_cleansing.png',
+  './icons/items-s/rune_cleansing_full.png',
+  './icons/items-s/rune_correction.png',
+  './icons/items-s/rune_fate_cleansing.png',
+  './icons/items-s/rune_freedom.png',
+  './icons/items-s/rune_growth_charged.png',
+  './icons/items-s/rune_limit_charged.png',
+  './icons/items-s/rune_protection.png',
+  './icons/items-s/rune_protection_absolute.png',
+  './icons/items-s/rune_protection_charged.png',
+  './icons/items-s/rune_redemption.png',
+  './icons/items-s/rune_restoration_charged.png',
+  './icons/items-s/rune_return.png',
+  './icons/items-s/rune_stability.png',
+  './icons/items-s/scroll_contract.png',
+  './icons/items-s/scroll_freeze.png',
+  './icons/items-s/scroll_renunciation.png',
+  './icons/items-s/scroll_transfer.png',
+  './icons/items-s/seal_growth.png',
+  './icons/items-s/seal_limit.png',
+  './icons/items-s/shard_limit.png',
+  './icons/items-s/shard_limit_double.png',
+  './icons/items-s/sphere_growth.png',
+  './icons/items-s/tablet_of_reassessment.png',
+  './icons/items-s/title_awakened.png',
+  './icons/items-s/title_breaker.png',
+  './icons/items-s/title_determined.png',
+  './icons/items-s/title_gate_trader.png',
+  './icons/items-s/title_horizon_conqueror.png',
+  './icons/items-s/title_limit_conqueror.png',
+  './icons/items-s/title_limitbreaker.png',
+  './icons/items-s/title_marathoner.png',
+  './icons/items-s/title_novice.png',
+  './icons/items-s/title_tireless.png',
+  './icons/items-s/title_unbreakable.png',
+  './icons/items-s/title_unyielding.png',
+  './icons/items-s/title_wanderer.png',
   './fonts/orbitron-latin-500-normal.woff2',
   './fonts/orbitron-latin-700-normal.woff2',
   './fonts/roboto-mono-latin-400-normal.woff2',
@@ -121,7 +191,7 @@ const ASSET_FILES = [
 ];
 
 function isAssetPath(pathname) {
-  return pathname.includes('/icons/items/') || pathname.includes('/fonts/');
+  return pathname.includes('/icons/items/') || pathname.includes('/icons/items-s/') || pathname.includes('/fonts/');   // v7.1.8: + маленькие копии
 }
 
 function isCacheable(response) {

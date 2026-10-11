@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.8 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1905,7 +1905,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.7';
+  const APP_VERSION = '7.1.8';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -2708,6 +2708,19 @@
   const RUNE_BOLT_INTERVAL = [8000, 15000];   // у каждой руны свой случайный интервал, мс
   const RUNE_BOLT_DURATION = 1200;            // пробег от края до края, мс (v6.10.1: было 900, демо 72)
   let runeBoltTimers = [];
+  // v7.1.8: маленькие копии иконок (128×128, icons/items-s) — для списков и панели эффектов; оригиналы — для окна
+  // просмотра, печати, льда, крупной картинки и ячеек контура. Признаки эффектов (руна/печать) по-прежнему смотрят на исходный адрес.
+  const ICON_S_DIR = 'icons/items-s/';
+  function iconS(id) { return ICON_S_DIR + id + '.png'; }
+  function smallIconSrc(path) { return String(path).replace('icons/items/', ICON_S_DIR); }
+  // Страховка: если маленькой копии нет на сайте (не загружена, не докачалась) — картинка подменяется оригиналом.
+  document.addEventListener('error', ev => {
+    const t = ev.target;
+    if (t && t.tagName === 'IMG' && /(^|\/)icons\/items-s\//.test(t.getAttribute('src') || '') && !t.dataset.iconFull) {
+      t.dataset.iconFull = '1'; t.setAttribute('src', t.getAttribute('src').replace(ICON_S_DIR, 'icons/items/'));
+    }
+  }, true);
+
   // Работающая руна: иконка предмета-руны, не «ожидает» и не «подавлена».
   function isWorkingRune(e) {
     return !e.isPending && !e.isSuppressed && /icons\/items\/rune_/.test(e.icon);
@@ -2779,7 +2792,7 @@
     window.__activeEffectsSignature = signature;
     clearRuneBolts();
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}${e.beadTrace ? ' bead-trace' : ''}${e.beadSparks || e.beadTrace ? ' bead-eff' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${e.icon}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${e.beadSparks ? beadSparksHtml() : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
+      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}${e.beadTrace ? ' bead-trace' : ''}${e.beadSparks || e.beadTrace ? ' bead-eff' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${smallIconSrc(e.icon)}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${e.beadSparks ? beadSparksHtml() : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
     ).join('');
     document.querySelectorAll('#effectsRow .rune-bolt').forEach(scheduleRuneBolt);
     updateEffectsFade();
@@ -5195,7 +5208,7 @@
       if (data.level < (item.level || 1)) continue;
       cont.innerHTML += `
         <div class="item-card" data-shop-id="${id}">
-          <div class="item-icon"><img${glowAttrs(id)} src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
+          <div class="item-icon"><img${glowAttrs(id)} src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
           <div class="item-info">
             <div class="item-name">${item.name}</div>
             <div class="item-desc">${item.desc}</div>
@@ -5226,7 +5239,7 @@
   function catalogCard(id, item, addFn, removeFn, hasNone, addDisabled) {
     return `
       <div class="item-card" data-cat-id="${id}">
-        <div class="item-icon"><img${glowAttrs(id)} src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
+        <div class="item-icon"><img${glowAttrs(id)} src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
         <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc || ''}</div></div>
         <div class="item-btn-stack">
           <button onclick="${removeFn}('${id}')" class="use-btn sell-btn" ${hasNone ? 'disabled' : ''}>-1</button>
@@ -5260,7 +5273,7 @@
       const has = data.keys[id] > 0;
       html += `
         <div class="item-card" data-cat-id="${id}">
-          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(KEY_CATALOG[id].name)}')"></div>
+          <div class="item-icon"><img class="item-icon-img" src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(KEY_CATALOG[id].name)}')"></div>
           <div class="item-info"><div class="item-name">${KEY_CATALOG[id].name}</div><div class="item-desc">${KEY_CATALOG[id].desc || ''}</div></div>
           <div class="item-btn-stack">
             <button onclick="devRemoveKey('${id}')" class="use-btn sell-btn" ${has ? '' : 'disabled'}>-1</button>
@@ -5272,7 +5285,7 @@
     for (let id in ARTEFACTS) {
       html += `
         <div class="item-card" data-cat-id="${id}">
-          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(ARTEFACTS[id].name)}')"></div>
+          <div class="item-icon"><img class="item-icon-img" src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(ARTEFACTS[id].name)}')"></div>
           <div class="item-info"><div class="item-name">${ARTEFACTS[id].name}</div><div class="item-desc">${ARTEFACTS[id].desc || ''}</div></div>
         </div>`;
     }
@@ -5399,7 +5412,7 @@
         if (!t) return;
         const isActive = data.activeTitle === tName;
         const iconId = TITLE_ICON_IDS[tName];
-        const iconHtml = iconId ? `<img class="item-icon-img" src="icons/items/${iconId}.png" alt="" onclick="event.stopPropagation(); showItemPreview('${iconId}','${escapeHtml(tName)}')">` : t.icon;
+        const iconHtml = iconId ? `<img class="item-icon-img" src="${iconS(iconId)}" alt="" onclick="event.stopPropagation(); showItemPreview('${iconId}','${escapeHtml(tName)}')">` : t.icon;
         cont.innerHTML += `
           <div class="item-card" style="${isActive ? 'border-color:#40ffaa;' : ''} cursor:pointer;" onclick="selectTitle('${tName}')" title="${isActive ? 'Активный титул' : 'Нажмите, чтобы сделать активным'}">
             <div class="item-icon">${iconHtml}</div>
@@ -5424,7 +5437,7 @@
       const btn = openContours === 0 ? '' : on
         ? `<button class="use-btn eq-btn eq-extract" onclick="extractArtifact('${key}')">ИЗВЛЕЧЬ</button>`
         : `<button class="use-btn eq-btn" onclick="equipArtifact('${key}')">СНАРЯДИТЬ</button>`;
-      cont.innerHTML += `<div class="item-card${on ? ' eq-on' : ''}"><div class="item-icon"><img class="item-icon-img" src="icons/items/${key}.png" alt="" onclick="showItemPreview('${key}','${escapeHtml(art.name)}')"></div><div class="item-info"><div class="item-name">${art.name}${on ? ' ●' : ''}</div><div class="item-desc">${art.desc}</div></div>${btn}</div>`;
+      cont.innerHTML += `<div class="item-card${on ? ' eq-on' : ''}"><div class="item-icon"><img class="item-icon-img" src="${iconS(key)}" alt="" onclick="showItemPreview('${key}','${escapeHtml(art.name)}')"></div><div class="item-info"><div class="item-name">${art.name}${on ? ' ●' : ''}</div><div class="item-desc">${art.desc}</div></div>${btn}</div>`;
     });
     cont.innerHTML += `<div class="section-title">Шкатулки</div>`;
     const boxIds = sortByRank(Object.keys(data.boxes).filter(id => data.boxes[id] > 0));
@@ -5435,7 +5448,7 @@
       const count = data.boxes[id];
       cont.innerHTML += `
         <div class="item-card" data-box-id="${id}">
-          <div class="item-icon"><img${glowAttrs(id)} src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(box.name)}')"></div>
+          <div class="item-icon"><img${glowAttrs(id)} src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(box.name)}')"></div>
           <div class="item-info"><div class="item-name">${box.name} ×${count}</div><div class="item-desc">${box.desc}</div></div>
           <button onclick="openBox('${id}')" class="use-btn">ОТКРЫТЬ</button>
         </div>`;
@@ -5448,7 +5461,7 @@
       if (!key) return;
       cont.innerHTML += `
         <div class="item-card">
-          <div class="item-icon"><img class="item-icon-img" src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(key.name)}')"></div>
+          <div class="item-icon"><img class="item-icon-img" src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(key.name)}')"></div>
           <div class="item-info"><div class="item-name">${key.name}</div></div>
         </div>`;
     });
@@ -5461,7 +5474,7 @@
       const count = data.consumables[id];
       cont.innerHTML += `
         <div class="item-card" data-consumable-id="${id}">
-          <div class="item-icon"><img${glowAttrs(id)} src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
+          <div class="item-icon"><img${glowAttrs(id)} src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
           <div class="item-info"><div class="item-name">${item.name} ×${count}</div><div class="item-desc">${item.desc}</div></div>
           <div class="item-btn-stack">
             ${SHOP_CATALOG[id] ? `<button onclick="sellItem('${id}')" class="use-btn sell-btn">ПРОДАТЬ</button>` : ''}
@@ -5478,7 +5491,7 @@
       const count = data.consumables[id];
       cont.innerHTML += `
         <div class="item-card" data-consumable-id="${id}">
-          <div class="item-icon"><img${glowAttrs(id)} src="icons/items/${id}.png" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
+          <div class="item-icon"><img${glowAttrs(id)} src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
           <div class="item-info"><div class="item-name">${item.name} ×${count}</div><div class="item-desc">${item.desc}</div></div>
           <div class="item-btn-stack">
             ${SHOP_CATALOG[id] ? `<button onclick="sellItem('${id}')" class="use-btn sell-btn">ПРОДАТЬ</button>` : ''}
@@ -6557,7 +6570,7 @@
     document.getElementById(prefix + 'Rank').textContent = rank.name;
     const iconId = TITLE_ICON_IDS[data.activeTitle];
     document.getElementById(prefix + 'Title').innerHTML = 'Титул: ' +
-      (iconId ? `<img src="icons/items/${iconId}.png" alt="">` : '') + `<span>${escapeHtml(data.activeTitle)}</span>`;
+      (iconId ? `<img src="${iconS(iconId)}" alt="">` : '') + `<span>${escapeHtml(data.activeTitle)}</span>`;
     const inDebt = data.expDebt > 0;
     const expToNext = getExpToNext(data.level);
     document.getElementById(prefix + 'ExpRow').classList.toggle('debt', inDebt);
@@ -6615,7 +6628,7 @@
     const free = freeArtifacts();
     if (!free.length) return;   // по механике не бывает: свободный артефакт есть всегда
     openEquipOverlay('КОНТУР СНАРЯЖЕНИЯ', `<div class="eq-text">Выберите артефакт:</div>` +
-      free.map(k => `<div class="eq-opt" onclick="equipArtifact('${k}', ${i})"><img src="icons/items/${k}.png" alt=""><span class="nm">${ARTEFACTS[k].name}</span></div>`).join(''));
+      free.map(k => `<div class="eq-opt" onclick="equipArtifact('${k}', ${i})"><img src="${iconS(k)}" alt=""><span class="nm">${ARTEFACTS[k].name}</span></div>`).join(''));
   }
   function afterEquipmentChange() {
     closeEquipOverlay();
@@ -6630,7 +6643,7 @@
     if (slot === undefined) slot = data.equippedArtifacts.slice(0, open).findIndex(x => !x);
     if (slot === -1) {
       openEquipOverlay('КОНТУР СНАРЯЖЕНИЯ', `<div class="eq-text">Контур снаряжения заполнен. Заменить:</div>` +
-        data.equippedArtifacts.slice(0, open).map((e, i) => `<div class="eq-opt" onclick="equipArtifact('${id}', ${i})"><img src="icons/items/${e}.png" alt=""><span class="nm">${ARTEFACTS[e].name}</span></div>`).join(''));
+        data.equippedArtifacts.slice(0, open).map((e, i) => `<div class="eq-opt" onclick="equipArtifact('${id}', ${i})"><img src="${iconS(e)}" alt=""><span class="nm">${ARTEFACTS[e].name}</span></div>`).join(''));
       return;
     }
     if (slot < 0 || slot >= open) return;

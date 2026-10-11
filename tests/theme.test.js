@@ -414,6 +414,35 @@ const w = boot(); const D = w.document; await tick();
     && /letter-spacing: 1\.5px; text-shadow: none;   \/\* v7\.1\.7: кнопки без свечения \*\//.test(css)
     && !/\.sf-win\.mwin \.item-name, body/.test(css) && !/#btnStr/.test(css.slice(css.indexOf('v7.0.9:')))); }
 
+// ===== v7.1.8: маленькие иконки (icons/items-s) =====
+{ const root = path.join(__dirname, '..'), small = new Set(fs.readdirSync(path.join(root, 'icons', 'items-s')));
+  const ids = J(w, `[...Object.keys(SHOP_CATALOG), ...Object.keys(UNIQUE_CATALOG), ...Object.keys(BOX_CATALOG), ...Object.keys(KEY_CATALOG), ...Object.keys(ARTEFACTS), ...Object.values(TITLE_ICON_IDS)]`);
+  const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  const effStatic = [...src.matchAll(/icon: 'icons\/items\/([\w-]+)\.png'/g)].map(m => m[1]);
+  const need = [...new Set([...JSON.parse(ids), ...effStatic])], miss = need.filter(id => !small.has(id + '.png'));
+  const big = fs.readdirSync(path.join(root, 'icons', 'items')).filter(f => f.endsWith('.png') && f !== 'ice_layer_freeze.png');
+  check('T66 маленькая копия есть у каждого предмета, титула и значка эффекта (и у каждого оригинала, кроме льда)', miss.length === 0 && big.every(f => small.has(f)), miss.join(','));
+  closeAll(w); await tick(); E(w, 'openShop()'); await tick();
+  const shopSrc = [...D.querySelectorAll('#shopOverlay img.item-icon-img')].map(i => i.getAttribute('src'));
+  E(w, "showItemPreview('crystal_restoration', 'К')"); await tick();
+  const prevSrc = D.getElementById('itemPreviewImg').getAttribute('src');
+  closeAll(w); await tick();
+  E(w, "data.insurance = true; data.insuranceSourceId = 'rune_protection'; render()"); await tick();
+  const eff = [...D.querySelectorAll('#effectsRow .effect-icon-btn')], effImgs = eff.map(b => b.querySelector('img').getAttribute('src'));
+  const runeBtn = eff.find(b => /rune_protection\.png/.test(b.querySelector('img').getAttribute('src')));
+  check('T67 Магазин и панель эффектов — маленькие иконки; признаки руны (глубокое свечение, разряд — по исходному адресу) сохранены; окно просмотра — оригинал',
+    shopSrc.length > 3 && shopSrc.every(x => x.startsWith('icons/items-s/')) && effImgs.length > 0 && effImgs.every(x => x.startsWith('icons/items-s/'))
+    && !!runeBtn && runeBtn.classList.contains('glow-deep') && E(w, `isWorkingRune({ icon: 'icons/items/rune_protection.png' })`) && prevSrc === 'icons/items/crystal_restoration.png',
+    `${shopSrc[0]} | ${effImgs.join(' ')} | ${prevSrc}`);
+  E(w, "data.insurance = false; data.insuranceSourceId = null; render()");
+  const img = D.createElement('img'); img.setAttribute('src', 'icons/items-s/nope.png'); D.body.appendChild(img);
+  img.dispatchEvent(new w.Event('error')); const after1 = img.getAttribute('src');
+  img.dispatchEvent(new w.Event('error')); const after2 = img.getAttribute('src'); img.remove();
+  check('T68 нет маленькой копии на сайте — картинка подменяется оригиналом (один раз, без зацикливания)', after1 === 'icons/items/nope.png' && after2 === 'icons/items/nope.png', after1);
+  const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf-8'), listed = new Set([...sw.matchAll(/'\.\/icons\/items-s\/([\w.-]+)'/g)].map(m => m[1]));
+  check('T69 sw.js: маленькие копии — в фоновой докачке (все файлы папки) и в кэше картинок, а не каркаса',
+    [...small].every(f => listed.has(f)) && listed.size === small.size && /pathname\.includes\('\/icons\/items-s\/'\)/.test(sw)); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);

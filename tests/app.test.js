@@ -840,7 +840,7 @@ async function runeBoltTests() {
   const base = `data.insurance=false; data.insuranceSourceId=null; data.streakShield=false; data.streakShieldSourceId=null; data.activeScroll=null; data.pendingScroll=null;
     data.curseActiveToday=false; data.pendingCurse=false; data.targetDiscountToday=false; data.targetDiscountSourceId=null; data.expBoostToday=0; data.expBoostSourceId=null; data.creditBoostToday=0;`;
   const bolts = () => [...D.querySelectorAll('#effectsRow .rune-bolt')];
-  const iconsWithBolt = () => bolts().map(b => b.parentElement.querySelector('img').getAttribute('src').replace('icons/items/', '').replace('.png', ''));
+  const iconsWithBolt = () => bolts().map(b => b.parentElement.querySelector('img').getAttribute('src').replace(/icons\/items(-s)?\//, '').replace('.png', ''));
   // работающие руны — есть разряд; кристалл — нет
   E(w, base + `data.insurance=true; data.insuranceSourceId='rune_protection'; data.streakShield=true; data.streakShieldSourceId='rune_stability';
     data.targetDiscountToday=true; data.targetDiscountRate=0.1; data.targetDiscountSourceId='rune_freedom'; data.expBoostToday=0.55; data.expBoostSourceId='crystal_clarity'; render()`);

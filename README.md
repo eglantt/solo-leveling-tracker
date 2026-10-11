@@ -1,6 +1,6 @@
 # Solo Leveling: Daily Training
 
-**Текущая версия: v7.1.7**
+**Текущая версия: v7.1.8**
 
 ![Экраны приложения](screenshots/sldt_screenshots.png)
 
@@ -68,7 +68,7 @@
 index.html       — всё приложение целиком (разметка, стили, логика)
 manifest.json    — манифест PWA
 sw.js            — Service Worker (офлайн-кэш)
-icons/           — иконки приложения и предметов
+icons/           — иконки приложения и предметов (items — оригиналы, items-s — уменьшенные копии для списков)
 fonts/           — шрифты интерфейса
 tests/           — автотесты (запуск: cd tests && npm install && npm test)
 ```
