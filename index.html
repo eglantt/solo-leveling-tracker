@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1092,14 +1092,6 @@
     #sysStatsRefundBtn { margin-top: 12px; }
     /* v7.0.4: кнопки шага — в столбцах «−» / «+»; выбранная — заливка ярче и светящаяся рамка */
     .sys-stat-row .sys-step-btn.on { background: rgba(0,140,255,0.45); border-color: #9fdcff; color: #fff; box-shadow: 0 0 10px rgba(64,192,255,0.6); }
-    /* v7.1.4: временная «Проверка нагрузки» в Длани (perfTest) — переключатели и их действие */
-    .perf-note { font-size: 0.72rem; opacity: 0.8; margin-bottom: 6px; }
-    .perf-row { margin-top: 8px; } .perf-lb { font-size: 0.78rem; margin-bottom: 4px; }
-    .perf-row .perf-opt { margin-top: 0; }
-    .perf-row .perf-opt { background: rgba(0,0,0,0.35); }
-    .perf-row .perf-opt.on { background: rgba(255,204,51,0.22); border-color: #ffcc33; color: #ffe08a; box-shadow: 0 0 10px rgba(255,204,51,0.45); }
-    body.perf-ico-s .pulse-glow-special { animation-play-state: paused !important; }
-    body.perf-ico-0 .pulse-glow-special { animation: none !important; filter: none !important; }
     /* ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85). Действует, пока на <body> стоит класс theme-sys; в теме «Классика»
        класса нет, и ни одно правило ниже (кроме выбора оформления в Архиве) не применяется.
        Окно в теме «Система»: .sf-win.mwin > .sf-content > .sf-panel.mw, заголовок — табличка .mw-hdr > .mw-tt,
@@ -1321,6 +1313,9 @@
     body.theme-sys.sys-anom .mscr .sc-bar:not(.debt) { --f: #ff5d70; }
     body.theme-sys.sys-anom .mscr .sf-circ, body.theme-sys.sys-anom .mscr .sf-scr { filter: hue-rotate(140deg) saturate(1.3); }
     body.theme-sys.sys-anom .mscr .sf-screen .sf-base { background: #12040a; }
+    /* v7.1.5: виньетка главного экрана — фон у боковых краёв рамки за 16px уходит в цвет основы */
+    body.theme-sys .mscr .sf-vig { position: absolute; top: 0; bottom: 0; pointer-events: none; background: linear-gradient(90deg, #030914, rgba(3,9,20,0) 16px, rgba(3,9,20,0) calc(100% - 16px), #030914); }
+    body.theme-sys.sys-anom .mscr .sf-vig { background: linear-gradient(90deg, #12040a, rgba(18,4,10,0) 16px, rgba(18,4,10,0) calc(100% - 16px), #12040a); }
     body.theme-sys.sys-anom .mscr button:not(:disabled):active { background: rgba(255,150,165,.2) !important; box-shadow: 0 0 10px rgba(255,120,140,.6); }
 
     /* --- SSS и Монарх: компактная пульсация цифры (ореол не шире ~17px, меняется яркость, а не размер) --- */
@@ -1382,23 +1377,12 @@
        Задаётся на <body> и наследуется: currentColor в наследуемом свечении берётся у каждой надписи свой. У кого есть своё
        свечение (заголовки, числа, таймер, кнопки), остаётся своё — прямое правило сильнее унаследованного. ===== */
     body.theme-sys {
-      --tg: 0 0 .096em color-mix(in srgb, currentColor 54%, transparent), 0 0 .264em color-mix(in srgb, currentColor 54%, transparent),
-            0 0 .54em color-mix(in srgb, currentColor 54%, transparent), 0 0 1.08em color-mix(in srgb, currentColor 42%, transparent);
-      --tgd: 0 0 .096em color-mix(in srgb, currentColor 30%, transparent), 0 0 .264em color-mix(in srgb, currentColor 30%, transparent),
-            0 0 .54em color-mix(in srgb, currentColor 30%, transparent), 0 0 1.08em color-mix(in srgb, currentColor 23%, transparent);
-      --tgr: 0 0 .096em rgba(255,200,205,.54), 0 0 .264em rgba(255,120,130,.54), 0 0 .54em rgba(255,70,90,.54), 0 0 1.08em rgba(220,50,70,.42);
-      text-shadow: var(--tg);
-    }
-    /* v7.1.4: временная «Проверка нагрузки» — облегчённое свечение текста, без свечения колонн и размытия стекла полос */
-    body.theme-sys.perf-tg-2 {
+      /* v7.1.5: два слоя вместо четырёх («Проверка нагрузки» 7.1.4 — быстрая прокрутка на телефоне) */
       --tg: 0 0 .2em color-mix(in srgb, currentColor 58%, transparent), 0 0 .8em color-mix(in srgb, currentColor 46%, transparent);
       --tgd: 0 0 .2em color-mix(in srgb, currentColor 32%, transparent), 0 0 .8em color-mix(in srgb, currentColor 25%, transparent);
       --tgr: 0 0 .2em rgba(255,140,150,.58), 0 0 .8em rgba(230,60,80,.46);
+      text-shadow: var(--tg);
     }
-    body.theme-sys.perf-tg-0, body.theme-sys.perf-tg-0 * { text-shadow: none !important; }
-    body.theme-sys.perf-col-0 svg.sf-under, body.theme-sys.perf-col-0 svg.sf-under * { filter: none !important; }
-    body.theme-sys.perf-bar-0 svg.sf-over, body.theme-sys.perf-bar-0 svg.sf-over * { filter: none !important; }
-    body.theme-sys .sf-win.mwin .perf-row .perf-opt.on { --bc: #ffe08a; border-color: #ffcc33 !important; color: #ffe08a !important; background: rgba(255,204,51,.16) !important; box-shadow: 0 0 10px rgba(255,204,51,.45), inset 0 0 10px rgba(255,204,51,.2) !important; }
     /* цифра уровня — своё свечение цвета ранга (drop-shadow), общее не нужно */
     body.theme-sys .sc-hex b, body.theme-sys .sc-hex .sc-idq { text-shadow: none; }
     /* вместо прежнего слабого — общее: названия упражнений, счётчики и цели (в своём цвете), текст уведомлений */
@@ -1717,14 +1701,6 @@
           <div class="sound-checkbox-zone" onclick="togglePaceControl()"><div class="sound-checkbox on" id="paceControlCheckbox">✓</div></div>
         </div>
       </div>
-      <div class="backup-section" id="perfTestSection">   <!-- v7.1.4: временно — проверка нагрузки на телефоне -->
-        <div class="backup-section-title">Проверка нагрузки</div>
-        <div class="backup-summary perf-note">Временно, для проверки плавности прокрутки на телефоне. Действует только на этом устройстве, в сохранение и копию не попадает.</div>
-        <div class="perf-row"><div class="perf-lb">Свечение текста</div><div class="sys-btn-pair" data-perf="tg"><button class="backup-action-btn perf-opt" data-v="4">как есть</button><button class="backup-action-btn perf-opt" data-v="2">2 слоя</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
-        <div class="perf-row"><div class="perf-lb">Свечение колонн рамки</div><div class="sys-btn-pair" data-perf="col"><button class="backup-action-btn perf-opt" data-v="1">как есть</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
-        <div class="perf-row"><div class="perf-lb">Размытие стекла полос</div><div class="sys-btn-pair" data-perf="bar"><button class="backup-action-btn perf-opt" data-v="1">как есть</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
-        <div class="perf-row"><div class="perf-lb">Свечение иконок предметов</div><div class="sys-btn-pair" data-perf="ico"><button class="backup-action-btn perf-opt" data-v="1">как есть</button><button class="backup-action-btn perf-opt" data-v="s">без пульса</button><button class="backup-action-btn perf-opt" data-v="0">выкл</button></div></div>
-      </div>
       <div class="backup-section danger-zone">
         <div class="backup-section-title danger">Сбросы</div>
         <button class="reset-all" onclick="sysToolsFlashThenRun(this, resetDailyProgressAction)">Сбросить дневной прогресс</button>
@@ -1920,7 +1896,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.4';
+  const APP_VERSION = '7.1.5';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -4169,7 +4145,7 @@
     // Ближнее — копия формы без линий (стекло и контур), сдвинуто по диагонали: вверху — вверх-вправо, внизу — вниз-влево.
     // Возвращает два слоя: back (среднее стекло и всё остальное) и near (ближнее стекло); узор кладётся между ними.
     function buildBars(c) {
-      const { w, h, m, scheme, id, cg, panelPx, pal } = c;
+      const { w, h, m, scheme, id, panelPx, pal } = c;
       const P = NP[scheme] || NP.blue, ga = NB.ga, lb = NB.lb, r = rng(7 + Math.round(w)), J = JJ;
       const { T, B } = barGeom(m);
       const [T0, T1, T2, T3, T4, T5, T6] = T;
@@ -4193,17 +4169,16 @@
       const enW = (w * .16).toFixed(0), tY0 = T0[1], tY1 = T4[1] + 2, bY0 = B0[1] - 2, bY1 = B1[1] + 2;
       const ml = fn => [0, 1, 2].map(k => `<polyline points="${J(fn(k))}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>`).join('');
       const svg = (cls, body) => `<svg class="sf-frm sf-over${cls}" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`;
-      const back = svg('', `<defs>${cg}
-          <filter id="${id}lg" x="-5%" y="-200%" width="110%" height="500%"><feGaussianBlur stdDeviation="1.8"/></filter>
-          <filter id="${id}gb" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+      // v7.1.5: без SVG-фильтров (размытие стекла, свечение линий и контура) — выбор пользователя по «Проверке нагрузки» 7.1.4
+      const back = svg('', `<defs>
           ${glass('t', 1)}${glass('b', 1)}
           <linearGradient id="${id}eg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
           <mask id="${id}mt" maskUnits="userSpaceOnUse" x="0" y="${-h}" width="${w}" height="${3 * h}">${ml(topLine)}</mask><mask id="${id}mb" maskUnits="userSpaceOnUse" x="0" y="${-h}" width="${w}" height="${3 * h}">${ml(botLine)}</mask></defs>
-        <polygon points="${J(panelPx)}" fill="none" stroke="${pal.col}" stroke-width="1" filter="url(#${id}cg)"/>
+        <polygon points="${J(panelPx)}" fill="none" stroke="${pal.col}" stroke-width="1"/>
         <line x1="${(B0[0] + 8).toFixed(1)}" y1="${(B0[1] - 2.6).toFixed(1)}" x2="${B3[0].toFixed(1)}" y2="${(B0[1] - 2.6).toFixed(1)}" stroke="${P.dark}" stroke-width="1.6" opacity=".9"/>
         <polyline points="${J([[T2[0] + 30, T4[1] + 2.4], [T4[0] - 6, T4[1] + 2.4]])}" fill="none" stroke="${P.dark}" stroke-width="1.1" opacity=".75"/>
-        <polygon points="${J(T)}" fill="${rgba(P.glass, ga * .9)}" filter="url(#${id}gb)" opacity=".8"/>
-        <polygon points="${J(B)}" fill="${rgba(P.glass, ga * .9)}" filter="url(#${id}gb)" opacity=".9"/>
+        <polygon points="${J(T)}" fill="${rgba(P.glass, ga * .9)}" opacity=".8"/>
+        <polygon points="${J(B)}" fill="${rgba(P.glass, ga * .9)}" opacity=".9"/>
         <polygon points="${J(T)}" fill="url(#${id}tg)"/><polygon points="${J(B)}" fill="url(#${id}bg)"/>
         <polygon points="${J(T)}" fill="none" stroke="${P.mid}" stroke-width=".9" stroke-linejoin="round" opacity="${Math.min(1, .7 * lb).toFixed(2)}"/>
         <polygon points="${J(B)}" fill="none" stroke="${P.mid}" stroke-width=".9" stroke-linejoin="round" opacity="${Math.min(1, .8 * lb).toFixed(2)}"/>
@@ -4211,16 +4186,16 @@
         <polyline points="${J([T0, T6])}" fill="none" stroke="${P.mid}" stroke-width=".7" opacity="${(.35 * ga + .1).toFixed(2)}"/>
         <polyline points="${J([B4, B3])}" fill="none" stroke="${P.mid}" stroke-width=".7" opacity="${(.35 * ga + .1).toFixed(2)}"/>
         ${dots}
-        <g filter="url(#${id}lg)">${halo(topLine)}</g><g filter="url(#${id}lg)">${halo(botLine)}</g>
+        <g>${halo(topLine)}</g><g>${halo(botLine)}</g>
         ${lines(topLine)}${lines(botLine)}${topSlant}
         <g mask="url(#${id}mt)"><rect class="sf-energy" x="0" y="${tY0}" width="${enW}" height="${tY1 - tY0}" fill="url(#${id}eg)"/></g>
         <g mask="url(#${id}mb)"><rect class="sf-energy sf-b" x="0" y="${bY0}" width="${enW}" height="${bY1 - bY0}" fill="url(#${id}eg)"/></g>`);
       // ближнее стекло: сдвиг в долях толщины полосы, срез по краю окна (с запасом на выступ полос наружу)
       const sv = thick * NB.kv, sh = thick * NB.kh, ext = Math.max(thick, bh) + sv;
       const nearBar = (Q, dx, dy, key, op) => `<g transform="translate(${dx.toFixed(2)},${dy.toFixed(2)})">
-          <polygon points="${J(Q)}" fill="${rgba(P.glass, ga * .9 * NB.nf)}" filter="url(#${id}ngb)" opacity="${op}"/><polygon points="${J(Q)}" fill="url(#${id}n${key}g)"/>
+          <polygon points="${J(Q)}" fill="${rgba(P.glass, ga * .9 * NB.nf)}" opacity="${op}"/><polygon points="${J(Q)}" fill="url(#${id}n${key}g)"/>
           <polygon points="${J(Q)}" fill="none" stroke="${P.mid}" stroke-width=".9" stroke-linejoin="round" opacity="${Math.min(1, .75 * lb).toFixed(2)}"/></g>`;
-      const near = svg(' sf-near', `<defs><filter id="${id}ngb" x="-5%" y="-100%" width="110%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+      const near = svg(' sf-near', `<defs>
           ${glass('nt', NB.nf)}${glass('nb', NB.nf)}
           <clipPath id="${id}nc"><rect x="0" y="${(-ext).toFixed(1)}" width="${w}" height="${(h + 2 * ext).toFixed(1)}"/></clipPath></defs>
         <g clip-path="url(#${id}nc)" opacity="${NB.nb}">${nearBar(T, sh, -sv, 't', .8)}${nearBar(B, -sh, sv, 'b', .9)}</g>`);
@@ -4379,14 +4354,22 @@
       }
       const scr = document.createElement('div'); scr.className = 'sf-screen'; scr.setAttribute('aria-hidden', 'true');
       scr.style.width = w + 'px'; scr.style.height = h + 'px';
-      // v7.1.3: у главного экрана (длинная страница) фон не вырезается по форме рамки — разницы на глаз нет, прокрутка легче
+      // v7.1.3: у главного экрана (длинная страница) фон не вырезается по форме рамки (многоугольник тяжёл для прокрутки).
+      // v7.1.5: вместо него — прямоугольник по внутренней границе рваного края (дёшево) и виньетка 16px у боковых краёв.
+      let vig = '';
       if (!win.classList.contains('mscr')) scr.style.clipPath = `polygon(${panelPx.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')})`;
-      scr.innerHTML = `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>`;
+      else if (panelPx.length) {
+        const ys = panelPx.map(p => p[1]), y0 = Math.min(...ys), y1 = Math.max(...ys);
+        const mid = panelPx.filter(p => p[1] > y0 + 60 && p[1] < y1 - 60), side = mid.length ? mid : panelPx;
+        const L = Math.max(0, ...side.filter(p => p[0] < w / 2).map(p => p[0])), R = Math.max(0, ...side.filter(p => p[0] > w / 2).map(p => w - p[0]));
+        scr.style.clipPath = `inset(${y0.toFixed(1)}px ${R.toFixed(1)}px ${(h - y1).toFixed(1)}px ${L.toFixed(1)}px)`;
+        vig = `<div class="sf-vig" style="left:${L.toFixed(1)}px;right:${R.toFixed(1)}px"></div>`;
+      }
+      scr.innerHTML = `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>${vig}`;
       win.insertBefore(scr, content);
-      const cg = `<filter id="${id}cg" x="-50%" y="-5%" width="200%" height="110%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
-      const under = `<svg class="sf-frm sf-under" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs>${cg}</defs>
-        <g filter="url(#${id}cg)">${cols}</g></svg>`;
-      const bars = buildBars({ w, h, m, scheme, id, cg, panelPx, pal });
+      // v7.1.5: колонны без свечения (фильтр размытия убран)
+      const under = `<svg class="sf-frm sf-under" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><g>${cols}</g></svg>`;
+      const bars = buildBars({ w, h, m, scheme, id, panelPx, pal });
       win.insertAdjacentHTML('afterbegin', under); win.insertAdjacentHTML('beforeend', bars.back);
       addPatterns(win, w, m, scheme);   // v7.1.2: узор — между средним и ближним стеклом
       win.insertAdjacentHTML('beforeend', bars.near);
@@ -7477,28 +7460,6 @@
     document.getElementById('sysToolsOverlay').style.display = 'flex';
   }
 
-  // v7.1.4: временная «Проверка нагрузки» (Длань) — настройки только в памяти этого устройства (не в data, не в копии);
-  // классы на <body>: perf-tg-2/0, perf-col-0, perf-bar-0, perf-ico-s/0. Убрать после выбора постоянного решения.
-  const PERF_KEY = 'sl_perf_test', PERF_DEF = { tg: '4', col: '1', bar: '1', ico: '1' };
-  function perfTestGet() { let v = {}; try { v = JSON.parse(localStorage.getItem(PERF_KEY)) || {}; } catch (e) {} return Object.assign({}, PERF_DEF, v); }
-  function perfTestApply() {
-    const v = perfTestGet(), b = document.body;
-    ['2', '0'].forEach(k => b.classList.toggle('perf-tg-' + k, v.tg === k));
-    b.classList.toggle('perf-col-0', v.col === '0'); b.classList.toggle('perf-bar-0', v.bar === '0');
-    ['s', '0'].forEach(k => b.classList.toggle('perf-ico-' + k, v.ico === k));
-    document.querySelectorAll('#perfTestSection [data-perf]').forEach(g => g.querySelectorAll('.perf-opt').forEach(btn => btn.classList.toggle('on', v[g.dataset.perf] === btn.dataset.v)));
-  }
-  function perfTestSet(key, val) {
-    const v = perfTestGet(); v[key] = val;
-    try { localStorage.setItem(PERF_KEY, JSON.stringify(v)); } catch (e) {}
-    perfTestApply();
-  }
-  document.querySelectorAll('#perfTestSection [data-perf]').forEach(g => g.addEventListener('click', e => {
-    const btn = e.target.closest('.perf-opt'); if (!btn) return;
-    playSound('tap'); perfTestSet(g.dataset.perf, btn.dataset.v);
-  }));
-  perfTestApply();
-
   function closeSysTools() {
     document.getElementById('sysToolsOverlay').style.display = 'none';
     renderBackupModal();
@@ -7804,6 +7765,7 @@
 
   SysTheme.init();   // v7.0.0: тема применяется до первой отрисовки
   AnimPause.init();  // v7.1.3: пауза анимаций под открытым окном и во время прокрутки
+  try { localStorage.removeItem('sl_perf_test'); } catch (e) {}   // v7.1.5: настройки временной «Проверки нагрузки» 7.1.4 больше не нужны
   document.documentElement.classList.remove('theme-pending');
   render();
   if (!data.rulesAcknowledged) {

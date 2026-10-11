@@ -179,8 +179,9 @@ const w = boot(); const D = w.document; await tick();
   const pa = pad(a460), pb = pad(a620), pc = pad(b620);
   check('T27 главный экран шире 460px: отступы и толщина рамки те же, что на 460px (без предела — толще)',
     pa.every((v, i) => Math.abs(v - pb[i]) < 0.01) && pc[0] > pb[0] * 1.3 && Math.max(...clip(a620).map(p => p[0])) > 600, `${pa.join('/')} | ${pb.join('/')} | ${pc.join('/')}`);
-  check('T28 полосы рамки — в отдельных группах с фильтром (бегущая энергия не пересчитывает размытие всего окна)',
-    a620.querySelectorAll('svg.sf-over > g[filter]').length === 2 && a620.querySelectorAll('svg.sf-over .sf-energy').length === 2);
+  check('T28 v7.1.5: в рамке нет SVG-фильтров (колонны без свечения, стекло полос без размытия, линии без ореола); энергия на месте',
+    a620.querySelectorAll('svg.sf-frm [filter], svg.sf-frm filter, svg.sf-frm feGaussianBlur').length === 0 && a620.querySelectorAll('svg.sf-frm').length === 3
+    && a620.querySelectorAll('svg.sf-over .sf-energy').length === 2);
   { const ov = a620.querySelector('svg.sf-over'), un = a620.querySelector('svg.sf-under');
     const r1 = mk(390, 700); w.__el = r1; E(w, "SysFrame.render(__el, 'red', SYS_FRAME_OPT)");
     check('T52 v7.1.0 полосы по образцу (демо 91): энергия только по линиям (маски), нет прежней вспышки и штрих-кода, точки, тёмная линия, стекло; колонны с внутренним контуром; красная схема — красное стекло',
@@ -310,9 +311,9 @@ const w = boot(); const D = w.document; await tick();
 // ===== v7.0.8: свечение всех текстов в теме «Система» =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   const i = css.indexOf('v7.0.8: свечение'), blk = i > 0 ? css.slice(i) : '';
-  check('T50 тема «Система»: общее свечение текстов (на body, цвет надписи, 4 слоя 60% / 1.2×), исключения и красное под Бременем',
-    /body\.theme-sys \{\s*--tg: 0 0 \.096em color-mix\(in srgb, currentColor 54%, transparent\)/.test(blk)
-    && /1\.08em color-mix\(in srgb, currentColor 42%, transparent\);/.test(blk)
+  check('T50 тема «Система»: общее свечение текстов (на body, цвет надписи; v7.1.5 — 2 слоя .2em/.8em), исключения и красное под Бременем',
+    /body\.theme-sys \{\s*\/\*[^*]*\*\/\s*--tg: 0 0 \.2em color-mix\(in srgb, currentColor 58%, transparent\), 0 0 \.8em color-mix\(in srgb, currentColor 46%, transparent\);/.test(blk)
+    && /--tgr: 0 0 \.2em rgba\(255,140,150,\.58\), 0 0 \.8em rgba\(230,60,80,\.46\);/.test(blk) && !/1\.08em/.test(blk)
     && /text-shadow: var\(--tg\);\s*\}/.test(blk)
     && /body\.theme-sys \.sc-hex b, body\.theme-sys \.sc-hex \.sc-idq \{ text-shadow: none; \}/.test(blk)
     && /body\.theme-sys \.mscr \.quest-name, body\.theme-sys \.quest-item \.counter, body\.theme-sys \.quest-item \.target, body\.theme-sys \.sys-notice \.sn-body \{ text-shadow: var\(--tg\); \}/.test(blk)
@@ -351,7 +352,10 @@ const w = boot(); const D = w.document; await tick();
   const mw = mk('sf-win mwin mscr'), ww = mk('sf-win mwin');
   w.__el = mw; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)"); w.__el = ww; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
   const cm = mw.querySelector('.sf-screen').style.clipPath, cw = ww.querySelector('.sf-screen').style.clipPath;
-  check('T57 фон главного экрана не вырезается по форме рамки, у окон — вырезается', cm === '' && /^polygon\(/.test(cw), `${cm.slice(0, 20)} | ${cw.slice(0, 20)}`);
+  const ins = (cm.match(/^inset\(([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px\)$/) || []).slice(1).map(Number), vg = mw.querySelector('.sf-screen > .sf-vig');
+  check('T57 v7.1.5: фон главного экрана обрезан прямоугольником по внутренней границе края (10–25px), виньетка по тем же краям; у окон — по форме рамки',
+    ins.length === 4 && ins.every(v => v >= 8 && v <= 30) && !!vg && vg.style.left === ins[3] + 'px' && vg.style.right === ins[1] + 'px' && /^polygon\(/.test(cw) && !ww.querySelector('.sf-vig'),
+    `${cm} | ${cw.slice(0, 20)}`);
   mw.remove(); ww.remove();
   for (const theme of ['system', 'classic']) {
     E(w, `setTheme('${theme}')`); closeAll(w); await tick();
@@ -372,27 +376,12 @@ const w = boot(); const D = w.document; await tick();
   E(w, "setTheme('system')"); await tick();
   check('T59 прокрутка в «Системе»: фон и рамка замирают и через 0,3 с после остановки идут дальше; в «Классике» — без изменений', on1 && off1 && cls); }
 
-// ===== v7.1.4: временная «Проверка нагрузки» в Длани =====
-{ const sec = D.getElementById('perfTestSection');
-  const click = (k, v) => sec.querySelector(`[data-perf="${k}"] [data-v="${v}"]`).click();
-  const on = () => [...sec.querySelectorAll('.perf-opt.on')].map(b => b.closest('[data-perf]').dataset.perf + '=' + b.dataset.v).join(',');
-  const def = on() === 'tg=4,col=1,bar=1,ico=1' && !/perf-/.test(D.body.className);
-  click('tg', '2'); click('col', '0'); click('bar', '0'); click('ico', 's');
-  const cls1 = ['perf-tg-2', 'perf-col-0', 'perf-bar-0', 'perf-ico-s'].every(c => D.body.classList.contains(c)) && on() === 'tg=2,col=0,bar=0,ico=s';
-  const stored = w.localStorage.getItem('sl_perf_test'), inData = /perf/.test(J(w, 'data'));
-  click('tg', '0'); click('ico', '0');
-  const cls2 = D.body.classList.contains('perf-tg-0') && !D.body.classList.contains('perf-tg-2') && D.body.classList.contains('perf-ico-0') && !D.body.classList.contains('perf-ico-s');
-  click('tg', '4'); click('col', '1'); click('bar', '1'); click('ico', '1');
-  const back = !/perf-/.test(D.body.className) && on() === 'tg=4,col=1,bar=1,ico=1';
-  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
-  check('T60 «Проверка нагрузки» в Длани: по умолчанию «как есть»; переключатели ставят классы и запоминаются на устройстве (не в data); возврат снимает всё',
-    def && cls1 && cls2 && back && JSON.parse(stored).tg === '2' && !inData
-    && /body\.theme-sys\.perf-tg-2 \{\s+--tg:/.test(css) && /body\.theme-sys\.perf-col-0 svg\.sf-under/.test(css) && /body\.perf-ico-0 \.pulse-glow-special \{ animation: none !important; filter: none !important; \}/.test(css),
-    [def, cls1, cls2, back, stored, inData].join(' '));
-  STORE = { 'sl_daily_v5_5_0': SEED, 'sl_perf_test': JSON.stringify({ tg: '0', col: '1', bar: '0', ico: '1' }) };
-  const w2 = boot(); await sleep(40);
-  check('T61 при запуске настройки «Проверки нагрузки» применяются сразу', w2.document.body.classList.contains('perf-tg-0') && w2.document.body.classList.contains('perf-bar-0') && !w2.document.body.classList.contains('perf-col-0'));
-  STORE = null; w2.close(); }
+// ===== v7.1.5 =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  check('T60 виньетка главного экрана 16px в цвет основы (под Бременем — красно-тёмная); «Проверки нагрузки» в Длани больше нет, её запись стирается',
+    /body\.theme-sys \.mscr \.sf-vig \{[^}]*linear-gradient\(90deg, #030914, rgba\(3,9,20,0\) 16px, rgba\(3,9,20,0\) calc\(100% - 16px\), #030914\)/.test(css)
+    && /body\.theme-sys\.sys-anom \.mscr \.sf-vig \{ background: linear-gradient\(90deg, #12040a, rgba\(18,4,10,0\) 16px/.test(css)
+    && !D.getElementById('perfTestSection') && !/perf-tg|perf-col|perf-ico|perfTest/.test(css + src) && /localStorage\.removeItem\('sl_perf_test'\)/.test(src)); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
