@@ -228,9 +228,9 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   const seg = () => [...D.querySelectorAll('#backupContent .theme-row .theme-seg button')];
   const st = () => seg().map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|');
   const lbl = D.querySelector('#backupContent .theme-row span').textContent, t0 = st();
-  seg()[1].click(); await sleep(1100); const t1 = st(), th1 = E(w, 'data.theme'), body1 = D.body.classList.contains('theme-sys'), open1 = D.getElementById('backupOverlay').style.display;
-  seg()[0].click(); await sleep(1100); const t2 = st(), th2 = E(w, 'data.theme'), body2 = D.body.classList.contains('theme-sys');
-  check('N21 Архив → Настройки: «Оформление» — «Система» / «Классика», тема меняется на месте (через сбой 0,9 с, v7.1.11), Архив остаётся открытым',
+  seg()[1].click(); await sleep(1500); const t1 = st(), th1 = E(w, 'data.theme'), body1 = D.body.classList.contains('theme-sys'), open1 = D.getElementById('backupOverlay').style.display;
+  seg()[0].click(); await sleep(1500); const t2 = st(), th2 = E(w, 'data.theme'), body2 = D.body.classList.contains('theme-sys');
+  check('N21 Архив → Настройки: «Оформление» — «Система» / «Классика», тема меняется на месте (через сбой, v7.1.11–7.1.12), Архив остаётся открытым',
     lbl === 'Оформление' && t0 === 'Система*|Классика' && t1 === 'Система|Классика*' && th1 === 'classic' && body1 === false && open1 === 'flex' && t2 === 'Система*|Классика' && th2 === 'system' && body2 === true,
     `${lbl} ${t0} → ${t1} (${th1}) → ${t2} (${th2})`);
   check('N22 выбор темы сохраняется', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).theme === 'system' && !D.querySelector('#backupContent .sound-checkbox-zone[onclick*="Design"]')); }

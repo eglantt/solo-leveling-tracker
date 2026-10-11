@@ -472,40 +472,52 @@ const w = boot(); const D = w.document; await tick();
     && JSON.stringify(again) === JSON.stringify(rings.map(r => r.getAttribute('style'))), JSON.stringify({ delays, minGap }));
   E(w, `getActiveEffects = window.__origGAE; window.__activeEffectsSignature = null; render();`); }
 
-// ===== v7.1.11: смена оформления через сбой =====
+// ===== v7.1.11–7.1.12: смена оформления через сбой =====
 { closeAll(w); E(w, "setTheme('system'); backupModalStep = 'main'; openBackupModal()"); await tick();
   const btn = t => [...D.querySelectorAll('#backupContent .theme-seg button')].find(b => b.textContent.trim() === t);
-  const win = D.querySelector('#backupOverlay .status-window');
+  const ov = D.getElementById('backupOverlay'), win = ov.querySelector('.status-window');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   check('T73 кнопки «Система» / «Классика» в Архиве запускают смену через сбой (switchThemeFx), сама setTheme — прежняя',
     /switchThemeFx\('classic'\)/.test(btn('Классика').getAttribute('onclick')) && /switchThemeFx\('system'\)/.test(btn('Система').getAttribute('onclick')));
-  btn('Классика').click(); await sleep(60);
-  const scr = D.getElementById('themeFxScr');
-  const mid1 = { theme: E(w, 'data.theme'), slices: win.querySelectorAll(':scope > .tfx-slice').length, noise: win.querySelectorAll(':scope > .tfx-noise').length,
-    scr: !!scr && scr.style.display === 'block', col: scr ? scr.style.background : '' };
+  btn('Классика').click(); await sleep(150);
+  const noise1 = win.querySelector(':scope > .tfx-noise');
+  const rise = { theme: E(w, 'data.theme'), phase: E(w, 'themeFx && themeFx.phase'), slices: win.querySelectorAll(':scope > .tfx-slice').length, noise: !!noise1,
+    col: noise1 ? noise1.style.background : '', dim: !!ov.querySelector(':scope > .tfx-dim'), scr: !!D.getElementById('themeFxScr') };
   E(w, "switchThemeFx('system')"); const locked = E(w, 'themeFx && themeFx.to');
-  await sleep(520);
-  const mid2 = { theme: E(w, 'data.theme'), saved: w.localStorage.getItem('sl_theme'), body: D.body.classList.contains('theme-sys'), slices: win.querySelectorAll(':scope > .tfx-slice').length };
-  check('T74 до середины — тема прежняя, сбой идёт (3 копии окна, помехи в окне и на весь экран); повторное нажатие во время сбоя не действует',
-    mid1.theme === 'system' && mid1.slices === 3 && mid1.noise === 1 && mid1.scr && locked === 'classic', JSON.stringify(mid1) + ' ' + locked);
-  check('T75 на середине (0,45 с) тема переключается и сохраняется, сбой продолжается на новом виде',
-    mid2.theme === 'classic' && mid2.saved === 'classic' && !mid2.body && mid2.slices === 3, JSON.stringify(mid2));
-  check('T76 цвет помех по направлению: в «Классику» — белёсый', /225,\s*236,\s*255/.test(mid1.col), mid1.col);
+  check('T74 нарастание: тема прежняя, 3 копии окна, помехи в окне, слой вздрагивания за окном; помех на весь экран нет; повторное нажатие не действует',
+    rise.theme === 'system' && rise.phase === 'rise' && rise.slices === 3 && rise.noise && rise.dim && !rise.scr && locked === 'classic', JSON.stringify(rise) + ' ' + locked);
+  check('T76 цвет помех по направлению: в «Классику» — белёсый', /225,\s*236,\s*255/.test(rise.col), rise.col);
+  await sleep(400);
+  const loss = { phase: E(w, 'themeFx && themeFx.phase'), el: !!win.querySelector(':scope > .tfx-loss'), slices: win.querySelectorAll(':scope > .tfx-slice').length,
+    theme: E(w, 'data.theme'), saved: w.localStorage.getItem('sl_theme'), body: D.body.classList.contains('theme-sys') };
+  check('T75 на пике — потеря сигнала (тёмный кадр поверх окна), под ней тема сменилась и сохранена; копий окна больше нет',
+    loss.phase === 'loss' && loss.el && loss.slices === 0 && loss.theme === 'classic' && loss.saved === 'classic' && !loss.body, JSON.stringify(loss));
+  check('T81 слои сбоя выше кнопки «Сбросить всё» (z 100): копии 150, помехи 160, потеря сигнала 200; мерцание — прозрачностью, без фильтра яркости',
+    /\.tfx-slice \{[^}]*z-index: 150/.test(css) && /\.tfx-noise \{[^}]*z-index: 160/.test(css) && /\.tfx-loss \{[^}]*z-index: 200/.test(css)
+    && !/brightness\(/.test(E(w, 'themeFxFrame.toString()')), '');
+  await sleep(330);
+  const fall = { phase: E(w, 'themeFx && themeFx.phase'), loss: !!win.querySelector(':scope > .tfx-loss'), slices: win.querySelectorAll(':scope > .tfx-slice').length, noise: !!win.querySelector(':scope > .tfx-noise') };
+  check('T82 спад: потеря сигнала снята, на новом виде помехи без копий окна', fall.phase === 'fall' && !fall.loss && fall.slices === 0 && fall.noise, JSON.stringify(fall));
   await sleep(600);
   const sigFx = E(w, `JSON.stringify(${SIG}.backupOverlay)`);
-  const clean = { fx: E(w, 'themeFx'), left: D.querySelectorAll('.tfx-slice, .tfx-noise').length, scr: D.getElementById('themeFxScr').style.display,
-    tr: win.style.translate, flt: win.style.filter, ts: [...win.querySelectorAll('.status-header')].map(h => h.style.textShadow).join('') };
+  const clean = { fx: E(w, 'themeFx'), left: D.querySelectorAll('.tfx-slice, .tfx-noise, .tfx-loss, .tfx-dim').length,
+    tr: win.style.translate, op: win.style.opacity, ts: [...win.querySelectorAll('.status-header')].map(h => h.style.textShadow).join('') };
   E(w, "setTheme('system'); setTheme('classic')"); await tick();
   const sigPlain = E(w, `JSON.stringify(${SIG}.backupOverlay)`);
-  check('T77 после 0,9 с слоёв сбоя нет, окно чистое, разметка — как после мгновенной смены темы',
-    clean.fx === null && clean.left === 0 && clean.scr === 'none' && !clean.tr && !clean.flt && !clean.ts && sigFx === sigPlain, JSON.stringify(clean));
-  btn('Система').click(); await sleep(60);
-  const col2 = D.getElementById('themeFxScr').style.background;
-  await sleep(1000);
-  check('T78 обратно в «Систему» — помехи голубые, тема «Система», рамка на месте',
-    /64,\s*192,\s*255/.test(col2) && E(w, 'data.theme') === 'system' && D.body.classList.contains('theme-sys') && !!win.querySelector(':scope > svg.sf-frm, :scope > .sf-content') , col2);
+  check('T77 после сбоя слоёв нет (копии, помехи, потеря сигнала, вздрагивание), окно чистое, разметка — как после мгновенной смены темы',
+    clean.fx === null && clean.left === 0 && !clean.tr && !clean.op && !clean.ts && sigFx === sigPlain, JSON.stringify(clean));
+  btn('Система').click(); await sleep(150);
+  const col2 = (win.querySelector(':scope > .tfx-noise') || { style: {} }).style.background || '';
+  await sleep(1300);
+  check('T78 обратно в «Систему» — помехи голубые, тема «Система», рамка на месте, слоёв не осталось',
+    /64,\s*192,\s*255/.test(col2) && E(w, 'data.theme') === 'system' && D.body.classList.contains('theme-sys') && !!win.querySelector(':scope > .sf-content')
+    && D.querySelectorAll('.tfx-slice, .tfx-noise, .tfx-loss, .tfx-dim').length === 0, col2);
   btn('Классика').click(); await sleep(100); E(w, 'closeBackupModal()');
-  const cl = { theme: E(w, 'data.theme'), fx: E(w, 'themeFx'), left: D.querySelectorAll('.tfx-slice, .tfx-noise').length, scr: D.getElementById('themeFxScr').style.display };
-  check('T79 Архив закрыт до середины — тема переключается сразу, без эффекта, слоёв не остаётся', cl.theme === 'classic' && cl.fx === null && cl.left === 0 && cl.scr === 'none', JSON.stringify(cl));
+  const cl = { theme: E(w, 'data.theme'), fx: E(w, 'themeFx'), left: D.querySelectorAll('.tfx-slice, .tfx-noise, .tfx-loss, .tfx-dim').length };
+  check('T79 Архив закрыт до пика — тема переключается сразу, без эффекта, слоёв не остаётся', cl.theme === 'classic' && cl.fx === null && cl.left === 0, JSON.stringify(cl));
+  E(w, "setTheme('system'); openBackupModal()"); await tick(); btn('Классика').click(); await sleep(500); E(w, 'closeBackupModal()');
+  const cl2 = { theme: E(w, 'data.theme'), fx: E(w, 'themeFx'), left: D.querySelectorAll('.tfx-slice, .tfx-noise, .tfx-loss, .tfx-dim').length };
+  check('T83 Архив закрыт во время потери сигнала — тема уже сменена, сбой снят', cl2.theme === 'classic' && cl2.fx === null && cl2.left === 0, JSON.stringify(cl2));
   E(w, "setTheme('system')"); await tick();
   check('T80 смена темы без кнопки (запуск, бэкап) — мгновенная, без сбоя', E(w, 'data.theme') === 'system' && E(w, 'themeFx') === null && D.querySelectorAll('.tfx-slice').length === 0); }
 
