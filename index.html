@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.2.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1426,21 +1426,22 @@
     body.theme-sys .quest-item .target.cursed-scroll { animation-name: sysCursedScrollPulseTarget; }
     body.theme-sys .quest-item .counter.limit-scroll { animation-name: sysLimitScrollPulse; }
     body.theme-sys .quest-item .target.limit-scroll { animation-name: sysLimitScrollPulseTarget; }
+    /* v7.2.4: общее свечение записано цветом — с var(--tg) (currentColor в color-mix) браузер не интерполирует кадры, пульсация «моргала» */
     @keyframes sysCursedScrollPulse {
-      0%, 100% { text-shadow: var(--tg), 0 0 10px rgba(255,150,0,0.55), 0 0 18px rgba(255,150,0,0.3); }
-      50%      { text-shadow: var(--tg), 0 0 14px rgba(255,160,0,0.95), 0 0 28px rgba(255,150,0,0.65); }
+      0%, 100% { text-shadow: 0 0 .2em rgba(255,85,85,.58), 0 0 .8em rgba(255,85,85,.46), 0 0 10px rgba(255,150,0,0.55), 0 0 18px rgba(255,150,0,0.3); }
+      50%      { text-shadow: 0 0 .2em rgba(255,85,85,.58), 0 0 .8em rgba(255,85,85,.46), 0 0 14px rgba(255,160,0,0.95), 0 0 28px rgba(255,150,0,0.65); }
     }
     @keyframes sysCursedScrollPulseTarget {
-      0%, 100% { text-shadow: var(--tg), 0 0 6px rgba(255,150,0,0.3); }
-      50%      { text-shadow: var(--tg), 0 0 10px rgba(255,160,0,0.6); }
+      0%, 100% { text-shadow: 0 0 .2em rgba(255,85,85,.387), 0 0 .8em rgba(255,85,85,.307), 0 0 6px rgba(255,150,0,0.3); }
+      50%      { text-shadow: 0 0 .2em rgba(255,85,85,.387), 0 0 .8em rgba(255,85,85,.307), 0 0 10px rgba(255,160,0,0.6); }
     }
     @keyframes sysLimitScrollPulse {
-      0%, 100% { text-shadow: var(--tg), 0 0 10px rgba(255,160,0,0.5), 0 0 18px rgba(255,160,0,0.25); }
-      50%      { text-shadow: var(--tg), 0 0 14px rgba(255,170,0,0.95), 0 0 28px rgba(255,160,0,0.6); }
+      0%, 100% { text-shadow: 0 0 .2em rgba(64,192,255,.58), 0 0 .8em rgba(64,192,255,.46), 0 0 10px rgba(255,160,0,0.5), 0 0 18px rgba(255,160,0,0.25); }
+      50%      { text-shadow: 0 0 .2em rgba(64,192,255,.58), 0 0 .8em rgba(64,192,255,.46), 0 0 14px rgba(255,170,0,0.95), 0 0 28px rgba(255,160,0,0.6); }
     }
     @keyframes sysLimitScrollPulseTarget {
-      0%, 100% { text-shadow: var(--tg), 0 0 6px rgba(255,160,0,0.3); }
-      50%      { text-shadow: var(--tg), 0 0 10px rgba(255,170,0,0.6); }
+      0%, 100% { text-shadow: 0 0 .2em rgba(64,192,255,.387), 0 0 .8em rgba(64,192,255,.307), 0 0 6px rgba(255,160,0,0.3); }
+      50%      { text-shadow: 0 0 .2em rgba(64,192,255,.387), 0 0 .8em rgba(64,192,255,.307), 0 0 10px rgba(255,170,0,0.6); }
     }
     /* ===== v7.0.9: общее свечение вместо своего слабого — заголовки разделов и глав, Летопись, Прогресс, названия предметов,
        имя, ранг, кредиты, характеристики, «АКТИВНЫЕ ЭФФЕКТЫ» (свечение в цвет надписи). Таблички, кнопки, таймер — своё. ===== */
@@ -1925,7 +1926,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.3';
+  const APP_VERSION = '7.2.4';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -3751,9 +3752,9 @@
     queueTail: 'Свиток вступит в силу со следующим циклом дневного задания.',   // v7.2.3: строка окна свитка
     queueTailFreeze: 'Заморозка вступит в силу со следующего цикла.',
     // v7.2.3: руна защиты во время Пелены / её следа / Заморозки при ожидающем Бремени — отказ
-    protBurdenVeil: 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Пелены покоя.',
-    protBurdenTrace: 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит со следующим циклом.',
-    protBurdenFreeze: 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Заморозки.',
+    protBurdenVeil: 'Обычная защита бессильна против эффекта «Бремя Аномалии», который наступит после окончания Пелены покоя.',
+    protBurdenTrace: 'Обычная защита бессильна против эффекта «Бремя Аномалии», который наступит в следующем цикле.',
+    protBurdenFreeze: 'Обычная защита бессильна против эффекта «Бремя Аномалии», который наступит после окончания Заморозки.',
     transferActive: 'Свиток Переноса нельзя использовать, пока действует эффект «Пелена покоя».',
     transferTrace: 'Свиток Переноса нельзя использовать, пока действует остаточный эффект «Пелены покоя».',
     timerActive: 'Пелена покоя<br class="br-narrow"> рассеется через',

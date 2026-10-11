@@ -377,9 +377,9 @@ for (const [id, acc] of [['shard_limit', 'Осколок Предела'], ['sha
     check('V4 Заморозка на перерыве — окно без строк', warn(w, 'scroll_freeze') === '', warn(w, 'scroll_freeze')); }
 
   // ---- руны: отказ при ожидающем Бремени во время Пелены / следа / Заморозки ----
-  const HOLDS = { veil: ["data.activeScroll='veil'; data.veilLifted=false;", 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Пелены покоя.'],
-    trace: ["data.activeScroll='veil'; data.veilLifted=true;", 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит со следующим циклом.'],
-    freeze: ["data.activeScroll='freeze'; data.freezeEndTimestamp = Date.now() + 3*86400000;", 'Обычная защита бессильна против эффекта «Бремя Аномалии»: он наступит после окончания Заморозки.'] };
+  const HOLDS = { veil: ["data.activeScroll='veil'; data.veilLifted=false;", 'Обычная защита бессильна против эффекта «Бремя Аномалии», который наступит после окончания Пелены покоя.'],
+    trace: ["data.activeScroll='veil'; data.veilLifted=true;", 'Обычная защита бессильна против эффекта «Бремя Аномалии», который наступит в следующем цикле.'],
+    freeze: ["data.activeScroll='freeze'; data.freezeEndTimestamp = Date.now() + 3*86400000;", 'Обычная защита бессильна против эффекта «Бремя Аномалии», который наступит после окончания Заморозки.'] };
   const STACK = "data.penaltyStack=[{day:'2026-09-01',loss:400,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];";
   for (const [h, [setup, txt]] of Object.entries(HOLDS)) {
     for (const id of ['rune_protection', 'rune_protection_charged']) {

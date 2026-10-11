@@ -318,7 +318,7 @@ const w = boot(); const D = w.document; await tick();
     && /body\.theme-sys \.sc-hex b, body\.theme-sys \.sc-hex \.sc-idq \{ text-shadow: none; \}/.test(blk)
     && /body\.theme-sys \.mscr \.quest-name, body\.theme-sys \.quest-item \.counter, body\.theme-sys \.quest-item \.target \{ text-shadow: var\(--tg\); \}/.test(blk)
     && /body\.theme-sys\.sys-anom \.mscr \.quest-name[^{]*\{ text-shadow: var\(--tgr\); \}/.test(blk)
-    && /@keyframes sysCursedScrollPulse \{\s*0%, 100% \{ text-shadow: var\(--tg\), 0 0 10px rgba\(255,150,0,0\.55\)/.test(blk)
+    && /@keyframes sysCursedScrollPulse \{\s*0%, 100% \{ text-shadow: 0 0 \.2em rgba\(255,85,85,\.58\), 0 0 \.8em rgba\(255,85,85,\.46\), 0 0 10px rgba\(255,150,0,0\.55\)/.test(blk)
     && /@keyframes sysLimitScrollPulse/.test(blk)
     && /body\.theme-sys \.quest-item \.counter\.cursed-scroll \{ animation-name: sysCursedScrollPulse; \}/.test(blk)
     && /@keyframes cursedScrollPulse \{\s*0%, 100% \{ text-shadow: 0 0 4px rgba\(255,40,40,0\.7\)/.test(css)); }
@@ -550,6 +550,17 @@ const w = boot(); const D = w.document; await tick();
     (() => { const c = XD.querySelector('style').textContent; const a = c.indexOf('v7.2.2: карточки'), b = c.indexOf('ТЕМА «СИСТЕМА»');
       const blk = c.slice(a, b).split('\n').filter(l => /\{/.test(l) && !/^\s*\/\*/.test(l));
       return a > 0 && a < b && blk.length >= 10 && blk.every(l => /^\s*body:not\(\.theme-sys\)/.test(l)); })()); }
+
+// ===== v7.2.4: пульсации «свиток + Бремя / Предел» в «Системе» — плавные (без var(--tg) в кадрах) =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const kf = n => { const m = css.match(new RegExp('@keyframes ' + n + ' \\{([\\s\\S]*?)\\n    \\}')); return m ? m[1] : ''; };
+  const names = ['sysCursedScrollPulse', 'sysCursedScrollPulseTarget', 'sysLimitScrollPulse', 'sysLimitScrollPulseTarget'];
+  const bad = names.filter(n => { const b = kf(n); return !b || /var\(|currentColor|color-mix/.test(b); });
+  check('T90 четыре пульсации темы — без var(--tg)/currentColor (иначе браузер не интерполирует кадры)', bad.length === 0, bad.join(','));
+  const ok = /sysLimitScrollPulse \{\s*0%, 100% \{ text-shadow: 0 0 \.2em rgba\(64,192,255,\.58\), 0 0 \.8em rgba\(64,192,255,\.46\),/.test(css)
+    && /sysLimitScrollPulseTarget \{\s*0%, 100% \{ text-shadow: 0 0 \.2em rgba\(64,192,255,\.387\), 0 0 \.8em rgba\(64,192,255,\.307\),/.test(css)
+    && /sysCursedScrollPulseTarget \{\s*0%, 100% \{ text-shadow: 0 0 \.2em rgba\(255,85,85,\.387\), 0 0 \.8em rgba\(255,85,85,\.307\),/.test(css);
+  check('T91 общее свечение в кадрах — тот же цвет и размах, что var(--tg) у цифры и цели', ok); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
