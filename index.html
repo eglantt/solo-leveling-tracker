@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.1.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.1.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1042,15 +1042,21 @@
     .sf-shim i { position: absolute; width: 75%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(70,150,255,.22) 0%, rgba(70,150,255,.12) 30%, rgba(70,150,255,.04) 52%, transparent 70%); animation: sfShim 9s ease-in-out infinite; }
     .sf-shim i:nth-child(1) { left: -15%; top: -10%; } .sf-shim i:nth-child(2) { right: -20%; top: 30%; animation-delay: -3.1s; } .sf-shim i:nth-child(3) { left: 15%; bottom: -25%; animation-delay: -6.3s; }
     @keyframes sfShim { 0%, 100% { opacity: .25; transform: translate(0,0) scale(.85); } 50% { opacity: 1; transform: translate(8%,6%) scale(1.15); } }
-    .sf-energy { animation: sfEnergy 8.8s ease-in-out infinite; } .sf-energy.sf-b { animation-delay: -4.4s; }
+    /* v7.1.7: энергия — слой .sf-en (маска по линиям), вспышка .sf-energy двигается transform от --a до --z (−25% … 125% ширины окна) */
+    .sf-win > .sf-en { position: absolute; left: 0; z-index: 3; pointer-events: none; overflow: hidden; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+    .sf-en > .sf-energy { position: absolute; left: 0; display: block; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.95), rgba(255,255,255,0));
+      animation: sfEnergy 8.8s ease-in-out infinite; will-change: transform; }
+    .sf-en > .sf-energy.sf-b { animation-delay: -4.4s; }
     .sf-win > .sf-pat { position: absolute; z-index: 3; pointer-events: none; }   /* v7.1.0: живой узор в центре полос; v7.1.2 — под ближним стеклом (тот же слой, ближнее стекло идёт после) */
     .sf-dot { animation: sfDotTw 2.6s ease-in-out infinite; }
     @keyframes sfDotTw { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
-    @keyframes sfEnergy { 0% { transform: translateX(-25%); } 60%, 100% { transform: translateX(125%); } }
+    @keyframes sfEnergy { 0% { transform: translateX(var(--a)); } 60%, 100% { transform: translateX(var(--z)); } }
+    /* v7.1.7 (демо 95): узор полос — 4 заранее нарисованных кадра перетекают друг в друга (цикл 12 с, мягкость 70%, яркость 80%) */
+    .sf-win > .sf-pat { opacity: 0; animation: sfPatX 12s linear infinite; will-change: opacity; }
+    @keyframes sfPatX { 0% { opacity: 0; } 17.5% { opacity: .8; } 25% { opacity: .8; } 42.5% { opacity: 0; } 100% { opacity: 0; } }
     .sf-content { position: relative; z-index: 2; }
     /* v7.1.3: пауза анимаций под открытым окном (обе темы, AnimPause) и фона/рамки во время прокрутки («Система») */
     .anim-paused, .anim-paused *, .anim-paused *::before, .anim-paused *::after { animation-play-state: paused !important; }
-    body.theme-sys.sys-scrolling .sf-screen *, body.theme-sys.sys-scrolling svg.sf-frm * { animation-play-state: paused !important; }
     .sf-panel { position: relative; overflow: hidden; border: 1px solid rgba(225,242,255,.85); box-shadow: 0 0 6px rgba(160,220,255,.45); background: rgba(3,9,20,.45); }
     .sf-panel > .gp-inner, .sf-panel .gp-slice > .gp-inner { padding: 14px 12px 20px; }
     .sys-notice { position: fixed; top: 58%; left: 50%; width: min(350px, 94vw); transform: translate(-50%, -50%); z-index: 2000; cursor: pointer; text-align: center;
@@ -1124,7 +1130,7 @@
 
     /* --- кнопки: прямоугольные, белая рамка, цветная надпись --- */
     body.theme-sys .sf-win.mwin button { --bc: var(--acc); border-radius: 0; background: rgba(3,9,20,.45); border: 1px solid var(--sl); color: var(--bc);
-      box-shadow: var(--sg); font-family: 'Orbitron', 'Exo 2', sans-serif; text-transform: uppercase; letter-spacing: 1.5px; text-shadow: 0 0 8px currentColor;
+      box-shadow: var(--sg); font-family: 'Orbitron', 'Exo 2', sans-serif; text-transform: uppercase; letter-spacing: 1.5px; text-shadow: none;   /* v7.1.7: кнопки без свечения */
       transition: background .15s ease, box-shadow .15s ease; }
     body.theme-sys .sf-win.mwin button:hover { background: rgba(3,9,20,.45) !important; border-color: var(--sl) !important; color: var(--bc) !important; }
     body.theme-sys .sf-win.mwin button:not(:disabled):active { background: rgba(140,205,255,.2) !important; border-color: #fff !important; color: var(--bc) !important; box-shadow: 0 0 10px rgba(160,220,255,.6); }
@@ -1152,7 +1158,7 @@
       border-radius: 0; border: 1px solid var(--sl2); background: rgba(3,9,20,.35); }
     body.theme-sys .sf-win.mwin .item-card.eq-on { border-color: var(--sl); box-shadow: var(--sg); }
     body.theme-sys .sf-win.mwin .item-info { display: contents; }
-    body.theme-sys .sf-win.mwin .item-name { grid-column: 1 / -1; grid-row: 1; color: var(--tx); text-shadow: 0 0 7px rgba(120,210,255,.7); font-weight: 600; line-height: 1.25; }
+    body.theme-sys .sf-win.mwin .item-name { grid-column: 1 / -1; grid-row: 1; color: var(--tx); text-shadow: none; font-weight: 600; line-height: 1.25; }
     body.theme-sys .sf-win.mwin .item-icon { grid-column: 1; grid-row: 2; align-self: start; width: 58px; height: 58px; min-width: 0; box-sizing: border-box; border: 1px solid var(--sl);
       box-shadow: var(--sg), inset 0 0 8px rgba(80,160,255,.18); background: rgba(3,9,20,.5); font-size: 1.6rem; }
     body.theme-sys .sf-win.mwin .item-icon-img, body.theme-sys .sf-win.mwin .item-icon img { width: 44px; height: 44px; }
@@ -1384,16 +1390,15 @@
       --tg: 0 0 .2em color-mix(in srgb, currentColor 58%, transparent), 0 0 .8em color-mix(in srgb, currentColor 46%, transparent);
       --tgd: 0 0 .2em color-mix(in srgb, currentColor 32%, transparent), 0 0 .8em color-mix(in srgb, currentColor 25%, transparent);
       --tgr: 0 0 .2em rgba(255,140,150,.58), 0 0 .8em rgba(230,60,80,.46);
-      text-shadow: var(--tg);
+      text-shadow: none;   /* v7.1.7: свечение не наследуется всем текстом — только заголовки, цифры, имя/ранг/титул (правила ниже) */
     }
     /* цифра уровня — своё свечение цвета ранга (drop-shadow), общее не нужно */
     body.theme-sys .sc-hex b, body.theme-sys .sc-hex .sc-idq { text-shadow: none; }
     /* вместо прежнего слабого — общее: названия упражнений, счётчики и цели (в своём цвете), текст уведомлений */
-    body.theme-sys .mscr .quest-name, body.theme-sys .quest-item .counter, body.theme-sys .quest-item .target, body.theme-sys .sys-notice .sn-body { text-shadow: var(--tg); }
+    body.theme-sys .mscr .quest-name, body.theme-sys .quest-item .counter, body.theme-sys .quest-item .target { text-shadow: var(--tg); }
     /* Бремя Аномалии: белые названия упражнений и текст красного уведомления — красное свечение */
-    body.theme-sys.sys-anom .mscr .quest-name, body.theme-sys .sys-notice.sn-red .sn-body:not(.tone-warn):not(.tone-danger) { text-shadow: var(--tgr); }
+    body.theme-sys.sys-anom .mscr .quest-name { text-shadow: var(--tgr); }
     /* тусклые серые надписи — свечение слабее */
-    body.theme-sys .mscr #limitBreakBtn:not(.ready), body.theme-sys .cal-arrow.disabled, body.theme-sys .day-cell.none { text-shadow: var(--tgd); }
     /* кнопки «Оформления»: невыбранная прежде была без свечения — теперь общее */
     body.theme-sys .sf-win.mwin .theme-seg button:not(.on) { text-shadow: var(--tg); }
     /* Бремя + свиток и Предел + свиток: общее свечение цифр и поверх — прежняя оранжевая пульсация свитка (ритм и размах те же) */
@@ -1421,14 +1426,15 @@
        имя, ранг, кредиты, характеристики, «АКТИВНЫЕ ЭФФЕКТЫ» (свечение в цвет надписи). Таблички, кнопки, таймер — своё. ===== */
     body.theme-sys .sf-win.mwin .section-title, body.theme-sys .sf-win.mwin .backup-section-title, body.theme-sys .sf-win.mwin .backup-section-title.danger,
     body.theme-sys .sf-win.mwin .st-sec-title, body.theme-sys .sf-win.mwin .codex-chapter-title,
-    body.theme-sys .sf-win.mwin #calStreakLine, body.theme-sys .sf-win.mwin .cal-month-label, body.theme-sys .sf-win.mwin .day-cell, body.theme-sys .sf-win.mwin .day-cell.has-data,
-    body.theme-sys .sf-win.mwin #stats > div:first-child, body.theme-sys .sf-win.mwin #stats .stats-caption, body.theme-sys .sf-win.mwin #stats .stat-line strong,
-    body.theme-sys .sf-win.mwin .item-name,
-    body.theme-sys #hdrName, body.theme-sys #stName, body.theme-sys #hdrRank, body.theme-sys #stRank, body.theme-sys #hdrCredits, body.theme-sys #stCredits,
+    body.theme-sys .sf-win.mwin .cal-month-label, body.theme-sys .sf-win.mwin #stats > div:first-child, body.theme-sys .sf-win.mwin #stats .stats-caption, body.theme-sys .sf-win.mwin #stats .stat-line strong,
+    body.theme-sys #hdrName, body.theme-sys #stName, body.theme-sys #hdrRank, body.theme-sys #stRank, body.theme-sys #hdrTitle, body.theme-sys #stTitle,
+    body.theme-sys #hdrExp, body.theme-sys #stExp, body.theme-sys #hdrCredits, body.theme-sys #stCredits,
     body.theme-sys .sf-win.mwin #valStr, body.theme-sys .sf-win.mwin #valAgi, body.theme-sys .sf-win.mwin #valSta, body.theme-sys .sf-win.mwin #valInt, body.theme-sys .sf-win.mwin #valPer,
-    body.theme-sys .sf-win.mwin #btnStr, body.theme-sys .sf-win.mwin #btnAgi, body.theme-sys .sf-win.mwin #btnSta, body.theme-sys .sf-win.mwin #btnInt, body.theme-sys .sf-win.mwin #btnPer,
     body.theme-sys .sf-win.mwin #statPoints, body.theme-sys .mscr .effects-header { text-shadow: var(--tg); }
-    body.theme-sys .sf-win.mwin .day-cell.none { text-shadow: var(--tgd); }
+    /* v7.1.7: без свечения — названия предметов, дни календаря, строка серии, кнопки (в т. ч. характеристик), текст уведомлений
+       (у них были свои слабые свечения из «Классики» и 7.0.x — гасятся явно) */
+    body.theme-sys .day-cell, body.theme-sys #calStreakLine, body.theme-sys .sys-notice .sn-body,
+    body.theme-sys .sf-win.mwin .eq-opt .nm, body.theme-sys .sf-win.mwin .danger-text, body.theme-sys .sf-win.mwin.sn-red .danger-text { text-shadow: none; }
   </style>
 </head>
 <body>
@@ -1899,7 +1905,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.1.6';
+  const APP_VERSION = '7.1.7';
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
@@ -4013,13 +4019,11 @@
   // Размер берётся из offsetWidth/offsetHeight — без учёта анимации появления (иначе рамка строится «сжатой»).
   // ===== v7.1.3: ПАУЗА АНИМАЦИЙ (демо 94 — нагрузка на телефонах) =====
   // Под открытым окном (обе темы): главный экран и нижние открытые окна получают класс anim-paused — их CSS-анимации
-  // замирают и продолжаются с того же места после закрытия; узоры рамки и пробеги рун под окном не рисуются.
+  // замирают и продолжаются с того же места после закрытия (с 7.1.7 узор рамки — тоже CSS-анимация); пробеги рун под окном не рисуются.
   // Верхнее окно — открытое с наибольшим z-index (при равных — последнее в разметке). Уведомления не трогаются.
-  // Во время прокрутки (только «Система»): на <body> класс sys-scrolling — замирают фон и рамка, узоры не рисуются;
-  // через SCROLL_IDLE_MS после остановки всё идёт дальше.
+  // v7.1.7: пауза во время прокрутки (7.1.3) убрана — анимации рамки стали дешёвыми, а включение паузы на каждой прокрутке само стоило работы.
   const AnimPause = (() => {
-    const SCROLL_IDLE_MS = 300;
-    let ovs = [], main = null, scrolling = false, scrollTimer = 0;
+    let ovs = [], main = null;
     const isOpen = ov => !!ov.style.display && ov.style.display !== 'none';
     function update() {
       const open = ovs.filter(isOpen);
@@ -4029,21 +4033,14 @@
       document.querySelectorAll('.anim-paused').forEach(el => { if (!want.includes(el)) el.classList.remove('anim-paused'); });
       want.forEach(el => el.classList.add('anim-paused'));
     }
-    function onScroll() {
-      if (!isSysTheme()) return;
-      if (!scrolling) { scrolling = true; document.body.classList.add('sys-scrolling'); }
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => { scrolling = false; document.body.classList.remove('sys-scrolling'); }, SCROLL_IDLE_MS);
-    }
     function init() {
       main = document.querySelector('.system-container');
       ovs = [...document.querySelectorAll('.status-overlay')];
       const mo = new MutationObserver(() => { if (typeof document !== 'undefined' && document) update(); });
       ovs.forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['style'] }));
-      document.addEventListener('scroll', onScroll, { capture: true, passive: true });
       update();
     }
-    return { init, update, scrolling: () => scrolling };
+    return { init, update };
   })();
 
   const SysFrame = (() => {
@@ -4176,8 +4173,7 @@
       // v7.1.5: без SVG-фильтров (размытие стекла, свечение линий и контура) — выбор пользователя по «Проверке нагрузки» 7.1.4
       const back = svg('', `<defs>
           ${glass('t', 1)}${glass('b', 1)}
-          <linearGradient id="${id}eg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-          <mask id="${id}mt" maskUnits="userSpaceOnUse" x="0" y="${-h}" width="${w}" height="${3 * h}">${ml(topLine)}</mask><mask id="${id}mb" maskUnits="userSpaceOnUse" x="0" y="${-h}" width="${w}" height="${3 * h}">${ml(botLine)}</mask></defs>
+          </defs>
         <polygon points="${J(panelPx)}" fill="none" stroke="${pal.col}" stroke-width="1"/>
         <line x1="${(B0[0] + 8).toFixed(1)}" y1="${(B0[1] - 2.6).toFixed(1)}" x2="${B3[0].toFixed(1)}" y2="${(B0[1] - 2.6).toFixed(1)}" stroke="${P.dark}" stroke-width="1.6" opacity=".9"/>
         <polyline points="${J([[T2[0] + 30, T4[1] + 2.4], [T4[0] - 6, T4[1] + 2.4]])}" fill="none" stroke="${P.dark}" stroke-width="1.1" opacity=".75"/>
@@ -4192,8 +4188,16 @@
         ${dots}
         <g>${halo(topLine)}</g><g>${halo(botLine)}</g>
         ${lines(topLine)}${lines(botLine)}${topSlant}
-        <g mask="url(#${id}mt)"><rect class="sf-energy" x="0" y="${tY0}" width="${enW}" height="${tY1 - tY0}" fill="url(#${id}eg)"/></g>
-        <g mask="url(#${id}mb)"><rect class="sf-energy sf-b" x="0" y="${bY0}" width="${enW}" height="${bY1 - bY0}" fill="url(#${id}eg)"/></g>`);
+        `);
+      // v7.1.7 (демо 95): бегущая энергия — отдельный слой поверх среднего стекла, виден только на линиях (маска из их контуров);
+      // вспышку сдвигает видеокарта (transform), рисунок полосы не перерисовывается. Запас E — полосы выступают за край окна.
+      const E = 40, enLayer = (fn, y0, y1, b) => {
+        const svgM = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h + 2 * E}" viewBox="0 ${-E} ${w} ${h + 2 * E}">${ml(fn)}</svg>`;
+        const url = `url(&quot;data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgM)}&quot;)`;
+        return `<div class="sf-en" aria-hidden="true" style="top:${-E}px;width:${w}px;height:${h + 2 * E}px;-webkit-mask-image:${url};mask-image:${url};-webkit-mask-size:${w}px ${h + 2 * E}px;mask-size:${w}px ${h + 2 * E}px">`
+          + `<i class="sf-energy${b ? ' sf-b' : ''}" style="top:${(y0 + E).toFixed(1)}px;height:${(y1 - y0).toFixed(1)}px;width:${enW}px;--a:${(-.25 * w).toFixed(1)}px;--z:${(1.25 * w).toFixed(1)}px"></i></div>`;
+      };
+      const en = enLayer(topLine, tY0, tY1, false) + enLayer(botLine, bY0, bY1, true);
       // ближнее стекло: сдвиг в долях толщины полосы, срез по краю окна (с запасом на выступ полос наружу)
       const sv = thick * NB.kv, sh = thick * NB.kh, ext = Math.max(thick, bh) + sv;
       const nearBar = (Q, dx, dy, key, op) => `<g transform="translate(${dx.toFixed(2)},${dy.toFixed(2)})">
@@ -4203,10 +4207,9 @@
           ${glass('nt', NB.nf)}${glass('nb', NB.nf)}
           <clipPath id="${id}nc"><rect x="0" y="${(-ext).toFixed(1)}" width="${w}" height="${(h + 2 * ext).toFixed(1)}"/></clipPath></defs>
         <g clip-path="url(#${id}nc)" opacity="${NB.nb}">${nearBar(T, sh, -sv, 't', .8)}${nearBar(B, -sh, sv, 'b', .9)}</g>`);
-      return { back, near };
+      return { back, en, near };
     }
     // ---- живой узор в центре полос: короткие светящиеся штрихи, ширина «дышит» до 45% окна, к краям гаснет ----
-    const PATS = []; let patRaf = 0, patLast = 0;
     function hash(n) { let k = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b); k ^= k >>> 13; k = Math.imul(k, 0xc2b2ae35); k ^= k >>> 16; return (k >>> 0) / 4294967295; }
     function noise(x, sd) { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return (hash(i + (sd % 100000) * 131) * (1 - u) + hash(i + 1 + (sd % 100000) * 131) * u) * 2 - 1; }
     function addPatterns(win, w, m, scheme) {   // v7.1.2: узор ровно по высоте среднего стекла
@@ -4214,19 +4217,26 @@
       patMk(win, w * .5, T[0][1], T[4][1], Wmax, P);
       patMk(win, w * .535, B[0][1], B[1][1], Wmax, P);
     }
+    // v7.1.7 (демо 95): узор рисуется один раз в PAT_FRAMES вариантах (живой узор «прокручивается» вперёд и снимается копией);
+    // кадры перетекают друг в друга анимацией прозрачности (sfPatX) — процессор больше не перерисовывает узор.
+    const PAT_FRAMES = 4, PAT_CYCLE = 12;
     function patMk(win, cx, y0, y1, Wmax, P) {
       const H = y1 - y0, dpr = Math.min(2, window.devicePixelRatio || 1);
-      const cv = document.createElement('canvas'); cv.className = 'sf-pat'; cv.setAttribute('aria-hidden', 'true');
+      const cv = document.createElement('canvas');
       const gx = canvasCtx(cv); if (!gx || H < 2) return;
       cv.width = Math.round(Wmax * dpr); cv.height = Math.round(H * dpr);
-      cv.style.cssText = `left:${(cx - Wmax / 2).toFixed(1)}px;top:${y0.toFixed(1)}px;width:${Wmax.toFixed(1)}px;height:${H.toFixed(1)}px`;
-      win.appendChild(cv);
       const Wref = Math.max(16, Wmax * .22);
       const o = { cv, g: gx, dpr, W: Wmax, Wp: Wref, H, cx: Wmax / 2, P, strokes: [], seed: Math.floor(Math.random() * 90000), r: rng(Math.floor(Math.random() * 1e9)) };
       const n = Math.max(8, Math.round(Math.min(70, Wref * H / 14) * (Wmax / Wref) * .45 * NB.pd));
       for (let i = 0; i < n; i++) o.strokes.push(patStroke(o, 0, true));
-      PATS.push(o);
-      if (!patRaf) patRaf = requestAnimationFrame(patLoop);
+      const t0 = Math.random() * 500, css = `left:${(cx - Wmax / 2).toFixed(1)}px;top:${y0.toFixed(1)}px;width:${Wmax.toFixed(1)}px;height:${H.toFixed(1)}px`;
+      for (let k = 0; k < PAT_FRAMES; k++) {
+        for (let st = 0; st < 30; st++) patDraw(o, t0 + k * 4.1 + st * .07);
+        const f = document.createElement('canvas'); f.className = 'sf-pat'; f.setAttribute('aria-hidden', 'true'); f.width = cv.width; f.height = cv.height;
+        const fg = f.getContext('2d'); if (fg) fg.drawImage(cv, 0, 0);
+        f.style.cssText = css + `;animation-delay:-${(k * PAT_CYCLE / PAT_FRAMES).toFixed(2)}s`;
+        win.appendChild(f);
+      }
     }
     function patStroke(o, t, init) {
       const r = o.r, v = r(), u = r() * 2 - 1, vert = r() < .22, pts = [[0, 0]];
@@ -4262,16 +4272,6 @@
         g.globalAlpha = Math.min(1, al); g.strokeStyle = P.pcore; g.lineWidth = st.w; g.stroke();
       }
       g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
-    }
-    // один цикл на все узоры, ~30 кадров/с; узоры удалённых и скрытых окон не рисуются; без узоров цикл останавливается.
-    // v7.1.3: не рисуются и узоры окон под открытым окном (AnimPause), и все узоры во время прокрутки.
-    function patLoop(now) {
-      for (let i = PATS.length - 1; i >= 0; i--) if (!PATS[i].cv.isConnected) PATS.splice(i, 1);
-      if (!PATS.length) { patRaf = 0; return; }
-      patRaf = requestAnimationFrame(patLoop);
-      if (document.hidden || AnimPause.scrolling() || now - patLast < 33) return; patLast = now;
-      const t = now / 1000 * NB.ps;
-      PATS.forEach(o => { if (o.cv.getClientRects().length && !o.cv.closest('.anim-paused')) patDraw(o, t); });
     }
     function mapperFit(s, Hpx) {
       const top = YT * s, bot = (G.H - YB) * s, midPx = Math.max(10, Hpx - top - bot), natural = (YB - YT) * s;
@@ -4341,7 +4341,7 @@
       // opt.cap — ширина, после которой рамка перестаёт утолщаться: окно шире, полосы и колонны прежние (растёт только середина)
       const w = win.offsetWidth, s = Math.min(w, (opt && opt.cap) || w) / G.W;
       content.style.padding = `${(YT + 70 * gap) * s}px ${((G.W - XR) * side + 65 * gap) * s}px ${(G.H - YB + 70 * gap) * s}px ${(XL * side + 70 * gap) * s}px`;
-      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen, :scope > .sf-pat').forEach(x => x.remove());
+      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen, :scope > .sf-pat, :scope > .sf-en').forEach(x => x.remove());
       const h = win.offsetHeight, m0 = mapperFit(s, h), id = 'sf' + Math.random().toString(36).slice(2, 8);
       const lw = XL * s * side, rw = (G.W - XR) * s * side, mw = w - lw - rw;
       const mx = x => x <= XL ? x * s * side : x >= XR ? w - (G.W - x) * s * side : lw + (x - XL) / (XR - XL) * mw;
@@ -4398,7 +4398,7 @@
       // v7.1.5: колонны без свечения (фильтр размытия убран)
       const under = `<svg class="sf-frm sf-under" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><g>${cols}</g></svg>`;
       const bars = buildBars({ w, h, m, scheme, id, panelPx, pal });
-      win.insertAdjacentHTML('afterbegin', under); win.insertAdjacentHTML('beforeend', bars.back);
+      win.insertAdjacentHTML('afterbegin', under); win.insertAdjacentHTML('beforeend', bars.back); win.insertAdjacentHTML('beforeend', bars.en);
       addPatterns(win, w, m, scheme);   // v7.1.2: узор — между средним и ближним стеклом
       win.insertAdjacentHTML('beforeend', bars.near);
       win.dataset.sfScheme = scheme;
@@ -4450,7 +4450,7 @@
         if (h) { h.classList.remove('mw-tt'); if (h._sysNext && h._sysNext.parentNode) h._sysNext.before(h); else box.before(h); h._sysNext = null; }
         box.remove();
       }
-      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen, :scope > .sf-pat').forEach(x => x.remove());
+      win.querySelectorAll(':scope > svg.sf-frm, :scope > .sf-screen, :scope > .sf-pat, :scope > .sf-en').forEach(x => x.remove());
       [...panel.childNodes].forEach(k => win.appendChild(k));
       win.querySelector(':scope > .sf-content').remove();
       win.classList.remove('sf-win', 'mwin', 'mscr', 'mw-in', 'sn-red', 'mw-ic', 'mw-scroll', 'mw-top');
@@ -7792,7 +7792,7 @@
   }
 
   SysTheme.init();   // v7.0.0: тема применяется до первой отрисовки
-  AnimPause.init();  // v7.1.3: пауза анимаций под открытым окном и во время прокрутки
+  AnimPause.init();  // v7.1.3: пауза анимаций под открытым окном
   try { localStorage.removeItem('sl_perf_test'); } catch (e) {}   // v7.1.5: настройки временной «Проверки нагрузки» 7.1.4 больше не нужны
   document.documentElement.classList.remove('theme-pending');
   render();

@@ -181,11 +181,11 @@ const w = boot(); const D = w.document; await tick();
     pa.every((v, i) => Math.abs(v - pb[i]) < 0.01) && pc[0] > pb[0] * 1.3 && Math.max(...clip(a620).map(p => p[0])) > 600, `${pa.join('/')} | ${pb.join('/')} | ${pc.join('/')}`);
   check('T28 v7.1.5: в рамке нет SVG-фильтров (колонны без свечения, стекло полос без размытия, линии без ореола); энергия на месте',
     a620.querySelectorAll('svg.sf-frm [filter], svg.sf-frm filter, svg.sf-frm feGaussianBlur').length === 0 && a620.querySelectorAll('svg.sf-frm').length === 3
-    && a620.querySelectorAll('svg.sf-over .sf-energy').length === 2);
+    && a620.querySelectorAll(':scope > .sf-en > .sf-energy').length === 2);
   { const ov = a620.querySelector('svg.sf-over'), un = a620.querySelector('svg.sf-under');
     const r1 = mk(390, 700); w.__el = r1; E(w, "SysFrame.render(__el, 'red', SYS_FRAME_OPT)");
     check('T52 v7.1.0 полосы по образцу (демо 91): энергия только по линиям (маски), нет прежней вспышки и штрих-кода, точки, тёмная линия, стекло; колонны с внутренним контуром; красная схема — красное стекло',
-      ov.querySelectorAll('mask').length === 2 && ov.querySelectorAll('g[mask] .sf-energy').length === 2 && !ov.querySelector('ellipse, rect.core')
+      ov.querySelectorAll('mask').length === 0 && r1.querySelectorAll(':scope > .sf-en').length === 2 && !ov.querySelector('ellipse, rect.core')
       && ov.querySelectorAll('rect.sf-dot').length >= 1 && ov.querySelectorAll('line').length === 1 && ov.querySelectorAll('polyline').length >= 15
       && un.querySelectorAll('polygon[fill="none"], polyline').length > 0 && /rgba\(5,16,50,\.7\)/.test(un.innerHTML)
       && /rgba\(196,28,56,/.test(r1.querySelector('svg.sf-over').innerHTML) && !/rgba\(34,112,236,/.test(r1.querySelector('svg.sf-over').innerHTML)
@@ -200,7 +200,7 @@ const w = boot(); const D = w.document; await tick();
     const tTop = Math.min(...tMid.map(p => p[1])), tBot = Math.max(...tMid.map(p => p[1]));
     check('T53 v7.1.2 два стекла: среднее с линиями и энергией, ближнее после него (поверх узора), без линий, вверху сдвинуто вверх-вправо, внизу вниз-влево; высота наружу; засечек нет',
       svgs.length === 2 && svgs[1] === near && near.querySelectorAll('polyline, .sf-energy').length === 0 && near.querySelectorAll('polygon').length === 6
-      && back.querySelectorAll('.sf-energy').length === 2 && JSON.stringify(tNear) === JSON.stringify(tMid)
+      && back.querySelectorAll('.sf-energy').length === 0 && JSON.stringify(tNear) === JSON.stringify(tMid)
       && trT[0] > 0 && trT[1] < 0 && trB[0] < 0 && trB[1] > 0 && Math.abs(trT[1]) > Math.abs(trT[0])
       && tTop < 0.2 * tBot && !back.querySelector('rect[width="1.3"]') && !!near.querySelector('clipPath')
       && near.querySelector('g[clip-path]').getAttribute('opacity') === '0.3',
@@ -311,12 +311,12 @@ const w = boot(); const D = w.document; await tick();
 // ===== v7.0.8: свечение всех текстов в теме «Система» =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   const i = css.indexOf('v7.0.8: свечение'), blk = i > 0 ? css.slice(i) : '';
-  check('T50 тема «Система»: общее свечение текстов (на body, цвет надписи; v7.1.5 — 2 слоя .2em/.8em), исключения и красное под Бременем',
+  check('T50 тема «Система»: общее свечение (цвет надписи; v7.1.5 — 2 слоя; v7.1.7 — не наследуется, только у заголовков, цифр, имени), исключения и красное под Бременем',
     /body\.theme-sys \{\s*\/\*[^*]*\*\/\s*--tg: 0 0 \.2em color-mix\(in srgb, currentColor 58%, transparent\), 0 0 \.8em color-mix\(in srgb, currentColor 46%, transparent\);/.test(blk)
     && /--tgr: 0 0 \.2em rgba\(255,140,150,\.58\), 0 0 \.8em rgba\(230,60,80,\.46\);/.test(blk) && !/1\.08em/.test(blk)
-    && /text-shadow: var\(--tg\);\s*\}/.test(blk)
+    && /--tgr: [^;]*;\s*text-shadow: none;/.test(blk)
     && /body\.theme-sys \.sc-hex b, body\.theme-sys \.sc-hex \.sc-idq \{ text-shadow: none; \}/.test(blk)
-    && /body\.theme-sys \.mscr \.quest-name, body\.theme-sys \.quest-item \.counter, body\.theme-sys \.quest-item \.target, body\.theme-sys \.sys-notice \.sn-body \{ text-shadow: var\(--tg\); \}/.test(blk)
+    && /body\.theme-sys \.mscr \.quest-name, body\.theme-sys \.quest-item \.counter, body\.theme-sys \.quest-item \.target \{ text-shadow: var\(--tg\); \}/.test(blk)
     && /body\.theme-sys\.sys-anom \.mscr \.quest-name[^{]*\{ text-shadow: var\(--tgr\); \}/.test(blk)
     && /@keyframes sysCursedScrollPulse \{\s*0%, 100% \{ text-shadow: var\(--tg\), 0 0 10px rgba\(255,150,0,0\.55\)/.test(blk)
     && /@keyframes sysLimitScrollPulse/.test(blk)
@@ -326,11 +326,10 @@ const w = boot(); const D = w.document; await tick();
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   { const i9 = css.indexOf('/* ===== v7.0.9:'), r9 = i9 < 0 ? '' : css.slice(i9, css.indexOf('var(--tgd); }', i9));
     const kf = css.lastIndexOf('@keyframes', i9), kfEnd = css.indexOf('\n    }', kf);
-    const need = ['.codex-chapter-title', '.section-title', '.backup-section-title.danger', '.st-sec-title', '#calStreakLine', '.cal-month-label', '.day-cell.has-data',
-      '#stats > div:first-child', '#stats .stats-caption', '#stats .stat-line strong', '.item-name', '#hdrName', '#stRank', '#hdrCredits', '#valPer', '#btnStr', '#statPoints', '.mscr .effects-header'];
+    const need = ['.codex-chapter-title', '.section-title', '.backup-section-title.danger', '.st-sec-title', '.cal-month-label',
+      '#stats > div:first-child', '#stats .stats-caption', '#stats .stat-line strong', '#hdrName', '#stRank', '#hdrTitle', '#hdrExp', '#hdrCredits', '#valPer', '#statPoints', '.mscr .effects-header']   // v7.1.7: без предметов, дней, серии, кнопок;
     check('T51 тема «Система» (7.0.9): общее свечение у заголовков разделов и глав, Летописи, Прогресса, названий предметов, шапки и «СТАТУСА»; правило вне @keyframes',
       i9 > 0 && kfEnd > 0 && kfEnd < i9 && need.every(x => r9.includes(x)) && /\{ text-shadow: var\(--tg\); \}/.test(r9)
-      && /body\.theme-sys \.sf-win\.mwin \.day-cell\.none \{ text-shadow: var\(--tgd\); \}/.test(css)
       && r9.split('\n').filter(l => /^\s*body/.test(l)).every(l => l.trim().startsWith('body.theme-sys'))); } }
 
 
@@ -340,12 +339,14 @@ const w = boot(); const D = w.document; await tick();
     !/sfDrift/.test(css) && /\.sf-circ \{[^}]*\}/.test(css) && !/\.sf-circ \{[^}]*animation/.test(css) && !/\.sf-scr \{[^}]*animation/.test(css)
     && /\.sf-shim i \{[^}]*animation: sfShim/.test(css) && !/\.sf-shim i \{[^}]*filter:/.test(css) && !/mix-blend-mode: screen; \}\n\s*\.sf-shim i/.test(css) && !/\.sf-shim \{ mix-blend-mode/.test(css)
     && /body\.theme-sys \.mscr \.sf-shim \{ display: none; \}/.test(css));
-  check('T55 правила паузы: под окном — обе темы (anim-paused), во время прокрутки — только «Система», фон и рамка',
+  check('T55 правила паузы: под окном — обе темы (anim-paused); v7.1.7 — паузы во время прокрутки нет',
     /\.anim-paused, \.anim-paused \*, \.anim-paused \*::before, \.anim-paused \*::after \{ animation-play-state: paused !important; \}/.test(css)
-    && /body\.theme-sys\.sys-scrolling \.sf-screen \*, body\.theme-sys\.sys-scrolling svg\.sf-frm \* \{ animation-play-state: paused !important; \}/.test(css));
+    && !/sys-scrolling/.test(css));
   const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
-  check('T56 узор рамки не рисуется под окном и во время прокрутки; пробег руны под окном пропускается; текстуры размыты заранее (1,2 px)',
-    /AnimPause\.scrolling\(\) \|\| now - patLast < 33/.test(src) && /o\.cv\.getClientRects\(\)\.length && !o\.cv\.closest\('\.anim-paused'\)/.test(src)
+  check('T56 v7.1.7: узор — 4 заготовленных кадра с перетеканием (CSS, замирает под окном), живого цикла нет; пробег руны под окном пропускается; текстуры размыты заранее',
+    /const PAT_FRAMES = 4, PAT_CYCLE = 12;/.test(src) && !/patLoop|requestAnimationFrame\(patLoop\)|AnimPause\.scrolling|sys-scrolling/.test(src)
+    && /\.sf-win > \.sf-pat \{ opacity: 0; animation: sfPatX 12s linear infinite; will-change: opacity; \}/.test(css)
+    && /@keyframes sfPatX \{ 0% \{ opacity: 0; \} 17\.5% \{ opacity: \.8; \} 25% \{ opacity: \.8; \} 42\.5% \{ opacity: 0; \} 100% \{ opacity: 0; \} \}/.test(css)
     && /!document\.hidden && !svg\.closest\('\.anim-paused'\)\) runRuneBolt/.test(src) && /const TEX_BLUR = 1\.2;/.test(src) && (src.match(/return texBake\(c\);/g) || []).length === 2); }
 { const mk = (cls) => { const el = D.createElement('div'); el.className = cls; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
     Object.defineProperty(el, 'offsetWidth', { value: 380 }); Object.defineProperty(el, 'offsetHeight', { value: 900 }); D.body.appendChild(el); return el; };
@@ -369,12 +370,8 @@ const w = boot(); const D = w.document; await tick();
       p0 === '' && p1 === 'system-container' && p2 === 'shopOverlay,system-container' && p3 === 'system-container' && p4 === '', [p0, p1, p2, p3, p4].join(' | '));
   }
   E(w, "setTheme('system')"); await tick();
-  D.dispatchEvent(new w.Event('scroll'));
-  const on1 = D.body.classList.contains('sys-scrolling') && E(w, 'AnimPause.scrolling()');
-  await sleep(380); const off1 = !D.body.classList.contains('sys-scrolling') && !E(w, 'AnimPause.scrolling()');
-  E(w, "setTheme('classic')"); D.dispatchEvent(new w.Event('scroll')); const cls = !D.body.classList.contains('sys-scrolling'); await sleep(380);
-  E(w, "setTheme('system')"); await tick();
-  check('T59 прокрутка в «Системе»: фон и рамка замирают и через 0,3 с после остановки идут дальше; в «Классике» — без изменений', on1 && off1 && cls); }
+  D.dispatchEvent(new w.Event('scroll')); await tick();
+  check('T59 v7.1.7: прокрутка ничего не ставит на паузу (класса sys-scrolling нет)', !D.body.classList.contains('sys-scrolling') && typeof E(w, 'AnimPause.scrolling') === 'undefined'); }
 
 // ===== v7.1.5 =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
@@ -393,6 +390,29 @@ const w = boot(); const D = w.document; await tick();
   const pool = J(w, 'SYSTEM_NOTICES.complete');
   check('T62 уведомление о выполнении задания: «Задание выполнено в полном объёме.» вместо «исполнено»',
     JSON.parse(pool).includes('Задание выполнено в полном объёме.') && !/Задание исполнено/.test(pool) && new Set(JSON.parse(pool)).size === 9, pool); }
+
+// ===== v7.1.7 =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const mk = () => { const el = D.createElement('div'); el.className = 'sf-win mwin'; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
+    Object.defineProperty(el, 'offsetWidth', { value: 390 }); Object.defineProperty(el, 'offsetHeight', { value: 600 }); D.body.appendChild(el); return el; };
+  const e1 = mk(); w.__el = e1; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
+  const ens = [...e1.querySelectorAll(':scope > .sf-en')], kids = [...e1.children].map(c => c.classList.contains('sf-near') ? 'near' : c.classList.contains('sf-en') ? 'en' : c.classList.contains('sf-over') ? 'back' : '');
+  const ok = ens.length === 2 && ens.every(d => /mask-image:\s*url\("data:image\/svg\+xml/.test(d.getAttribute('style')) && d.querySelector('i.sf-energy'))
+    && ens[1].querySelector('i.sf-b') && /--a:-97\.5px;--z:487\.5px/.test(ens[0].querySelector('i').getAttribute('style'))
+    && kids.indexOf('back') < kids.indexOf('en') && kids.lastIndexOf('en') < kids.indexOf('near');
+  check('T63 энергия — отдельный слой с маской по линиям (2 полосы), вспышка от −25% до 125% ширины окна, между средним и ближним стеклом; в анимации — только transform',
+    ok && /@keyframes sfEnergy \{ 0% \{ transform: translateX\(var\(--a\)\); \} 60%, 100% \{ transform: translateX\(var\(--z\)\); \} \}/.test(css)
+    && /\.sf-en > \.sf-energy\.sf-b \{ animation-delay: -4\.4s; \}/.test(css), kids.join(','));
+  E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)"); const twice = e1.querySelectorAll(':scope > .sf-en').length;
+  e1.remove();
+  E(w, "setTheme('classic')"); await tick(); const leftC = D.querySelectorAll('.sf-en, .sf-pat, svg.sf-frm').length; E(w, "setTheme('system')"); await tick();
+  check('T65 повторная отрисовка рамки не копит слои энергии; в «Классике» слоёв энергии и рамки не остаётся', twice === 2 && leftC === 0, `${twice} ${leftC}`);
+  check('T64 свечение текста: на body нет; у заголовков окон, разделов, глав, «Активных эффектов», упражнений, цифр, имени/ранга/титула, опыта и кредитов — есть; у предметов, дней, кнопок, текста уведомлений — нет',
+    /body\.theme-sys #hdrName, body\.theme-sys #stName, body\.theme-sys #hdrRank, body\.theme-sys #stRank, body\.theme-sys #hdrTitle, body\.theme-sys #stTitle,\s+body\.theme-sys #hdrExp, body\.theme-sys #stExp, body\.theme-sys #hdrCredits, body\.theme-sys #stCredits,/.test(css)
+    && /body\.theme-sys \.sf-win\.mwin \.item-name \{[^}]*text-shadow: none;/.test(css)
+    && /body\.theme-sys \.day-cell, body\.theme-sys #calStreakLine, body\.theme-sys \.sys-notice \.sn-body,[^{]*\{ text-shadow: none; \}/.test(css)
+    && /letter-spacing: 1\.5px; text-shadow: none;   \/\* v7\.1\.7: кнопки без свечения \*\//.test(css)
+    && !/\.sf-win\.mwin \.item-name, body/.test(css) && !/#btnStr/.test(css.slice(css.indexOf('v7.0.9:')))); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
