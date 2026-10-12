@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.2.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1126,7 +1126,7 @@
     /* --- окно: рамка, табличка заголовка, развёртка --- */
     body.theme-sys .sf-win.mwin { background: none; border: 0; border-radius: 0; box-shadow: none; padding: 0; width: min(460px, 98vw); max-width: none; max-height: none; display: block; }
     body.theme-sys .item-preview-box.sf-win.mwin { width: min(380px, 94vw); cursor: pointer; }
-    body.theme-sys .stat-lore-box.sf-win.mwin { width: min(360px, 92vw); }
+    body.theme-sys .stat-lore-box.sf-win.mwin { width: min(360px, 92vw); cursor: pointer; }   /* v7.2.7: закрывается касанием и по карточке */
     body.theme-sys .sf-win.mwin::before, body.theme-sys .sf-win.mwin::after { display: none; }
     body.theme-sys .sf-win.mwin > .sf-content { display: flex; flex-direction: column; max-height: 92vh; box-sizing: border-box; }
     body.theme-sys .sf-win.mw-scroll .status-body { padding-bottom: 16px; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent); }
@@ -1506,7 +1506,7 @@
   </div>
 </div>
 
-<div class="status-overlay" id="statLoreOverlay" style="z-index:1600;" onclick="if(event.target.id==='statLoreOverlay') closeStatLore()">
+<div class="status-overlay" id="statLoreOverlay" style="z-index:1600; cursor:pointer;" onclick="closeStatLore()">
   <div class="stat-lore-box">
     <div class="stat-lore-header" id="statLoreHeader"></div>
     <div class="stat-lore-text" id="statLoreText"></div>
@@ -1927,7 +1927,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.6';
+  const APP_VERSION = '7.2.7';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система

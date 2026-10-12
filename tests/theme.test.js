@@ -555,6 +555,20 @@ const w = boot(); const D = w.document; await tick();
       const blk = c.slice(a, b).split('\n').filter(l => /\{/.test(l) && !/^\s*\/\*/.test(l));
       return a > 0 && a < b && blk.length >= 10 && blk.every(l => /^\s*body:not\(\.theme-sys\)/.test(l)); })()); }
 
+// ===== v7.2.7: окно описания характеристики закрывается касанием в любом месте (обе темы) =====
+{ const x = boot(); await tick(); const XD = x.document;
+  const r = {};
+  for (const th of ['system', 'classic']) {
+    E(x, `setTheme('${th}')`); closeAll(x); XD.getElementById('rankInfoBtn').click(); await tick();
+    const open = () => XD.getElementById('statLoreOverlay').style.display === 'flex';
+    const label = XD.querySelector('#statusOverlay [onclick*="showStatLore"]');
+    const hit = async sel => { label.click(); await tick(); const was = open(); XD.querySelector(sel).click(); await tick(); return was && !open(); };
+    r[th] = { text: await hit('#statLoreText'), head: await hit('#statLoreHeader'), box: await hit('#statLoreOverlay .stat-lore-box'), bg: await hit('#statLoreOverlay'),
+      statusOpen: XD.getElementById('statusOverlay').style.display === 'flex', cur: x.getComputedStyle(XD.getElementById('statLoreOverlay')).cursor };
+  }
+  const ok = t => t.text && t.head && t.box && t.bg && t.statusOpen && t.cur === 'pointer';
+  check('T93 описание характеристики: касание по тексту, заголовку, карточке и фону закрывает окно, «Статус» остаётся открытым — в обеих темах', ok(r.system) && ok(r.classic), JSON.stringify(r)); }
+
 // ===== v7.2.4: пульсации «свиток + Бремя / Предел» в «Системе» — плавные (без var(--tg) в кадрах) =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   const kf = n => { const m = css.match(new RegExp('@keyframes ' + n + ' \\{([\\s\\S]*?)\\n    \\}')); return m ? m[1] : ''; };
