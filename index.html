@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.2.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1926,7 +1926,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.4';
+  const APP_VERSION = '7.2.5';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2632,9 +2632,10 @@
               isPending: true,
               sparkCount: 1
             });
-          } else if (data.curseActiveToday) {
+          } else if (data.curseActiveToday && data.insuranceSourceId !== 'rune_protection_absolute') {
             // Руна активирована раньше, Бремя уже наступило — при провале
             // она сгорит без эффекта (см. computePenaltyAndApply).
+            // v7.2.5: Абсолютная Бремени не подавляется — сюда не попадает.
             effects.push({
               icon: `icons/items/${data.insuranceSourceId}.png`,
               name: `${item.name} (подавлена)`,

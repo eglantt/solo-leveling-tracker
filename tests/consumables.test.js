@@ -514,6 +514,30 @@ const CQ = 'Свиток вступит в силу со следующим ци
     check('F48 Инвентарь: в разделе «Свитки»', (() => { E(w, `data.consumables.scroll_focus=1; openInv()`); return E(w, `(() => { const t = document.getElementById('invContent') ? document.getElementById('invContent').innerHTML : document.body.innerHTML; const i = t.indexOf('Свиток Сосредоточения'); const sc = t.lastIndexOf('Свитки', i); const rs = t.lastIndexOf('Расходники', i); return i > 0 && sc > rs; })()`); })()); }
 }
 
+// ===== AB. v7.2.5: Абсолютная Защита под Бременем не «подавлена» в панели =====
+{
+  const prot = w => JSON.parse(J(w, `getActiveEffects().filter(e=>/Защит|Стабильн/.test(e.name)).map(e=>({n:e.name,t:e.text,s:!!e.isSuppressed}))`));
+  const abs = l => l.find(e => e.n.startsWith('Руна Абсолютной Защиты'));
+  const F = "data.activeScroll='focus'; data.focusExerciseId='pullups';";
+  const cases = [
+    ['AB1 Стабильность → Абсолютная, Бремя', `data.curseActiveToday=true;`, ['rune_stability','rune_protection_absolute']],
+    ['AB2 то же + Свиток Сосредоточения', `data.curseActiveToday=true; ${F}`, ['rune_stability','rune_protection_absolute']],
+    ['AB3 щит серии без источника (старое сохранение) + Абсолютная, Бремя + Сосредоточение', `data.curseActiveToday=true; data.streakShield=true; data.streakShieldSourceId=null; ${F}`, ['rune_protection_absolute']],
+  ];
+  for (const [n, extra, items] of cases) {
+    const w = fresh(extra); items.forEach(id => use(w, id)); const l = prot(w); const a = abs(l);
+    check(n + ': Абсолютная без «(подавлена)», с обычным описанием', a && a.n === 'Руна Абсолютной Защиты' && !a.s && !/подавляет/.test(a.t), JSON.stringify(l));
+    check(n + ': Руна Стабильности в панели', l.some(e => e.n === 'Руна Стабильности'), JSON.stringify(l));
+    check(n + ': провал — штрафа нет (день «защищён»)', failDayStatus(w) === 'protected');
+  }
+  { const w = fresh(`data.curseActiveToday=true; ${F}`); use(w, 'rune_protection_absolute'); const l = prot(w);
+    check('AB4 только Абсолютная, Бремя + Сосредоточение: одна иконка без пометки', l.length === 1 && l[0].n === 'Руна Абсолютной Защиты' && !l[0].s, JSON.stringify(l)); }
+  for (const id of ['rune_protection','rune_protection_charged']) {
+    const w = fresh(setIns(id) + ' data.curseActiveToday=true;'); const a = prot(w).find(e => e.n.includes(NAME[id]));
+    check(`AB5 ${NAME[id]} под Бременем — по-прежнему «(подавлена)»`, a && a.n === NAME[id] + ' (подавлена)' && a.s, JSON.stringify(a));
+  }
+}
+
 console.log(results.join('\n'));
 const nFail = results.filter(r => r.startsWith('FAIL')).length;
 console.log(`\nИтого: ${results.length - nFail} OK, ${nFail} FAIL`);
