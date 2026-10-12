@@ -538,6 +538,10 @@ const w = boot(); const D = w.document; await tick();
     oneJs: cs(one).justifySelf, oneW: cs(one).width };
   check('T86 «Классика», Инвентарь: две кнопки — строкой пополам через 10 px, одна («ОТКРЫТЬ») — справа в полстроки (как вторая из двух); размер кнопок прежний (6 px, 0.7rem)',
     i.st === 'grid' && /1fr 1fr/.test(i.cols) && i.gap === '10px' && i.uPad === '6px' && i.uFs === '0.7rem' && i.oneJs === 'end' && /calc\(50% - 5px\)/.test(i.oneW), JSON.stringify(i));
+  { const mt = el => cs(el).marginTop;
+    const r = { price: mt(sp), stack: mt(stack), one: mt(one), name: mt(sc.querySelector('.item-name')), desc: mt(sc.querySelector('.item-desc')) };
+    check('T92 «Классика» (v7.2.6): строка кнопок отодвинута на 4 px (итого 8 px от описания) — цена, пара кнопок, одиночная; название и описание без сдвига',
+      r.price === '4px' && r.stack === '4px' && r.one === '4px' && r.name === '0px' && r.desc === '0px', JSON.stringify(r)); }
   closeAll(x); XD.getElementById('leaderboardContent').innerHTML = '<div class="item-card"><div class="item-info"><div class="item-name">A</div></div></div>';
   E(x, "document.getElementById('leaderboardOverlay').style.display = 'flex'"); await tick();
   const lb = XD.querySelector('#leaderboardContent .item-card');
