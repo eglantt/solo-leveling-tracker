@@ -335,27 +335,23 @@ const w = boot(); const D = w.document; await tick();
 
 // ===== v7.1.3: облегчение для телефонов (демо 94) =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
-  check('T54 фон окон неподвижен (без дрейфа), пятна света — без живого размытия и наложения, на главном экране их нет',
-    !/sfDrift/.test(css) && /\.sf-circ \{[^}]*\}/.test(css) && !/\.sf-circ \{[^}]*animation/.test(css) && !/\.sf-scr \{[^}]*animation/.test(css)
-    && /\.sf-shim i \{[^}]*animation: sfShim/.test(css) && !/\.sf-shim i \{[^}]*filter:/.test(css) && !/mix-blend-mode: screen; \}\n\s*\.sf-shim i/.test(css) && !/\.sf-shim \{ mix-blend-mode/.test(css)
-    && /body\.theme-sys \.mscr \.sf-shim \{ display: none; \}/.test(css));
+  check('T54 v7.3.1: прежнего фона окон нет — ни «схемы» и «царапин», ни пятен света (и их анимации), ни дрейфа',
+    !/sfDrift|sfShim|\.sf-shim|\.sf-circ|\.sf-scr\b|\.sf-bg \{|--sf-pat/.test(css));
   check('T55 правила паузы: под окном — обе темы (anim-paused); v7.1.7 — паузы во время прокрутки нет',
     /\.anim-paused, \.anim-paused \*, \.anim-paused \*::before, \.anim-paused \*::after \{ animation-play-state: paused !important; \}/.test(css)
     && !/sys-scrolling/.test(css));
   const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
-  check('T56 v7.1.7: узор — 4 заготовленных кадра с перетеканием (CSS, замирает под окном), живого цикла нет; пробег руны под окном пропускается; текстуры размыты заранее',
-    /const PAT_FRAMES = 4, PAT_CYCLE = 12;/.test(src) && !/patLoop|requestAnimationFrame\(patLoop\)|AnimPause\.scrolling|sys-scrolling/.test(src)
-    && /\.sf-win > \.sf-pat \{ opacity: 0; animation: sfPatX 12s linear infinite; will-change: opacity; \}/.test(css)
-    && /@keyframes sfPatX \{ 0% \{ opacity: 0; \} 17\.5% \{ opacity: \.8; \} 25% \{ opacity: \.8; \} 42\.5% \{ opacity: 0; \} 100% \{ opacity: 0; \} \}/.test(css)
-    && /!document\.hidden && !svg\.closest\('\.anim-paused'\)\) runRuneBolt/.test(src) && /const TEX_BLUR = 1\.2;/.test(src) && (src.match(/return texBake\(c\);/g) || []).length === 2); }
+  check('T56 узор полос — заготовленные кадры с перетеканием (CSS, замирает под окном), живого цикла нет; пробег руны под окном пропускается; текстур прежнего фона нет',
+    /const PLC = \{[^}]*frames: 12, step: 1\.5,/.test(src) && !/patLoop|PAT_FRAMES|sfPatX|AnimPause\.scrolling|sys-scrolling/.test(src + css)
+    && /!document\.hidden && !svg\.closest\('\.anim-paused'\)\) runRuneBolt/.test(src) && !/texBake|texCircuit|texScratch|TEXC|TEX_BLUR/.test(src)); }
 { const mk = (cls) => { const el = D.createElement('div'); el.className = cls; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
     Object.defineProperty(el, 'offsetWidth', { value: 380 }); Object.defineProperty(el, 'offsetHeight', { value: 900 }); D.body.appendChild(el); return el; };
   const mw = mk('sf-win mwin mscr'), ww = mk('sf-win mwin');
   w.__el = mw; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)"); w.__el = ww; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
   const cm = mw.querySelector('.sf-screen').style.clipPath, cw = ww.querySelector('.sf-screen').style.clipPath;
-  const ins = (cm.match(/^inset\(([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px\)$/) || []).slice(1).map(Number), vg = mw.querySelector('.sf-screen > .sf-vig');
-  check('T57 v7.1.5: фон главного экрана обрезан прямоугольником по внутренней границе края (10–25px), виньетка по тем же краям; у окон — по форме рамки',
-    ins.length === 4 && ins.every(v => v >= 8 && v <= 30) && !!vg && vg.style.left === ins[3] + 'px' && vg.style.right === ins[1] + 'px' && /^polygon\(/.test(cw) && !ww.querySelector('.sf-vig'),
+  const ins = (cm.match(/^inset\(([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px\)$/) || []).slice(1).map(Number), vg = mw.querySelector('.sf-vig');
+  check('T57 фон главного экрана обрезан прямоугольником по внутренней границе края (10–25px), у окон — по форме рамки; v7.3.1: полосы виньетки нет (виньетка — в картинке фона)',
+    ins.length === 4 && ins.every(v => v >= 8 && v <= 30) && !vg && /^polygon\(/.test(cw) && !ww.querySelector('.sf-vig'),
     `${cm} | ${cw.slice(0, 20)}`);
   mw.remove(); ww.remove();
   for (const theme of ['system', 'classic']) {
@@ -375,18 +371,16 @@ const w = boot(); const D = w.document; await tick();
 
 // ===== v7.1.5 =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
-  check('T60 виньетка главного экрана 16px в цвет основы (под Бременем — красно-тёмная); «Проверки нагрузки» в Длани больше нет, её запись стирается',
-    /body\.theme-sys \.mscr \.sf-vig \{[^}]*linear-gradient\(90deg, #030914, rgba\(3,9,20,0\) 16px, rgba\(3,9,20,0\) calc\(100% - 16px\), #030914\)/.test(css)
-    && /body\.theme-sys\.sys-anom \.mscr \.sf-vig \{ background: linear-gradient\(90deg, #12040a, rgba\(18,4,10,0\) 16px/.test(css)
+  check('T60 v7.3.1: правил полосы виньетки нет (виньетка 16px — в картинке фона главного экрана); «Проверки нагрузки» в Длани нет, её запись стирается',
+    !/\.sf-vig/.test(css) && /side\(red \? '18,4,10' : '2,14,24'\)/.test(src) && /const MBG_VIG = 16;/.test(src)
     && !D.getElementById('perfTestSection') && !/perf-tg|perf-col|perf-ico|perfTest/.test(css + src) && /localStorage\.removeItem\('sl_perf_test'\)/.test(src)); }
-
 // ===== v7.1.6 =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
-  check('T61 фон главного экрана — одна картинка размером с экран (узоры с прежней прозрачностью, виньетка 16px, красная под Бременем), «прилипает» к экрану; без холста — прежние слои',
+  check('T61 фон главного экрана — одна картинка размером с экран, «прилипает» к экрану; v7.3.1: без рисунка или холста — однотонная основа (под Бременем красно-тёмная)',
     /body\.theme-sys \.mscr > \.sf-screen \{ overflow: clip; \}/.test(css) && /body\.theme-sys \.mscr \.sf-mbg \{ position: sticky; top: 0; display: block; \}/.test(css)
-    && /const MBG_PAT = 0\.55, MBG_VIG = 16;/.test(src) && /\[\[TEXC_CV, MBG_PAT \* \.9\], \[TEXS_CV, MBG_PAT \* \.85\]\]/.test(src)
-    && /g\.fillStyle = red \? '#12040a' : '#030914'/.test(src) && /hue-rotate\(140deg\) saturate\(1\.3\)/.test(src) && /mbg = mainBg\(w, L, R, scheme === 'red'\);/.test(src)
-    && /if \(mbg\) scr\.appendChild\(mbg\);\s+else if \(win\.classList\.contains\('mscr'\)\) scr\.innerHTML = OLD_BG\(\) \+ vig;/.test(src));
+    && !/MBG_PAT/.test(src) && /\} else \{ g\.fillStyle = red \? '#12040a' : '#030914'; g\.fillRect\(0, 0, cv\.width, H\); \}/.test(src) && /mbg = mainBg\(w, L, R, scheme === 'red'\);/.test(src)
+    && /if \(mbg\) scr\.appendChild\(mbg\);\s+else if \(win\.classList\.contains\('mscr'\)\) scr\.innerHTML = OLD_BG\(\);/.test(src)
+    && /const OLD_BG = \(\) => '<div class="sf-base"><\/div>';/.test(src));
   const pool = J(w, 'SYSTEM_NOTICES.complete');
   check('T62 уведомление о выполнении задания: «Задание выполнено в полном объёме.» вместо «исполнено»',
     JSON.parse(pool).includes('Задание выполнено в полном объёме.') && !/Задание исполнено/.test(pool) && new Set(JSON.parse(pool)).size === 9, pool); }
@@ -688,6 +682,28 @@ const w = boot(); const D = w.document; await tick();
   closeAll(w); E(w, 'data.curseActiveToday = false; render()'); await tick(); [wn, mn, nt].forEach(e => e.remove());
   check('T103 без холста — прежний фон (окно, главный экран, уведомление); под Бременем фон перекрашивается без ошибок, окна остаются синими',
     oldOk && err === '' && anom && !shopRed && /SysFrame\.artRefresh\(\);/.test(src), [!!oldOk, err, anom, shopRed].join('/')); }
+
+// ===== v7.3.1: нити плазмы в полосах (демо 103); прежнего фона нет =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  const fn = n => { const m = src.match(new RegExp('function ' + n + '\\([\\s\\S]*?\\n    \\}')); return m ? m[0] : ''; };
+  check('T104 сборка демо 103: нитей 9 и 8 дальних, наклон 30°, извилистость 85%, середина 2,2 и ореол 3,5 px, яркость 90%, ширина 50% (дыхание 45%), затухание 15%, узлы 10%, отражение 15% / 1 px, 12 кадров по 1,5 с, сдвиг 25%, мерцание 45%',
+    /const PLC = \{ n: 9, far: 8, ang: 30, wig: \.85, core: 2\.2, halo: 3\.5, br: \.9, span: \.5, breath: \.45, fade: \.15,\s+nodeK: \.1, reflK: \.15, reflD: 1, frames: 12, step: 1\.5, drift: \.25, flick: \.45, keep: 6 \};/.test(src)
+    && /plPlace\(win, T, P, scheme, 't', \[shh, -sv\], w, w \* \.5,/.test(src) && /plPlace\(win, B, P, scheme, 'b', \[-shh, sv\], w, w \* \.535,/.test(src));
+  check('T105 перетекание: 12 кадров, цикл 18 с, мягкость 100% (кадр нарастает 1,5 с и гаснет 1,5 с), кадры складываются; набор, готовый позже, проявляется за 0,5 с; без живого размытия',
+    /\.sf-plw > i \{ position: absolute; inset: 0; background-size: 100% 100%; background-repeat: no-repeat; opacity: 0;\s+animation: sfPl 18s linear infinite; mix-blend-mode: plus-lighter; will-change: opacity; \}/.test(css)
+    && /@keyframes sfPl \{ 0% \{ opacity: 0; \} 8\.333% \{ opacity: 1; \} 16\.667% \{ opacity: 0; \} 100% \{ opacity: 0; \} \}/.test(css)
+    && /\.sf-win > \.sf-pat\.sf-pin \{ animation: sfPlIn \.5s ease-out both; \}/.test(css) && /animation-delay:-\$\{\(k \* PLC\.step\)\.toFixed\(2\)\}s/.test(fn('plFill'))
+    && !/(filter: blur|backdrop-filter)[^}]*\}/.test((css.match(/\.sf-plw[^}]*\}/g) || []).join('')));
+  check('T106 кадры рисуются один раз на форму полосы и цвет (общий набор картинок), по кадру в свободное время; при отрисовке рамки — только расстановка; лишние наборы освобождаются',
+    /let S = PLS\.get\(key\);/.test(fn('plPlace')) && /PLQ\.push\(S\); plKick\(\);/.test(fn('plPlace')) && !/plFrame\(/.test(fn('plPlace') + fn('addPatterns') + fn('plFill'))
+    && /requestIdleCallback\(go, \{ timeout: 400 \}\)/.test(fn('plKick')) && /S\.cvs\.push\(plFrame\(S, S\.k\+\+\)\);/.test(fn('plStep')) && /URL\.createObjectURL\(b\)/.test(fn('plStep'))
+    && /URL\.revokeObjectURL\(u\)/.test(fn('plTrim')) && /used\.has\(k\)/.test(fn('plTrim'))
+    && /g\.globalCompositeOperation = 'destination-in'; g\.fillStyle = '#000'; poly\(QL\); g\.fill\(\);/.test(fn('plFrame')));
+  const mk = cls => { const el = D.createElement('div'); el.className = cls; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
+    Object.defineProperty(el, 'offsetWidth', { value: 390 }); Object.defineProperty(el, 'offsetHeight', { value: 600 }); D.body.appendChild(el); return el; };
+  const a = mk('sf-win mwin'); w.__a = a; let err = ''; try { E(w, "SysFrame.render(__a, 'blue', SYS_FRAME_OPT); SysFrame.render(__a, 'red', SYS_FRAME_OPT)"); } catch (e) { err = String(e); }
+  const ok = err === '' && !a.querySelector('.sf-plw, canvas.sf-pat') && a.querySelectorAll(':scope > .sf-en').length === 2 && a.querySelector('.sf-screen > .sf-base'); a.remove();
+  check('T107 без холста (jsdom) — полосы без узора, основа однотонная, вспышка энергии на месте, ошибок нет', !!ok, err); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);

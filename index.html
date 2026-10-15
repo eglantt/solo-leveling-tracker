@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1044,18 +1044,11 @@
     .sys-btn-pair .backup-action-btn { flex: 1 1 0; min-width: 0; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
     .sys-btn-pair .cr-ic { vertical-align: -1px; }
     /* ===== v6.11.0: оформление Системы — рамка (SysFrame) и уведомление ===== */
-    .sf-win { position: relative; --sf-pat: .55; }
+    .sf-win { position: relative; }
     .sf-win > svg.sf-frm { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
     .sf-win > svg.sf-under { z-index: 0; } .sf-win > svg.sf-over { z-index: 3; }
     .sf-screen { position: absolute; left: 0; top: 0; z-index: 1; overflow: hidden; pointer-events: none; }
     .sf-screen .sf-base { position: absolute; inset: 0; background: #030914; }
-    .sf-bg { position: absolute; inset: 0; pointer-events: none; opacity: var(--sf-pat); }
-    /* v7.1.3 (демо 94, нагрузка на телефонах): фон неподвижен и размыт заранее (texBake); пятна света — мягкий градиент без живого размытия и наложения */
-    .sf-circ { background-repeat: repeat; background-size: 300px 300px; opacity: calc(var(--sf-pat) * .9); }
-    .sf-scr { background-repeat: repeat; background-size: 320px 320px; opacity: calc(var(--sf-pat) * .85); }
-    .sf-shim i { position: absolute; width: 75%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(70,150,255,.22) 0%, rgba(70,150,255,.12) 30%, rgba(70,150,255,.04) 52%, transparent 70%); animation: sfShim 9s ease-in-out infinite; }
-    .sf-shim i:nth-child(1) { left: -15%; top: -10%; } .sf-shim i:nth-child(2) { right: -20%; top: 30%; animation-delay: -3.1s; } .sf-shim i:nth-child(3) { left: 15%; bottom: -25%; animation-delay: -6.3s; }
-    @keyframes sfShim { 0%, 100% { opacity: .25; transform: translate(0,0) scale(.85); } 50% { opacity: 1; transform: translate(8%,6%) scale(1.15); } }
     /* v7.1.7: энергия — слой .sf-en (маска по линиям), вспышка .sf-energy двигается transform от --a до --z (−25% … 125% ширины окна) */
     .sf-win > .sf-en { position: absolute; left: 0; z-index: 3; pointer-events: none; overflow: hidden; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
     .sf-en > .sf-energy { position: absolute; left: 0; display: block; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.95), rgba(255,255,255,0));
@@ -1063,9 +1056,14 @@
     .sf-en > .sf-energy.sf-b { animation-delay: -4.4s; }
     .sf-win > .sf-pat { position: absolute; z-index: 3; pointer-events: none; }   /* v7.1.0: живой узор в центре полос; v7.1.2 — под ближним стеклом (тот же слой, ближнее стекло идёт после) */
     @keyframes sfEnergy { 0% { transform: translateX(var(--a)); } 60%, 100% { transform: translateX(var(--z)); } }
-    /* v7.1.7 (демо 95): узор полос — 4 заранее нарисованных кадра перетекают друг в друга (цикл 12 с, мягкость 70%, яркость 80%) */
-    .sf-win > .sf-pat { opacity: 0; animation: sfPatX 12s linear infinite; will-change: opacity; }
-    @keyframes sfPatX { 0% { opacity: 0; } 17.5% { opacity: .8; } 25% { opacity: .8; } 42.5% { opacity: 0; } 100% { opacity: 0; } }
+    /* v7.3.1 (демо 103): узор полос — нити плазмы: 12 заранее нарисованных кадров по 1,5 с перетекают друг в друга (цикл 18 с,
+       мягкость 100%), кадры складываются (plus-lighter — переход без провала яркости); набор, готовый позже окна, проявляется за 0,5 с */
+    .sf-win > .sf-pat.sf-plw { mix-blend-mode: plus-lighter; }
+    .sf-plw > i { position: absolute; inset: 0; background-size: 100% 100%; background-repeat: no-repeat; opacity: 0;
+      animation: sfPl 18s linear infinite; mix-blend-mode: plus-lighter; will-change: opacity; }
+    @keyframes sfPl { 0% { opacity: 0; } 8.333% { opacity: 1; } 16.667% { opacity: 0; } 100% { opacity: 0; } }
+    .sf-win > .sf-pat.sf-pin { animation: sfPlIn .5s ease-out both; }
+    @keyframes sfPlIn { from { opacity: 0; } to { opacity: 1; } }
     .sf-content { position: relative; z-index: 2; }
     /* v7.1.3: пауза анимаций под открытым окном (обе темы, AnimPause) и фона/рамки во время прокрутки («Система») */
     .anim-paused, .anim-paused *, .anim-paused *::before, .anim-paused *::after { animation-play-state: paused !important; }
@@ -1322,7 +1320,6 @@
     body.theme-sys .quest-panel.mscr { width: min(620px, 98vw); max-width: none; background: none; border: 0; border-radius: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: visible; }
     body.theme-sys .quest-panel.mscr > .sf-content { display: block; max-height: none; }
     body.theme-sys .quest-panel.mscr .sf-panel.mw { display: block; }
-    body.theme-sys .mscr .sf-shim { display: none; }       /* v7.1.3: на главном экране пятен света нет — облегчает прокрутку длинной страницы */
     body.theme-sys .mscr .header { background: none; padding: 0; border-bottom: 0; gap: 12px; }
     body.theme-sys .mscr .header-top-row { display: block; }
     body.theme-sys .mscr .mw-hdr { margin-bottom: 0; }
@@ -1354,14 +1351,10 @@
       --acc: #ff6b7d; --accg: rgba(255,60,90,.75); --hg1: #ff6b7d; --hg2: #ff2d4d; }
     body.theme-sys.sys-anom .mscr .sf-panel { border-color: #ff8a96; box-shadow: 0 0 8px rgba(255,40,70,.45); }
     body.theme-sys.sys-anom .mscr .sc-bar:not(.debt) { --f: #ff5d70; }
-    body.theme-sys.sys-anom .mscr .sf-circ, body.theme-sys.sys-anom .mscr .sf-scr { filter: hue-rotate(140deg) saturate(1.3); }
     body.theme-sys.sys-anom .mscr .sf-screen .sf-base { background: #12040a; }
-    /* v7.1.5: виньетка главного экрана — фон у боковых краёв рамки за 16px уходит в цвет основы */
-    body.theme-sys .mscr .sf-vig { position: absolute; top: 0; bottom: 0; pointer-events: none; background: linear-gradient(90deg, #030914, rgba(3,9,20,0) 16px, rgba(3,9,20,0) calc(100% - 16px), #030914); }
     /* v7.1.6: фон главного экрана — одна картинка, «прилипает» к экрану; overflow: clip — не «прокручиваемый» блок, иначе прилипание не работает */
     body.theme-sys .mscr > .sf-screen { overflow: clip; }
     body.theme-sys .mscr .sf-mbg { position: sticky; top: 0; display: block; }
-    body.theme-sys.sys-anom .mscr .sf-vig { background: linear-gradient(90deg, #12040a, rgba(18,4,10,0) 16px, rgba(18,4,10,0) calc(100% - 16px), #12040a); }
     body.theme-sys.sys-anom .mscr button:not(:disabled):active { background: rgba(255,150,165,.2) !important; box-shadow: 0 0 10px rgba(255,120,140,.6); }
 
     /* --- SSS и Монарх: компактная пульсация цифры (ореол не шире ~17px, меняется яркость, а не размер) --- */
@@ -1951,7 +1944,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.0';
+  const APP_VERSION = '7.3.1';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4261,44 +4254,6 @@
     // Холст: в тестовом браузере (jsdom) рисования нет — текстуры пустые.
     function canvasCtx(c) { if (/jsdom/i.test(navigator.userAgent)) return null; try { return c.getContext('2d'); } catch (e) { return null; } }
     function rng(seed) { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
-    // ---- текстуры фона (рисуются один раз) ----
-    // v7.1.3: текстура размывается один раз при создании (1,2 px, с повтором краёв — без швов на стыках плиток):
-    // тот же мягкий фон, что дало бы живое размытие, но без пересчёта на каждом кадре (демо 94).
-    const TEX_BLUR = 1.2;
-    // v7.1.6: возвращает холст (адрес картинки берёт render; сам холст нужен для фона главного экрана)
-    function texBake(c) {
-      try {
-        const o = document.createElement('canvas'); o.width = c.width; o.height = c.height;
-        const g = o.getContext('2d'); if (!g || !('filter' in g)) return c;
-        g.filter = `blur(${TEX_BLUR}px)`;
-        for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) g.drawImage(c, dx * c.width, dy * c.height);
-        return o;
-      } catch (e) { return c; }
-    }
-    function texCircuit() {
-      const c = document.createElement('canvas'); c.width = c.height = 300; const g = canvasCtx(c), r = rng(7); if (!g) return null;
-      g.strokeStyle = 'rgba(70,150,255,0.22)'; g.lineWidth = .8;
-      for (let k = 0; k < 26; k++) {
-        let x = Math.round(r() * 30) * 10, y = Math.round(r() * 30) * 10; g.beginPath(); g.moveTo(x, y);
-        for (let s = 0; s < 4; s++) { if (r() < .5) x += (r() < .5 ? -1 : 1) * Math.round(2 + r() * 8) * 10; else y += (r() < .5 ? -1 : 1) * Math.round(2 + r() * 8) * 10; g.lineTo(x, y); }
-        g.stroke(); g.fillStyle = 'rgba(120,200,255,0.35)'; g.fillRect(x - 1, y - 1, 2, 2);
-      }
-      return texBake(c);
-    }
-    function texScratch() {
-      const c = document.createElement('canvas'); c.width = c.height = 320; const g = canvasCtx(c), r = rng(19); if (!g) return null;
-      for (let k = 0; k < 160; k++) {
-        const x = r() * 320, y = r() * 320, len = 20 + r() * 120, a = (-35 + (r() - .5) * 22) * Math.PI / 180;
-        g.strokeStyle = `rgba(${110 + r() * 60 | 0},${180 + r() * 50 | 0},255,${(0.10 + r() * 0.30).toFixed(2)})`; g.lineWidth = r() < .15 ? 1.4 : .7;
-        g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
-      }
-      for (let k = 0; k < 14; k++) {   // голографические завихрения — дуги
-        const x = r() * 320, y = r() * 320, rad = 20 + r() * 90, a0 = r() * Math.PI * 2;
-        g.strokeStyle = `rgba(90,170,255,${(0.10 + r() * 0.18).toFixed(2)})`; g.lineWidth = .8;
-        g.beginPath(); g.arc(x, y, rad, a0, a0 + .8 + r() * 1.8); g.stroke();
-      }
-      return texBake(c);
-    }
     const YT = 177, YB = 1645;
     // Правая сторона: зубцы вдвое мельче (силуэт тот же) — «спрямить колонну».
     (function straightenRight() {
@@ -4420,69 +4375,142 @@
         <g clip-path="url(#${id}nc)" opacity="${NB.nb}">${nearBar(T, sh, -sv, 't', .8)}${nearBar(B, -sh, sv, 'b', .9)}</g>`);
       return { back, en, near };
     }
-    // ---- живой узор в центре полос: короткие светящиеся штрихи, ширина «дышит» до 45% окна, к краям гаснет ----
-    function hash(n) { let k = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b); k ^= k >>> 13; k = Math.imul(k, 0xc2b2ae35); k ^= k >>> 16; return (k >>> 0) / 4294967295; }
-    function noise(x, sd) { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return (hash(i + (sd % 100000) * 131) * (1 - u) + hash(i + 1 + (sd % 100000) * 131) * u) * 2 - 1; }
-    function addPatterns(win, w, m, scheme) {   // v7.1.2: узор ровно по высоте среднего стекла
-      const P = NP[scheme] || NP.blue, { T, B } = barGeom(m), Wmax = w * NB.pw;
-      patMk(win, w * .5, T[0][1], T[4][1], Wmax, P);
-      patMk(win, w * .535, B[0][1], B[1][1], Wmax, P);
+    // ===== v7.3.1 (демо 103): узор полос — нити плазмы =====
+    // Нити поперёк полосы (наклон, извилистость, белая середина и ореол), бледные «дальние», дымка, касание краёв, слабые узлы
+    // на пересечениях, отражение на втором стекле (в сторону ближнего стекла). Ширина — до 50% окна по центру (нижняя полоса —
+    // со сдвигом вправо), «дышит» на 45%. Всё — строго внутри полосы.
+    // 12 кадров рисуются ОДИН раз на форму полосы и цвет: общие картинки (blob-адреса) — окна одной ширины берут один набор.
+    // Рисуются понемногу (по кадру) в свободное время; пока набора нет — полоса без узора, готовый проявляется за 0,5 с.
+    // В работе процессор узор не рисует: кадры перетекают анимацией прозрачности (sfPl).
+    const PLC = { n: 9, far: 8, ang: 30, wig: .85, core: 2.2, halo: 3.5, br: .9, span: .5, breath: .45, fade: .15,
+      nodeK: .1, reflK: .15, reflD: 1, frames: 12, step: 1.5, drift: .25, flick: .45, keep: 6 };
+    const PLS = new Map(), PLQ = [];   // наборы кадров по ключу (порядок — давность использования); очередь рисования
+    let plOk = null, plBusy = 0;
+    function addPatterns(win, w, m, scheme) {   // узор — между средним и ближним стеклом
+      if (plOk === null) plOk = !!canvasCtx(document.createElement('canvas'));
+      if (!plOk) return;   // нет холста (jsdom) — полосы без узора
+      const P = NP[scheme] || NP.blue, { T, B } = barGeom(m), thick = T[4][1] - T[0][1], sv = thick * NB.kv, shh = thick * NB.kh;
+      plPlace(win, T, P, scheme, 't', [shh, -sv], w, w * .5, 11 + Math.round(w));
+      plPlace(win, B, P, scheme, 'b', [-shh, sv], w, w * .535, 29 + Math.round(w));
+      plTrim();
     }
-    // v7.1.7 (демо 95): узор рисуется один раз в PAT_FRAMES вариантах (живой узор «прокручивается» вперёд и снимается копией);
-    // кадры перетекают друг в друга анимацией прозрачности (sfPatX) — процессор больше не перерисовывает узор.
-    const PAT_FRAMES = 4, PAT_CYCLE = 12;
-    function patMk(win, cx, y0, y1, Wmax, P) {
-      const H = y1 - y0, dpr = Math.min(2, window.devicePixelRatio || 1);
-      const cv = document.createElement('canvas');
-      const gx = canvasCtx(cv); if (!gx || H < 2) return;
-      cv.width = Math.round(Wmax * dpr); cv.height = Math.round(H * dpr);
-      const Wref = Math.max(16, Wmax * .22);
-      const o = { cv, g: gx, dpr, W: Wmax, Wp: Wref, H, cx: Wmax / 2, P, strokes: [], seed: Math.floor(Math.random() * 90000), r: rng(Math.floor(Math.random() * 1e9)) };
-      const n = Math.max(8, Math.round(Math.min(70, Wref * H / 14) * (Wmax / Wref) * .45 * NB.pd));
-      for (let i = 0; i < n; i++) o.strokes.push(patStroke(o, 0, true));
-      const t0 = Math.random() * 500, css = `left:${(cx - Wmax / 2).toFixed(1)}px;top:${y0.toFixed(1)}px;width:${Wmax.toFixed(1)}px;height:${H.toFixed(1)}px`;
-      for (let k = 0; k < PAT_FRAMES; k++) {
-        for (let st = 0; st < 30; st++) patDraw(o, t0 + k * 4.1 + st * .07);
-        const f = document.createElement('canvas'); f.className = 'sf-pat'; f.setAttribute('aria-hidden', 'true'); f.width = cv.width; f.height = cv.height;
-        const fg = f.getContext('2d'); if (fg) fg.drawImage(cv, 0, 0);
-        f.style.cssText = css + `;animation-delay:-${(k * PAT_CYCLE / PAT_FRAMES).toFixed(2)}s`;
-        win.appendChild(f);
+    function plPlace(win, Q, P, scheme, bar, sh, ww, ccx, seed) {
+      const ox = Math.min(...Q.map(p => p[0])), oy = Math.min(...Q.map(p => p[1]));
+      const QR = Q.map(p => [Math.round((p[0] - ox) * 2) / 2, Math.round((p[1] - oy) * 2) / 2]);
+      const key = scheme + '|' + bar + '|' + Math.round(ww) + '|' + QR.map(p => p.join(',')).join(';');
+      let S = PLS.get(key);
+      if (S) PLS.delete(key);
+      else { S = { key, Q: QR, P, sh, ww, ccx: Math.round((ccx - ox) * 2) / 2, seed, urls: null, cvs: [], k: 0, slots: [] }; PLQ.push(S); plKick(); }
+      PLS.set(key, S);
+      const el = document.createElement('div'); el.className = 'sf-pat sf-plw'; el.setAttribute('aria-hidden', 'true'); el.dataset.pk = key; el._o = [ox, oy];
+      if (S.urls) plFill(el, S, false); else { el.hidden = true; S.slots.push(el); }
+      win.appendChild(el);
+    }
+    function plFill(el, S, late) {
+      const b = S.box; el.hidden = false;
+      el.style.cssText = `left:${(el._o[0] + b[0]).toFixed(1)}px;top:${(el._o[1] + b[1]).toFixed(1)}px;width:${b[2].toFixed(1)}px;height:${b[3].toFixed(1)}px`;
+      el.innerHTML = S.urls.map((u, k) => `<i style="background-image:url(${u});animation-delay:-${(k * PLC.step).toFixed(2)}s"></i>`).join('');
+      if (late) el.classList.add('sf-pin');
+    }
+    // Лишние готовые наборы (их больше PLC.keep и ни одна полоса их не показывает) освобождаются.
+    function plTrim() {
+      if (PLS.size <= PLC.keep) return;
+      const used = new Set([...document.querySelectorAll('.sf-plw')].map(e => e.dataset.pk));
+      for (const [k, S] of PLS) { if (PLS.size <= PLC.keep) break; if (!S.urls || used.has(k)) continue;
+        S.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} }); PLS.delete(k); }
+    }
+    function plKick() {
+      if (plBusy || !PLQ.length) return; plBusy = 1;
+      // за один вызов — сколько кадров успевается в свободное время (не меньше одного)
+      const go = d => { plBusy = 0; try { do plStep(); while (PLQ.length && d && d.timeRemaining && d.timeRemaining() > 12); } catch (e) { PLQ.shift(); } plKick(); };
+      // новый набор начинается в свободное время; дальше — по кадру (~25 мс работы) с паузой в кадр экрана, чтобы набор был готов
+      // примерно за секунду, а касания и прокрутка не ждали
+      if (PLQ[0].k > 0 || !window.requestIdleCallback) setTimeout(go, 16); else requestIdleCallback(go, { timeout: 400 });
+    }
+    function plStep() {
+      const S = PLQ[0]; if (!S) return;
+      if (!S.prep) plPrep(S);
+      S.cvs.push(plFrame(S, S.k++));
+      if (S.k < PLC.frames) return;
+      PLQ.shift(); S.tmp = null; S.fil = null;
+      const urls = new Array(S.cvs.length); let left = S.cvs.length;
+      const done = () => { S.urls = urls; S.cvs = []; S.slots.forEach(el => { if (el.isConnected) plFill(el, S, true); }); S.slots = []; };
+      S.cvs.forEach((cv, i) => {
+        if (cv.toBlob && typeof URL !== 'undefined' && URL.createObjectURL) cv.toBlob(b => { urls[i] = b ? URL.createObjectURL(b) : ''; if (--left === 0) done(); }, 'image/png');
+        else { urls[i] = cv.toDataURL(); if (--left === 0) done(); }
+      });
+    }
+    function plRng(s) { let a = s >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+    const plCol = (c, a) => { if (typeof c === 'string') { const n = parseInt(c.slice(1), 16); c = [n >> 16, (n >> 8) & 255, n & 255]; } return rgba(c, a); };
+    function plIn(Q, x, y) { let c = false; for (let i = 0, j = Q.length - 1; i < Q.length; j = i++) { const a = Q[i], b = Q[j];
+      if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+    function plPath(g, pts) { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length - 1; i++) g.quadraticCurveTo(pts[i][0], pts[i][1], (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
+      const l = pts[pts.length - 1]; g.lineTo(l[0], l[1]); }
+    function plCross(a, b, c, d) { const r = [b[0] - a[0], b[1] - a[1]], s = [d[0] - c[0], d[1] - c[1]], den = r[0] * s[1] - r[1] * s[0]; if (Math.abs(den) < 1e-9) return null;
+      const t = ((c[0] - a[0]) * s[1] - (c[1] - a[1]) * s[0]) / den, u = ((c[0] - a[0]) * r[1] - (c[1] - a[1]) * r[0]) / den;
+      return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? [a[0] + t * r[0], a[1] + t * r[1]] : null; }
+    function plPrep(S) {
+      const C = PLC, Q = S.Q, dpr = Math.min(2, window.devicePixelRatio || 1);
+      const bx1 = Math.max(...Q.map(p => p[0])), H = Math.max(...Q.map(p => p[1]));
+      const len = Math.hypot(S.sh[0], S.sh[1]) || 1, rd = [S.sh[0] / len * C.reflD, S.sh[1] / len * C.reflD];
+      const pad = Math.ceil(C.halo * 2 + C.reflD + 2), span = S.ww * C.span;
+      const half = span / 2 + C.halo * 2 + Math.tan(C.ang * Math.PI / 180) * H * 1.4 + 2;
+      const x0 = Math.max(0, S.ccx - half), x1 = Math.min(bx1, S.ccx + half), L = x0 - pad, T = -pad, CW = x1 - x0 + 2 * pad, CH = H + 2 * pad;
+      S.box = [L, T, CW, CH]; S.dpr = dpr; S.rd = rd; S.span = span; S.H = H; S.CW = CW; S.CH = CH; S.cx = S.ccx - L;
+      S.QL = Q.map(p => [p[0] - L, p[1] - T]); S.QR = S.QL.map(p => [p[0] + rd[0], p[1] + rd[1]]);
+      const r = plRng(S.seed);
+      const mk = far => ({ u: r(), lean: Math.tan(C.ang * Math.PI / 180) * (r() < .5 ? -1 : 1) * (.6 + .8 * r()),
+        A: C.wig * H * .35 * (.5 + r()), fq: .6 + r() * 1.2, ph: r() * 6.283, ps: r() * 6.283, pa: r() * 6.283, pb: r() * 6.283,
+        cyc: 1 + Math.floor(r() * 2), fc: 1 + Math.floor(r() * 3), b: far ? .25 + .2 * r() : .55 + .45 * r(), far, flashAt: r() < .25 ? Math.floor(r() * C.frames) : -1 });
+      S.fil = []; for (let i = 0; i < C.n; i++) { const f = mk(false); f.u = (i + .15 + r() * .7) / C.n; S.fil.push(f); }
+      for (let i = 0; i < C.far; i++) S.fil.push(mk(true));
+      S.tmp = document.createElement('canvas'); S.tmp.width = Math.round(CW * dpr); S.tmp.height = Math.round(CH * dpr); S.prep = 1;
+    }
+    function plFrame(S, k) {
+      const C = PLC, P = S.P, dpr = S.dpr, tmp = S.tmp, tg = tmp.getContext('2d'), N = C.frames, CH = S.CH, CW = S.CW;
+      const t = k / N * Math.PI * 2, drift = C.drift * C.halo * 1.6, spanK = S.span * (1 - C.breath * (.5 + .5 * Math.sin(t + S.seed)));
+      const yA = -2, yB = CH + 2, ym = CH / 2, SEG = 22;
+      const lines = S.fil.map(f => {
+        const x0 = S.cx + (f.u - .5) * spanK + drift * Math.sin(t + f.ps), A = f.A * (1 + .3 * C.drift * Math.sin(t + f.pa)), ph = f.ph + t * f.cyc;
+        let b = f.b * (1 - C.flick * .6 * (.5 + .5 * Math.sin(t * f.fc + f.pb))); if (f.flashAt === k) b = Math.min(1.2, b * (1 + C.flick));
+        const pts = []; for (let s = 0; s <= SEG; s++) { const v = s / SEG, y = yA + (yB - yA) * v; pts.push([x0 + f.lean * (y - ym) + A * Math.sin(Math.PI * 2 * f.fq * v + ph), y]); }
+        return { f, pts, b };
+      });
+      const cv = document.createElement('canvas'); cv.width = tmp.width; cv.height = tmp.height; const g = cv.getContext('2d');
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round'; g.lineJoin = 'round';
+      const br = C.br, poly = Q => { g.beginPath(); Q.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); };
+      const layer = (clipQ, off, aK, blurK) => {   // свечение — одним размытием (только здесь, при рисовании кадра)
+        tg.setTransform(1, 0, 0, 1, 0, 0); tg.clearRect(0, 0, tmp.width, tmp.height); tg.setTransform(dpr, 0, 0, dpr, 0, 0);
+        tg.save(); tg.translate(off[0], off[1]); tg.lineCap = 'round'; tg.globalCompositeOperation = 'lighter';
+        lines.forEach(l => { tg.strokeStyle = plCol(P.pglow, (l.f.far ? .5 : .75) * l.b * br * aK); tg.lineWidth = l.f.far ? C.halo * 1.6 : C.halo; plPath(tg, l.pts); tg.stroke(); });
+        lines.forEach(l => { if (l.f.far) return; tg.strokeStyle = plCol(P.pglow, .12 * l.b * br * aK); tg.lineWidth = C.halo * 4; plPath(tg, l.pts.map(p => [p[0] + C.halo, p[1]])); tg.stroke(); });   // дымка
+        tg.restore();
+        g.save(); poly(clipQ); g.clip(); g.setTransform(1, 0, 0, 1, 0, 0);
+        if ('filter' in g) { g.filter = `blur(${(C.halo * .7 * blurK * dpr).toFixed(2)}px)`; g.drawImage(tmp, 0, 0); g.filter = 'none'; }
+        g.globalAlpha = .45; g.drawImage(tmp, 0, 0); g.globalAlpha = 1; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.translate(off[0], off[1]);
+        lines.forEach(l => { if (l.f.far) return; g.strokeStyle = plCol(P.pcore, Math.min(1, l.b * br * aK)); g.lineWidth = C.core; plPath(g, l.pts); g.stroke(); });
+        g.restore();
+      };
+      layer(S.QR, S.rd, C.reflK, 1.3);   // отражение на втором стекле
+      layer(S.QL, [0, 0], 1, 1);
+      const QL = S.QL, near = lines.filter(l => !l.f.far);
+      near.forEach(l => { for (let s = 1; s < l.pts.length; s++) { const a = l.pts[s - 1], c = l.pts[s];   // касание краёв
+        if (plIn(QL, a[0], a[1]) !== plIn(QL, c[0], c[1])) { const p = [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2], R = C.halo * 1.4;
+          const gr = g.createRadialGradient(p[0], p[1], 0, p[0], p[1], R); gr.addColorStop(0, plCol(P.pcore, .7 * l.b * br)); gr.addColorStop(.4, plCol(P.pglow, .35 * l.b * br)); gr.addColorStop(1, plCol(P.pglow, 0));
+          g.fillStyle = gr; g.fillRect(p[0] - R, p[1] - R, 2 * R, 2 * R); } } });
+      for (let i = 0; i < near.length; i++) for (let j = i + 1; j < near.length; j++) {   // узлы на пересечениях
+        const A = near[i].pts, B = near[j].pts; let hit = null;
+        for (let s = 1; s < A.length && !hit; s++) for (let q = 1; q < B.length && !hit; q++) { const p = plCross(A[s - 1], A[s], B[q - 1], B[q]); if (p && plIn(QL, p[0], p[1])) hit = p; }
+        if (!hit) continue; const kb = Math.min(near[i].b, near[j].b) * br, R = C.halo * 1.8, gr = g.createRadialGradient(hit[0], hit[1], 0, hit[0], hit[1], R);
+        gr.addColorStop(0, plCol(P.pcore, C.nodeK * kb)); gr.addColorStop(.35, plCol(P.pglow, .4 * C.nodeK * kb)); gr.addColorStop(1, plCol(P.pglow, 0));
+        g.fillStyle = gr; g.fillRect(hit[0] - R, hit[1] - R, 2 * R, 2 * R);
       }
-    }
-    function patStroke(o, t, init) {
-      const r = o.r, v = r(), u = r() * 2 - 1, vert = r() < .22, pts = [[0, 0]];
-      if (vert) pts.push([(r() - .5) * 1.2, (.25 + r() * .5) * o.H * (v > .5 ? -1 : 1)]);
-      else { let x = 0, y = 0; const n = 2 + Math.floor(r() * 4);
-        for (let i = 0; i < n; i++) { const dirs = [[1, 0], [0, 1], [1, 1], [1, -1], [-1, 1], [0, -1], [1, .4], [.4, 1]], d = dirs[Math.floor(r() * dirs.length)], L = 1.2 + r() * Math.max(2, o.Wp * .16);
-          x += d[0] * L; y += d[1] * L * .7; pts.push([x, y]); } }
-      const life = .5 + r() * 1.7;
-      return { u, v, pts, born: init ? t - r() * life : t, life, sd: Math.floor(r() * 1e5), w: vert ? 1.2 : .7 + r() * .6 };
-    }
-    function patSpread(o, v, t) { return Math.min(1, (.3 + .7 * (.5 + .5 * noise(t * .4, o.seed + 1))) * (1 + .15 * noise(v * 3 + t * .7, o.seed + 2))); }
-    function patDraw(o, t) {
-      const { g, dpr, P } = o, bright = NB.pb, half = o.W / 2;
-      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, o.cv.width, o.cv.height);
-      g.globalCompositeOperation = 'lighter';
-      const sp = patSpread(o, .5, t);
-      g.save(); g.translate(o.cx, o.H * .45); g.scale(Math.max(4, half * sp * .8), o.H * .9);
-      const gr = g.createRadialGradient(0, 0, 0, 0, 0, 1);
-      gr.addColorStop(0, rgba(P.pg, .22 * bright)); gr.addColorStop(1, rgba(P.pg, 0));
-      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 1, 0, Math.PI * 2); g.fill(); g.restore();
-      g.lineCap = 'round'; g.lineJoin = 'round';
-      for (let i = 0; i < o.strokes.length; i++) {
-        let st = o.strokes[i]; let age = (t - st.born) / st.life;
-        if (age >= 1) { o.strokes[i] = st = patStroke(o, t); age = 0; }
-        const k = patSpread(o, st.v, t), fade = Math.exp(-Math.pow(Math.abs(st.u), 3) * 1.4);
-        const fl = .65 + .35 * noise(t * 7 + st.sd, 3), al = Math.pow(Math.sin(Math.PI * age), .6) * fl * bright * fade;
-        if (al <= .02) continue;
-        const bx = o.cx + st.u * half * k, by = st.v * o.H;
-        g.beginPath();
-        st.pts.forEach((p, j) => { const jx = noise(t * 1.3 + st.sd + j * 7, 5) * 1.6, jy = noise(t * 1.3 + st.sd + j * 7, 9) * 1.2;
-          const x = bx + p[0] + jx, y = by + p[1] + jy; j ? g.lineTo(x, y) : g.moveTo(x, y); });
-        g.globalAlpha = Math.min(1, al * .55); g.strokeStyle = P.pglow; g.lineWidth = st.w + 2.2; g.stroke();
-        g.globalAlpha = Math.min(1, al); g.strokeStyle = P.pcore; g.lineWidth = st.w; g.stroke();
-      }
-      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      g.globalCompositeOperation = 'destination-in'; g.fillStyle = '#000'; poly(QL); g.fill();   // строго внутри полосы
+      const h0 = S.cx - spanK / 2, h1 = S.cx + spanK / 2, fz = Math.max(.001, spanK * C.fade / 2), gr = g.createLinearGradient(h0, 0, h1, 0);   // затухание к концам
+      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(Math.min(.5, fz / spanK), 'rgba(0,0,0,1)'); gr.addColorStop(Math.max(.5, 1 - fz / spanK), 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, CW, CH); g.globalCompositeOperation = 'source-over';
+      return cv;
     }
     function mapperFit(s, Hpx) {
       const top = YT * s, bot = (G.H - YB) * s, midPx = Math.max(10, Hpx - top - bot), natural = (YB - YT) * s;
@@ -4495,12 +4523,10 @@
       red:    { bg: ['#7a0a1c', '#d81e3c', '#7a0a1c'], ig: ['#ff3d5a', '#ffb0bc', '#ff3d5a'], ng: '#ffc0ca', edge: '#ff5c74', core: '#ffe6ea', t1: '#ffd0d8', t2: '#ff9fb0', col: 'rgba(255,90,110,.55)' },
       orange: { bg: ['#7a3a00', '#e07800', '#7a3a00'], ig: ['#ff9a2a', '#ffd9a0', '#ff9a2a'], ng: '#ffe0b8', edge: '#ffa64d', core: '#fff0dc', t1: '#ffe2bd', t2: '#ffc27a', col: 'rgba(255,170,80,.55)' }
     };
-    let TEXC = null, TEXS = null, TEXC_CV = null, TEXS_CV = null;
-    // v7.1.6: фон главного экрана — одна картинка размером с экран (основа, «схема», «царапины» с прежней прозрачностью и
-    // виньетка 16px у боковых краёв рамки), «прилипает» к экрану (position: sticky) — при прокрутке не перерисовывается.
-    // Под Бременем — красная основа и тот же сдвиг цвета узора, что был у слоёв (hue-rotate 140°, saturate 1.3).
-    // Нет холста (jsdom) — null: остаются прежние слои.
-    const MBG_PAT = 0.55, MBG_VIG = 16;
+    // v7.1.6: фон главного экрана — одна картинка размером с экран, «прилипает» к экрану (position: sticky) — при прокрутке
+    // не перерисовывается. v7.3.0: картинка — общий рисунок «Системы» (см. ниже) и виньетка 16px у боковых краёв рамки.
+    // v7.3.1: прежних слоёв («схема», «царапины», пятна света) больше нет; без рисунка — однотонная основа. Нет холста (jsdom) — null.
+    const MBG_VIG = 16;
     function mainBg(w, L, R, red) {
       try {
         const H = Math.ceil(Math.max(window.innerHeight || 0, (screen && screen.height) || 0, (screen && screen.width) || 0, 320));
@@ -4517,13 +4543,7 @@
         else if (st === -1) {   // запомненная картинка ещё раскодируется — пока тёмная основа, затем рисунок на этот же холст
           g.fillStyle = red ? '#12040a' : '#030914'; g.fillRect(0, 0, cv.width, H);
           artWhenSaved(() => { if (cv.isConnected && artEnsure(cv.width) === 1) { paintArt(); artRefresh(); } });
-        } else {   // нет холста для рисунка — прежний фон
-          g.fillStyle = red ? '#12040a' : '#030914'; g.fillRect(0, 0, cv.width, H);
-          if (red && 'filter' in g) g.filter = 'hue-rotate(140deg) saturate(1.3)';
-          [[TEXC_CV, MBG_PAT * .9], [TEXS_CV, MBG_PAT * .85]].forEach(([t, a]) => { if (!t) return; g.globalAlpha = a; g.fillStyle = g.createPattern(t, 'repeat'); g.fillRect(0, 0, cv.width, H); });
-          g.globalAlpha = 1; if ('filter' in g) g.filter = 'none';
-          side(red ? '18,4,10' : '3,9,20');
-        }
+        } else { g.fillStyle = red ? '#12040a' : '#030914'; g.fillRect(0, 0, cv.width, H); }   // рисунка нет — однотонная основа (v7.3.1)
         cv.className = 'sf-mbg'; cv.style.width = w + 'px'; cv.style.height = H + 'px';
         return cv;
       } catch (e) { return null; }
@@ -4786,7 +4806,7 @@
       cv.toBlob(b => { if (cv !== artCanvas(red)) return; ART.wait[k] = 0; if (!b) return; ART.url[k] = URL.createObjectURL(b); artRefresh(); }, 'image/png');
       return '';
     }
-    const OLD_BG = () => `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>`;
+    const OLD_BG = () => '<div class="sf-base"></div>';   // v7.3.1: прежнего фона нет — однотонная основа, пока нет рисунка (или нет холста)
     // Фон окна (не главного экрана): середина общей картинки; пока адреса нет — прежние слои.
     function winBg(scr, w, h) {
       const red = artRedOn(), k = red ? 'r' : 'b';
@@ -4848,7 +4868,6 @@
     function render(win, scheme, opt) {
       const side = (opt && opt.side) || 1, gap = (opt && opt.gap) || 1, tile = !opt || opt.tile !== false;
       const pal = PAL[scheme] || PAL.blue;
-      if (TEXC === null) { TEXC_CV = texCircuit(); TEXS_CV = texScratch(); TEXC = TEXC_CV ? TEXC_CV.toDataURL() : ''; TEXS = TEXS_CV ? TEXS_CV.toDataURL() : ''; }
       const content = win.querySelector('.sf-content');
       // opt.cap — ширина, после которой рамка перестаёт утолщаться: окно шире, полосы и колонны прежние (растёт только середина)
       const w = win.offsetWidth, s = Math.min(w, (opt && opt.cap) || w) / G.W;
@@ -4894,18 +4913,17 @@
       // v7.1.3: у главного экрана (длинная страница) фон не вырезается по форме рамки (многоугольник тяжёл для прокрутки).
       // v7.1.5: вместо него — прямоугольник по внутренней границе рваного края (дёшево) и виньетка 16px у боковых краёв.
       // v7.1.6: фон главного экрана — одной неподвижной картинкой (mainBg), вместо слоёв и полосы виньетки.
-      let vig = '', mbg = null;
+      let mbg = null;
       if (!win.classList.contains('mscr')) scr.style.clipPath = `polygon(${panelPx.map(p => p[0].toFixed(1) + 'px ' + p[1].toFixed(1) + 'px').join(',')})`;
       else if (panelPx.length) {
         const ys = panelPx.map(p => p[1]), y0 = Math.min(...ys), y1 = Math.max(...ys);
         const mid = panelPx.filter(p => p[1] > y0 + 60 && p[1] < y1 - 60), side = mid.length ? mid : panelPx;
         const L = Math.max(0, ...side.filter(p => p[0] < w / 2).map(p => p[0])), R = Math.max(0, ...side.filter(p => p[0] > w / 2).map(p => w - p[0]));
         scr.style.clipPath = `inset(${y0.toFixed(1)}px ${R.toFixed(1)}px ${(h - y1).toFixed(1)}px ${L.toFixed(1)}px)`;
-        vig = `<div class="sf-vig" style="left:${L.toFixed(1)}px;right:${R.toFixed(1)}px"></div>`;
         mbg = mainBg(w, L, R, scheme === 'red');
       }
       if (mbg) scr.appendChild(mbg);
-      else if (win.classList.contains('mscr')) scr.innerHTML = OLD_BG() + vig;
+      else if (win.classList.contains('mscr')) scr.innerHTML = OLD_BG();
       else if (win.classList.contains('sys-notice')) noticeBg(scr, w, h);   // v7.3.0
       else winBg(scr, w, h);
       win.insertBefore(scr, content);
@@ -5068,7 +5086,7 @@
       for (let i = 0; i < 3; i++) {
         const sl = document.createElement('div'); sl.className = 'tfx-slice'; sl.setAttribute('aria-hidden', 'true'); sl.innerHTML = inner;
         sl.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
-        sl.querySelectorAll('.sf-en, .sf-pat, .sf-vig, .tfx-slice, .tfx-noise, .tfx-loss').forEach(el => el.remove());
+        sl.querySelectorAll('.sf-en, .sf-pat, .tfx-slice, .tfx-noise, .tfx-loss').forEach(el => el.remove());
         sl.style.display = cs.display; sl.style.flexDirection = cs.flexDirection; sl.style.alignItems = cs.alignItems;
         if (!sys) { sl.style.backgroundColor = cs.backgroundColor; sl.style.backgroundImage = cs.backgroundImage; sl.style.padding = cs.padding; sl.style.borderRadius = cs.borderRadius; }
         sl.style.opacity = 0;
