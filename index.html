@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -935,7 +935,7 @@
        цифры и данные — Roboto Mono. Правило для новых элементов то же. ===== */
     .item-name { font-family: 'Exo 2 Text', sans-serif; font-size: 1.03rem; }
     .item-desc { font-family: 'Exo 2 Text', sans-serif; font-size: 0.81rem; }
-    .item-preview-meta { font-family: 'Exo 2 Text', sans-serif; font-size: 0.84rem; }
+    .item-preview-meta { font-family: 'Exo 2 Text', sans-serif; font-size: 0.84rem; overflow-wrap: normal; word-break: normal; hyphens: manual; }   /* v7.3.3: переносы только по словам */
     .danger-text { font-family: 'Exo 2 Text', sans-serif; font-size: 0.92rem; }
     .danger-list { font-family: 'Exo 2 Text', sans-serif; font-size: 0.86rem; }
     .notif-log-text { font-family: 'Exo 2 Text', sans-serif; font-size: 0.78rem; }
@@ -1944,7 +1944,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.2';
+  const APP_VERSION = '7.3.3';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -6185,6 +6185,9 @@
     return desc;
   }
   function itemPreviewText(iconId) {
+    // v7.3.3: титул — без меток («Тип», «Эффект» и т. п.): «Титул», условие действия и описание; у «Новичка» условия нет
+    const tName = Object.keys(TITLE_ICON_IDS).find(n => TITLE_ICON_IDS[n] === iconId);
+    if (tName && TITLES_DB[tName]) return tName === 'Новичок' ? `Титул\n${TITLES_DB[tName].desc}` : `Титул\nДействует, пока выбран активным\n${TITLES_DB[tName].desc}`;
     const meta = ITEM_META[iconId];
     let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
     const desc = ARTEFACTS[iconId] ? artifactEffectText(iconId) : getItemDesc(iconId);

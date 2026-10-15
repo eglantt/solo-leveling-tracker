@@ -706,6 +706,17 @@ const w = boot(); const D = w.document; await tick();
   const ok = err === '' && !a.querySelector('.sf-plw, canvas.sf-pat') && a.querySelectorAll(':scope > .sf-en').length === 2 && a.querySelector('.sf-screen > .sf-base'); a.remove();
   check('T107 без холста (jsdom) — полосы без узора, основа однотонная, вспышка энергии на месте, ошибок нет', !!ok, err); }
 
+// ===== v7.3.3: текст в превью титулов =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const tx = id => E(w, `itemPreviewText(${JSON.stringify(id)})`), tid = n => E(w, `TITLE_ICON_IDS[${JSON.stringify(n)}]`), ds = n => E(w, `TITLES_DB[${JSON.stringify(n)}].desc`);
+  const names = JSON.parse(E(w, 'JSON.stringify(Object.keys(TITLE_ICON_IDS).filter(n => TITLES_DB[n]))'));
+  const bad = names.filter(n => tx(tid(n)) !== (n === 'Новичок' ? `Титул\n${ds(n)}` : `Титул\nДействует, пока выбран активным\n${ds(n)}`) || /Тип:|Ранг:|Применение:|Эффект:/.test(tx(tid(n))));
+  check('T109 превью титула: «Титул», «Действует, пока выбран активным» и описание (у «Новичка» — без условия), без меток «Тип / Ранг / Применение / Эффект»; все 13 титулов',
+    names.length === 13 && bad.length === 0 && tx(tid('Новичок')) === 'Титул\nСтатус начинающего Игрока. Без бонусов.', bad.join(','));
+  check('T110 превью предмета не изменилось; текст превью переносится только по словам',
+    /^Ранг: E\nТип: Расходный предмет\nПрименение: Одноразовое использование\nЭффект: /.test(tx('rune_protection'))
+    && /\.item-preview-meta \{ font-family: 'Exo 2 Text', sans-serif; font-size: 0\.84rem; overflow-wrap: normal; word-break: normal; hyphens: manual; \}/.test(css)); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
