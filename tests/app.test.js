@@ -1267,10 +1267,16 @@ async function designTests() {
   }
   // --- LEVEL UP ---
   const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
-  const kf = (css.match(/@keyframes levelUp \{([^\n]*)\}/) || [])[1] || '';
-  check('L1 центрирующий сдвиг внутри каждого кадра анимации', (kf.match(/translateX\(-50%\)/g) || []).length === 4, kf);
-  const lu = (css.match(/\.levelup-popup \{([^}]*)\}/) || [])[1] || '';
-  check('L2 одна строка и размер по ширине экрана', lu.includes('white-space:nowrap') && lu.includes('font-size:clamp(1.6rem, 11vw, 3.5rem)') && lu.includes('animation:levelUp 3s'), lu);
+  const lu = (css.match(/\.lvx-t \{([^}]*)\}/) || [])[1] || '', lr = (css.match(/\.lvx \{([^}]*)\}/) || [])[1] || '';
+  check('L1 v7.3.4: надпись без поворота и раздувания (старых правил нет), по центру на 25% высоты экрана, на полосе-стекле',
+    !/@keyframes levelUp|levelup-popup|rotate\(/.test((css.match(/\.lvx[^{]*\{[^}]*\}/g) || []).join('') + (css.includes('levelup-popup') ? 'levelup-popup' : '') + (/@keyframes levelUp/.test(css) ? '@keyframes levelUp' : ''))
+    && /position: fixed; left: 0; right: 0; top: 25%; z-index: 100; display: flex; justify-content: center;/.test(lr) && /\.lvx-box::before, \.lvx-box::after \{/.test(css), lr);
+  check('L2 одна строка, размер по ширине экрана, белая с голубым свечением', lu.includes('white-space: nowrap') && lu.includes('font-size: clamp(1.6rem, 11vw, 3.5rem)') && lu.includes('color: #f2fbff') && lu.includes('0 0 22px #40c0ff'), lu);
+  { E(w, 'data.level = 5; data.dailyTargetLevel = 5; data.exp = 0; render()'); E(w, 'gainExp(getExpToNext(5) + getExpToNext(6) + getExpToNext(7) + 10); checkLevelUp(); render()');
+    const n1 = D.querySelectorAll('.lvx').length, txt = (D.querySelector('.lvx .lvx-t') || {}).textContent;
+    E(w, 'gainExp(getExpToNext(data.level) + 5); checkLevelUp(); render()'); const n2 = D.querySelectorAll('.lvx').length;
+    await new Promise(r => setTimeout(r, 3150)); const n3 = D.querySelectorAll('.lvx, .lvx-hex, .lvx-pillar, .lvx-spark').length;
+    check('L3 три уровня за раз — одна надпись «LEVEL UP»; новое повышение заменяет прежнюю; через 3 с слоёв не остаётся', n1 === 1 && txt === 'LEVEL UP' && n2 === 1 && n3 === 0, `${n1} ${txt} ${n2} ${n3}`); }
   // --- шрифты: по вычисленному стилю ---
   const fam = sel => { const el = D.querySelector(sel); return el ? w.getComputedStyle(el).fontFamily : null; };
   const probe = D.createElement('div'); probe.innerHTML = `

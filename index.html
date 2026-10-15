@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -709,13 +709,25 @@
     /* v6.6.7: центрирующий сдвиг — часть каждого кадра (раньше кадры его затирали, надпись уезжала вправо-вниз и переносилась). */
     @keyframes completeText { 0% {opacity:0; transform:translate(-50%,-50%) scale(0.4) translateY(30px);} 40% {opacity:1; transform:translate(-50%,-50%) scale(1.35) translateY(0);} 100% {opacity:0; transform:translate(-50%,-50%) scale(2) translateY(-60px);} }
     /* v6.5.36: центрирующий сдвиг — часть анимации (раньше keyframes его затирали, и надпись уезжала вправо). */
-    @keyframes levelUp { 0% {opacity:0; transform:translateX(-50%) scale(0.3) rotate(-20deg);} 25% {opacity:1; transform:translateX(-50%) scale(1.5) rotate(12deg);} 75% {transform:translateX(-50%) scale(1.1) rotate(-8deg);} 100% {opacity:0; transform:translateX(-50%) scale(2.2) rotate(0);} }
     @keyframes pulse-bg { 0% { background: rgba(80,20,20,0.6); } 50% { background: rgba(120,30,30,0.8); } 100% { background: rgba(80,20,20,0.6); } }
     @keyframes pulse-text { 0% { opacity: 0.8; } 100% { opacity: 1; text-shadow: 0 0 20px #ff4444; } }
     
     .completion-effect { position:absolute; inset:0; pointer-events:none; animation:flash 1.2s ease-out forwards; z-index: 1; }
     .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-family:'Orbitron','Exo 2',sans-serif; font-size:1.6rem; font-weight:700; white-space:nowrap; text-align:center; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
-    .levelup-popup { position:fixed; top:20%; left:50%; transform:translateX(-50%); color:#ffd700; font-family:'Orbitron',sans-serif; font-size:clamp(1.6rem, 11vw, 3.5rem); white-space:nowrap; text-shadow:0 0 30px #ffd700; pointer-events:none; animation:levelUp 3s forwards; z-index:100; }
+    /* v7.3.4 (демо 105): надпись повышения уровня — обе темы: «LEVEL UP» белая с голубым свечением на полосе-стекле, 25% высоты экрана;
+       появление — фокусировка, шестиугольная волна, столб света, искры вверх, уход — сбой (levelUpFx). Движение — только transform/opacity. */
+    .lvx { position: fixed; left: 0; right: 0; top: 25%; z-index: 100; display: flex; justify-content: center; pointer-events: none; }
+    .lvx-box { position: relative; padding: 10px 40px 12px; transform-origin: 50% 50%;
+      background: linear-gradient(90deg, rgba(20,90,200,0), rgba(20,90,200,.32) 25%, rgba(20,90,200,.32) 75%, rgba(20,90,200,0)); }
+    .lvx-box::before, .lvx-box::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, #40c0ff 20%, #40c0ff 80%, transparent); box-shadow: 0 0 6px #40c0ff; }
+    .lvx-box::before { top: 0; } .lvx-box::after { bottom: 0; }
+    .lvx-t { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: clamp(1.6rem, 11vw, 3.5rem); white-space: nowrap; letter-spacing: .12em; color: #f2fbff; text-shadow: 0 0 6px #40c0ff, 0 0 22px #40c0ff; }
+    .lvx-gc { position: absolute; left: 50%; top: 0; translate: -50% 0; pointer-events: none; }
+    .lvx-hex { position: fixed; z-index: 99; pointer-events: none; overflow: visible; }
+    .lvx-pillar { position: fixed; top: 0; bottom: 0; width: 44px; z-index: 98; pointer-events: none; transform-origin: 50% 100%; opacity: 0;
+      background: linear-gradient(90deg, transparent, rgba(64,192,255,.55), rgba(255,255,255,.67), rgba(64,192,255,.55), transparent);
+      -webkit-mask-image: linear-gradient(0deg, transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(0deg, transparent, #000 30%, #000 70%, transparent); }
+    .lvx-spark { position: fixed; z-index: 101; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px 1px #40c0ff; pointer-events: none; }
 
     @keyframes systemPopupIn {   /* v7.2.8: появление — проявление снизу на 12 px за 0,25 с (вариант А, демо 99); уход — прежний */
       0% { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); animation-timing-function: cubic-bezier(.2,.8,.2,1); }
@@ -1944,7 +1956,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.3';
+  const APP_VERSION = '7.3.4';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -6840,6 +6852,52 @@
     document.getElementById('limitStatus').textContent = statusText;
   }
 
+  // ===== v7.3.4 (демо 105): надпись повышения уровня — обе темы =====
+  // 3 с: фокусировка 0,5 с → удержание → уход со сбоем 0,45 с; с 0,25 с — искры вверх, с 0,3 с — две шестиугольные волны, столб света — 1,6 с.
+  // Повторный показ убирает прежнюю надпись. Все слои временные (удаляются через 3 с). Без element.animate (jsdom) — надпись без движения.
+  function levelUpFx() {
+    const S = levelUpFx.s || (levelUpFx.s = { timers: [], els: [] });
+    S.timers.forEach(clearTimeout); S.timers = []; S.els.forEach(e => e.remove()); S.els = [];
+    const T = (fn, ms) => S.timers.push(setTimeout(fn, ms)), add = el => { document.body.appendChild(el); S.els.push(el); return el; };
+    const A = (el, kf, o) => el.animate ? el.animate(kf, o) : null;
+    const D = 3000, tin = 500, tout = 450;
+    const root = add(document.createElement('div')); root.className = 'lvx'; root.setAttribute('aria-hidden', 'true');
+    const box = document.createElement('div'); box.className = 'lvx-box';
+    const t = document.createElement('div'); t.className = 'lvx-t'; t.textContent = 'LEVEL UP'; box.appendChild(t); root.appendChild(box);
+    const vw = window.innerWidth || 0, maxW = vw * .84;   // длинная надпись не переносится — ужимается
+    if (vw && t.scrollWidth > maxW) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * maxW / t.scrollWidth).toFixed(1) + 'px';
+    A(box, [{ transform: 'scale(1.25)', opacity: 0, letterSpacing: '.35em' }, { transform: 'scale(1)', opacity: 1, letterSpacing: '.12em' }], { duration: tin, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' });
+    const mid = () => { const r = t.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width, r.height]; };
+    if (box.animate) {
+      const fs = parseFloat(getComputedStyle(t).fontSize) || 40;
+      T(() => { const [x, y] = mid(); [0, 180].forEach(d => T(() => {   // шестиугольная волна
+        const R = Math.max(fs * 2.2, 90), sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('class', 'lvx-hex'); sv.setAttribute('viewBox', '-50 -50 100 100');
+        sv.style.cssText = `left:${x - R}px;top:${y - R}px;width:${2 * R}px;height:${2 * R}px`;
+        const pts = [0, 1, 2, 3, 4, 5].map(i => { const a = Math.PI / 3 * i - Math.PI / 2; return `${(46 * Math.cos(a)).toFixed(1)},${(46 * Math.sin(a)).toFixed(1)}`; }).join(' ');
+        sv.innerHTML = `<polygon points="${pts}" fill="none" stroke="#40c0ff" stroke-width="1.6"/><polygon points="${pts}" fill="none" stroke="#40c0ff" stroke-width="5" opacity=".25"/>`;
+        add(sv); A(sv, [{ transform: 'scale(.35)', opacity: .95 }, { transform: 'scale(1.6)', opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.2,.7,.3,1)', fill: 'forwards' });
+      }, d)); }, tin * .6);
+      { const [x] = mid(), p = document.createElement('div'); p.className = 'lvx-pillar'; p.style.left = (x - 22) + 'px'; document.body.insertBefore(p, root); S.els.push(p);   // столб света
+        A(p, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: .7, offset: .35 }, { transform: 'scaleY(1)', opacity: 0 }], { duration: 1600, easing: 'ease-out', fill: 'forwards' }); }
+      T(() => { const [x, y, w] = mid(); for (let i = 0; i < 18; i++) {   // искры вверх
+        const d = add(document.createElement('i')); d.className = 'lvx-spark'; d.style.left = (x + (Math.random() - .5) * w) + 'px'; d.style.top = (y + 10) + 'px';
+        A(d, [{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${((Math.random() - .5) * 30).toFixed(1)}px,${(-(50 + Math.random() * 90)).toFixed(1)}px) scale(.4)`, opacity: 0 }],
+          { duration: 900 + Math.random() * 700, delay: Math.random() * 400, easing: 'ease-out', fill: 'both' }); } }, tin * .5);
+    }
+    // уход — сбой: 3 копии надписи полосами со сдвигом, расслоение цвета, дрожь; сила растёт, надпись гаснет
+    T(() => {
+      const cps = [0, 1, 2].map(() => { const c = box.cloneNode(true); c.classList.add('lvx-gc'); root.appendChild(c); return c; }), t0 = Date.now();
+      const step = () => { const k = Math.min(1, (Date.now() - t0) / tout);
+        box.style.opacity = String(1 - k); box.style.transform = `translateX(${((Math.random() - .5) * 10 * k).toFixed(1)}px)`;
+        box.style.textShadow = `${(-3 * k).toFixed(1)}px 0 rgba(255,60,90,.8), ${(3 * k).toFixed(1)}px 0 rgba(60,200,255,.8)`;
+        cps.forEach(c => { const y0 = Math.random() * 80, h = 6 + Math.random() * 22;
+          c.style.clipPath = `inset(${y0.toFixed(0)}% 0 ${Math.max(0, 100 - y0 - h).toFixed(0)}% 0)`; c.style.transform = `translateX(${((Math.random() - .5) * 26 * k).toFixed(1)}px)`; c.style.opacity = String((.5 + Math.random() * .5) * k); });
+        if (k < 1) T(step, 55); else { cps.forEach(c => c.remove()); box.style.opacity = '0'; } };
+      step();
+    }, D - tout);
+    T(() => { S.els.forEach(e => e.remove()); S.els = []; }, D);
+  }
+
   function checkLevelUp() {
     let leveled = false;
     const contoursBefore = openContourCount(data.level);
@@ -6880,8 +6938,7 @@
     }
     if (leveled) {
       data.pendingLevelUpToday = data.level;
-      const p = document.createElement('div'); p.className = 'levelup-popup'; p.textContent = 'LEVEL UP';
-      document.body.appendChild(p); setTimeout(() => p.remove(), 3000);
+      levelUpFx();   // v7.3.4: надпись повышения уровня (несколько уровней за раз — одна надпись)
       const levelReached = data.level;
       setTimeout(() => showNotice(`Достигнут ${levelReached}-й уровень.`, 'info'), 4500);
       const rankAfter = getRank(data.level).name;

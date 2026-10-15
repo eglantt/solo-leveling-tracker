@@ -717,6 +717,11 @@ const w = boot(); const D = w.document; await tick();
     /^Ранг: E\nТип: Расходный предмет\nПрименение: Одноразовое использование\nЭффект: /.test(tx('rune_protection'))
     && /\.item-preview-meta \{ font-family: 'Exo 2 Text', sans-serif; font-size: 0\.84rem; overflow-wrap: normal; word-break: normal; hyphens: manual; \}/.test(css)); }
 
+// ===== v7.3.4: надпись повышения уровня — одинаковая в обеих темах =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('T111 надпись повышения уровня — общие правила (без body.theme-sys / «Классики»), прежней (.levelup-popup, @keyframes levelUp) нет',
+    /\n    \.lvx \{ position: fixed;/.test(css) && !/body\.theme-sys[^{]*\.lvx|body:not\(\.theme-sys\)[^{]*\.lvx/.test(css) && !/levelup-popup|@keyframes levelUp /.test(css)); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
