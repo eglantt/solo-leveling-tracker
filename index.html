@@ -2,6 +2,10 @@
 <html lang="ru" class="booting theme-pending">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    // v7.3.0: запомненный фон «Системы» начинает раскодироваться сразу, пока читается остальная страница (см. SysFrame, ART_KEY)
+    try { var __a = JSON.parse(localStorage.getItem('sl_sys_art') || 'null'); if (__a && __a.d) { window.__slArt = { sig: __a.sig, w: __a.w, h: __a.h, img: new Image() }; window.__slArt.img.src = __a.d; } } catch (e) {}
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.9 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1471,6 +1475,9 @@
     body.theme-sys .sf-win.mwin .eq-opt .nm, body.theme-sys .sf-win.mwin .danger-text, body.theme-sys .sf-win.mwin.sn-red .danger-text { text-shadow: none; }
     /* v7.2.8: подпись Заморозки — уже поле справа (на 360 «Заморозка / закончится / через» без разрыва слов) */
     body.theme-sys .sf-win.mwin .tstrip.frz .reset-label { padding-right: 4px; }
+    /* v7.3.0 (демо 101–102): новый фон «Системы» — общая картинка (окна берут середину), уведомлению — свой холст */
+    body.theme-sys .sf-screen .sf-art { position: absolute; inset: 0; background-repeat: no-repeat; background-position: 50% 50%; }
+    body.theme-sys .sf-screen .sf-artc { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
     /* v7.2.9: свечение цифры уровня в окне «Статус» — компактнее (4 + 8 px), чтобы не срезалось краем прокрутки;
        главный экран остаётся 5 + 14; у SSS и Монарха свечение задаёт пульсация lvPulse — она это правило перекрывает */
     body.theme-sys #statusOverlay .sf-win.mwin .sc-hex b { filter: drop-shadow(0 0 4px var(--rk)) drop-shadow(0 0 8px var(--rk)); }
@@ -1944,7 +1951,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.9';
+  const APP_VERSION = '7.3.0';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4499,16 +4506,317 @@
         const H = Math.ceil(Math.max(window.innerHeight || 0, (screen && screen.height) || 0, (screen && screen.width) || 0, 320));
         const cv = document.createElement('canvas'); cv.width = Math.ceil(w); cv.height = H;
         const g = canvasCtx(cv); if (!g) return null;
-        const base = red ? '#12040a' : '#030914', rgb = red ? '18,4,10' : '3,9,20';
-        g.fillStyle = base; g.fillRect(0, 0, cv.width, H);
-        if (red && 'filter' in g) g.filter = 'hue-rotate(140deg) saturate(1.3)';
-        [[TEXC_CV, MBG_PAT * .9], [TEXS_CV, MBG_PAT * .85]].forEach(([t, a]) => { if (!t) return; g.globalAlpha = a; g.fillStyle = g.createPattern(t, 'repeat'); g.fillRect(0, 0, cv.width, H); });
-        g.globalAlpha = 1; if ('filter' in g) g.filter = 'none';
-        const side = (x0, x1) => { const gr = g.createLinearGradient(x0, 0, x1, 0); gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(1, `rgba(${rgb},0)`); g.fillStyle = gr; g.fillRect(Math.min(x0, x1), 0, Math.abs(x1 - x0), H); };
-        side(L, L + MBG_VIG); side(w - R, w - R - MBG_VIG);
+        const side = rgb => [[L, L + MBG_VIG], [w - R, w - R - MBG_VIG]].forEach(([x0, x1]) => { const gr = g.createLinearGradient(x0, 0, x1, 0);
+          gr.addColorStop(0, `rgba(${rgb},1)`); gr.addColorStop(1, `rgba(${rgb},0)`); g.fillStyle = gr; g.fillRect(Math.min(x0, x1), 0, Math.abs(x1 - x0), H); });
+        // v7.3.0: новый рисунок (общая картинка; середина — если картинка шире экрана)
+        const paintArt = () => { const art = artCanvas(red); if (!art) return false; g.clearRect(0, 0, cv.width, H);
+          g.drawImage(art, Math.max(0, Math.floor((art.width - cv.width) / 2)), 0, cv.width, Math.min(H, art.height), 0, 0, cv.width, Math.min(H, art.height));
+          side(red ? '18,4,10' : '2,14,24'); artUrl(red); return true; };
+        const st = artEnsure(cv.width);
+        if (st === 1) paintArt();
+        else if (st === -1) {   // запомненная картинка ещё раскодируется — пока тёмная основа, затем рисунок на этот же холст
+          g.fillStyle = red ? '#12040a' : '#030914'; g.fillRect(0, 0, cv.width, H);
+          artWhenSaved(() => { if (cv.isConnected && artEnsure(cv.width) === 1) { paintArt(); artRefresh(); } });
+        } else {   // нет холста для рисунка — прежний фон
+          g.fillStyle = red ? '#12040a' : '#030914'; g.fillRect(0, 0, cv.width, H);
+          if (red && 'filter' in g) g.filter = 'hue-rotate(140deg) saturate(1.3)';
+          [[TEXC_CV, MBG_PAT * .9], [TEXS_CV, MBG_PAT * .85]].forEach(([t, a]) => { if (!t) return; g.globalAlpha = a; g.fillStyle = g.createPattern(t, 'repeat'); g.fillRect(0, 0, cv.width, H); });
+          g.globalAlpha = 1; if ('filter' in g) g.filter = 'none';
+          side(red ? '18,4,10' : '3,9,20');
+        }
         cv.className = 'sf-mbg'; cv.style.width = w + 'px'; cv.style.height = H + 'px';
         return cv;
       } catch (e) { return null; }
+    }
+    // ===== v7.3.0 (демо 101–102): фон «Системы» — рисунок кодом по картинке пользователя =====
+    // Рисунок (основа, «топография», «жидкость», кольца, «схема», дуги, частицы, обрывки интерфейса, размытие краёв и всего рисунка 1 px,
+    // виньетка) рисуется ОДИН раз — общей картинкой: ширина главного экрана (не уже окна) × высота экрана, 1×.
+    // Главный экран рисует её на свой холст (sticky, как с v7.1.6); окна берут середину той же картинки (blob-адрес, без копий);
+    // уведомления — своя маленькая картинка по размеру (запоминается). Под Бременем Аномалии (body.sys-anom) фон везде красноватый —
+    // та же картинка через матрицу hue-rotate(140°) + saturate(1.3), рамки окон не меняются. Нет холста (jsdom) — прежние слои.
+    const ART_OPT = { seed: 24, base: .85, line: .85, dim: .5, soft: 1 };
+    function artGen(W, H) {
+      try {
+        const o = { seed: ART_OPT.seed, base: ART_OPT.base, dim: ART_OPT.dim, soft: ART_OPT.soft, blur: 1, vign: 1 };
+        ['flow', 'fluid', 'rings', 'blocks', 'arcs', 'dots', 'hud'].forEach(k => { o[k] = ART_OPT.line; });
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const g = canvasCtx(cv); if (!g) return null; const dpr = 1;
+      let s = (o.seed * 2654435761) >>> 0; const R = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+      // шум (Perlin 2D, свой генератор)
+      const P = new Uint8Array(512); { const p = [...Array(256).keys()]; for (let i = 255; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } for (let i = 0; i < 512; i++) P[i] = p[i & 255]; }
+      const fade = t => t * t * t * (t * (t * 6 - 15) + 10), lerp = (a, b, t) => a + (b - a) * t;
+      const grad = (h, x, y) => { const v = h & 3; return (v & 1 ? -x : x) + (v & 2 ? -y : y); };
+      const noise = (x, y) => { const X = Math.floor(x) & 255, Y = Math.floor(y) & 255; x -= Math.floor(x); y -= Math.floor(y);
+        const u = fade(x), v = fade(y), a = P[X] + Y, b = P[X + 1] + Y;
+        return lerp(lerp(grad(P[a], x, y), grad(P[b], x - 1, y), u), lerp(grad(P[a + 1], x, y - 1), grad(P[b + 1], x - 1, y - 1), u), v); };
+      const gauss = () => { let u = 0; for (let i = 0; i < 4; i++) u += R(); return (u - 2) / 2; };
+      const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${Math.max(0, Math.min(1, a)).toFixed(3)})`;
+      const cx = W * .5, cy = H * .5, D = Math.hypot(W, H) / 2, area = W * H, K = Math.sqrt(area / (1000 * 562));
+      // ---- 1. основа: эллиптический радиальный градиент (цвета сняты с картинки) ----
+      const B = o.base;
+      g.save(); g.translate(cx, cy); g.scale(W / 2, H / 2);
+      const bg = g.createRadialGradient(0, 0, 0, 0, 0, 1.5);
+      [[0, [7, 62, 94]], [.17, [8, 64, 96]], [.33, [6, 54, 85]], [.53, [5, 44, 73]], [.67, [3, 35, 58]], [.8, [2, 27, 45]], [1, [2, 19, 31]]]
+        .forEach(([t, c]) => bg.addColorStop(t, `rgb(${c.map(v => Math.round(v * B)).join(',')})`));
+      g.fillStyle = bg; g.fillRect(-1.6, -1.6, 3.2, 3.2); g.restore();
+      g.globalCompositeOperation = 'lighter'; g.lineCap = 'round'; g.lineJoin = 'round';
+      // центральное свечение (мягкое пятно света, как в середине картинки)
+      { g.save(); g.translate(cx + W * .04, cy); g.scale(W * .38, H * .42); const r = g.createRadialGradient(0, 0, 0, 0, 0, 1);
+        r.addColorStop(0, rgba([20, 90, 120], .35 * B)); r.addColorStop(1, rgba([20, 90, 120], 0)); g.fillStyle = r; g.beginPath(); g.arc(0, 0, 1, 0, 7); g.fill(); g.restore(); }
+      // «миндаль» — общий контур композиции: верхнее и нижнее веко сходятся слева и справа на средней линии
+      const lid = (u, up) => cy + (up ? -1 : 1) * H * (up ? .40 : .36) * Math.pow(Math.sin(Math.PI * u), .75) + H * .02 * Math.sin(u * 9);
+      // изолинии поля шума (марширующие квадраты): рисуют «топографию» в центре и «мраморную жидкость» по краям
+      const contours = (step, field, levels, mask, style) => {
+        const nx = Math.ceil(W / step) + 1, ny = Math.ceil(H / step) + 1, F = new Float32Array(nx * ny), M = new Float32Array(nx * ny);
+        // маска плавная — считается на редкой сетке (шаг ×4) и сглаживается; поле — только там, где маска заметна
+        const q = 4, mx = Math.ceil((nx - 1) / q) + 1, my = Math.ceil((ny - 1) / q) + 1, MC = new Float32Array(mx * my);
+        for (let j = 0; j < my; j++) for (let i = 0; i < mx; i++) MC[j * mx + i] = mask(i * q * step, j * q * step);
+        for (let j = 0; j < ny; j++) { const fy = j / q, j0 = Math.min(my - 2, Math.floor(fy)), ty = fy - j0;
+          for (let i = 0; i < nx; i++) { const fx = i / q, i0 = Math.min(mx - 2, Math.floor(fx)), tx = fx - i0, k = j0 * mx + i0;
+            const m = (MC[k] * (1 - tx) + MC[k + 1] * tx) * (1 - ty) + (MC[k + mx] * (1 - tx) + MC[k + mx + 1] * tx) * ty;
+            M[j * nx + i] = m; F[j * nx + i] = m >= .005 ? field(i * step, j * step) : 0; } }
+        const NB = 10, paths = Array.from({ length: NB }, () => new Path2D());
+        const seg = (p, ax, ay, bx, by) => { p.moveTo(ax, ay); p.lineTo(bx, by); };
+        levels.forEach(L => {
+          for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+            const k = j * nx + i, m = (M[k] + M[k + 1] + M[k + nx] + M[k + nx + 1]) / 4; if (m < .03) continue;
+            const a = F[k] - L, b = F[k + 1] - L, c = F[k + nx + 1] - L, d = F[k + nx] - L;
+            const idx = (a > 0 ? 8 : 0) | (b > 0 ? 4 : 0) | (c > 0 ? 2 : 0) | (d > 0 ? 1 : 0); if (idx === 0 || idx === 15) continue;
+            const x = i * step, y = j * step, t = (u, v) => u / (u - v);
+            const T = [x + t(a, b) * step, y], Rr = [x + step, y + t(b, c) * step], Bm = [x + t(d, c) * step, y + step], Lf = [x, y + t(a, d) * step];
+            const p = paths[Math.min(NB - 1, Math.floor(m * NB))];
+            switch (idx) {
+              case 1: case 14: seg(p, ...Lf, ...Bm); break; case 2: case 13: seg(p, ...Bm, ...Rr); break;
+              case 3: case 12: seg(p, ...Lf, ...Rr); break; case 4: case 11: seg(p, ...T, ...Rr); break;
+              case 6: case 9: seg(p, ...T, ...Bm); break; case 7: case 8: seg(p, ...Lf, ...T); break;
+              case 5: seg(p, ...Lf, ...T); seg(p, ...Bm, ...Rr); break; case 10: seg(p, ...T, ...Rr); seg(p, ...Lf, ...Bm); break;
+            }
+          }
+        });
+        paths.forEach((p, n) => style(p, (n + .5) / NB));
+      };
+      const warp = (x, y, sc, wk, off) => { const qx = x / sc, qy = y / sc; return noise(qx + wk * noise(qx * .7 + off, qy * .7), qy + wk * noise(qx * .7, qy * .7 + off + 3.3)); };
+      // ---- 2. «топография»: плотные изолинии с завихрением в центре ----
+      if (o.flow > 0) {
+        const sw = (x, y) => { const dx = (x - cx - W * .08) / (W * .3), dy = (y - cy) / (H * .38), r2 = dx * dx + dy * dy, a = 3.4 * Math.exp(-r2 * 2.2);
+          const ca = Math.cos(a), sa = Math.sin(a), X = dx * ca - dy * sa, Y = dx * sa + dy * ca; return [cx + W * .08 + X * W * .3, cy + Y * H * .38]; };
+        const lv = []; for (let L = -.6; L <= .6; L += .09) lv.push(L);
+        contours(2.5, (x, y) => { const [X, Y] = sw(x, y); return warp(X, Y, 150, 1.6, 11); }, lv,
+          (x, y) => { const dx = (x - cx) / (W * .36), dy = (y - cy) / (H * .42); return Math.min(1, .1 + .5 * Math.exp(-(dx * dx + dy * dy)) + .6 * Math.exp(-(Math.pow((x - cx - W * .1) / (W * .14), 2) + Math.pow((y - cy) / (H * .25), 2)))); },
+          (p, m) => { g.strokeStyle = rgba([80, 195, 215], .42 * m * o.flow); g.lineWidth = .7; g.stroke(p); });
+      }
+      // ---- 3. дуги-орбиты: длинные тонкие кривые через всё поле ----
+      if (o.arcs > 0) {
+        for (let i = 0; i < 20; i++) {
+          const up = R() < .5, x0 = -W * .05 + R() * W * .3, x1 = W * .7 + R() * W * .35;
+          const y0 = cy + gauss() * H * .25, y1 = cy + gauss() * H * .25, ym = cy + (up ? -1 : 1) * H * (.15 + R() * .4);
+          g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo((x0 + x1) / 2, ym, x1, y1);
+          g.strokeStyle = rgba([110, 205, 235], (.1 + R() * .22) * o.arcs); g.lineWidth = .6 + R() * .6; g.stroke();
+        }
+      }
+      // ---- 4. кольца HUD: концентрические эллипсы, засечки и «штрих-код» на верхней дуге ----
+      if (o.rings > 0) {
+        const ring = (rx, ry, a0, a1, al, lw) => { g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, a0, a1); g.strokeStyle = rgba([110, 200, 240], al * o.rings); g.lineWidth = lw; g.stroke(); };
+        ring(W * .27, H * .34, 0, Math.PI * 2, .22, 1);
+        ring(W * .29, H * .36, Math.PI * 1.12, Math.PI * 1.88, .5, 1.4);
+        ring(W * .3, H * .43, Math.PI * 1.15, Math.PI * 1.85, .42, 1.2);
+        ring(W * .3, H * .43, Math.PI * .15, Math.PI * .85, .25, 1);
+        ring(W * .34, H * .40, Math.PI * .1, Math.PI * .9, .16, 1);
+        ring(W * .46, H * .47, 0, Math.PI * 2, .07, 1);
+        // засечки и короткие плашки на верхней дуге
+        for (let i = 0; i < 26; i++) {
+          const a = Math.PI * (1.36 + R() * .3), rx = W * .3, ry = H * .43, x = cx + Math.cos(a) * rx, y = cy + Math.sin(a) * ry - 4 + (R() < .5 ? 0 : 8);
+          const w = R() < .7 ? 2 + R() * 3 : 8 + R() * 14;
+          g.fillStyle = rgba([150, 225, 250], (.35 + R() * .5) * o.rings); g.fillRect(x, y, w, R() < .5 ? 1.5 : 3);
+        }
+      }
+      // ---- 5. диагональные блоки «схемы» (бирюзовые прямоугольники с лесенкой) ----
+      if (o.blocks > 0) {
+        const th = 40 * Math.PI / 180, ux = Math.cos(th), uy = Math.sin(th), vx = -uy, vy = ux, col = [95, 225, 205];
+        const n = Math.round(95 * K * K * o.blocks);
+        for (let i = 0; i < n; i++) {
+          const px = cx + gauss() * W * .3, py = cy + gauss() * H * .4;
+          const L = 20 + Math.pow(R(), 1.8) * 230, w = 4 + R() * 12, al = (.14 + R() * .34) * o.blocks;
+          g.save(); g.translate(px, py); g.transform(ux, uy, vx, vy, 0, 0);
+          g.strokeStyle = rgba(col, al); g.lineWidth = .8 + R() * .5;
+          const kind = R();
+          if (kind < .55) g.strokeRect(-L / 2, -w / 2, L, w);
+          else if (kind < .8) { g.beginPath(); g.moveTo(-L / 2, 0); g.lineTo(L / 2, 0); g.stroke(); }
+          else { g.strokeRect(-L / 2, -w / 2, L, w); g.beginPath(); for (let x = -L / 2 + 3; x < L / 2; x += 3) { g.moveTo(x, -w / 2); g.lineTo(x, w / 2); } g.strokeStyle = rgba(col, al * .7); g.lineWidth = .6; g.stroke(); }
+          if (R() < .3) { g.beginPath(); const x = (R() - .5) * L; g.moveTo(x, w / 2); g.lineTo(x, w / 2 + 8 + R() * 20); g.strokeStyle = rgba(col, al * .8); g.stroke(); }
+          g.restore();
+        }
+        // длинные параллельные линии
+        for (let i = 0; i < 26 * o.blocks; i++) {
+          const px = cx + gauss() * W * .22, py = cy + gauss() * H * .3, L = 120 + R() * 320;
+          g.beginPath(); g.moveTo(px - ux * L / 2, py - uy * L / 2); g.lineTo(px + ux * L / 2, py + uy * L / 2);
+          g.strokeStyle = rgba(col, (.1 + R() * .2) * o.blocks); g.lineWidth = .7; g.stroke();
+        }
+      }
+      // ---- 6. «жидкость»: яркие мраморные контуры по краям миндаля (крылья слева и справа) ----
+      if (o.fluid > 0) {
+        const zone = (x, y) => { const u = x / W; let m = 0;
+          [true, false].forEach(up => { const d = (y - lid(Math.min(.999, Math.max(.001, u)), up)) / (H * (.05 + .09 * Math.abs(.5 - u))); m = Math.max(m, Math.exp(-d * d)); });
+          const side = Math.min(1, Math.pow(Math.abs(u - .5) * 2, 1.6) * 1.5 + .05);
+          const bl = (X, Y, rx, ry, k) => k * Math.exp(-Math.pow((x - W * X) / (W * rx), 2) - Math.pow((y - H * Y) / (H * ry), 2));
+          const blobL = bl(.1, .4, .14, .2, 1) + bl(.18, .2, .12, .1, .7) + bl(.15, .8, .16, .12, .7) + bl(.55, .92, .12, .07, .6) + bl(.88, .5, .1, .12, .8) + bl(.85, .15, .12, .08, .5);
+          return Math.max(0, Math.min(1, (m * side + blobL * .8) * (.35 + 1.1 * noise(x / 110 + 40, y / 110)))); };
+        const lv = [-.12, .14];
+        // свечение контуров — одним проходом размытия на все контуры (вместо тени у каждого): тот же вид, в разы быстрее
+        const gl = document.createElement('canvas'); gl.width = cv.width; gl.height = cv.height; const gg = gl.getContext('2d'); gg.setTransform(dpr, 0, 0, dpr, 0, 0);
+        gg.globalCompositeOperation = 'lighter'; gg.lineCap = 'round'; gg.lineJoin = 'round'; const cores = [];
+        const st = (p, m) => { gg.strokeStyle = rgba([30, 140, 250], .55 * m * o.fluid); gg.lineWidth = 2.6; gg.stroke(p); cores.push([p, m]); };
+        contours(2.5, (x, y) => { const a = noise(x / 300 + 7, y / 300) * .9; const X = x * Math.cos(a) * .42 - y * Math.sin(a) * .2, Y = x * Math.sin(a) * .42 + y * Math.cos(a); return warp(X, Y, 70, 3.4, 23) + .12 * noise(x / 22, y / 22); }, lv, zone, st);
+        g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+        if ('filter' in g) { g.filter = `blur(${(4.5 * dpr).toFixed(1)}px)`; g.drawImage(gl, 0, 0); g.filter = 'none'; }
+        g.drawImage(gl, 0, 0); g.restore();
+        cores.forEach(([p, m]) => { g.strokeStyle = rgba([90, 195, 255], .9 * m * o.fluid); g.lineWidth = 1; g.stroke(p); });
+      }
+      // ---- 7. частицы ----
+      if (o.dots > 0) {
+        const n = Math.round(area / 2600 * o.dots);
+        for (let i = 0; i < n; i++) {
+          const x = R() * W, y = R() * H, sz = R() < .85 ? 1 + R() * 1.4 : 2 + R() * 2.5;
+          const dc = Math.hypot((x - cx) / (W * .5), (y - cy) / (H * .5));
+          g.fillStyle = rgba([160, 235, 255], (.25 + R() * .7) * Math.max(.3, 1.2 - dc * .6) * o.dots);
+          if (R() < .6) g.fillRect(x, y, sz, sz * (R() < .5 ? 1 : .5)); else { g.beginPath(); g.arc(x, y, sz * .6, 0, 7); g.fill(); }
+        }
+      }
+      // ---- 8. обрывки интерфейса: вертикальные отводы с узлами, штрих-коды ----
+      if (o.hud > 0) {
+        const c = [120, 210, 240], al = .55 * o.hud;
+        const node = (x, y0, y1) => { g.beginPath(); g.moveTo(x, y0); g.lineTo(x, y1); g.strokeStyle = rgba(c, al); g.lineWidth = 1; g.stroke();
+          g.strokeRect(x - 2, y1, 4, 9); g.beginPath(); g.arc(x, y0, 2.2, 0, 7); g.stroke(); };
+        node(W * .085, H * .06, H * .17); node(W * .155, H * .14, H * .21);
+        g.beginPath(); g.moveTo(W * .125, H * .13); g.quadraticCurveTo(W * .15, H * .13, W * .155, H * .14); g.strokeStyle = rgba(c, al * .7); g.stroke();
+        for (let i = 0; i < 4; i++) { const x = W * (.6 + i * .06), y = H * (.32 + R() * .15); g.strokeStyle = rgba(c, al * .5); g.strokeRect(x, y, 8 + R() * 18, 6 + R() * 12); }
+      }
+      g.globalCompositeOperation = 'source-over'; g.shadowBlur = 0;
+      // ---- 9. размытие по краям (глубина резкости) и виньетка ----
+      if (o.blur > 0 && 'filter' in g) {
+        const sharp = document.createElement('canvas'); sharp.width = cv.width; sharp.height = cv.height;
+        const sg = sharp.getContext('2d'); sg.drawImage(cv, 0, 0);
+        // размытие краёв — на картинке вдвое меньше (в 4 раза меньше точек), затем растягивается обратно
+        const half = document.createElement('canvas'); half.width = Math.ceil(cv.width / 2); half.height = Math.ceil(cv.height / 2);
+        const hg = half.getContext('2d'); hg.filter = `blur(${(1.1 * o.blur * dpr).toFixed(2)}px)`; hg.drawImage(sharp, 0, 0, half.width, half.height); hg.filter = 'none';
+        g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingQuality = 'high'; g.drawImage(half, 0, 0, cv.width, cv.height);
+        sg.globalCompositeOperation = 'destination-in'; sg.save(); sg.translate(cv.width / 2, cv.height / 2); sg.scale(cv.width / 2, cv.height / 2);
+        const m = sg.createRadialGradient(0, 0, 0, 0, 0, 1.2); m.addColorStop(0, 'rgba(0,0,0,1)'); m.addColorStop(.55, 'rgba(0,0,0,1)'); m.addColorStop(1, 'rgba(0,0,0,0)');
+        sg.fillStyle = m; sg.fillRect(-2, -2, 4, 4); sg.restore();
+        g.drawImage(sharp, 0, 0); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      // ---- 10. мягкое размытие всего рисунка (запекается один раз) ----
+      if (o.soft > 0 && 'filter' in g) {
+        const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height; t.getContext('2d').drawImage(cv, 0, 0);
+        g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = 'rgb(3,30,50)'; g.fillRect(0, 0, cv.width, cv.height);
+        g.filter = `blur(${(o.soft * dpr).toFixed(2)}px)`; g.drawImage(t, 0, 0); g.filter = 'none'; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      if (o.vign > 0) { g.save(); g.translate(cx, cy); g.scale(W / 2, H / 2); const v = g.createRadialGradient(0, 0, .55, 0, 0, 1.45);
+        v.addColorStop(0, 'rgba(1,10,18,0)'); v.addColorStop(1, rgba([1, 10, 18], .75 * o.vign)); g.fillStyle = v; g.fillRect(-2, -2, 4, 4); g.restore(); }
+      if (o.dim > 0) { g.fillStyle = rgba([2, 8, 16], o.dim); g.fillRect(0, 0, W, H); }
+        return cv;
+      } catch (e) { return null; }
+    }
+    // Красноватый вариант: та же матрица, что у CSS hue-rotate(140deg) saturate(1.3) (не зависит от поддержки ctx.filter).
+    const ART_RED_M = (() => { const a = 140 * Math.PI / 180, c = Math.cos(a), n = Math.sin(a), s = 1.3;
+      const Hm = [[.213 + c * .787 - n * .213, .715 - c * .715 - n * .715, .072 - c * .072 + n * .928], [.213 - c * .213 + n * .143, .715 + c * .285 + n * .140, .072 - c * .072 - n * .283], [.213 - c * .213 - n * .787, .715 - c * .715 + n * .715, .072 + c * .928 + n * .072]];
+      const Sm = [[.213 + .787 * s, .715 - .715 * s, .072 - .072 * s], [.213 - .213 * s, .715 + .285 * s, .072 - .072 * s], [.213 - .213 * s, .715 - .715 * s, .072 + .928 * s]];
+      return Sm.map(r => [0, 1, 2].map(j => r[0] * Hm[0][j] + r[1] * Hm[1][j] + r[2] * Hm[2][j])); })();
+    function artRedden(src) {
+      try {
+        const cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height; const g = canvasCtx(cv); if (!g) return null;
+        g.drawImage(src, 0, 0); const im = g.getImageData(0, 0, cv.width, cv.height), d = im.data, M = ART_RED_M;
+        for (let i = 0; i < d.length; i += 4) { const r = d[i], gg = d[i + 1], b = d[i + 2];
+          d[i] = M[0][0] * r + M[0][1] * gg + M[0][2] * b; d[i + 1] = M[1][0] * r + M[1][1] * gg + M[1][2] * b; d[i + 2] = M[2][0] * r + M[2][1] * gg + M[2][2] * b; }
+        g.putImageData(im, 0, 0); return cv;
+      } catch (e) { return null; }
+    }
+    const ART = { cv: null, red: null, W: 0, H: 0, url: { b: '', r: '' }, wait: { b: 0, r: 0 }, small: new Map() };
+    const artRedOn = () => document.body.classList.contains('sys-anom');
+    const artH = () => Math.ceil(Math.max(window.innerHeight || 0, (screen && screen.height) || 0, (screen && screen.width) || 0, 320));
+    // Общая картинка: рисуется при первой отрисовке главного экрана (во время заставки загрузки) и заново — только если экран стал шире/выше.
+    function artEnsure(wNeed) {
+      const H = artH(), W = Math.ceil(Math.max(wNeed, Math.min(460, (window.innerWidth || 0) * .98)));
+      if (ART.cv && ART.W >= W && ART.H >= H) return 1;
+      const GW = Math.max(W, ART.W), GH = Math.max(H, ART.H);
+      if (artPending(GW, GH)) return -1;   // 1 — готово, −1 — ждём запомненную картинку, 0 — рисунка нет (нет холста)
+      const cv = artFromStore(GW, GH) || artGen(GW, GH); if (!cv) return 0;
+      if (!cv._stored) artStore(cv);
+      ['b', 'r'].forEach(k => { if (ART.url[k]) { try { URL.revokeObjectURL(ART.url[k]); } catch (e) {} ART.url[k] = ''; } ART.wait[k] = 0; });
+      ART.cv = cv; ART.red = null; ART.W = cv.width; ART.H = cv.height;
+      artUrl(false); return 1;
+    }
+    // Готовая картинка запоминается на устройстве (localStorage, JPEG): долгим бывает только первый запуск (и после смены размера экрана).
+    // Чтение начинается сразу при загрузке скрипта (картинка успевает раскодироваться до первой отрисовки главного экрана).
+    const ART_KEY = 'sl_sys_art', ART_SIG = 'v1|' + [ART_OPT.seed, ART_OPT.base, ART_OPT.line, ART_OPT.dim, ART_OPT.soft].join('|');
+    // Картинку начинает раскодировать скрипт в <head> (window.__slArt); если он не сработал — читаем здесь.
+    let artSaved = (() => { try { if (/jsdom/i.test(navigator.userAgent)) return null;
+      const e = window.__slArt; if (e && e.sig === ART_SIG && e.img) return { w: e.w, h: e.h, img: e.img };
+      const r = JSON.parse(localStorage.getItem(ART_KEY) || 'null');
+      if (!r || r.sig !== ART_SIG || !r.d) return null; const img = new Image(); img.src = r.d; return { w: r.w, h: r.h, img }; } catch (e) { return null; } })();
+    // Запомненная картинка подходит по размеру, но ещё раскодируется: ждём её (несколько кадров), а не рисуем заново (~1 с на телефоне).
+    const artPending = (W, H) => {
+      if (!artSaved || artSaved.w < W || artSaved.h < H) return false;
+      if (artSaved.img.complete) { if (!artSaved.img.naturalWidth) artSaved = null; return false; }   // уже раскодирована или испорчена
+      return true;
+    };
+    function artWhenSaved(fn) {
+      const img = artSaved && artSaved.img; if (!img) return;
+      if (!img._sl) { img._sl = []; const go = ok => { if (!ok) artSaved = null; const l = img._sl; img._sl = []; l.forEach(f => { try { f(); } catch (e) {} }); };
+        img.addEventListener('load', () => go(true), { once: true }); img.addEventListener('error', () => go(false), { once: true });
+        setTimeout(() => { if (img._sl.length) go(!!(img.complete && img.naturalWidth)); }, 3000); }   // страховка: ни load, ни error
+      img._sl.push(fn);
+    }
+    function artFromStore(W, H) {
+      try {
+        if (!artSaved || artSaved.w < W || artSaved.h < H || !artSaved.img.complete || !artSaved.img.naturalWidth) return null;
+        const cv = document.createElement('canvas'); cv.width = artSaved.w; cv.height = artSaved.h; const g = canvasCtx(cv); if (!g) return null;
+        g.drawImage(artSaved.img, 0, 0); cv._stored = true; return cv;
+      } catch (e) { return null; }
+    }
+    function artStore(cv) {
+      setTimeout(() => { try { localStorage.setItem(ART_KEY, JSON.stringify({ sig: ART_SIG, w: cv.width, h: cv.height, d: cv.toDataURL('image/jpeg', .92) })); } catch (e) {} }, 2500);
+    }
+    function artCanvas(red) { if (!ART.cv) return null; if (!red) return ART.cv; if (!ART.red) ART.red = artRedden(ART.cv); return ART.red; }
+    // Адрес картинки для окон (одна раскодированная картинка на все окна); готов чуть позже — тогда открытые окна получают новый фон.
+    function artUrl(red) {
+      const k = red ? 'r' : 'b'; if (ART.url[k]) return ART.url[k];
+      const cv = artCanvas(red); if (!cv || ART.wait[k] || !cv.toBlob || typeof URL === 'undefined' || !URL.createObjectURL) return '';
+      ART.wait[k] = 1;
+      cv.toBlob(b => { if (cv !== artCanvas(red)) return; ART.wait[k] = 0; if (!b) return; ART.url[k] = URL.createObjectURL(b); artRefresh(); }, 'image/png');
+      return '';
+    }
+    const OLD_BG = () => `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>`;
+    // Фон окна (не главного экрана): середина общей картинки; пока адреса нет — прежние слои.
+    function winBg(scr, w, h) {
+      const red = artRedOn(), k = red ? 'r' : 'b';
+      if (scr.dataset.art === k) return;
+      const url = ART.cv ? artUrl(red) : '';
+      if (!url) { if (scr.dataset.art !== 'old') { scr.innerHTML = OLD_BG(); scr.dataset.art = 'old'; } return; }
+      const fit = w <= ART.W && h <= ART.H ? `${ART.W}px ${ART.H}px` : 'cover';
+      scr.innerHTML = `<div class="sf-base"></div><div class="sf-art" style="background-image:url(${url});background-size:${fit}"></div>`;
+      scr.dataset.art = k;
+    }
+    // Фон уведомления: своя маленькая картинка по его размеру (рисуется один раз на размер).
+    function noticeBg(scr, w, h) {
+      const red = artRedOn(), k = red ? 'r' : 'b', key = Math.round(w) + 'x' + Math.round(h);
+      if (scr.dataset.art === k) return;
+      if (!(w > 1 && h > 1)) { scr.innerHTML = '<div class="sf-base"></div>'; return; }   // окно ещё не видно — фон при следующей отрисовке
+      let rec = ART.small.get(key);
+      if (!rec) { const cv = artGen(Math.round(w), Math.round(h)); if (!cv) { if (scr.dataset.art !== 'old') { scr.innerHTML = OLD_BG(); scr.dataset.art = 'old'; } return; }
+        rec = { b: cv, r: null }; if (ART.small.size > 6) ART.small.clear(); ART.small.set(key, rec); }
+      if (red && !rec.r) rec.r = artRedden(rec.b);
+      const src = red ? rec.r : rec.b; if (!src) return;
+      const cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height; cv.className = 'sf-artc';
+      const g = canvasCtx(cv); if (g) g.drawImage(src, 0, 0);
+      scr.innerHTML = '<div class="sf-base"></div>'; scr.appendChild(cv); scr.dataset.art = k;
+    }
+    // Перекраска фона открытых окон и уведомлений (адрес готов, Бремя наступило или снялось). Главный экран — через render.
+    function artRefresh() {
+      document.querySelectorAll('.sf-win:not(.mscr) > .sf-screen').forEach(scr => {
+        const win = scr.parentElement; if (!win) return;
+        if (win.classList.contains('sys-notice')) noticeBg(scr, win.offsetWidth, win.offsetHeight); else winBg(scr, win.offsetWidth, win.offsetHeight);
+      });
     }
     // Края контуров у верхней и нижней границ середины — строго по горизонтали: иначе на высоком окне наклон обводки
     // (несколько единиц) растягивается вместе с серединой и подложка встаёт криво.
@@ -4597,7 +4905,9 @@
         mbg = mainBg(w, L, R, scheme === 'red');
       }
       if (mbg) scr.appendChild(mbg);
-      else scr.innerHTML = `<div class="sf-base"></div>${TEXC ? `<div class="sf-bg sf-circ" style="background-image:url(${TEXC})"></div>` : ''}${TEXS ? `<div class="sf-bg sf-scr" style="background-image:url(${TEXS})"></div>` : ''}<div class="sf-bg sf-shim"><i></i><i></i><i></i></div>${vig}`;
+      else if (win.classList.contains('mscr')) scr.innerHTML = OLD_BG() + vig;
+      else if (win.classList.contains('sys-notice')) noticeBg(scr, w, h);   // v7.3.0
+      else winBg(scr, w, h);
       win.insertBefore(scr, content);
       // v7.1.5: колонны без свечения (фильтр размытия убран)
       const under = `<svg class="sf-frm sf-under" aria-hidden="true" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><g>${cols}</g></svg>`;
@@ -4607,7 +4917,7 @@
       win.insertAdjacentHTML('beforeend', bars.near);
       win.dataset.sfScheme = scheme;
     }
-    return { render, PAL };
+    return { render, PAL, artRefresh };
   })();
 
   // ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85) =====
@@ -4685,6 +4995,7 @@
       if (a === anomaly()) return;
       document.body.classList.toggle('sys-anom', a);
       frame(mainWin);
+      SysFrame.artRefresh();   // v7.3.0: фон окон и уведомлений — красноватый под Бременем
     }
     // Применить выбранную тему: и при запуске, и при смене в Архиве (открытые окна переодеваются на месте).
     function apply() {

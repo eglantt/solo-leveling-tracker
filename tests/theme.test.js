@@ -385,8 +385,8 @@ const w = boot(); const D = w.document; await tick();
   check('T61 фон главного экрана — одна картинка размером с экран (узоры с прежней прозрачностью, виньетка 16px, красная под Бременем), «прилипает» к экрану; без холста — прежние слои',
     /body\.theme-sys \.mscr > \.sf-screen \{ overflow: clip; \}/.test(css) && /body\.theme-sys \.mscr \.sf-mbg \{ position: sticky; top: 0; display: block; \}/.test(css)
     && /const MBG_PAT = 0\.55, MBG_VIG = 16;/.test(src) && /\[\[TEXC_CV, MBG_PAT \* \.9\], \[TEXS_CV, MBG_PAT \* \.85\]\]/.test(src)
-    && /const base = red \? '#12040a' : '#030914'/.test(src) && /hue-rotate\(140deg\) saturate\(1\.3\)/.test(src) && /mbg = mainBg\(w, L, R, scheme === 'red'\);/.test(src)
-    && /if \(mbg\) scr\.appendChild\(mbg\);\s+else scr\.innerHTML = `<div class="sf-base">/.test(src));
+    && /g\.fillStyle = red \? '#12040a' : '#030914'/.test(src) && /hue-rotate\(140deg\) saturate\(1\.3\)/.test(src) && /mbg = mainBg\(w, L, R, scheme === 'red'\);/.test(src)
+    && /if \(mbg\) scr\.appendChild\(mbg\);\s+else if \(win\.classList\.contains\('mscr'\)\) scr\.innerHTML = OLD_BG\(\) \+ vig;/.test(src));
   const pool = J(w, 'SYSTEM_NOTICES.complete');
   check('T62 уведомление о выполнении задания: «Задание выполнено в полном объёме.» вместо «исполнено»',
     JSON.parse(pool).includes('Задание выполнено в полном объёме.') && !/Задание исполнено/.test(pool) && new Set(JSON.parse(pool)).size === 9, pool); }
@@ -658,6 +658,36 @@ const w = boot(); const D = w.document; await tick();
     && /sysLimitScrollPulseTarget \{\s*0%, 100% \{ text-shadow: 0 0 \.2em rgba\(64,192,255,\.387\), 0 0 \.8em rgba\(64,192,255,\.307\),/.test(css)
     && /sysCursedScrollPulseTarget \{\s*0%, 100% \{ text-shadow: 0 0 \.2em rgba\(255,85,85,\.387\), 0 0 \.8em rgba\(255,85,85,\.307\),/.test(css);
   check('T91 общее свечение в кадрах — тот же цвет и размах, что var(--tg) у цифры и цели', ok); }
+
+// ===== v7.3.0: новый фон «Системы» (демо 101–102) =====
+{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), scripts = [...D.querySelectorAll('script')].map(x => x.textContent), src = scripts.join('\n');
+  const fn = n => { const m = src.match(new RegExp('function ' + n + '\\([\\s\\S]*?\\n    \\}')); return m ? m[0] : ''; };
+  check('T100 рисунок по решению демо 101–102: вариант 24, основа и линии 85%, затемнение 50%, размытие 1 px; запоминается на устройстве (JPEG, с подписью настроек), чтение — первым скриптом в <head>; «Сбросить всё» его не трогает (не данные)',
+    /const ART_OPT = \{ seed: 24, base: \.85, line: \.85, dim: \.5, soft: 1 \};/.test(src) && /const ART_KEY = 'sl_sys_art', ART_SIG = 'v1\|' \+ \[ART_OPT\.seed, ART_OPT\.base, ART_OPT\.line, ART_OPT\.dim, ART_OPT\.soft\]/.test(src)
+    && /toDataURL\('image\/jpeg', \.92\)/.test(fn('artStore')) && /localStorage\.getItem\('sl_sys_art'\)/.test(scripts[0]) && D.head.contains(D.querySelector('script'))
+    && /function clearAppStorage\(\) \{[^}]*localStorage\.removeItem\(STORAGE_KEY\)[^}]*\}/.test(src) && !/function clearAppStorage\(\) \{[^}]*sl_sys_art/.test(src));
+  check('T101 фон окна — середина общей картинки (один адрес на все окна), без пятен света; уведомление — своя маленькая картинка; рисунок не рисуется при открытии окна',
+    /<div class="sf-art" style="background-image:url\(\$\{url\}\);background-size:\$\{fit\}"><\/div>/.test(fn('winBg')) && !/sf-shim|artGen\(/.test(fn('winBg'))
+    && /artGen\(Math\.round\(w\), Math\.round\(h\)\)/.test(fn('noticeBg')) && /ART\.small\.get\(key\)/.test(fn('noticeBg'))
+    && /body\.theme-sys \.sf-screen \.sf-art \{ position: absolute; inset: 0; background-repeat: no-repeat; background-position: 50% 50%; \}/.test(css)
+    && /body\.theme-sys \.sf-screen \.sf-artc \{/.test(css) && !/filter: blur|backdrop-filter/.test((css.match(/body\.theme-sys \.sf-screen \.sf-art[^}]*\}/g) || []).join('')));
+  check('T102 красноватый вариант — матрица hue-rotate(140°) · saturate(1.3) (как у главного экрана); запомненная картинка ждётся, а не рисуется заново; испорченная — рисунок заново',
+    /const ART_RED_M = \(\(\) => \{ const a = 140 \* Math\.PI \/ 180, c = Math\.cos\(a\), n = Math\.sin\(a\), s = 1\.3;/.test(src)
+    && /if \(artPending\(GW, GH\)\) return -1;/.test(fn('artEnsure')) && /if \(!artSaved\.img\.naturalWidth\) artSaved = null;/.test(src)
+    && /artWhenSaved\(\(\) => \{ if \(cv\.isConnected && artEnsure\(cv\.width\) === 1\) \{ paintArt\(\); artRefresh\(\); \} \}\);/.test(src));
+  // без холста (jsdom) — прежние слои у окна, главного экрана и уведомления; Бремя — перекраска без ошибок, рамка окна синяя
+  const mk = cls => { const el = D.createElement('div'); el.className = cls; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
+    Object.defineProperty(el, 'offsetWidth', { value: 390 }); Object.defineProperty(el, 'offsetHeight', { value: 600 }); D.body.appendChild(el); return el; };
+  const wn = mk('sf-win mwin'), mn = mk('sf-win mwin mscr'), nt = mk('sf-win sys-notice'); w.__a = wn; w.__b = mn; w.__c = nt;
+  E(w, "SysFrame.render(__a, 'blue', SYS_FRAME_OPT); SysFrame.render(__b, 'blue', SYS_FRAME_OPT); SysFrame.render(__c, 'blue')");
+  const sc = el => el.querySelector(':scope > .sf-screen');
+  const oldOk = sc(wn).dataset.art === 'old' && sc(nt).dataset.art === 'old' && sc(wn).querySelector('.sf-base') && sc(mn).querySelector('.sf-base') && !D.querySelector('.sf-art, .sf-artc');
+  let err = ''; try { E(w, 'data.curseActiveToday = true; render(); SysFrame.artRefresh()'); await tick(); } catch (e) { err = String(e); }
+  const anom = D.body.classList.contains('sys-anom');
+  E(w, 'openShop()'); await tick(); const shopRed = D.querySelector('#shopOverlay > .status-window').classList.contains('sn-red');
+  closeAll(w); E(w, 'data.curseActiveToday = false; render()'); await tick(); [wn, mn, nt].forEach(e => e.remove());
+  check('T103 без холста — прежний фон (окно, главный экран, уведомление); под Бременем фон перекрашивается без ошибок, окна остаются синими',
+    oldOk && err === '' && anom && !shopRed && /SysFrame\.artRefresh\(\);/.test(src), [!!oldOk, err, anom, shopRed].join('/')); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
