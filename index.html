@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.2.9 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1471,6 +1471,9 @@
     body.theme-sys .sf-win.mwin .eq-opt .nm, body.theme-sys .sf-win.mwin .danger-text, body.theme-sys .sf-win.mwin.sn-red .danger-text { text-shadow: none; }
     /* v7.2.8: подпись Заморозки — уже поле справа (на 360 «Заморозка / закончится / через» без разрыва слов) */
     body.theme-sys .sf-win.mwin .tstrip.frz .reset-label { padding-right: 4px; }
+    /* v7.2.9: свечение цифры уровня в окне «Статус» — компактнее (4 + 8 px), чтобы не срезалось краем прокрутки;
+       главный экран остаётся 5 + 14; у SSS и Монарха свечение задаёт пульсация lvPulse — она это правило перекрывает */
+    body.theme-sys #statusOverlay .sf-win.mwin .sc-hex b { filter: drop-shadow(0 0 4px var(--rk)) drop-shadow(0 0 8px var(--rk)); }
   </style>
 </head>
 <body>
@@ -1941,7 +1944,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.8';
+  const APP_VERSION = '7.2.9';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система

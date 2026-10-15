@@ -641,6 +641,13 @@ const w = boot(); const D = w.document; await tick();
   check('X6 шапка и «Статус» показывают одно и то же; у полосы нет прежнего сдвига 0,3 с',
     a === b && $('stExp').textContent.startsWith('1500 / 3000') && !/\.sc-bar i \{[^}]*transition/.test(css), [a, b, $('stExp').textContent].join(' | ')); }
 
+{ const x = boot(); await tick(); const css = x.document.querySelector('style').textContent;
+  const st = /body\.theme-sys #statusOverlay \.sf-win\.mwin \.sc-hex b \{ filter: drop-shadow\(0 0 4px var\(--rk\)\) drop-shadow\(0 0 8px var\(--rk\)\); \}/.test(css);
+  const main = /body\.theme-sys \.sf-win\.mwin \.sc-hex b \{[^}]*drop-shadow\(0 0 5px var\(--rk\)\) drop-shadow\(0 0 14px var\(--rk\)\)/.test(css);
+  const pulse = /@keyframes lvPulse \{ 0%, 100% \{ filter: drop-shadow\(0 0 4px var\(--rk\)\) drop-shadow\(0 0 9px var\(--rk\)\); \}/.test(css)
+    && /\.rk-sss \.sc-hex b \{ --rk2: #ff66ff; animation: lvPulse 2\.4s/.test(css) && /\.rk-monarch \.sc-hex b \{ --rk2: #ff44ff; animation: lvPulse 2\.2s/.test(css);
+  check('T99 «Система»: свечение цифры уровня в «Статусе» 4 + 8 px, на главном экране 5 + 14; пульсация SSS и Монарха прежняя', st && main && pulse, [st, main, pulse].join('/')); }
+
 // ===== v7.2.4: пульсации «свиток + Бремя / Предел» в «Системе» — плавные (без var(--tg) в кадрах) =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   const kf = n => { const m = css.match(new RegExp('@keyframes ' + n + ' \\{([\\s\\S]*?)\\n    \\}')); return m ? m[1] : ''; };
