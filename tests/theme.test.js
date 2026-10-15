@@ -569,6 +569,78 @@ const w = boot(); const D = w.document; await tick();
   const ok = t => t.text && t.head && t.box && t.bg && t.statusOpen && t.cur === 'pointer';
   check('T93 описание характеристики: касание по тексту, заголовку, карточке и фону закрывает окно, «Статус» остаётся открытым — в обеих темах', ok(r.system) && ok(r.classic), JSON.stringify(r)); }
 
+// ===== v7.2.8: подпись Заморозки, лёд «Классики», появление окон «Классики», плавный набор опыта =====
+{ const x = boot(); await tick(); const XD = x.document; const css = XD.querySelector('style').textContent;
+  E(x, `data.activeScroll='freeze'; data.freezeEndTimestamp=Date.now()+5*24*3600e3; data.freezeAnimPlayed=true; render(); updateTimer()`);
+  const c = XD.getElementById('resetTimerContainer'), lab = c.querySelector('.reset-label');
+  const frzOn = c.classList.contains('frz'), padSys = x.getComputedStyle(lab).paddingRight;
+  E(x, `setTheme('classic')`); const padCl = x.getComputedStyle(lab).paddingRight;
+  E(x, `setTheme('system'); data.activeScroll=null; render(); updateTimer()`);
+  check('T94 Заморозка: метка frz на полосе таймера; в «Системе» поле справа 4px, в «Классике» прежнее; без Заморозки метки нет',
+    frzOn && padSys === '4px' && padCl === '10px' && !c.classList.contains('frz') && x.getComputedStyle(lab).paddingRight === '10px', [frzOn, padSys, padCl].join('/'));
+  E(x, `setTheme('classic'); data.activeScroll='freeze'; render()`);
+  const ice = XD.querySelector('.freeze-ice-overlay'), cat = XD.querySelector('.freeze-tap-catcher'), veil = XD.getElementById('veilOverlay');
+  const iceRule = /body:not\(\.theme-sys\) \.freeze-ice-overlay, body:not\(\.theme-sys\) \.freeze-tap-catcher \{ inset: 10px 12px; border-radius: 10px; overflow: hidden; \}/.test(css);
+  const veilRule = /\.veil-overlay \{[^}]*inset:\s*10px 12px;[^}]*border-radius:\s*10px/.test(css);
+  const okCl = iceRule && veilRule && x.getComputedStyle(ice).overflow === 'hidden' && x.getComputedStyle(cat).overflow === 'hidden';
+  E(x, `setTheme('system')`);
+  check('T95 «Классика»: лёд и ловушка касаний — отступы 10/12 и скругление 10, как у Пелены; «Система» — прежние −5px',
+    okCl && x.getComputedStyle(ice).overflow !== 'hidden' && /body\.theme-sys[^{]*\.freeze-ice-overlay[^{]*\{[^}]*inset:\s*-5px/.test(css), [iceRule, veilRule, x.getComputedStyle(ice).overflow].join('/'));
+  E(x, `data.activeScroll=null; render()`);
+  const kf = css.slice(css.indexOf('@keyframes systemPopupIn'), css.indexOf('}\n    }', css.indexOf('@keyframes systemPopupIn')));
+  check('T96 уведомление «Классики»: проявление снизу на 12 px за 0,25 с (2,5% от 10 с), уход прежний',
+    /0%\s*\{\s*opacity:\s*0;\s*transform:\s*translate\(-50%,\s*calc\(-50% \+ 12px\)\)/.test(kf) && /2\.5%\s*\{\s*opacity:\s*1/.test(kf) && /100%\s*\{\s*opacity:\s*0;\s*transform:\s*translate\(-50%,\s*-54%\)/.test(kf) && /animation:\s*systemPopupIn 10s/.test(css), kf.slice(0, 160)); }
+
+{ const x = boot(); await tick(); const XD = x.document; E(x, `setTheme('classic')`); closeAll(x); await tick();
+  const ov = XD.getElementById('invOverlay'), win = ov.firstElementChild;
+  E(x, `openInv()`); await tick();
+  const css7 = XD.querySelector('style').textContent;
+  const inOk = ov.classList.contains('cfx-ov-in') && win.classList.contains('cfx-win-in') && /\.status-overlay\.cfx-ov-in \{ animation: cfxOvIn \.25s/.test(css7) && /\.cfx-win-in \{ animation: cfxWinIn \.25s/.test(css7);
+  await sleep(350); const cleared = !ov.classList.contains('cfx-ov-in') && !win.classList.contains('cfx-win-in');
+  E(x, `closeInv()`); await tick();
+  const gh = XD.querySelector('.status-overlay.cfx-ghost');
+  const ghOk = !!gh && ov.style.display === 'none' && !gh.id && !gh.querySelector('[id]') && x.getComputedStyle(gh).pointerEvents === 'none' && /\.cfx-ghost > \* \{ animation: cfxWinOut \.18s/.test(css7);
+  await sleep(300); const ghGone = !XD.querySelector('.cfx-ghost');
+  check('T97 «Классика»: окно появляется (фон и окно — проявление 0,25 с), классы снимаются; закрытие — копия без id, не ловит нажатия, уходит и удаляется',
+    inOk && cleared && ghOk && ghGone, [inOk, cleared, ghOk, ghGone].join('/'));
+  E(x, `setTheme('system')`); await tick(); E(x, `openInv()`); await tick();
+  const sysNo = !ov.classList.contains('cfx-ov-in'); E(x, `closeInv()`); await tick(); const sysNoGhost = !XD.querySelector('.cfx-ghost');
+  E(x, `setTheme('classic')`); const ro = XD.getElementById('rulesOverlay');
+  E(x, `showRulesOverlay('onboarding')`); await tick(); const onbNo = !ro.classList.contains('cfx-ov-in');
+  E(x, `stopRulesAnimation(); document.getElementById('rulesOverlay').style.display='none'`); await tick(); const onbNoGhost = !XD.querySelector('.cfx-ghost');
+  E(x, `showRulesOverlay('archive')`); await tick(); const arcYes = ro.classList.contains('cfx-ov-in');
+  check('T98 без эффекта: тема «Система» и стартовое окно первого запуска; правила из Архива — с эффектом',
+    sysNo && sysNoGhost && onbNo && onbNoGhost && arcYes, [sysNo, sysNoGhost, onbNo, onbNoGhost, arcYes].join('/')); }
+
+{ const x = boot(); await tick(); const XD = x.document; const $ = id => XD.getElementById(id);
+  const st = () => $('hdrExp').textContent + ' L' + $('hdrLevel').textContent + ' ' + $('hdrBarFill').style.width;
+  E(x, `data.level=12; data.exp=1300; data.expDebt=0; render()`); const s0 = st();
+  E(x, `gainExp(400); render()`); await sleep(500); const mid = st(); const midN = parseInt($('hdrExp').textContent, 10);
+  await sleep(650); const end = st();
+  check('X1 опыт: начисление считает вверх за 1 с равномерно (середина ≈ половина), в конце — точное значение',
+    s0.startsWith('1300 / 1800') && midN > 1380 && midN < 1620 && end.startsWith('1700 / 1800 EXP L12'), [s0, mid, end].join(' | '));
+  E(x, `data.level=12; data.exp=1300; render()`);   // не начисление — сразу
+  E(x, `gainExp(1200); checkLevelUp(); render()`); const lv0 = $('hdrLevel').textContent; await sleep(450);
+  const midL = $('hdrLevel').textContent + '/' + $('hdrExp').textContent; await sleep(700); const endL = st();
+  check('X2 новый уровень: сначала прежний уровень, полоса доходит до конца, номер сменяется, остаток добирается',
+    lv0 === '12' && endL.startsWith('700 / 1950 EXP L13') && E(x, 'data.level') === 13, [lv0, midL, endL].join(' | '));
+  E(x, `data.level=12; data.exp=0; render()`);
+  E(x, `gainExp(300); render()`); await sleep(300); E(x, `gainExp(300); render()`); await sleep(300);
+  const n2 = parseInt($('hdrExp').textContent, 10); E(x, `gainExp(300); render()`); await sleep(1150);
+  check('X3 три начисления подряд: счёт не обрывается и не прыгает назад, в конце 900', n2 > 150 && n2 < 600 && $('hdrExp').textContent.startsWith('900 /'), n2 + ' → ' + $('hdrExp').textContent);
+  E(x, `data.exp=900; render(); data.exp=100; render()`); const dec = $('hdrExp').textContent;
+  E(x, `data.level=20; data.exp=0; render()`); const jump = $('hdrExp').textContent + ' L' + $('hdrLevel').textContent;
+  check('X4 уменьшение и смена уровня без начисления — сразу', dec.startsWith('100 /') && jump.startsWith('0 / 3000 EXP L20'), dec + ' | ' + jump);
+  E(x, `data.level=20; data.exp=0; data.expDebt=600; render()`); const d0 = $('hdrExp').textContent;
+  E(x, `gainExp(1000); render()`); await sleep(400); const dMid = $('hdrExp').textContent; await sleep(750); const dEnd = $('hdrExp').textContent;
+  const dm = parseInt(dMid.replace(/\D+/g, ''), 10);
+  check('X5 долг гасится набором: «Долг −N» уменьшается, затем опыт растёт от нуля', d0 === 'Долг −600 EXP' && /Долг −/.test(dMid) && dm < 600 && dm > 50 && dEnd.startsWith('400 / 3000'), [d0, dMid, dEnd].join(' | '));
+  E(x, `data.exp=0; data.expDebt=0; render()`); XD.getElementById('rankInfoBtn').click(); await tick();
+  E(x, `gainExp(1500); render(); updateStatusUI()`); await sleep(500); const a = $('hdrExp').textContent, b = $('stExp').textContent; await sleep(650);
+  const css = XD.querySelector('style').textContent;
+  check('X6 шапка и «Статус» показывают одно и то же; у полосы нет прежнего сдвига 0,3 с',
+    a === b && $('stExp').textContent.startsWith('1500 / 3000') && !/\.sc-bar i \{[^}]*transition/.test(css), [a, b, $('stExp').textContent].join(' | ')); }
+
 // ===== v7.2.4: пульсации «свиток + Бремя / Предел» в «Системе» — плавные (без var(--tg) в кадрах) =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   const kf = n => { const m = css.match(new RegExp('@keyframes ' + n + ' \\{([\\s\\S]*?)\\n    \\}')); return m ? m[1] : ''; };

@@ -13,7 +13,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.2.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.2.8 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -205,7 +205,7 @@
     .sc-exp .n { font-family: 'Roboto Mono', monospace; color: #88ffcc; font-size: 0.95rem; font-weight: 700; white-space: nowrap; }
     .sc-exp.debt .n { color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); }
     .sc-bar { height: 6px; border: 1px solid #40c0ff88; border-radius: 4px; background: rgba(0,0,0,0.35); overflow: hidden; }
-    .sc-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #40c0ff, #9fe6ff); box-shadow: 0 0 8px #40c0ff; transition: width 0.3s ease-out; }
+    .sc-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #40c0ff, #9fe6ff); box-shadow: 0 0 8px #40c0ff; }
     .sc-bar.debt { border-color: #ff5555aa; }
     .sc-bar.debt i { background: #ff5555; box-shadow: 0 0 8px #ff5555; }
     .sc-debt { font-family: 'Exo 2 Text', sans-serif; font-size: 0.8rem; color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); margin-top: 4px; }
@@ -713,12 +713,22 @@
     .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-family:'Orbitron','Exo 2',sans-serif; font-size:1.6rem; font-weight:700; white-space:nowrap; text-align:center; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
     .levelup-popup { position:fixed; top:20%; left:50%; transform:translateX(-50%); color:#ffd700; font-family:'Orbitron',sans-serif; font-size:clamp(1.6rem, 11vw, 3.5rem); white-space:nowrap; text-shadow:0 0 30px #ffd700; pointer-events:none; animation:levelUp 3s forwards; z-index:100; }
 
-    @keyframes systemPopupIn {
-      0% { opacity: 0; transform: translate(-50%, -46%) scale(0.92); }
-      12% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      85% { opacity: 1; }
+    @keyframes systemPopupIn {   /* v7.2.8: появление — проявление снизу на 12 px за 0,25 с (вариант А, демо 99); уход — прежний */
+      0% { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); animation-timing-function: cubic-bezier(.2,.8,.2,1); }
+      2.5% { opacity: 1; transform: translate(-50%, -50%); }
+      85% { opacity: 1; transform: translate(-50%, -50%); }
       100% { opacity: 0; transform: translate(-50%, -54%) scale(0.98); }
     }
+    /* v7.2.8: окна «Классики» — проявление и уход (ClassicFx) */
+    @keyframes cfxOvIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes cfxWinIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes cfxOvOut { to { opacity: 0; } }
+    @keyframes cfxWinOut { to { opacity: 0; transform: translateY(8px); } }
+    .status-overlay.cfx-ov-in { animation: cfxOvIn .25s ease-out both; }
+    .status-overlay.cfx-ov-in > .cfx-win-in { animation: cfxWinIn .25s cubic-bezier(.2,.8,.2,1) both; }
+    .status-overlay.cfx-ghost { pointer-events: none; animation: cfxOvOut .18s ease-in both; }
+    .status-overlay.cfx-ghost * { pointer-events: none !important; }
+    .status-overlay.cfx-ghost > * { animation: cfxWinOut .18s ease-in both; }
     .system-popup {
       position: fixed; top: 64%; left: 50%; transform: translate(-50%, -50%);
       width: min(320px, 82vw);
@@ -1119,6 +1129,8 @@
     body:not(.theme-sys) .status-overlay:not(#leaderboardOverlay) .item-card .item-btn-stack > button:only-child { grid-column: 2; }
     body:not(.theme-sys) .status-overlay:not(#leaderboardOverlay) .item-card > button { grid-column: 1 / -1; grid-row: 3; justify-self: end; width: calc(50% - 5px); box-sizing: border-box; text-align: center; }
     body:not(.theme-sys) .status-overlay:not(#leaderboardOverlay) .item-card .item-btn-stack, body:not(.theme-sys) .status-overlay:not(#leaderboardOverlay) .item-card > button { margin-top: 4px; }   /* v7.2.6: от текста до кнопок — как от названия до текста */
+    /* v7.2.8: «Классика» — лёд Заморозки с теми же отступами и скруглением, что у Пелены покоя */
+    body:not(.theme-sys) .freeze-ice-overlay, body:not(.theme-sys) .freeze-tap-catcher { inset: 10px 12px; border-radius: 10px; overflow: hidden; }
     /* ===== v7.0.0: ТЕМА «СИСТЕМА» (демо 79–85). Действует, пока на <body> стоит класс theme-sys; в теме «Классика»
        класса нет, и ни одно правило ниже (кроме выбора оформления в Архиве) не применяется.
        Окно в теме «Система»: .sf-win.mwin > .sf-content > .sf-panel.mw, заголовок — табличка .mw-hdr > .mw-tt,
@@ -1457,6 +1469,8 @@
        (у них были свои слабые свечения из «Классики» и 7.0.x — гасятся явно) */
     body.theme-sys .day-cell, body.theme-sys #calStreakLine, body.theme-sys .sys-notice .sn-body,
     body.theme-sys .sf-win.mwin .eq-opt .nm, body.theme-sys .sf-win.mwin .danger-text, body.theme-sys .sf-win.mwin.sn-red .danger-text { text-shadow: none; }
+    /* v7.2.8: подпись Заморозки — уже поле справа (на 360 «Заморозка / закончится / через» без разрыва слов) */
+    body.theme-sys .sf-win.mwin .tstrip.frz .reset-label { padding-right: 4px; }
   </style>
 </head>
 <body>
@@ -1927,7 +1941,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.2.7';
+  const APP_VERSION = '7.2.8';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4186,6 +4200,52 @@
     return { init, update };
   })();
 
+  // v7.2.8: «Классика» — окна появляются мягким проявлением (вариант А, демо 99): фон темнеет, окно выплывает снизу
+  // на 12 px, 0,25 с; закрытие — короткий уход 0,18 с неподвижной копией окна (сами окна закрываются из многих мест
+  // кода, поэтому уход рисует копия, а настоящее окно скрыто сразу — кнопки под ней работают). Без эффекта: тема
+  // «Система» и стартовое окно первого запуска.
+  const ClassicFx = (() => {
+    const IN_MS = 250, OUT_MS = 180;
+    const prev = new WeakMap();
+    const isOpen = ov => !!ov.style.display && ov.style.display !== 'none';
+    const skip = ov => (typeof isSysTheme === 'function' && isSysTheme()) || (ov.id === 'rulesOverlay' && ov.dataset.notice === '1');
+    function opened(ov) {
+      const win = ov.firstElementChild;
+      ov.classList.remove('cfx-ov-in'); if (win) win.classList.remove('cfx-win-in');
+      void ov.offsetWidth;
+      ov.classList.add('cfx-ov-in'); if (win) win.classList.add('cfx-win-in');
+      clearTimeout(ov._cfxT);
+      ov._cfxT = setTimeout(() => { ov.classList.remove('cfx-ov-in'); if (win) win.classList.remove('cfx-win-in'); }, IN_MS + 60);
+    }
+    function closed(ov) {
+      clearTimeout(ov._cfxT);
+      ov.classList.remove('cfx-ov-in'); const w0 = ov.firstElementChild; if (w0) w0.classList.remove('cfx-win-in');
+      const g = ov.cloneNode(true);
+      g.removeAttribute('id'); g.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+      g.removeAttribute('onclick'); g.classList.remove('anim-paused');
+      g.classList.add('cfx-ghost');
+      g.style.display = 'flex'; g.style.zIndex = getComputedStyle(ov).zIndex;
+      const sc = ov.querySelectorAll('*'), gc = g.querySelectorAll('*');   // прокрутка — как у окна в момент закрытия
+      document.body.appendChild(g);
+      sc.forEach((el, i) => { if (el.scrollTop && gc[i]) gc[i].scrollTop = el.scrollTop; });
+      setTimeout(() => g.remove(), OUT_MS + 40);
+    }
+    function check(ov) {
+      const o = isOpen(ov), was = prev.get(ov) || false;
+      if (o === was) return;
+      prev.set(ov, o);
+      if (skip(ov)) return;
+      if (o) opened(ov); else closed(ov);
+    }
+    function init() {
+      const ovs = [...document.querySelectorAll('.status-overlay')];
+      ovs.forEach(ov => prev.set(ov, isOpen(ov)));
+      const mo = new MutationObserver(recs => { if (typeof document === 'undefined' || !document) return; new Set(recs.map(r => r.target)).forEach(check); });
+      ovs.forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['style'] }));
+    }
+    return { init, IN_MS, OUT_MS };
+  })();
+
   const SysFrame = (() => {
     const G = {"W": 3051, "H": 1793, "barTop": [[3, 3], [3, 51], [648, 51], [754, 135], [2951, 135], [3050, 68], [3050, 3]], "barBot": [[9, 1693], [127, 1789], [3033, 1789], [3033, 1693], [402, 1693], [365, 1718], [210, 1719], [177, 1693]], "panel": [[311, 177], [309, 259], [254, 287], [254, 367], [281, 367], [282, 491], [251, 510], [251, 765], [284, 800], [283, 806], [259, 823], [258, 902], [313, 903], [313, 1052], [293, 1066], [298, 1275], [312, 1287], [312, 1511], [287, 1524], [291, 1642], [2875, 1644], [2875, 1527], [2865, 1525], [2865, 1290], [2834, 1287], [2835, 1078], [2821, 1077], [2822, 1029], [2805, 1010], [2805, 1005], [2824, 985], [2822, 913], [2782, 912], [2781, 517], [2745, 517], [2745, 391], [2759, 388], [2759, 302], [2784, 281], [2781, 185]], "stripL": [[226, 177], [194, 177], [192, 259], [137, 287], [137, 367], [164, 367], [165, 491], [134, 510], [134, 765], [167, 800], [166, 806], [142, 823], [141, 901], [195, 926], [196, 1052], [176, 1066], [181, 1275], [195, 1287], [195, 1511], [170, 1524], [174, 1642], [206, 1642], [203, 1526], [228, 1513], [228, 1286], [213, 1273], [208, 1068], [229, 1054], [228, 900], [174, 899], [174, 825], [204, 803], [166, 763], [166, 513], [198, 493], [196, 364], [170, 363], [169, 290], [224, 262]], "stripR": [[2873, 208], [2874, 313], [2849, 333], [2849, 418], [2835, 422], [2835, 554], [2872, 554], [2873, 948], [2913, 949], [2914, 1017], [2892, 1041], [2912, 1063], [2912, 1113], [2925, 1114], [2924, 1323], [2956, 1327], [2956, 1562], [2966, 1563], [2966, 1677], [2985, 1677], [2985, 1650], [3013, 1644], [3013, 1527], [3003, 1525], [3003, 1290], [2972, 1287], [2973, 1078], [2959, 1077], [2960, 1029], [2943, 1010], [2943, 1005], [2962, 985], [2960, 913], [2920, 912], [2919, 517], [2883, 517], [2883, 391], [2897, 388], [2897, 302], [2922, 281], [2923, 208]], "lineL": [[108, 789], [110, 1643], [162, 1643], [161, 1373], [132, 1372], [132, 789]], "lineR": [[2932, 210], [2932, 519], [2944, 520], [2944, 707], [2979, 708], [2979, 1030], [3003, 1030], [3003, 325], [2979, 325], [2979, 379], [2958, 380], [2957, 210]]};
     // Холст: в тестовом браузере (jsdom) рисования нет — текстуры пустые.
@@ -5088,6 +5148,7 @@
   // any) actually raises data.exp / can trigger a level-up.
   function gainExp(amount) {
     if (amount <= 0) return;
+    if (typeof xpAnim !== "undefined" && xpAnim) xpAnim.armed = true;   // v7.2.8: начисление опыта — показать набором (остальные изменения — сразу)
     if (data.expDebt > 0) {
       const pay = Math.min(data.expDebt, amount);
       data.expDebt -= pay;
@@ -5304,6 +5365,7 @@
     burdenGlitchTick();   // v6.9.0
     const container = document.getElementById('resetTimerContainer');
     const labelEl = container.querySelector('.reset-label');
+    container.classList.toggle('frz', data.activeScroll === 'freeze');   // v7.2.8: подпись Заморозки в «Системе» — уже поле справа
     if (data.activeScroll === 'freeze') {
       const timeLeft = data.freezeEndTimestamp - Date.now();
       if (timeLeft <= 0) { checkMissedDays(); return; }
@@ -6837,29 +6899,68 @@
   }
 
   // v6.6.0: заполняет карточку статуса (prefix 'hdr' — главный экран, 'st' — окно «СТАТУС»).
+  // v7.2.8: плавный набор опыта (обе темы). Положение на шкале — накопленный опыт минус долг (xpPos).
+  // Начисление опыта (gainExp) — счёт за XP_ANIM_MS равномерно от того, что на экране; всё остальное (штраф, запуск,
+  // уровень из Длани, загрузка) — сразу.
+  var XP_ANIM_MS = 1000;   // var: отрисовка и gainExp могут сработать при загрузке раньше этой строки
+  var xpAnim = { shown: null, from: 0, to: 0, t0: 0, base: 1, raf: 0, armed: false };
+  var xpCumCache = [0, 0];
+  function xpCum(l) { if (!xpCumCache) xpCumCache = [0, 0]; while (xpCumCache.length <= l) { const i = xpCumCache.length - 1; xpCumCache.push(xpCumCache[i] + getExpToNext(i)); } return xpCumCache[l]; }
+  function xpPos() { return xpCum(data.level) + Math.floor(data.exp) - Math.floor(data.expDebt || 0); }
+  function xpSnap() { xpAnim.shown = null; if (xpAnim.raf) { cancelAnimationFrame(xpAnim.raf); xpAnim.raf = 0; } }
+  function xpView() {   // что показать сейчас: { level, exp, debt }
+    if (!xpAnim) return { level: data.level, exp: Math.floor(data.exp), debt: Math.floor(data.expDebt || 0) };
+    if (!xpAnim.raf || xpAnim.shown === null) return { level: data.level, exp: Math.floor(data.exp), debt: Math.floor(data.expDebt || 0) };
+    const p = Math.floor(xpAnim.shown), b = xpAnim.base;
+    if (p < xpCum(b)) return { level: b, exp: 0, debt: xpCum(b) - p };
+    let l = b; while (p >= xpCum(l + 1)) l++;
+    return { level: l, exp: p - xpCum(l), debt: 0 };
+  }
+  function xpUpdate() {   // вызывается при каждой отрисовке карточки
+    if (!xpAnim) return;
+    const target = xpPos();
+    if (xpAnim.shown === null || document.documentElement.classList.contains('booting')) { xpAnim.shown = target; xpAnim.to = target; xpAnim.base = data.level; return; }
+    if (target === xpAnim.to) { xpAnim.armed = false; return; }
+    const armed = xpAnim.armed; xpAnim.armed = false;
+    if (!armed || target < xpAnim.shown || data.level < xpAnim.base) { xpSnap(); xpAnim.shown = target; xpAnim.to = target; xpAnim.base = data.level; return; }
+    xpAnim.from = xpAnim.shown; xpAnim.to = target; xpAnim.t0 = performance.now();
+    if (!xpAnim.raf) xpAnim.raf = requestAnimationFrame(xpTick);
+  }
+  function xpTick(now) {
+    const k = Math.min(1, (now - xpAnim.t0) / (XP_ANIM_MS || 1000));
+    xpAnim.shown = xpAnim.from + (xpAnim.to - xpAnim.from) * k;
+    if (k < 1) { xpAnim.raf = requestAnimationFrame(xpTick); ['hdr', 'st'].forEach(xpDraw); }
+    else { xpAnim.raf = 0; xpAnim.shown = xpAnim.to; xpAnim.base = data.level; ['hdr', 'st'].forEach(xpDraw); }
+  }
+  function xpDraw(prefix) {   // уровень, ранг, опыт, полоса, долг — по тому, что сейчас на экране
+    const top = document.getElementById(prefix + 'Top');
+    if (!top) return;
+    const v = xpView();
+    const rank = getRank(v.level);
+    top.className = 'sc-top rk-' + rank.class;
+    const lv = document.getElementById(prefix + 'Level');
+    lv.textContent = v.level;
+    lv.className = 'd' + Math.min(3, String(v.level).length);
+    document.getElementById(prefix + 'Rank').textContent = rank.name;
+    const inDebt = v.debt > 0;
+    const expToNext = getExpToNext(v.level);
+    document.getElementById(prefix + 'ExpRow').classList.toggle('debt', inDebt);
+    document.getElementById(prefix + 'Exp').textContent = inDebt ? `Долг −${v.debt} EXP` : `${v.exp} / ${expToNext} EXP`;
+    document.getElementById(prefix + 'Bar').classList.toggle('debt', inDebt);
+    document.getElementById(prefix + 'BarFill').style.width = inDebt ? '100%' : Math.max(0, Math.min(100, v.exp / expToNext * 100)) + '%';
+    document.getElementById(prefix + 'Debt').style.display = inDebt ? 'block' : 'none';
+    document.getElementById(prefix + 'DebtVal').textContent = v.debt;
+  }
+
   function fillStatusBlock(prefix) {
     const top = document.getElementById(prefix + 'Top');
     if (!top) return;
-    const rank = getRank(data.level);
-    top.className = 'sc-top rk-' + rank.class;
-    const lv = document.getElementById(prefix + 'Level');
-    lv.textContent = data.level;
-    lv.className = 'd' + Math.min(3, String(data.level).length);
+    xpUpdate();
+    xpDraw(prefix);
     document.getElementById(prefix + 'Name').textContent = data.playerName || 'Игрок';
-    document.getElementById(prefix + 'Rank').textContent = rank.name;
     const iconId = TITLE_ICON_IDS[data.activeTitle];
     document.getElementById(prefix + 'Title').innerHTML = 'Титул: ' +
       (iconId ? `<img src="${iconS(iconId)}" alt="">` : '') + `<span>${escapeHtml(data.activeTitle)}</span>`;
-    const inDebt = data.expDebt > 0;
-    const expToNext = getExpToNext(data.level);
-    document.getElementById(prefix + 'ExpRow').classList.toggle('debt', inDebt);
-    document.getElementById(prefix + 'Exp').textContent = inDebt
-      ? `Долг −${Math.floor(data.expDebt)} EXP`
-      : `${Math.floor(data.exp)} / ${expToNext} EXP`;
-    document.getElementById(prefix + 'Bar').classList.toggle('debt', inDebt);
-    document.getElementById(prefix + 'BarFill').style.width = inDebt ? '100%' : Math.max(0, Math.min(100, data.exp / expToNext * 100)) + '%';
-    document.getElementById(prefix + 'Debt').style.display = inDebt ? 'block' : 'none';
-    document.getElementById(prefix + 'DebtVal').textContent = Math.floor(data.expDebt);
     document.getElementById(prefix + 'Credits').innerHTML = creditsHtml(Math.floor(data.credits) + ' ◈');
     document.getElementById(prefix + 'Streak').textContent = data.consecutiveDays || 0;
   }
@@ -7891,14 +7992,14 @@
       data.exp = 0;
     }
     data.dailyTargetLevel = data.level;
-    saveData(); render();
+    xpSnap(); saveData(); render();
   }
 
   function quickLevelAction() {
     data.exp = getExpToNext(data.level);
     checkLevelUp();
     data.dailyTargetLevel = data.level;
-    saveData(); render();
+    xpSnap(); saveData(); render();
   }
 
   function addCreditsAction() {
@@ -8089,6 +8190,7 @@
 
   SysTheme.init();   // v7.0.0: тема применяется до первой отрисовки
   AnimPause.init();  // v7.1.3: пауза анимаций под открытым окном
+  ClassicFx.init();  // v7.2.8: проявление и уход окон в «Классике»
   try { localStorage.removeItem('sl_perf_test'); } catch (e) {}   // v7.1.5: настройки временной «Проверки нагрузки» 7.1.4 больше не нужны
   document.documentElement.classList.remove('theme-pending');
   render();
