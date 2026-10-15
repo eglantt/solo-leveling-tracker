@@ -686,9 +686,10 @@ const w = boot(); const D = w.document; await tick();
 // ===== v7.3.1: нити плазмы в полосах (демо 103); прежнего фона нет =====
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
   const fn = n => { const m = src.match(new RegExp('function ' + n + '\\([\\s\\S]*?\\n    \\}')); return m ? m[0] : ''; };
-  check('T104 сборка демо 103: нитей 9 и 8 дальних, наклон 30°, извилистость 85%, середина 2,2 и ореол 3,5 px, яркость 90%, ширина 50% (дыхание 45%), затухание 15%, узлы 10%, отражение 15% / 1 px, 12 кадров по 1,5 с, сдвиг 25%, мерцание 45%',
-    /const PLC = \{ n: 9, far: 8, ang: 30, wig: \.85, core: 2\.2, halo: 3\.5, br: \.9, span: \.5, breath: \.45, fade: \.15,\s+nodeK: \.1, reflK: \.15, reflD: 1, frames: 12, step: 1\.5, drift: \.25, flick: \.45, keep: 6 \};/.test(src)
+  check('T104 сборка демо 103 и 104: нитей 9 и 8 дальних, наклон 30°, извилистость 85%, середина 2,2 px (яркость 55%) и ореол 3,5 px, общая яркость 35%, ширина 50% (дыхание 45%), затухание 15%, узлы 10%, отражение 15% / 1 px, 12 кадров по 1,5 с, сдвиг 25%, мерцание 45%',
+    /const PLC = \{ n: 9, far: 8, ang: 30, wig: \.85, core: 2\.2, ck: \.55, halo: 3\.5, br: \.35, span: \.5, breath: \.45, fade: \.15,\s+nodeK: \.1, reflK: \.15, reflD: 1, frames: 12, step: 1\.5, drift: \.25, flick: \.45, keep: 6 \};/.test(src)
     && /plPlace\(win, T, P, scheme, 't', \[shh, -sv\], w, w \* \.5,/.test(src) && /plPlace\(win, B, P, scheme, 'b', \[-shh, sv\], w, w \* \.535,/.test(src));
+  check('T108 v7.3.2: множитель белой середины действует только на середину нитей', /plCol\(P\.pcore, Math\.min\(1, l\.b \* br \* aK \* C\.ck\)\)/.test(src) && (src.match(/C\.ck/g) || []).length === 1);
   check('T105 перетекание: 12 кадров, цикл 18 с, мягкость 100% (кадр нарастает 1,5 с и гаснет 1,5 с), кадры складываются; набор, готовый позже, проявляется за 0,5 с; без живого размытия',
     /\.sf-plw > i \{ position: absolute; inset: 0; background-size: 100% 100%; background-repeat: no-repeat; opacity: 0;\s+animation: sfPl 18s linear infinite; mix-blend-mode: plus-lighter; will-change: opacity; \}/.test(css)
     && /@keyframes sfPl \{ 0% \{ opacity: 0; \} 8\.333% \{ opacity: 1; \} 16\.667% \{ opacity: 0; \} 100% \{ opacity: 0; \} \}/.test(css)

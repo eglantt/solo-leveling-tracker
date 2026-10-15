@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1944,7 +1944,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.1';
+  const APP_VERSION = '7.3.2';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4382,7 +4382,8 @@
     // 12 кадров рисуются ОДИН раз на форму полосы и цвет: общие картинки (blob-адреса) — окна одной ширины берут один набор.
     // Рисуются понемногу (по кадру) в свободное время; пока набора нет — полоса без узора, готовый проявляется за 0,5 с.
     // В работе процессор узор не рисует: кадры перетекают анимацией прозрачности (sfPl).
-    const PLC = { n: 9, far: 8, ang: 30, wig: .85, core: 2.2, halo: 3.5, br: .9, span: .5, breath: .45, fade: .15,
+    // v7.3.2 (демо 104): свечение тише — общая яркость 35% (было 90%), белая середина нитей 55% (ck); ореол и дымка прежние.
+    const PLC = { n: 9, far: 8, ang: 30, wig: .85, core: 2.2, ck: .55, halo: 3.5, br: .35, span: .5, breath: .45, fade: .15,
       nodeK: .1, reflK: .15, reflD: 1, frames: 12, step: 1.5, drift: .25, flick: .45, keep: 6 };
     const PLS = new Map(), PLQ = [];   // наборы кадров по ключу (порядок — давность использования); очередь рисования
     let plOk = null, plBusy = 0;
@@ -4489,7 +4490,7 @@
         g.save(); poly(clipQ); g.clip(); g.setTransform(1, 0, 0, 1, 0, 0);
         if ('filter' in g) { g.filter = `blur(${(C.halo * .7 * blurK * dpr).toFixed(2)}px)`; g.drawImage(tmp, 0, 0); g.filter = 'none'; }
         g.globalAlpha = .45; g.drawImage(tmp, 0, 0); g.globalAlpha = 1; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.translate(off[0], off[1]);
-        lines.forEach(l => { if (l.f.far) return; g.strokeStyle = plCol(P.pcore, Math.min(1, l.b * br * aK)); g.lineWidth = C.core; plPath(g, l.pts); g.stroke(); });
+        lines.forEach(l => { if (l.f.far) return; g.strokeStyle = plCol(P.pcore, Math.min(1, l.b * br * aK * C.ck)); g.lineWidth = C.core; plPath(g, l.pts); g.stroke(); });
         g.restore();
       };
       layer(S.QR, S.rd, C.reflK, 1.3);   // отражение на втором стекле
