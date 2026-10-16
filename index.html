@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -743,14 +743,12 @@
     .status-overlay.cfx-ghost { pointer-events: none; animation: cfxOvOut .3s ease-in both; }
     .status-overlay.cfx-ghost * { pointer-events: none !important; }
     .status-overlay.cfx-ghost > * { animation: cfxWinOut .3s ease-in both; }
-    /* v7.3.6: окна «Системы» — свёртывание в линию 0,3 с (демо 106): копия окна сжимается по высоте, на её месте вспыхивает
-       линия и гаснет к центру, затемнение уходит во второй половине (SysCloseFx) */
-    @keyframes sfxOvOut { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
-    @keyframes sfxFold { 0% { transform: scale(1, 1); } 55% { transform: scale(1, .02); opacity: 1; } 100% { transform: scale(1, .02); opacity: 0; } }
+    /* v7.3.7: окна «Системы» — уход мягко вниз на 12 px с угасанием, 0,35 с (как в «Классике», чуть дольше: на телефоне
+       первая отрисовка копии окна съедает начало ухода; свёртывание 7.3.6 не успевало проиграться). Линия — только у уведомлений */
     @keyframes sfxLine { 0%, 45% { opacity: 0; transform: scaleX(1); } 58% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(0); } }
-    .status-overlay.sfx-ghost { pointer-events: none; animation: sfxOvOut .3s linear both; }
+    .status-overlay.sfx-ghost { pointer-events: none; animation: cfxOvOut .35s ease-in both; }
     .status-overlay.sfx-ghost * { pointer-events: none !important; }
-    .status-overlay.sfx-ghost > * { animation: sfxFold .3s ease-in both; transform-origin: 50% 50%; }
+    .status-overlay.sfx-ghost > * { animation: cfxWinOut .35s ease-in both; }
     .sfx-line { position: fixed; height: 2px; margin-top: -1px; pointer-events: none; transform-origin: 50% 50%; --lc: #40c0ff;
       background: linear-gradient(90deg, transparent, var(--lc) 15%, #fff 50%, var(--lc) 85%, transparent); box-shadow: 0 0 12px var(--lc);
       animation: sfxLine .3s ease-in both; }
@@ -1970,7 +1968,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.6';
+  const APP_VERSION = '7.3.7';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4260,11 +4258,11 @@
   // на 12 px, 0,25 с; закрытие — короткий уход 0,18 с неподвижной копией окна (сами окна закрываются из многих мест
   // кода, поэтому уход рисует копия, а настоящее окно скрыто сразу — кнопки под ней работают). Без эффекта: тема
   // «Система» и стартовое окно первого запуска.
-  // v7.3.6 (демо 106): «Классика» — уход мягко вниз на 12 px за 0,3 с; «Система» — уход тоже копией: свёртывание
-  // в линию 0,3 с (линия голубая, у красного окна штрафа — красная). Без эффекта: стартовое окно первого запуска
+  // v7.3.6 (демо 106): «Классика» — уход мягко вниз на 12 px за 0,3 с; «Система» — уход тоже копией, v7.3.7: тоже вниз
+  // на 12 px с угасанием, 0,35 с (свёртывание 7.3.6 на телефоне не успевало проиграться). Без эффекта: стартовое окно первого запуска
   // и смена оформления в Архиве (идёт свой сбой).
   const ClassicFx = (() => {
-    const IN_MS = 250, OUT_MS = 300, SYS_OUT_MS = 300;
+    const IN_MS = 250, OUT_MS = 300, SYS_OUT_MS = 350;
     const prev = new WeakMap();
     const scrollPos = new Map();   // элемент окна → последняя прокрутка
     const isOpen = ov => !!ov.style.display && ov.style.display !== 'none';
@@ -4296,8 +4294,6 @@
       // показывала начало списка), поэтому положение запоминается по событиям прокрутки (scrollPos)
       g.querySelectorAll('[data-cfx-sy]').forEach(el => { el.scrollTop = +el.dataset.cfxSy; el.removeAttribute('data-cfx-sy'); });
       ov.querySelectorAll('[data-cfx-sy]').forEach(el => el.removeAttribute('data-cfx-sy'));
-      const gw = g.firstElementChild;
-      if (isSys && gw) closeLine(gw, CLOSE_LINE_COL[gw.classList.contains('sn-red') ? 'red' : 'blue'], ms, z + 1);
       setTimeout(() => g.remove(), ms + 40);
     }
     function check(ov) {

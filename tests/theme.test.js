@@ -736,18 +736,16 @@ const w = boot(); const D = w.document; await tick();
   x.Element.prototype.getBoundingClientRect = function () { return { left: 20, top: 100, width: 300, height: 400, right: 320, bottom: 500 }; };
   const css = XD.querySelector('style').textContent;
   E(x, `openShop()`); await tick(); E(x, `document.getElementById('shopOverlay').style.display = 'none'`); await tick();
-  const g = XD.querySelector('.status-overlay.sfx-ghost'), ln = XD.querySelector('.sfx-line');
-  const gOk = !!g && !g.id && !g.querySelector('[id]') && !g.querySelector('.mw-in') && x.getComputedStyle(g).pointerEvents === 'none' && g.firstElementChild.classList.contains('mwin');
-  const lOk = !!ln && ln.style.getPropertyValue('--lc') === '#40c0ff' && ln.style.width === '288px' && ln.style.top === '300px' && +ln.style.zIndex === (parseInt(g.style.zIndex, 10) + 1) && ln.style.animationDuration === '300ms';
-  const cssOk = /\.status-overlay\.sfx-ghost \{ pointer-events: none; animation: sfxOvOut \.3s/.test(css) && /\.status-overlay\.sfx-ghost > \* \{ animation: sfxFold \.3s/.test(css)
-    && /@keyframes sfxFold \{ 0% \{ transform: scale\(1, 1\); \} 55% \{ transform: scale\(1, \.02\); opacity: 1; \} 100% \{ transform: scale\(1, \.02\); opacity: 0; \} \}/.test(css)
-    && /@keyframes sfxLine \{ 0%, 45% \{ opacity: 0; transform: scaleX\(1\); \} 58% \{ opacity: 1; transform: scaleX\(1\); \} 100% \{ opacity: 0; transform: scaleX\(0\); \} \}/.test(css);
-  await sleep(400); const gone = !XD.querySelector('.sfx-ghost, .sfx-line');
+  const g = XD.querySelector('.status-overlay.sfx-ghost');
+  const gOk = !!g && !g.id && !g.querySelector('[id]') && !g.querySelector('.mw-in') && x.getComputedStyle(g).pointerEvents === 'none' && g.firstElementChild.classList.contains('mwin') && !XD.querySelector('.sfx-line');
+  const cssOk = /\.status-overlay\.sfx-ghost \{ pointer-events: none; animation: cfxOvOut \.35s ease-in both; \}/.test(css) && /\.status-overlay\.sfx-ghost > \* \{ animation: cfxWinOut \.35s ease-in both; \}/.test(css)
+    && /@keyframes cfxWinOut \{ to \{ opacity: 0; transform: translateY\(12px\); \} \}/.test(css) && !/sfxFold|sfxOvOut/.test(css) && E(x, 'ClassicFx.SYS_OUT_MS') === 350 && E(x, 'ClassicFx.OUT_MS') === 300;
+  await sleep(300); const still = !!XD.querySelector('.sfx-ghost'); await sleep(150); const gone = !XD.querySelector('.sfx-ghost, .sfx-line');
   E(x, 'showPenaltyBanner(1, 1, 1, 1, false)'); await tick(); E(x, `document.getElementById('penaltyOverlay').style.display = 'none'`); await tick();
-  const redLine = (XD.querySelector('.sfx-line') || { style: { getPropertyValue: () => '' } }).style.getPropertyValue('--lc') === '#ff5566';
-  await sleep(400);
-  check('T112 «Система»: окно уходит свёртыванием в линию 0,3 с — копия без id и нажатий, голубая линия по середине окна (у окна штрафа — красная), затем всё удаляется',
-    gOk && lOk && cssOk && gone && redLine, [gOk, lOk, cssOk, gone, redLine].join('/'));
+  const pen = !!XD.querySelector('.sfx-ghost') && !XD.querySelector('.sfx-line');
+  await sleep(450);
+  check('T112 «Система» (v7.3.7): окно уходит мягко вниз на 12 px с угасанием за 0,35 с — копия без id и нажатий, без линии (и у окна штрафа), затем удаляется; «Классика» — 0,3 с',
+    gOk && cssOk && still && gone && pen, [gOk, cssOk, still, gone, pen].join('/'));
   const cols = {};
   for (const [k, body] of [['blue', 'Проверка'], ['orange', E(x, 'PACE_NOTICE')]]) {
     E(x, `notificationActive = false; displayNotificationNow({ body: ${JSON.stringify(body)}, tone: 'info' })`);
