@@ -127,6 +127,7 @@ const w = boot(); const D = w.document; await tick();
     "const id = Object.keys(SHOP_CATALOG)[0]; showItemPreview(id, 'x')", 'openSysToolsAuth()', 'sysToolsAuthorized = true; openSysTools()', 'openFullCatalog()',
     "document.getElementById('nameOverlay').style.display = 'flex'", "document.getElementById('leaderboardOverlay').style.display = 'flex'", 'onContourClick(0)']) {
     try { E(w, js); } catch (e) {} await tick(); closeAll(w); await tick(); }
+  await sleep(400);   // v7.3.6: копии уходящих окон (0,3 с) удалены
   const dressed = [...D.querySelectorAll('.status-overlay')].filter(o => o.firstElementChild.classList.contains('mwin')).length;
   E(w, 'openBackupModal()'); await tick();
   E(w, "setTheme('classic')"); await tick();
@@ -582,8 +583,14 @@ const w = boot(); const D = w.document; await tick();
     okCl && x.getComputedStyle(ice).overflow !== 'hidden' && /body\.theme-sys[^{]*\.freeze-ice-overlay[^{]*\{[^}]*inset:\s*-5px/.test(css), [iceRule, veilRule, x.getComputedStyle(ice).overflow].join('/'));
   E(x, `data.activeScroll=null; render()`);
   const kf = css.slice(css.indexOf('@keyframes systemPopupIn'), css.indexOf('}\n    }', css.indexOf('@keyframes systemPopupIn')));
-  check('T96 уведомление «Классики»: проявление снизу на 12 px за 0,25 с (2,5% от 10 с), уход прежний',
-    /0%\s*\{\s*opacity:\s*0;\s*transform:\s*translate\(-50%,\s*calc\(-50% \+ 12px\)\)/.test(kf) && /2\.5%\s*\{\s*opacity:\s*1/.test(kf) && /100%\s*\{\s*opacity:\s*0;\s*transform:\s*translate\(-50%,\s*-54%\)/.test(kf) && /animation:\s*systemPopupIn 10s/.test(css), kf.slice(0, 160)); }
+  E(x, `setTheme('classic'); notificationActive = false; displayNotificationNow({ body: 'Проверка ухода', tone: 'info' })`);
+  const sp = XD.querySelector('.system-popup'); sp.click(); const spOut = sp.classList.contains('sp-out') && sp.isConnected && E(x, 'notificationActive') === false;
+  await sleep(320); const spGone = !sp.isConnected;
+  E(x, `setTheme('system')`);
+  check('T96 уведомление «Классики»: проявление снизу на 12 px за 0,25 с; уход (v7.3.6, демо 106) — мягко вниз на 12 px за 0,25 с, по касанию тоже, затем удаляется',
+    /0%\s*\{\s*opacity:\s*0;\s*transform:\s*translate\(-50%,\s*calc\(-50% \+ 12px\)\)/.test(kf) && /100%\s*\{\s*opacity:\s*1;\s*transform:\s*translate\(-50%,\s*-50%\)/.test(kf) && /animation:\s*systemPopupIn \.25s/.test(css)
+    && /\.system-popup\.sp-out \{ animation: spOut \.25s/.test(css) && /@keyframes spOut \{ to \{ opacity: 0; transform: translate\(-50%, calc\(-50% \+ 12px\)\); \} \}/.test(css) && spOut && spGone,
+    [kf.slice(0, 80), spOut, spGone].join('/')); }
 
 { const x = boot(); await tick(); const XD = x.document; E(x, `setTheme('classic')`); closeAll(x); await tick();
   const ov = XD.getElementById('invOverlay'), win = ov.firstElementChild;
@@ -593,17 +600,18 @@ const w = boot(); const D = w.document; await tick();
   await sleep(350); const cleared = !ov.classList.contains('cfx-ov-in') && !win.classList.contains('cfx-win-in');
   E(x, `closeInv()`); await tick();
   const gh = XD.querySelector('.status-overlay.cfx-ghost');
-  const ghOk = !!gh && ov.style.display === 'none' && !gh.id && !gh.querySelector('[id]') && x.getComputedStyle(gh).pointerEvents === 'none' && /\.cfx-ghost > \* \{ animation: cfxWinOut \.18s/.test(css7);
-  await sleep(300); const ghGone = !XD.querySelector('.cfx-ghost');
-  check('T97 «Классика»: окно появляется (фон и окно — проявление 0,25 с), классы снимаются; закрытие — копия без id, не ловит нажатия, уходит и удаляется',
+  const ghOk = !!gh && ov.style.display === 'none' && !gh.id && !gh.querySelector('[id]') && x.getComputedStyle(gh).pointerEvents === 'none' && /\.cfx-ghost > \* \{ animation: cfxWinOut \.3s/.test(css7) && /@keyframes cfxWinOut \{ to \{ opacity: 0; transform: translateY\(12px\); \} \}/.test(css7);
+  await sleep(400); const ghGone = !XD.querySelector('.cfx-ghost');
+  check('T97 «Классика»: окно появляется (фон и окно — проявление 0,25 с), классы снимаются; закрытие — копия без id, не ловит нажатия, уходит вниз на 12 px за 0,3 с (v7.3.6) и удаляется',
     inOk && cleared && ghOk && ghGone, [inOk, cleared, ghOk, ghGone].join('/'));
   E(x, `setTheme('system')`); await tick(); E(x, `openInv()`); await tick();
-  const sysNo = !ov.classList.contains('cfx-ov-in'); E(x, `closeInv()`); await tick(); const sysNoGhost = !XD.querySelector('.cfx-ghost');
+  const sysNo = !ov.classList.contains('cfx-ov-in'); E(x, `closeInv()`); await tick(); const sysNoGhost = !XD.querySelector('.cfx-ghost') && !!XD.querySelector('.sfx-ghost');
+  await sleep(400);
   E(x, `setTheme('classic')`); const ro = XD.getElementById('rulesOverlay');
   E(x, `showRulesOverlay('onboarding')`); await tick(); const onbNo = !ro.classList.contains('cfx-ov-in');
   E(x, `stopRulesAnimation(); document.getElementById('rulesOverlay').style.display='none'`); await tick(); const onbNoGhost = !XD.querySelector('.cfx-ghost');
   E(x, `showRulesOverlay('archive')`); await tick(); const arcYes = ro.classList.contains('cfx-ov-in');
-  check('T98 без эффекта: тема «Система» и стартовое окно первого запуска; правила из Архива — с эффектом',
+  check('T98 «Система» — без проявления «Классики», уход своей копией (sfx); стартовое окно первого запуска — без эффекта; правила из Архива — с эффектом',
     sysNo && sysNoGhost && onbNo && onbNoGhost && arcYes, [sysNo, sysNoGhost, onbNo, onbNoGhost, arcYes].join('/')); }
 
 { const x = boot(); await tick(); const XD = x.document; const $ = id => XD.getElementById(id);
@@ -721,6 +729,39 @@ const w = boot(); const D = w.document; await tick();
 { const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
   check('T111 надпись повышения уровня — общие правила (без body.theme-sys / «Классики»), прежней (.levelup-popup, @keyframes levelUp) нет',
     /\n    \.lvx \{ position: fixed;/.test(css) && !/body\.theme-sys[^{]*\.lvx|body:not\(\.theme-sys\)[^{]*\.lvx/.test(css) && !/levelup-popup|@keyframes levelUp /.test(css)); }
+
+
+// ===== v7.3.6: уход окон и уведомлений «Системы» (демо 106) =====
+{ const x = boot(); await tick(); const XD = x.document; closeAll(x); await tick();
+  x.Element.prototype.getBoundingClientRect = function () { return { left: 20, top: 100, width: 300, height: 400, right: 320, bottom: 500 }; };
+  const css = XD.querySelector('style').textContent;
+  E(x, `openShop()`); await tick(); E(x, `document.getElementById('shopOverlay').style.display = 'none'`); await tick();
+  const g = XD.querySelector('.status-overlay.sfx-ghost'), ln = XD.querySelector('.sfx-line');
+  const gOk = !!g && !g.id && !g.querySelector('[id]') && !g.querySelector('.mw-in') && x.getComputedStyle(g).pointerEvents === 'none' && g.firstElementChild.classList.contains('mwin');
+  const lOk = !!ln && ln.style.getPropertyValue('--lc') === '#40c0ff' && ln.style.width === '288px' && ln.style.top === '300px' && +ln.style.zIndex === (parseInt(g.style.zIndex, 10) + 1) && ln.style.animationDuration === '300ms';
+  const cssOk = /\.status-overlay\.sfx-ghost \{ pointer-events: none; animation: sfxOvOut \.3s/.test(css) && /\.status-overlay\.sfx-ghost > \* \{ animation: sfxFold \.3s/.test(css)
+    && /@keyframes sfxFold \{ 0% \{ transform: scale\(1, 1\); \} 55% \{ transform: scale\(1, \.02\); opacity: 1; \} 100% \{ transform: scale\(1, \.02\); opacity: 0; \} \}/.test(css)
+    && /@keyframes sfxLine \{ 0%, 45% \{ opacity: 0; transform: scaleX\(1\); \} 58% \{ opacity: 1; transform: scaleX\(1\); \} 100% \{ opacity: 0; transform: scaleX\(0\); \} \}/.test(css);
+  await sleep(400); const gone = !XD.querySelector('.sfx-ghost, .sfx-line');
+  E(x, 'showPenaltyBanner(1, 1, 1, 1, false)'); await tick(); E(x, `document.getElementById('penaltyOverlay').style.display = 'none'`); await tick();
+  const redLine = (XD.querySelector('.sfx-line') || { style: { getPropertyValue: () => '' } }).style.getPropertyValue('--lc') === '#ff5566';
+  await sleep(400);
+  check('T112 «Система»: окно уходит свёртыванием в линию 0,3 с — копия без id и нажатий, голубая линия по середине окна (у окна штрафа — красная), затем всё удаляется',
+    gOk && lOk && cssOk && gone && redLine, [gOk, lOk, cssOk, gone, redLine].join('/'));
+  const cols = {};
+  for (const [k, body] of [['blue', 'Проверка'], ['orange', E(x, 'PACE_NOTICE')]]) {
+    E(x, `notificationActive = false; displayNotificationNow({ body: ${JSON.stringify(body)}, tone: 'info' })`);
+    const nn = XD.querySelectorAll('.sys-notice:not(.sn-out)'), n = nn[nn.length - 1]; n.click(); const l = XD.querySelector('.sfx-line');
+    cols[k] = [n.classList.contains('sn-out'), l && l.style.getPropertyValue('--lc'), l && +l.style.zIndex].join(',');
+    await sleep(380); cols[k] += ',' + !n.isConnected;
+  }
+  E(x, `data.curseActiveToday = true; notificationActive = false; displayNotificationNow({ body: 'Красное', tone: 'info' })`);
+  const nrr = XD.querySelectorAll('.sys-notice:not(.sn-out)'), nr = nrr[nrr.length - 1]; await sleep(10200); const lr = XD.querySelector('.sfx-line');
+  cols.red = [nr.classList.contains('sn-out'), lr && lr.style.getPropertyValue('--lc')].join(','); await sleep(400); cols.red += ',' + !nr.isConnected;
+  E(x, 'data.curseActiveToday = false');
+  check('T113 «Система»: уведомление уходит свёртыванием в линию 0,3 с (по касанию и через 10 с), линия в цвет уведомления — голубая, оранжевая, красная; затем удаляется',
+    cols.blue === 'true,#40c0ff,2001,true' && cols.orange === 'true,#ff8a30,2001,true' && cols.red === 'true,#ff5566,true'
+    && /\.sys-notice\.sn-out \{ animation: snOut \.3s/.test(css) && /@keyframes snOut \{ 55% \{ transform: translate\(-50%,-50%\) scale\(1, \.02\); opacity: 1; \}/.test(css), JSON.stringify(cols)); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);

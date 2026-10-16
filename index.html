@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -729,22 +729,31 @@
       -webkit-mask-image: linear-gradient(0deg, transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(0deg, transparent, #000 30%, #000 70%, transparent); }
     .lvx-spark { position: fixed; z-index: 101; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px 1px #40c0ff; pointer-events: none; }
 
-    @keyframes systemPopupIn {   /* v7.2.8: появление — проявление снизу на 12 px за 0,25 с (вариант А, демо 99); уход — прежний */
-      0% { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); animation-timing-function: cubic-bezier(.2,.8,.2,1); }
-      2.5% { opacity: 1; transform: translate(-50%, -50%); }
-      85% { opacity: 1; transform: translate(-50%, -50%); }
-      100% { opacity: 0; transform: translate(-50%, -54%) scale(0.98); }
+    @keyframes systemPopupIn {   /* v7.2.8: появление — проявление снизу на 12 px за 0,25 с (вариант А, демо 99); v7.3.6: уход — отдельно (spOut) */
+      0% { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); }
+      100% { opacity: 1; transform: translate(-50%, -50%); }
     }
     /* v7.2.8: окна «Классики» — проявление и уход (ClassicFx) */
     @keyframes cfxOvIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes cfxWinIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
     @keyframes cfxOvOut { to { opacity: 0; } }
-    @keyframes cfxWinOut { to { opacity: 0; transform: translateY(8px); } }
+    @keyframes cfxWinOut { to { opacity: 0; transform: translateY(12px); } }   /* v7.3.6: мягкий уход вниз 12 px, 0,3 с (демо 106) */
     .status-overlay.cfx-ov-in { animation: cfxOvIn .25s ease-out both; }
     .status-overlay.cfx-ov-in > .cfx-win-in { animation: cfxWinIn .25s cubic-bezier(.2,.8,.2,1) both; }
-    .status-overlay.cfx-ghost { pointer-events: none; animation: cfxOvOut .18s ease-in both; }
+    .status-overlay.cfx-ghost { pointer-events: none; animation: cfxOvOut .3s ease-in both; }
     .status-overlay.cfx-ghost * { pointer-events: none !important; }
-    .status-overlay.cfx-ghost > * { animation: cfxWinOut .18s ease-in both; }
+    .status-overlay.cfx-ghost > * { animation: cfxWinOut .3s ease-in both; }
+    /* v7.3.6: окна «Системы» — свёртывание в линию 0,3 с (демо 106): копия окна сжимается по высоте, на её месте вспыхивает
+       линия и гаснет к центру, затемнение уходит во второй половине (SysCloseFx) */
+    @keyframes sfxOvOut { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes sfxFold { 0% { transform: scale(1, 1); } 55% { transform: scale(1, .02); opacity: 1; } 100% { transform: scale(1, .02); opacity: 0; } }
+    @keyframes sfxLine { 0%, 45% { opacity: 0; transform: scaleX(1); } 58% { opacity: 1; transform: scaleX(1); } 100% { opacity: 0; transform: scaleX(0); } }
+    .status-overlay.sfx-ghost { pointer-events: none; animation: sfxOvOut .3s linear both; }
+    .status-overlay.sfx-ghost * { pointer-events: none !important; }
+    .status-overlay.sfx-ghost > * { animation: sfxFold .3s ease-in both; transform-origin: 50% 50%; }
+    .sfx-line { position: fixed; height: 2px; margin-top: -1px; pointer-events: none; transform-origin: 50% 50%; --lc: #40c0ff;
+      background: linear-gradient(90deg, transparent, var(--lc) 15%, #fff 50%, var(--lc) 85%, transparent); box-shadow: 0 0 12px var(--lc);
+      animation: sfxLine .3s ease-in both; }
     .system-popup {
       position: fixed; top: 64%; left: 50%; transform: translate(-50%, -50%);
       width: min(320px, 82vw);
@@ -757,9 +766,13 @@
       pointer-events: auto;
       cursor: pointer;
       z-index: 2000;
-      animation: systemPopupIn 10s ease forwards;
+      animation: systemPopupIn .25s cubic-bezier(.2,.8,.2,1) both;
       box-shadow: 0 0 25px rgba(0,140,255,0.35), inset 0 0 15px rgba(0,80,200,0.15);
     }
+    /* v7.3.6: уход уведомления «Классики» — мягко вниз на 12 px, 0,25 с (демо 106); и по касанию, и через 10 с.
+       Начальный кадр не задан — уход начинается с того места, где уведомление было (в т. ч. посреди появления) */
+    .system-popup.sp-out { animation: spOut .25s ease-in forwards; pointer-events: none; }
+    @keyframes spOut { to { opacity: 0; transform: translate(-50%, calc(-50% + 12px)); } }
     .system-popup-header {
       font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.05rem;
       color: #40c0ff; opacity: 0.85; margin-bottom: 8px; text-transform: uppercase;
@@ -1084,8 +1097,9 @@
     .sys-notice { position: fixed; top: 58%; left: 50%; width: min(350px, 94vw); transform: translate(-50%, -50%); z-index: 2000; cursor: pointer; text-align: center;
       animation: snUnfold .65s cubic-bezier(.2,.8,.2,1) backwards; }
     @keyframes snUnfold { 0% { transform: translate(-50%,-50%) scaleY(.01) scaleX(.3); filter: brightness(3); } 30% { transform: translate(-50%,-50%) scaleY(.01) scaleX(1); filter: brightness(2.4); } 100% { transform: translate(-50%,-50%) scale(1); filter: brightness(1); } }
-    .sys-notice.sn-out { animation: snOut .35s ease-in forwards; pointer-events: none; }
-    @keyframes snOut { to { opacity: 0; transform: translate(-50%,-52%) scale(.97); } }
+    /* v7.3.6: уход уведомления «Системы» — свёртывание в линию 0,3 с (демо 106); начальный кадр не задан — с текущего места */
+    .sys-notice.sn-out { animation: snOut .3s ease-in forwards; pointer-events: none; }
+    @keyframes snOut { 55% { transform: translate(-50%,-50%) scale(1, .02); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1, .02); opacity: 0; } }
     .sn-hdr { display: flex; gap: 7px; align-items: stretch; justify-content: center; margin-bottom: 14px; }
     .sn-ic { width: 34px; flex: 0 0 34px; border: 1px solid rgba(225,242,255,.8); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px rgba(160,220,255,.35); }
     .sn-ic svg { width: 22px; height: 22px; filter: drop-shadow(0 0 3px #9fe6ff); }
@@ -1956,7 +1970,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.5';
+  const APP_VERSION = '7.3.6';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4142,7 +4156,9 @@
       if (dismissed) return;
       dismissed = true;
       stopNotificationGlitch(p);
-      p.remove();
+      freezeAnim(p);   // v7.3.6: уход мягко вниз 0,25 с (демо 106) — и по касанию, и через 10 с
+      p.classList.add('sp-out');
+      setTimeout(() => p.remove(), POPUP_OUT_MS + 30);
       notificationActive = false;
       currentNotificationBody = null;
       setTimeout(processNotificationQueue, 2000);
@@ -4155,6 +4171,29 @@
   // Рамка SysFrame; появление — развёртка из линии; Бремя — всё окно красное, сбой всего окна;
   // недопустимый темп без Бремени — всё окно оранжевое, сбой всего окна (расслоение и помехи).
   const SN_APPEAR_MS = 650;
+  // v7.3.6 (демо 106): уход окон и уведомлений. «Система» — свёртывание в линию 0,3 с, линия — в цвет окна/уведомления;
+  // «Классика» — уведомление мягко вниз 0,25 с (окна — ClassicFx).
+  const SN_OUT_MS = 300, POPUP_OUT_MS = 250;
+  const CLOSE_LINE_COL = { blue: '#40c0ff', red: '#ff5566', orange: '#ff8a30' };
+  // Светящаяся линия по середине элемента (ширина — без 6 px с каждой стороны); гаснет к центру.
+  function closeLine(el, col, ms, z) {
+    const r = el.getBoundingClientRect();
+    if (!(r.width > 12)) return null;
+    const l = document.createElement('div');
+    l.className = 'sfx-line';
+    l.style.cssText = `left:${r.left + 6}px;width:${r.width - 12}px;top:${r.top + r.height / 2}px;z-index:${z};--lc:${col};animation-duration:${ms}ms`;
+    document.body.appendChild(l);
+    setTimeout(() => l.remove(), ms + 40);
+    return l;
+  }
+  // Остановить анимацию появления там, где она сейчас: уход (без начального кадра) начнётся с этого места, без рывка.
+  function freezeAnim(el) {
+    const cs = getComputedStyle(el);
+    if (cs.transform && cs.transform !== 'none') el.style.transform = cs.transform;
+    if (cs.opacity !== '') el.style.opacity = cs.opacity;
+    if (cs.filter && cs.filter !== 'none') el.style.filter = cs.filter;
+    el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  }
   const SN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#eaf8ff" stroke-width="1.6"/><rect x="11" y="5.5" width="2" height="9" rx="1" fill="#eaf8ff"/><circle cx="12" cy="17.6" r="1.3" fill="#eaf8ff"/></svg>';
   function displaySystemNotice(p, { body, sub, toneClass, check }) {
     const glitchKind = notificationGlitchKind(body);
@@ -4174,8 +4213,10 @@
       if (dismissed) return;
       dismissed = true;
       stopNotificationGlitch(p);
+      closeLine(p, CLOSE_LINE_COL[scheme], SN_OUT_MS, 2001);   // v7.3.6: свёртывание в линию цвета уведомления (демо 106)
+      freezeAnim(p);
       p.classList.add('sn-out');
-      setTimeout(() => p.remove(), 350);
+      setTimeout(() => p.remove(), SN_OUT_MS + 30);
       notificationActive = false;
       currentNotificationBody = null;
       setTimeout(processNotificationQueue, 2000);
@@ -4219,11 +4260,17 @@
   // на 12 px, 0,25 с; закрытие — короткий уход 0,18 с неподвижной копией окна (сами окна закрываются из многих мест
   // кода, поэтому уход рисует копия, а настоящее окно скрыто сразу — кнопки под ней работают). Без эффекта: тема
   // «Система» и стартовое окно первого запуска.
+  // v7.3.6 (демо 106): «Классика» — уход мягко вниз на 12 px за 0,3 с; «Система» — уход тоже копией: свёртывание
+  // в линию 0,3 с (линия голубая, у красного окна штрафа — красная). Без эффекта: стартовое окно первого запуска
+  // и смена оформления в Архиве (идёт свой сбой).
   const ClassicFx = (() => {
-    const IN_MS = 250, OUT_MS = 180;
+    const IN_MS = 250, OUT_MS = 300, SYS_OUT_MS = 300;
     const prev = new WeakMap();
+    const scrollPos = new Map();   // элемент окна → последняя прокрутка
     const isOpen = ov => !!ov.style.display && ov.style.display !== 'none';
-    const skip = ov => (typeof isSysTheme === 'function' && isSysTheme()) || (ov.id === 'rulesOverlay' && ov.dataset.notice === '1');
+    const sys = () => typeof isSysTheme === 'function' && isSysTheme();
+    const themeFxOn = () => { try { return !!themeFx; } catch (e) { return false; } };
+    const skip = ov => (ov.id === 'rulesOverlay' && ov.dataset.notice === '1') || themeFxOn();
     function opened(ov) {
       const win = ov.firstElementChild;
       ov.classList.remove('cfx-ov-in'); if (win) win.classList.remove('cfx-win-in');
@@ -4235,30 +4282,39 @@
     function closed(ov) {
       clearTimeout(ov._cfxT);
       ov.classList.remove('cfx-ov-in'); const w0 = ov.firstElementChild; if (w0) w0.classList.remove('cfx-win-in');
+      scrollPos.forEach((y, el) => { if (!el.isConnected) scrollPos.delete(el); else if (y > 0 && ov.contains(el)) el.dataset.cfxSy = y; });
       const g = ov.cloneNode(true);
       g.removeAttribute('id'); g.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
       g.removeAttribute('onclick'); g.classList.remove('anim-paused');
-      g.classList.add('cfx-ghost');
-      g.style.display = 'flex'; g.style.zIndex = getComputedStyle(ov).zIndex;
-      const sc = ov.querySelectorAll('*'), gc = g.querySelectorAll('*');   // прокрутка — как у окна в момент закрытия
+      const isSys = sys(), ms = isSys ? SYS_OUT_MS : OUT_MS;
+      if (isSys) g.querySelectorAll('.mw-in, .anim-paused').forEach(el => el.classList.remove('mw-in', 'anim-paused'));
+      g.classList.add(isSys ? 'sfx-ghost' : 'cfx-ghost');
+      const z = parseInt(getComputedStyle(ov).zIndex, 10) || 1000;
+      g.style.display = 'flex'; g.style.zIndex = z;
       document.body.appendChild(g);
-      sc.forEach((el, i) => { if (el.scrollTop && gc[i]) gc[i].scrollTop = el.scrollTop; });
-      setTimeout(() => g.remove(), OUT_MS + 40);
+      // прокрутка — как у окна в момент закрытия. v7.3.6: у скрытого окна scrollTop уже 0 (копия раньше всегда
+      // показывала начало списка), поэтому положение запоминается по событиям прокрутки (scrollPos)
+      g.querySelectorAll('[data-cfx-sy]').forEach(el => { el.scrollTop = +el.dataset.cfxSy; el.removeAttribute('data-cfx-sy'); });
+      ov.querySelectorAll('[data-cfx-sy]').forEach(el => el.removeAttribute('data-cfx-sy'));
+      const gw = g.firstElementChild;
+      if (isSys && gw) closeLine(gw, CLOSE_LINE_COL[gw.classList.contains('sn-red') ? 'red' : 'blue'], ms, z + 1);
+      setTimeout(() => g.remove(), ms + 40);
     }
     function check(ov) {
       const o = isOpen(ov), was = prev.get(ov) || false;
       if (o === was) return;
       prev.set(ov, o);
       if (skip(ov)) return;
-      if (o) opened(ov); else closed(ov);
+      if (o) { if (!sys()) opened(ov); } else closed(ov);
     }
     function init() {
       const ovs = [...document.querySelectorAll('.status-overlay')];
       ovs.forEach(ov => prev.set(ov, isOpen(ov)));
+      document.addEventListener('scroll', e => { const t = e.target; if (t && t.nodeType === 1 && t.closest('.status-overlay:not(.cfx-ghost):not(.sfx-ghost)')) scrollPos.set(t, t.scrollTop); }, true);
       const mo = new MutationObserver(recs => { if (typeof document === 'undefined' || !document) return; new Set(recs.map(r => r.target)).forEach(check); });
       ovs.forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['style'] }));
     }
-    return { init, IN_MS, OUT_MS };
+    return { init, IN_MS, OUT_MS, SYS_OUT_MS };
   })();
 
   const SysFrame = (() => {

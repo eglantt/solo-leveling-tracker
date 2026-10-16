@@ -375,8 +375,9 @@ async function glitchTests() {
   check('G8 у Аномалии все пять приёмов', fxA === 'gfx-flicker,gfx-noise,gfx-shake,gfx-slice,gfx-split', fxA);
   await sleep(800);
   check('G9 Аномалия: всплеск снят, запланированы микросбои', !p.classList.contains('glitch') && p._glitchTimers.length > 0);
-  p.click();
-  check('G10 закрытие останавливает все таймеры сбоя', p._glitchStopped === true && p._glitchTimers.length === 0 && !p.isConnected);
+  p.click(); const g10now = p._glitchStopped === true && p._glitchTimers.length === 0 && p.classList.contains('sp-out');
+  await sleep(320);   // v7.3.6: уведомление уходит 0,25 с, затем удаляется
+  check('G10 закрытие останавливает все таймеры сбоя', g10now && !p.isConnected);
   p = show(E(w, 'PACE_NOTICE'), 'warn');
   check('G11 темп во время Бремени — «наводка» Аномалии', p.dataset.glitch === 'anomaly');
   clear();
