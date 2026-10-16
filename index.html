@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.3.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -714,9 +714,9 @@
     
     .completion-effect { position:absolute; inset:0; pointer-events:none; animation:flash 1.2s ease-out forwards; z-index: 1; }
     .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-family:'Orbitron','Exo 2',sans-serif; font-size:1.6rem; font-weight:700; white-space:nowrap; text-align:center; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
-    /* v7.3.4 (демо 105): надпись повышения уровня — обе темы: «LEVEL UP» белая с голубым свечением на полосе-стекле, 25% высоты экрана;
+    /* v7.3.4 (демо 105): надпись повышения уровня — обе темы: «LEVEL UP» белая с голубым свечением на полосе-стекле, середина на 40% высоты экрана (v7.3.5; в 7.3.4 — верх на 25%);
        появление — фокусировка, шестиугольная волна, столб света, искры вверх, уход — сбой (levelUpFx). Движение — только transform/opacity. */
-    .lvx { position: fixed; left: 0; right: 0; top: 25%; z-index: 100; display: flex; justify-content: center; pointer-events: none; }
+    .lvx { position: fixed; left: 0; right: 0; top: 40%; transform: translateY(-50%); z-index: 100; display: flex; justify-content: center; pointer-events: none; }   /* v7.3.5: середина надписи — на 40% высоты экрана */
     .lvx-box { position: relative; padding: 10px 40px 12px; transform-origin: 50% 50%;
       background: linear-gradient(90deg, rgba(20,90,200,0), rgba(20,90,200,.32) 25%, rgba(20,90,200,.32) 75%, rgba(20,90,200,0)); }
     .lvx-box::before, .lvx-box::after { content: ''; position: absolute; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, #40c0ff 20%, #40c0ff 80%, transparent); box-shadow: 0 0 6px #40c0ff; }
@@ -1956,7 +1956,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.4';
+  const APP_VERSION = '7.3.5';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система

@@ -1268,9 +1268,9 @@ async function designTests() {
   // --- LEVEL UP ---
   const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
   const lu = (css.match(/\.lvx-t \{([^}]*)\}/) || [])[1] || '', lr = (css.match(/\.lvx \{([^}]*)\}/) || [])[1] || '';
-  check('L1 v7.3.4: надпись без поворота и раздувания (старых правил нет), по центру на 25% высоты экрана, на полосе-стекле',
+  check('L1 v7.3.4: надпись без поворота и раздувания (старых правил нет), середина надписи на 40% высоты экрана (v7.3.5), на полосе-стекле',
     !/@keyframes levelUp|levelup-popup|rotate\(/.test((css.match(/\.lvx[^{]*\{[^}]*\}/g) || []).join('') + (css.includes('levelup-popup') ? 'levelup-popup' : '') + (/@keyframes levelUp/.test(css) ? '@keyframes levelUp' : ''))
-    && /position: fixed; left: 0; right: 0; top: 25%; z-index: 100; display: flex; justify-content: center;/.test(lr) && /\.lvx-box::before, \.lvx-box::after \{/.test(css), lr);
+    && /position: fixed; left: 0; right: 0; top: 40%; transform: translateY\(-50%\); z-index: 100; display: flex; justify-content: center;/.test(lr) && /\.lvx-box::before, \.lvx-box::after \{/.test(css), lr);
   check('L2 одна строка, размер по ширине экрана, белая с голубым свечением', lu.includes('white-space: nowrap') && lu.includes('font-size: clamp(1.6rem, 11vw, 3.5rem)') && lu.includes('color: #f2fbff') && lu.includes('0 0 22px #40c0ff'), lu);
   { E(w, 'data.level = 5; data.dailyTargetLevel = 5; data.exp = 0; render()'); E(w, 'gainExp(getExpToNext(5) + getExpToNext(6) + getExpToNext(7) + 10); checkLevelUp(); render()');
     const n1 = D.querySelectorAll('.lvx').length, txt = (D.querySelector('.lvx .lvx-t') || {}).textContent;
