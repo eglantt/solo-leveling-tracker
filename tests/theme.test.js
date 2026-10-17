@@ -364,7 +364,7 @@ const w = boot(); const D = w.document; await tick();
     E(w, "document.getElementById('itemPreviewOverlay').style.display = 'none'"); await tick(); const p3 = paused();
     closeAll(w); await tick(); const p4 = paused();
     check(`T58 пауза под окном (${theme === 'system' ? '«Система»' : '«Классика»'}): Магазин — замер главный экран; превью поверх — ещё и Магазин; закрыли превью — Магазин ожил; закрыли всё — пауз нет`,
-      p0 === '' && p1 === 'system-container' && p2 === 'shopOverlay,system-container' && p3 === 'system-container' && p4 === '', [p0, p1, p2, p3, p4].join(' | '));
+      p0 === '' && p1 === 'fzBar,system-container' && p2 === 'fzBar,shopOverlay,system-container' && p3 === 'fzBar,system-container' && p4 === '', [p0, p1, p2, p3, p4].join(' | '));   // v7.4.0: и шкала усталости
   }
   E(w, "setTheme('system')"); await tick();
   D.dispatchEvent(new w.Event('scroll')); await tick();

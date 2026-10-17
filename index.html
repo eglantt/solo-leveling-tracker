@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.3.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.4.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1139,6 +1139,28 @@
     .tfx-loss { position: absolute; inset: 0; pointer-events: none; z-index: 200; background: #02060c; border-radius: inherit; }
     .tfx-loss i { position: absolute; inset: 0; opacity: .5; }
     .tfx-dim { position: absolute; inset: 0; pointer-events: none; background: #000; opacity: 0; will-change: opacity; }
+    /* ===== v7.4.0: шкала усталости (демо 107.5). Главный экран — неподвижный слой (fixed): подложка-овал (темнота .75, край 22 px),
+       подпись и полоса как у упражнений (.qbar), 110 px, заполнение слева направо; цвет — плавно голубой → янтарный (70) →
+       оранжевый (90) → красный (100); от 90 — пульсация свечения 1,2 с; появление и уход — 1 с. «Статус» — отдельный блок. ===== */
+    .fz { position: fixed; left: 0; top: 0; z-index: 900; pointer-events: none; box-sizing: border-box; --w: 110px; width: calc(var(--w) + 24px); padding: 8px 12px 10px;
+      --fc: #40c0ff; --f: var(--fc); --fv: 0; --bo: .75; --bf: 22px; --fill: .8s; opacity: 0; transition: opacity 1s ease; }
+    .fz.on { opacity: 1; }
+    .fz::before { content: ''; position: absolute; z-index: -1; pointer-events: none; inset: calc(var(--bf) * -1) calc(var(--bf) * -1.5);
+      background: radial-gradient(farthest-side, rgba(3,9,18,var(--bo)) 45%, rgba(3,9,18,calc(var(--bo) * .55)) 70%, rgba(3,9,18,0) 100%); }
+    html.booting .fz, html.theme-pending .fz { display: none; }
+    .fz-l { font: 500 11px 'Exo 2 Text', 'Exo 2', sans-serif; letter-spacing: .06em; color: #cfe8ff; margin-bottom: 6px; text-shadow: none; }
+    .fz-cap { position: relative; width: var(--w); max-width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); display: flex; justify-content: flex-start; }
+    .fz-fill { height: 100%; width: calc(var(--fv) * 100%); border-radius: 2px; background: var(--fc); box-shadow: 0 0 6px color-mix(in srgb, var(--fc) 50%, transparent);
+      transition: width var(--fill) ease-out, background-color .4s, box-shadow .4s; }
+    .fz-glow { position: absolute; inset: -3px; border-radius: 999px; pointer-events: none; opacity: 0; transition: opacity .6s ease; }
+    .fz-glow::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 12px 2px var(--fc); animation: fzBreath 1.2s ease-in-out infinite; }
+    .fz.pulse .fz-glow { opacity: 1; }
+    @keyframes fzBreath { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
+    .fz-st { display: flex; align-items: center; gap: 10px; --w: 110px; --fc: #40c0ff; --f: var(--fc); --fv: 0; }
+    .fz-st .k { font-family: 'Exo 2 Text', sans-serif; color: #88ddff; font-size: 0.84rem; white-space: nowrap; margin-right: auto; }
+    .fz-st .fz-v { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: .85rem; color: var(--fc); min-width: 3.2em; text-align: right; white-space: nowrap; }
+    .fz-st .fz-cap { flex: 0 0 auto; }
+    .fz-st .fz-fill { transition: width 1s ease-out, background-color .4s, box-shadow .4s; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (без рамки) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -1498,6 +1520,13 @@
     /* v7.2.9: свечение цифры уровня в окне «Статус» — компактнее (4 + 8 px), чтобы не срезалось краем прокрутки;
        главный экран остаётся 5 + 14; у SSS и Монарха свечение задаёт пульсация lvPulse — она это правило перекрывает */
     body.theme-sys #statusOverlay .sf-win.mwin .sc-hex b { filter: drop-shadow(0 0 4px var(--rk)) drop-shadow(0 0 8px var(--rk)); }
+    /* v7.4.0: шкала усталости в «Системе» — подпись Orbitron, полоса — капсула 11 px, как у упражнений */
+    body.theme-sys .fz-l { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: #e8f6ff; text-shadow: 0 0 6px rgba(64,192,255,.6); }
+    body.theme-sys .fz-cap { box-sizing: border-box; height: 11px; padding: 3px; border: 1px solid var(--f); border-radius: 999px; background: rgba(3,9,20,.55);
+      box-shadow: 0 0 5px color-mix(in srgb, var(--f) 45%, transparent); transition: border-color .4s, box-shadow .4s; }
+    body.theme-sys .fz-fill { border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--f) 50%, #06101f), var(--f)); box-shadow: 0 0 6px var(--f); }
+    body.theme-sys .sf-win.mwin .fz-st .k { color: var(--tx2); }
+    body.theme-sys .sf-win.mwin .fz-st .fz-v { text-shadow: var(--tg); }
   </style>
 </head>
 <body>
@@ -1524,6 +1553,7 @@
         <div class="sc-debt" id="stDebt" style="display:none;">Долг перед Системой: −<span id="stDebtVal">0</span> EXP</div>
         <div class="sc-chips"><div class="sc-chip cr"><span class="k">Кредиты</span><span class="n" id="stCredits">0 <span class="cr-ic" role="img" aria-label="кредитов"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#credSeal"/></svg><span class="gl"></span></span></span></div><div class="sc-chip st"><span class="k">Серия дней</span><span class="n" id="stStreak">0</span></div></div>
       </div>
+      <div class="st-sec fz-sec" id="fzStatus"><div class="fz-st"><span class="k">Усталость</span><span class="fz-v">0%</span><div class="fz-cap"><div class="fz-fill"></div></div></div></div>
       <div class="st-sec"><div class="st-grid">
           <div class="st-cell"><div class="st-k" onclick="showStatLore('str')">Сила</div><div class="st-line"><span class="st-v" id="valStr">10</span><button onclick="incStat('str')" class="stat-add-btn" id="btnStr">+</button></div></div>
           <div class="st-cell"><div class="st-k" onclick="showStatLore('agi')">Ловкость</div><div class="st-line"><span class="st-v" id="valAgi">10</span><button onclick="incStat('agi')" class="stat-add-btn" id="btnAgi">+</button></div></div>
@@ -1773,6 +1803,14 @@
           <div class="sound-checkbox-zone" onclick="togglePaceControl()"><div class="sound-checkbox on" id="paceControlCheckbox">✓</div></div>
         </div>
       </div>
+      <div class="backup-section">
+        <div class="backup-section-title">Шкала усталости</div>
+        <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <span id="fatigueLabel">Шкала: включена.</span>
+          <div class="sound-checkbox-zone" onclick="toggleFatigue()"><div class="sound-checkbox on" id="fatigueCheckbox">✓</div></div>
+        </div>
+        <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetFatigueAction)">Сбросить усталость</button>
+      </div>
       <div class="backup-section danger-zone">
         <div class="backup-section-title danger">Сбросы</div>
         <button class="reset-all" onclick="sysToolsFlashThenRun(this, resetDailyProgressAction)">Сбросить дневной прогресс</button>
@@ -1838,6 +1876,8 @@
   </div>
 </div>
 
+<!-- v7.4.0: шкала усталости — неподвижный слой поверх главного экрана (не прокручивается) -->
+<div id="fzBar" class="fz" aria-hidden="true"><div class="fz-l">Усталость</div><div class="fz-cap"><div class="fz-fill"></div><i class="fz-glow"></i></div></div>
 <div class="system-container">
   <div class="quest-panel hud-frame">
     <div class="header">
@@ -1968,7 +2008,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.3.7';
+  const APP_VERSION = '7.4.0';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -1979,6 +2019,21 @@
   const PACE_WINDOW_MS = 2 * 60 * 1000;
   const PACE_BUDGET = 2;
   const PACE_NOTICE = 'Зафиксирован недопустимый темп. Последнее внесение не засчитано. Система восстанавливает контроль.';
+  // v7.4.0: шкала усталости (демо 107.5). Числа нигде в текстах не называются.
+  const FZ = {
+    k: 25, A: 1.5,                                             // усталость подхода: k·x·(1 + A·y²)
+    comfort: { pushups: 0.35, squats: 0.40, pullups: 0.40, press: 0.45 },   // удобный подход — доля нормы
+    steps: 35,                                                 // шаги: полная норма = 35, без надбавки за размер
+    restMin: 3, restBonus: 0.25,                               // нормальный отдых, надбавка за короткий
+    t1: 20, t2: 80,                                            // спад свежей и накопленной, мин
+    s0: 0.25, s1: 0.50,                                        // доля в накопленную: s0 + s1·d (шаги — пополам)
+    glueMs: 30000,                                             // нажатия по одному упражнению в пределах 30 с — один подход
+    big: 0.6, rearm: 50, popMs: 4000,
+    base: { pushups: 100, squats: 120, pullups: 40, press: 100, steps: 10000 }
+  };
+  const FZ_T70 = 'Зафиксирована высокая нагрузка. Требуется время на восстановление сил Игрока.';
+  const FZ_T100 = 'Усталость достигла критической отметки. Система настоятельно рекомендует отдых.';
+  const FZ_TBIG = 'Зафиксирована перегрузка: объём одного подхода превышает рекомендуемый.';
   const STORAGE_KEY = 'sl_daily_v5_5_0';
   const STATS_KEY = 'sl_total_stats_v5_5_0';
   // v7.0.2: выбранная тема — ещё и в отдельной записи. «Сбросить всё» стирает только прогресс и статистику, поэтому после сброса
@@ -2071,6 +2126,7 @@
         paceControl: typeof oldData.paceControl === 'boolean' ? oldData.paceControl : true,
         beadStreak: 0, beadBlockUntil: null, veilLifted: !!oldData.veilLifted,
         paceWindow: oldData.paceWindow,
+        fatigueOn: typeof oldData.fatigueOn === 'boolean' ? oldData.fatigueOn : true, fatigue: oldData.fatigue,   // v7.4.0
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
@@ -2129,6 +2185,7 @@
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats", "equipment"],
         equippedArtifacts: [null, null, null, null],
         paceControl: true, paceWindow: { start: null, used: 0, locked: false, hot: [] },
+        fatigueOn: true, fatigue: emptyFatigue(),   // v7.4.0
         beadStreak: 0, beadBlockUntil: null, veilLifted: false,
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
@@ -2176,6 +2233,8 @@
   if (typeof data.veilLifted !== 'boolean') data.veilLifted = false;
   if (data.consumables && data.consumables.bone_bead > 3) data.consumables.bone_bead = 3;
   data.paceWindow = sanitizePaceWindow(data.paceWindow);
+  if (typeof data.fatigueOn !== 'boolean') data.fatigueOn = true;   // v7.4.0: шкала усталости, у всех включена
+  data.fatigue = data.fatigueOn ? sanitizeFatigue(data.fatigue) : emptyFatigue();
   // Догоняющая проверка — та же логика, что уже применена выше к title_probuzhdenny.
   // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
   // достижения нужного уровня (внутри checkLevelUp()) или находки — игроки, уже
@@ -2394,6 +2453,24 @@
     const used = (typeof w.used === 'number' && Number.isFinite(w.used)) ? Math.min(PACE_BUDGET, Math.max(0, w.used)) : 0;
     const hot = Array.isArray(w.hot) ? w.hot.filter((id, i, a) => PACE_SET[id] && a.indexOf(id) === i) : [];
     return { start: w.start, used, locked: !!w.locked, hot };
+  }
+
+  // v7.4.0: усталость — две части (свежая и накопленная), время последнего пересчёта, текущий подход, отметки предупреждений.
+  function emptyFatigue() { return { fast: 0, slow: 0, t: Date.now(), last: null, lastEnd: 0, w70: false, w100: false }; }
+  function sanitizeFatigue(f) {
+    if (!f || typeof f !== 'object') return emptyFatigue();
+    const num = (v, a, b) => (typeof v === 'number' && Number.isFinite(v)) ? Math.min(b, Math.max(a, v)) : a;
+    const now = Date.now();
+    let fast = num(f.fast, 0, 100), slow = num(f.slow, 0, 100);
+    if (fast + slow > 100) { const k = 100 / (fast + slow); fast *= k; slow *= k; }
+    const t = (typeof f.t === 'number' && Number.isFinite(f.t) && f.t <= now) ? f.t : now;
+    let last = null;
+    const L = f.last;
+    if (L && typeof L === 'object' && FZ.base[L.id] && typeof L.t === 'number' && Number.isFinite(L.t) && L.t <= now) {
+      last = { id: L.id, t: L.t, x: num(L.x, 0, 1000), d: num(L.d, 0, 1) };
+    }
+    const lastEnd = (typeof f.lastEnd === 'number' && Number.isFinite(f.lastEnd) && f.lastEnd <= now) ? Math.max(0, f.lastEnd) : 0;
+    return { fast, slow, t, last, lastEnd, w70: !!f.w70, w100: !!f.w100 };
   }
 
   // v6.7.0: сколько контуров снаряжения открыто на уровне.
@@ -3046,7 +3123,7 @@
   const CODEX_CHAPTERS = {
     daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Задание исполнено только при закрытии всех пяти пунктов — частичное выполнение приравнивается к неисполнению, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Смена цикла отслеживается обратным отсчётом на экране — по его истечении начинается новый цикл. Выполненное задание приносит опыт и кредиты. Система следит за темпом выполнения: повторения, внесённые быстрее, чем их возможно совершить, не засчитываются." },
     penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Однако с ростом силы и уровня эта тяжесть снижается. Если же накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия." },
-    stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку и увеличивает опыт при превышении задания." },
+    stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку, увеличивает опыт при превышении задания, облегчает усталость и ускоряет восстановление." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Магазин Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
     boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания." },
@@ -3442,7 +3519,7 @@
   const STAT_LORE = {
     str: { title: 'СИЛА', text: 'Тело Игрока крепнет с каждой тренировкой, и вместе с ним — способность переносить последствия неудач. Чем выше Сила, тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание.' },
     agi: { title: 'ЛОВКОСТЬ', text: 'Не всякое усилие равноценно — иногда одно и то же движение приносит больше, чем ожидалось. С ростом Ловкости растёт и шанс, что выполненное упражнение принесёт больше кредитов, чем обычно.' },
-    sta: { title: 'ВЫНОСЛИВОСТЬ', text: 'Запас сил редко замечают, пока он не понадобится по-настоящему. Выносливость снижает повседневную нагрузку заданий и заметно увеличивает опыт, если Игрок решается преодолеть предел.' },
+    sta: { title: 'ВЫНОСЛИВОСТЬ', text: 'Запас сил редко замечают, пока он не понадобится по-настоящему. Выносливость снижает повседневную нагрузку заданий, облегчает усталость и ускоряет восстановление, а также заметно увеличивает опыт, если Игрок решается преодолеть предел.' },
     int: { title: 'ИНТЕЛЛЕКТ', text: 'Опыт набирается быстрее, если разум готов его усвоить. Каждое очко, вложенное в Интеллект, увеличивает опыт, получаемый за любое выполненное задание.' },
     per: { title: 'ВОСПРИЯТИЕ', text: 'Там, где другие видят обычную находку, внимательный взгляд замечает нечто большее. Восприятие повышает шанс на получение редких шкатулок, на бонусные кредиты из них и на более ценное содержимое внутри.' },
   };
@@ -3647,7 +3724,7 @@
   function getDynamicTarget(base, lvl, id) {
     let val = Math.floor(base * getTargetGrowthMultiplier(lvl));
     const bonusSta = Math.max(0, data.stats.sta - 10);
-    const staReduction = data.activeScroll === 'renunciation' ? 0 : Math.min(0.20, bonusSta * 0.001);
+    const staReduction = data.activeScroll === 'renunciation' ? 0 : Math.min(0.20, bonusSta * 0.0005);   // v7.4.0: 0,05% за очко, потолок 20% на 410
     const isRuneOnHold = isLoadRuneOnHold();
     const runeReduction = (data.targetDiscountToday && !isRuneOnHold) ? (data.targetDiscountRate || 0.25) : 0;
     const combinedReduction = Math.min(0.60, staReduction + runeReduction);
@@ -4103,6 +4180,129 @@
     if (lbl) lbl.textContent = data.paceControl ? 'Контроль: включён.' : 'Контроль: выключен.';
   }
 
+  // ===== v7.4.0: ШКАЛА УСТАЛОСТИ (демо 107.5) =====
+  // Подход — засчитанные нажатия «+» по одному упражнению с паузой не больше 30 с (отказ контроля темпа не считается).
+  // Усталость подхода — 25·x·(1 + 1,5·y²): x — доля нормы уровня (только со снижением Выносливостью), y = (x − c)/(1 − c),
+  // c — удобный подход упражнения; короткий отдых (меньше 3 мин) — до +25% и больше в накопленную часть. Шаги — 35·x, без надбавок.
+  // Две части спадают по экспоненте (свежая — 20 мин, накопленная — 80 мин) по часам, и пока приложение закрыто; потолок 100;
+  // суточный сброс усталость не трогает. Выносливость: усталость подхода ×(1 − e), восстановление ×(1 + e), e = 0,05% за очко, до 20%.
+  // Состояние — объявлено через var: отрисовка может случиться при загрузке раньше этого места.
+  var fzPopUntil = 0;
+  var FZ_STOPS = [[0, [64, 192, 255]], [70, [255, 196, 77]], [90, [255, 138, 48]], [100, [255, 68, 85]]];
+  function fzSta() { const s = data.stats && typeof data.stats.sta === 'number' ? data.stats.sta : 10; return Math.min(0.20, Math.max(0, s - 10) * 0.0005); }
+  // Норма для усталости: цель уровня со снижением Выносливостью — без Бремени, свитков и рун.
+  function fzNorm(id) {
+    const lvl = Number.isFinite(data.dailyTargetLevel) && data.dailyTargetLevel > 0 ? data.dailyTargetLevel : (data.level || 1);
+    const t = Math.floor(FZ.base[id] * getTargetGrowthMultiplier(lvl));
+    const r = fzSta();
+    return Math.max(1, r > 0 ? Math.floor(t * (1 - r)) : t);
+  }
+  function fzValue() { const f = data.fatigue; return f ? Math.min(100, f.fast + f.slow) : 0; }
+  function fzG(x, id) { const c = FZ.comfort[id], y = Math.max(0, x - c) / (1 - c); return FZ.k * x * (1 + FZ.A * y * y); }
+  // Спад до текущего времени. Часы ушли назад — усталость не меняется, отсчёт идёт от нового времени.
+  function fzAdvance(now) {
+    const f = data.fatigue; if (!f) return;
+    now = now || Date.now();
+    const dt = (now - f.t) / 60000;
+    if (dt > 0) {
+      const rk = 1 + fzSta();
+      f.fast *= Math.exp(-dt * rk / FZ.t1); f.slow *= Math.exp(-dt * rk / FZ.t2);
+      if (f.fast < 1e-6) f.fast = 0;
+      if (f.slow < 1e-6) f.slow = 0;
+    }
+    f.t = now;
+  }
+  // Засчитанное внесение (вызывается из обработчика «+» после проверки темпа).
+  function fzAdd(id, val) {
+    if (!data.fatigueOn || !FZ.base[id] || !(val > 0)) return;
+    if (!data.fatigue) data.fatigue = emptyFatigue();
+    const f = data.fatigue, now = Date.now();
+    fzAdvance(now);
+    const steps = id === 'steps';
+    const L0 = f.last, gap = L0 ? now - L0.t : -1;
+    if (!(L0 && L0.id === id && gap >= 0 && gap <= FZ.glueMs)) {
+      const rest = (f.lastEnd && now >= f.lastEnd) ? (now - f.lastEnd) / 60000 : Infinity;
+      const d = steps ? 0.5 : Math.min(1, Math.max(0, 1 - rest / FZ.restMin));
+      f.last = { id, t: now, x: 0, d };
+    }
+    const L = f.last, xOld = L.x;
+    L.x += val / fzNorm(id); L.t = now; f.lastEnd = now;
+    let g = steps ? FZ.steps * (L.x - xOld) : (fzG(L.x, id) - fzG(xOld, id)) * (1 + FZ.restBonus * L.d);
+    g *= 1 - fzSta();
+    g = Math.min(Math.max(0, g), Math.max(0, 100 - f.fast - f.slow));
+    const sh = steps ? 0.5 : Math.min(1, Math.max(0, FZ.s0 + FZ.s1 * L.d));
+    f.slow += g * sh; f.fast += g * (1 - sh);
+    fzPopUntil = now + FZ.popMs;
+    if (!steps && xOld < FZ.big && L.x >= FZ.big) fzNotice(FZ_TBIG, 'warn');
+    fzThresholds(true);
+    fzDraw(true);
+  }
+  // Пороги: 70 — предупреждение, 100 — критическое; снова — только после спада ниже 50.
+  function fzThresholds(warn) {
+    const f = data.fatigue; if (!f) return;
+    const v = fzValue();
+    if (v < FZ.rearm) { f.w70 = false; f.w100 = false; }
+    if (!warn || !data.fatigueOn) return;
+    if (v >= 99.9 && !f.w100) { f.w100 = true; f.w70 = true; fzNotice(FZ_T100, 'warn'); }
+    else if (v >= 70 && !f.w70) { f.w70 = true; fzNotice(FZ_T70, 'info'); }
+  }
+  function fzNotice(text, tone) { showNotice(text, tone, false, tone === 'warn' ? 'none' : undefined); }
+  function fzColor(v) {
+    for (let i = 1; i < FZ_STOPS.length; i++) if (v <= FZ_STOPS[i][0]) {
+      const [a, ca] = FZ_STOPS[i - 1], [b, cb] = FZ_STOPS[i], k = (v - a) / (b - a);
+      return `rgb(${ca.map((c, j) => Math.round(c + (cb[j] - c) * k)).join(',')})`;
+    }
+    return `rgb(${FZ_STOPS[3][1].join(',')})`;
+  }
+  function fzPaint(el, v) { el.style.setProperty('--fc', fzColor(v)); el.style.setProperty('--fv', (v / 100).toFixed(4)); }
+  function fzWinOpen() { return [...document.querySelectorAll('.status-overlay')].some(ov => !!ov.style.display && ov.style.display !== 'none'); }
+  // Место на экране: по горизонтали 3% в пределах колонки карточек заданий, по вертикали 2% высоты экрана.
+  function fzPlace(z) {
+    const W = window.innerWidth || document.documentElement.clientWidth || 0, H = window.innerHeight || document.documentElement.clientHeight || 0;
+    const w = z.offsetWidth, h = z.offsetHeight, m = 12 + 22 * 0.5;
+    const col = [...document.querySelectorAll('.system-container .quest-item')].find(el => el.offsetWidth > 0) || document.querySelector('.system-container');
+    let L = 12, R = W - 12;
+    if (col) { const r = col.getBoundingClientRect(); if (r.width > 0) { L = Math.max(0, r.left); R = Math.min(W, r.right); } }
+    z.style.top = Math.round(m + Math.max(0, H - h - 2 * m) * 0.02) + 'px';
+    z.style.left = Math.round(L + Math.max(0, (R - L) - w) * 0.03) + 'px';
+  }
+  // Отрисовка шкалы на главном экране и блока в «Статусе». Классы меняются по одному — пульсация не перезапускается.
+  function fzDraw(anim) {
+    const on = !!data.fatigueOn, v = on ? fzValue() : 0;
+    const z = document.getElementById('fzBar');
+    if (z) {
+      z.style.setProperty('--fill', (anim ? 0.8 : 1) + 's');
+      fzPaint(z, v);
+      const show = on && (v >= 70 || Date.now() < fzPopUntil) && !fzWinOpen();
+      if (show && !z.classList.contains('on')) fzPlace(z);
+      z.classList.toggle('pulse', on && v >= 90);
+      z.classList.toggle('on', show);
+    }
+    const st = document.getElementById('fzStatus');
+    if (st) {
+      st.style.display = on ? '' : 'none';
+      const row = st.querySelector('.fz-st');
+      if (on && row) { fzPaint(row, v); const t = row.querySelector('.fz-v'); if (t) t.textContent = Math.round(v) + '%'; }
+    }
+  }
+  function fzTick() {
+    if (data.fatigueOn && data.fatigue) { fzAdvance(); fzThresholds(false); }
+    fzDraw(false);
+  }
+  function toggleFatigue() {
+    data.fatigueOn = !data.fatigueOn;
+    data.fatigue = emptyFatigue(); fzPopUntil = 0;
+    saveData(); syncFatigueCheckbox(); fzDraw(false);
+  }
+  function resetFatigueAction() { data.fatigue = emptyFatigue(); fzPopUntil = 0; saveData(); fzDraw(false); }
+  function syncFatigueCheckbox() {
+    const cb = document.getElementById('fatigueCheckbox');
+    if (cb) cb.classList.toggle('on', !!data.fatigueOn);
+    const lbl = document.getElementById('fatigueLabel');
+    if (lbl) lbl.textContent = data.fatigueOn ? 'Шкала: включена.' : 'Шкала: выключена.';
+  }
+  window.addEventListener('resize', () => { const z = document.getElementById('fzBar'); if (z && z.classList.contains('on')) fzPlace(z); });
+
   // ===== NOTIFICATION QUEUE =====
   // Every system message (short banners, title/rank/codex announcements) goes through
   // this single queue so overlapping events never render on screen at the same time.
@@ -4241,8 +4441,10 @@
       let top = null, tz = -Infinity;
       open.forEach(ov => { const z = parseInt(getComputedStyle(ov).zIndex, 10) || 0; if (z >= tz) { tz = z; top = ov; } });
       const want = top ? [main, ...open.filter(ov => ov !== top)].filter(Boolean) : [];
+      const fzb = document.getElementById('fzBar'); if (top && fzb) want.push(fzb);   // v7.4.0: шкала усталости — пульсация замирает
       document.querySelectorAll('.anim-paused').forEach(el => { if (!want.includes(el)) el.classList.remove('anim-paused'); });
       want.forEach(el => el.classList.add('anim-paused'));
+      try { fzDraw(false); } catch (e) {}   // v7.4.0: под открытым окном шкала гаснет
     }
     function init() {
       main = document.querySelector('.system-container');
@@ -5261,6 +5463,7 @@
   function notificationGlitchKind(body) {
     if (data.curseActiveToday) return 'anomaly';          // в момент показа; ожидающее Бремя — нет
     if (body === PACE_NOTICE) return 'pace';
+    if (body === FZ_T100 || body === FZ_TBIG) return 'pace';   // v7.4.0: усталость — тот же оранжевый сбой
     return null;
   }
   function buildGlitchPopupHtml(content, kind) {
@@ -5760,6 +5963,7 @@
   function updateTimerInner() {
     paceTick();
     burdenGlitchTick();   // v6.9.0
+    try { fzTick(); } catch (e) {}   // v7.4.0: спад усталости и шкала — раз в секунду
     const container = document.getElementById('resetTimerContainer');
     const labelEl = container.querySelector('.reset-label');
     container.classList.toggle('frz', data.activeScroll === 'freeze');   // v7.2.8: подпись Заморозки в «Системе» — уже поле справа
@@ -7175,7 +7379,7 @@
       }
     });
     fillStatusBlock('hdr');
-    syncPaceCheckbox();
+    syncPaceCheckbox(); syncFatigueCheckbox();
     SysTheme.syncAnomaly();   // v7.0.0
     renderVeil();   // v6.10.0
     document.querySelectorAll('.quest-item').forEach(item => {
@@ -7221,6 +7425,7 @@
         return;
       }
       playSound('tap');
+      fzAdd(id, val);   // v7.4.0: шкала усталости — только засчитанные внесения
       if (data.curseActiveToday) setTimeout(() => questGlitch(item, 360), 0);   // v6.9.0: сбой при засчитанном нажатии — после перерисовки (она переписывает число)
       data.completed[id] = current + val;
       totalStats[id] += val;
@@ -7847,6 +8052,8 @@
       beadBlockUntil: (typeof s.beadBlockUntil === 'number' && Number.isFinite(s.beadBlockUntil)) ? s.beadBlockUntil : null,
       veilLifted: s.veilLifted === true && s.activeScroll === 'veil',
       paceWindow: sanitizePaceWindow(s.paceWindow),
+      fatigueOn: typeof s.fatigueOn === 'boolean' ? s.fatigueOn : true,   // v7.4.0: переключатель — из копии,
+      fatigue: emptyFatigue(),                                            // усталость — с нуля
       consumables: cleanConsumables,
       insurance: !!s.insurance,
       activeTitle: cleanActiveTitle,

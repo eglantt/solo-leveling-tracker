@@ -472,7 +472,7 @@ const CQ = 'Свиток вступит в силу со следующим ци
     const st = failDayStatus(w);
     check('F32 провал — обычный штраф, без доплаты, свиток снят', st === 'penalty' && !E(w,'window.__N.join(" ")').includes('Сосредоточения') && E(w, `!data.activeScroll && data.focusExerciseId===null`), st); }
   { const w = fresh('data.curseActiveToday=true;'); useF(w, 'pullups');
-    const raw = E(w, `Math.floor(40 * getTargetGrowthMultiplier(data.dailyTargetLevel) * (1 - Math.min(0.6, Math.min(0.2, Math.max(0, data.stats.sta - 10) * 0.001))))`);
+    const raw = E(w, `Math.floor(40 * getTargetGrowthMultiplier(data.dailyTargetLevel) * (1 - Math.min(0.6, Math.min(0.2, Math.max(0, data.stats.sta - 10) * 0.0005))))`);
     check('F33 Бремя: ×1,4 и поверх ×1,5', tgt(w,'pullups',40) === Math.floor(Math.ceil(raw*1.4)*1.5), tgt(w,'pullups',40) + ' / ' + raw); }
   // руны
   { const w = fresh(); useF(w, 'press');
