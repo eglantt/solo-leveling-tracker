@@ -202,7 +202,7 @@ function scen(w, n, rest, mult) {
   const sec = E(w, "Array.from(document.querySelectorAll('#sysToolsOverlay .backup-section-title')).map(t => t.textContent).join('|')");
   check('A5 Длань: раздел «Шкала усталости» после «Контроля темпа», перед «Сбросами»', /Контроль темпа\|Шкала усталости\|Сбросы/.test(sec), sec);
   E(w, 'syncFatigueCheckbox()');
-  check('A6 галочка и подпись', E(w, "document.getElementById('fatigueCheckbox').classList.contains('on')") && E(w, "document.getElementById('fatigueLabel').textContent") === 'Шкала: включена.'); }
+  check('A6 галочка и подпись', E(w, "document.getElementById('fatigueCheckbox').classList.contains('on')") && E(w, "document.getElementById('fatigueLabel').textContent") === 'Механика усталости: включена.'); }
 { const w = fresh(); add(w, 'pushups', 50);
   const s = E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign({}, data, { fatigueOn: false, fatigue: { fast: 50, slow: 30, t: Date.now() } }), total: totalStats }).state || sanitizeImportedData({ state: Object.assign({}, data, { fatigueOn: false }) }))`);
   const o = JSON.parse(s);
@@ -212,6 +212,93 @@ function scen(w, n, rest, mult) {
   check('B2 старое сохранение: шкала включена, усталость 0', E(w, 'data.fatigueOn') === true && E(w, 'fzValue()') === 0 && E(w, 'typeof data.fatigue.t') === 'number');
   const bad = JSON.parse(SEED); bad.fatigue = { fast: 'x', slow: 500, t: Date.now() + 1e9, last: { id: 'zzz' } }; const w2 = boot(JSON.stringify(bad));
   check('B3 испорченные данные — в пределах', E(w2, 'fzValue()') <= 100 && E(w2, 'data.fatigue.last') === null && E(w2, 'data.fatigue.t') <= Date.now()); }
+
+// ===== 10. v7.4.1: всплывающая шкала в Архиве; Длань — значение, установка, промотка восстановления =====
+const ARCH = w => { E(w, "backupModalStep = 'main'; renderBackupModal()");
+  const sec = [...w.document.querySelectorAll('.backup-section')].find(x => x.querySelector('.backup-section-title') && x.querySelector('.backup-section-title').textContent.trim() === 'Настройки');
+  return sec ? [...sec.querySelectorAll('.backup-summary span')].map(x => x.textContent) : []; };
+const BAR = w => E(w, "document.getElementById('fzBar').classList.contains('on')");
+{ const w = fresh();
+  const r = ARCH(w);
+  check('P1 Архив: строка после «Уведомлений», перед «Оформлением», включена', JSON.stringify(r) === JSON.stringify(['Звуковые сигналы Системы: включены.', 'Уведомления Системы: включены.', 'Всплывающая шкала усталости: включена.', 'Оформление']) || (r[2] === 'Всплывающая шкала усталости: включена.' && r[3] === 'Оформление'), r.join(' | '));
+  check('P2 галочка в стиле звука, отмечена', E(w, "!!document.querySelector('#fzPopupRow .sound-checkbox-zone .sound-checkbox.on')"));
+  E(w, 'toggleFzPopup()');
+  check('P3 выключение: текст, поле, сохранено', ARCH(w)[2] === 'Всплывающая шкала усталости: выключена.' && E(w, 'data.fzPopup') === false && E(w, "JSON.parse(localStorage.getItem(STORAGE_KEY)).fzPopup") === false && E(w, "!document.querySelector('#fzPopupRow .sound-checkbox.on')"));
+  add(w, 'pushups', 10);
+  check('P4 выключено: после подхода шкала не всплывает, усталость считается', !BAR(w) && F(w) > 0);
+  E(w, 'data.fatigue.fast=40; data.fatigue.slow=40; data.fatigue.w70=false; data.fatigue.w100=false; fzThresholds(true); fzTick()');
+  check('P5 выключено: от 70 не всплывает, уведомление 70 приходит', !BAR(w) && N(w).includes('Зафиксирована высокая нагрузка'), N(w));
+  E(w, 'data.fatigue.fast=60; data.fatigue.slow=40; fzThresholds(true); fzTick()');
+  check('P6 выключено: уведомление 100 приходит', N(w).includes('критической отметки'), N(w));
+  E(w, 'data.completed={}'); min(w, 10); add(w, 'squats', 80);
+  check('P7 выключено: уведомление о большом подходе приходит', N(w).includes('перегрузка'), N(w));
+  check('P8 выключено: блок «Статуса» на месте и обновляется', E(w, "document.getElementById('fzStatus').style.display") !== 'none' && E(w, "document.querySelector('#fzStatus .fz-v').textContent") === Math.round(F(w)) + '%');
+  E(w, 'toggleFzPopup()');
+  check('P9 снова включено — шкала видна (усталость ≥ 70)', BAR(w) && ARCH(w)[2] === 'Всплывающая шкала усталости: включена.');
+  E(w, 'toggleFzPopup()');
+  check('P10 выключение при видимой шкале — уходит (класс снят, переход 1 с)', !BAR(w) && /1s/.test(E(w, "getComputedStyle(document.getElementById('fzBar')).transition") || '1s'));
+  E(w, 'data.fatigueOn = false; data.fatigue = emptyFatigue()');
+  const r2 = ARCH(w);
+  check('P11 механика выключена в Длани — строки нет', !r2.some(t => /Всплывающая/.test(t)) && r2[2] === 'Оформление', r2.join(' | ')); }
+{ const w0 = boot(); const old = JSON.parse(SEED); delete old.fzPopup; w0.close();
+  const w = boot(JSON.stringify(old));
+  check('P12 старое сохранение: включена', E(w, 'data.fzPopup') === true);
+  const bad = JSON.parse(SEED); bad.fzPopup = 'x'; const w2 = boot(JSON.stringify(bad));
+  check('P13 испорченное значение — включена', E(w2, 'data.fzPopup') === true);
+  const o1 = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: Object.assign({}, data, { fzPopup: false }), total: totalStats }).state)`));
+  const o2 = JSON.parse(E(w, `JSON.stringify(sanitizeImportedData({ state: (() => { const c = Object.assign({}, data); delete c.fzPopup; return c; })(), total: totalStats }).state)`));
+  check('P14 бэкап: значение из копии, без поля — включена', o1.fzPopup === false && o2.fzPopup === true); }
+// Длань
+const DV = w => E(w, "document.getElementById('fzSysValue').textContent");
+const SET = (w, v) => { E(w, `document.getElementById('fzSetInput').value = ${JSON.stringify(String(v))}; setFatigueAction()`); };
+{ const w = fresh();
+  check('L1 подпись «Механика усталости»', E(w, "document.getElementById('fatigueLabel').textContent") === 'Механика усталости: включена.');
+  E(w, 'toggleFatigue()');
+  check('L2 выключена — «выключена.»', E(w, "document.getElementById('fatigueLabel').textContent") === 'Механика усталости: выключена.');
+  E(w, 'toggleFatigue()');
+  SET(w, 63);
+  check('L3 «Установить» 63 → пополам', near(E(w, 'data.fatigue.fast'), 31.5) && near(E(w, 'data.fatigue.slow'), 31.5) && near(F(w), 63) && N(w) === '');
+  check('L4 строка значения', DV(w) === 'Усталость: 63 (свежая 32, накопленная 32)' || /^Усталость: 63 \(свежая \d+, накопленная \d+\)$/.test(DV(w)), DV(w));
+  check('L5 число в цвет шкалы', E(w, "document.querySelector('#fzSysValue .fz-dv').style.color") === E(w, 'fzColor(63)').replace(/,/g, ', '), E(w, "document.querySelector('#fzSysValue .fz-dv').style.color"));
+  SET(w, 75); E(w, 'fzTick()');
+  check('L6 75 → отметка 70 стоит, уведомления 70 нет', E(w, 'data.fatigue.w70') === true && E(w, 'data.fatigue.w100') === false && N(w) === '', N(w));
+  E(w, 'data.fatigue.fast=50; data.fatigue.slow=50; fzThresholds(true)');
+  check('L7 после 75 → рост до 100: приходит только 100', N(w).includes('критической') && !N(w).includes('высокая нагрузка'), N(w));
+  E(w, 'window.__N=[]'); SET(w, 40);
+  check('L8 40 → обе отметки сняты', E(w, 'data.fatigue.w70') === false && E(w, 'data.fatigue.w100') === false);
+  E(w, 'data.fatigue.fast=36; data.fatigue.slow=36; fzThresholds(true)');
+  check('L9 после 40 → 72: приходит 70', N(w).includes('высокая нагрузка'), N(w));
+  const before = P(w); SET(w, ''); const e1 = P(w); SET(w, 'abc'); const e2 = P(w);
+  check('L10 пусто и не число — ничего', before === e1 && before === e2);
+  SET(w, 250);
+  check('L11 больше 100 → 100', near(F(w), 100));
+  SET(w, -5);
+  check('L12 меньше 0 → 0', near(F(w), 0)); }
+{ const w = fresh();
+  E(w, 'data.completed={pushups:7}; data.fatigue.fast=40; data.fatigue.slow=40; data.fatigue.last={id:"pushups",t:Date.now(),x:.3,d:.2}; data.fatigue.lastEnd=Date.now(); data.fatigue.t=Date.now(); render()');
+  const T0 = E(w, '__T'), reset0 = E(w, 'data.lastReset'), last0 = E(w, 'JSON.stringify(data.fatigue.last)'), lastEnd0 = E(w, 'data.fatigue.lastEnd');
+  E(w, 'skipFatigueAction(10)');
+  const r = Ref(10); r.S.fast = 40; r.S.slow = 40; r.adv(10 * 60000);
+  check('L13 +10 мин: спад как через 10 минут', near(F(w), r.F(), 1e-6), F(w) + ' vs ' + r.F());
+  check('L14 часы, задание, склейка подхода не тронуты', E(w, '__T') === T0 && E(w, 'Date.now()') === T0 && E(w, 'data.lastReset') === reset0 && E(w, 'data.completed.pushups') === 7 && E(w, 'JSON.stringify(data.fatigue.last)') === last0 && E(w, 'data.fatigue.lastEnd') === lastEnd0);
+  E(w, 'skipFatigueAction(60)'); r.adv(70 * 60000);
+  check('L15 +1 ч: спад как через час', near(F(w), r.F(), 1e-6), F(w) + ' vs ' + r.F());
+  check('L16 строка обновлена сразу', DV(w).startsWith('Усталость: ' + Math.round(F(w)) + ' '), DV(w));
+  E(w, 'data.stats.sta = 410; data.fatigue.fast = 40; data.fatigue.slow = 40; skipFatigueAction(10)');
+  const r2 = Ref(410); r2.S.fast = 40; r2.S.slow = 40; r2.adv(10 * 60000);
+  check('L17 Выносливость ускоряет и промотку', near(F(w), r2.F(), 1e-6));
+  E(w, 'data.fatigue.fast=40; data.fatigue.slow=40; data.fatigue.w70=true; skipFatigueAction(60)');
+  check('L18 промотка ниже 50 снимает отметку 70', F(w) < 50 && E(w, 'data.fatigue.w70') === false); }
+{ const w = fresh(); E(w, 'data.fatigue.fast=30; data.fatigue.slow=30; data.fatigue.t=Date.now()');
+  E(w, 'openSysTools ? (sysToolsAuthorized = true, openSysTools()) : 0');
+  check('L19 при открытии Длани — текущее значение', DV(w).startsWith('Усталость: 60 '), DV(w));
+  min(w, 1); E(w, 'updateTimer()');
+  check('L20 обновляется раз в секунду (по таймеру)', DV(w).startsWith('Усталость: ' + Math.round(F(w)) + ' ') && Math.round(F(w)) < 60, DV(w));
+  const btns = E(w, "Array.from(document.querySelectorAll('#sysToolsOverlay .backup-section')).find(s => /Шкала усталости/.test(s.textContent)).querySelectorAll('button').length");
+  const on = E(w, "Array.from(Array.from(document.querySelectorAll('#sysToolsOverlay .backup-section')).find(s => /Шкала усталости/.test(s.textContent)).querySelectorAll('button')).map(b => b.textContent + '|' + /sysToolsFlashThenRun/.test(b.getAttribute('onclick'))).join(';')");
+  check('L21 кнопки раздела: Установить, +10 мин, +1 ч, Сбросить — со вспышкой', btns === 4 && /Установить\|true/.test(on) && /Восстановление \+10 мин\|true/.test(on) && /Восстановление \+1 ч\|true/.test(on) && /Сбросить усталость\|true/.test(on), on);
+  E(w, 'toggleFatigue()');
+  check('L22 механика выключена — строка «0 (0, 0)»', DV(w) === 'Усталость: 0 (свежая 0, накопленная 0)', DV(w)); }
 
 // ===== 9. Тексты =====
 { const w = fresh();

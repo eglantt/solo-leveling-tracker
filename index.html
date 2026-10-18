@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.4.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.4.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1806,9 +1806,14 @@
       <div class="backup-section">
         <div class="backup-section-title">Шкала усталости</div>
         <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-          <span id="fatigueLabel">Шкала: включена.</span>
+          <span id="fatigueLabel">Механика усталости: включена.</span>
           <div class="sound-checkbox-zone" onclick="toggleFatigue()"><div class="sound-checkbox on" id="fatigueCheckbox">✓</div></div>
         </div>
+        <div class="backup-summary" id="fzSysValue" style="margin-top:8px;">Усталость: <span class="fz-dv" style="font-family:'Orbitron','Exo 2',sans-serif;">0</span> (свежая 0, накопленная 0)</div>
+        <input type="number" id="fzSetInput" class="code-input-area" style="min-height:auto; text-align:center; margin-top:8px;" placeholder="Установить усталость (0–100)">
+        <button class="backup-action-btn" style="margin-top:8px;" onclick="sysToolsFlashThenRun(this, setFatigueAction)">Установить</button>
+        <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => skipFatigueAction(10))">Восстановление +10 мин</button>
+        <button class="backup-action-btn" style="margin-top:8px;" onclick="sysToolsFlashThenRun(this, () => skipFatigueAction(60))">Восстановление +1 ч</button>
         <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetFatigueAction)">Сбросить усталость</button>
       </div>
       <div class="backup-section danger-zone">
@@ -2008,7 +2013,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.4.0';
+  const APP_VERSION = '7.4.1';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2127,6 +2132,7 @@
         beadStreak: 0, beadBlockUntil: null, veilLifted: !!oldData.veilLifted,
         paceWindow: oldData.paceWindow,
         fatigueOn: typeof oldData.fatigueOn === 'boolean' ? oldData.fatigueOn : true, fatigue: oldData.fatigue,   // v7.4.0
+        fzPopup: typeof oldData.fzPopup === 'boolean' ? oldData.fzPopup : true,   // v7.4.1
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
@@ -2185,7 +2191,7 @@
         codexUnlocked: ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats", "equipment"],
         equippedArtifacts: [null, null, null, null],
         paceControl: true, paceWindow: { start: null, used: 0, locked: false, hot: [] },
-        fatigueOn: true, fatigue: emptyFatigue(),   // v7.4.0
+        fatigueOn: true, fatigue: emptyFatigue(), fzPopup: true,   // v7.4.0, v7.4.1
         beadStreak: 0, beadBlockUntil: null, veilLifted: false,
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
@@ -2234,6 +2240,7 @@
   if (data.consumables && data.consumables.bone_bead > 3) data.consumables.bone_bead = 3;
   data.paceWindow = sanitizePaceWindow(data.paceWindow);
   if (typeof data.fatigueOn !== 'boolean') data.fatigueOn = true;   // v7.4.0: шкала усталости, у всех включена
+  if (typeof data.fzPopup !== 'boolean') data.fzPopup = true;       // v7.4.1: всплывающая шкала на главном экране
   data.fatigue = data.fatigueOn ? sanitizeFatigue(data.fatigue) : emptyFatigue();
   // Догоняющая проверка — та же логика, что уже применена выше к title_probuzhdenny.
   // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
@@ -4273,10 +4280,15 @@
     if (z) {
       z.style.setProperty('--fill', (anim ? 0.8 : 1) + 's');
       fzPaint(z, v);
-      const show = on && (v >= 70 || Date.now() < fzPopUntil) && !fzWinOpen();
+      const show = on && data.fzPopup !== false && (v >= 70 || Date.now() < fzPopUntil) && !fzWinOpen();   // v7.4.1: выключена в Архиве — не всплывает
       if (show && !z.classList.contains('on')) fzPlace(z);
       z.classList.toggle('pulse', on && v >= 90);
       z.classList.toggle('on', show);
+    }
+    const dl = document.getElementById('fzSysValue');   // v7.4.1: текущее значение в Длани
+    if (dl) {
+      const f = data.fatigue || { fast: 0, slow: 0 };
+      dl.innerHTML = `Усталость: <span class="fz-dv" style="font-family:'Orbitron','Exo 2',sans-serif; color:${fzColor(v)}">${Math.round(v)}</span> (свежая ${Math.round(on ? f.fast : 0)}, накопленная ${Math.round(on ? f.slow : 0)})`;
     }
     const st = document.getElementById('fzStatus');
     if (st) {
@@ -4295,11 +4307,35 @@
     saveData(); syncFatigueCheckbox(); fzDraw(false);
   }
   function resetFatigueAction() { data.fatigue = emptyFatigue(); fzPopUntil = 0; saveData(); fzDraw(false); }
+  // v7.4.1: Длань — установить усталость (пополам в свежую и накопленную; отметки предупреждений — по новому значению, без уведомлений)
+  function setFatigueAction() {
+    const inp = document.getElementById('fzSetInput');
+    const raw = inp ? String(inp.value).trim().replace(',', '.') : '';
+    if (raw === '' || !Number.isFinite(Number(raw))) return;
+    const v = Math.min(100, Math.max(0, Number(raw)));
+    if (!data.fatigue) data.fatigue = emptyFatigue();
+    fzAdvance();
+    const f = data.fatigue;
+    f.fast = v / 2; f.slow = v / 2;
+    f.w70 = v >= 70; f.w100 = v >= 99.9;
+    saveData(); fzDraw(false);
+  }
+  // v7.4.1: Длань — промотать восстановление (только спад усталости; часы, задание и «склейка» подхода не меняются)
+  function skipFatigueAction(min) {
+    if (!data.fatigue) return;
+    fzAdvance();
+    const f = data.fatigue, rk = 1 + fzSta();
+    f.fast *= Math.exp(-min * rk / FZ.t1); f.slow *= Math.exp(-min * rk / FZ.t2);
+    if (f.fast < 1e-6) f.fast = 0;
+    if (f.slow < 1e-6) f.slow = 0;
+    fzThresholds(false);
+    saveData(); fzDraw(false);
+  }
   function syncFatigueCheckbox() {
     const cb = document.getElementById('fatigueCheckbox');
     if (cb) cb.classList.toggle('on', !!data.fatigueOn);
     const lbl = document.getElementById('fatigueLabel');
-    if (lbl) lbl.textContent = data.fatigueOn ? 'Шкала: включена.' : 'Шкала: выключена.';
+    if (lbl) lbl.textContent = data.fatigueOn ? 'Механика усталости: включена.' : 'Механика усталости: выключена.';
   }
   window.addEventListener('resize', () => { const z = document.getElementById('fzBar'); if (z && z.classList.contains('on')) fzPlace(z); });
 
@@ -8054,6 +8090,7 @@
       paceWindow: sanitizePaceWindow(s.paceWindow),
       fatigueOn: typeof s.fatigueOn === 'boolean' ? s.fatigueOn : true,   // v7.4.0: переключатель — из копии,
       fatigue: emptyFatigue(),                                            // усталость — с нуля
+      fzPopup: typeof s.fzPopup === 'boolean' ? s.fzPopup : true,         // v7.4.1: из копии
       consumables: cleanConsumables,
       insurance: !!s.insurance,
       activeTitle: cleanActiveTitle,
@@ -8169,6 +8206,13 @@
     renderBackupModal();
   }
 
+  // v7.4.1: всплывающая шкала усталости на главном экране (усталость, «Статус» и уведомления — без изменений)
+  function toggleFzPopup() {
+    data.fzPopup = !data.fzPopup;
+    saveData(); fzDraw(false);
+    renderBackupModal();
+  }
+
   function toggleNotifications() {
     data.notificationsEnabled = !data.notificationsEnabled;
     saveData();
@@ -8210,6 +8254,10 @@
             <span>Уведомления Системы: ${data.notificationsEnabled ? 'включены' : 'выключены'}.</span>
             <div class="sound-checkbox-zone" onclick="toggleNotifications()"><div class="sound-checkbox ${data.notificationsEnabled ? 'on' : ''}">✓</div></div>
           </div>
+          ${data.fatigueOn ? `<div class="backup-summary" id="fzPopupRow" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
+            <span>Всплывающая шкала усталости: ${data.fzPopup ? 'включена' : 'выключена'}.</span>
+            <div class="sound-checkbox-zone" onclick="toggleFzPopup()"><div class="sound-checkbox ${data.fzPopup ? 'on' : ''}">✓</div></div>
+          </div>` : ''}
           <div class="backup-summary theme-row">
             <span>Оформление</span>
             <div class="theme-seg"><button class="${isSysTheme() ? 'on' : ''}" onclick="switchThemeFx('system')">Система</button><button class="${isSysTheme() ? '' : 'on'}" onclick="switchThemeFx('classic')">Классика</button></div>
@@ -8528,6 +8576,7 @@
   function openSysTools() {
     if (!sysToolsAuthorized) return;
     updateSysCurrent();   // v6.10.4
+    try { fzDraw(false); } catch (e) {}   // v7.4.1: строка усталости в Длани
     const freezePauseBtn = document.getElementById('resetFreezePauseBtn');
     const hasPause = data.freezeNextAvailableAt && Date.now() < data.freezeNextAvailableAt;
     freezePauseBtn.disabled = !hasPause || data.activeScroll === 'freeze';
