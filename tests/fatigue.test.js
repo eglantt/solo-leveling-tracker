@@ -140,7 +140,8 @@ function scen(w, n, rest, mult) {
   check('T2 выше 70 — без повтора', N(w) === '', N(w));
   E(w, 'data.fatigue.slow = 99; data.fatigue.fast = 0; window.__N=[]'); add(w, 'pullups', 10);
   check('T3 100: «Усталость достигла критической отметки…»', N(w).includes('Усталость достигла критической отметки. Система настоятельно рекомендует отдых.'), N(w));
-  check('T4 у 100 и у большого подхода — оранжевый сбой', E(w, 'notificationGlitchKind(FZ_T100)') === 'pace' && E(w, 'notificationGlitchKind(FZ_TBIG)') === 'pace' && E(w, 'notificationGlitchKind(FZ_T70)') === null);
+  check('T4 у 100 и у большого подхода — без сбоя, окно оранжевое (v7.4.3); у 70 — голубое', E(w, 'notificationGlitchKind(FZ_T100)') === null && E(w, 'notificationGlitchKind(FZ_TBIG)') === null && E(w, 'notificationGlitchKind(FZ_T70)') === null
+    && E(w, 'noticeScheme(FZ_T100, null)') === 'orange' && E(w, 'noticeScheme(FZ_TBIG, null)') === 'orange' && E(w, 'noticeScheme(FZ_T70, null)') === 'blue');
   E(w, 'window.__N=[]; data.fatigue.slow = 55; data.fatigue.fast = 0; fzTick()'); add(w, 'press', 1);
   check('T5 после спада до 55 (не ниже 50) — без повтора', N(w) === '', N(w));
   E(w, 'data.fatigue.slow = 40; fzTick(); data.fatigue.slow = 75; window.__N=[]'); add(w, 'press', 1);
@@ -299,6 +300,33 @@ const SET = (w, v) => { E(w, `document.getElementById('fzSetInput').value = ${JS
   check('L21 кнопки раздела: Установить, +10 мин, +1 ч, Сбросить — со вспышкой', btns === 4 && /Установить\|true/.test(on) && /Восстановление \+10 мин\|true/.test(on) && /Восстановление \+1 ч\|true/.test(on) && /Сбросить усталость\|true/.test(on), on);
   E(w, 'toggleFatigue()');
   check('L22 механика выключена — строка «0 (0, 0)»', DV(w) === 'Усталость: 0 (свежая 0, накопленная 0)', DV(w)); }
+
+// ===== v7.4.3: вид уведомлений усталости (оранжевые без сбоя) =====
+{ const w = fresh('data.notificationsEnabled = true'); const D = w.document;
+  const show = (expr, tone) => { E(w, `document.querySelectorAll('.sys-notice,.system-popup,.sfx-line').forEach(n => n.remove()); notificationActive = false; displayNotificationNow({ body: ${expr}, tone: '${tone}', skipLog: false, sound: 'none' })`);
+    return D.querySelector('.sys-notice') || D.querySelector('.system-popup'); };
+  const noGlitch = p => !p.dataset.glitch && !p.querySelector('.gp-noise') && !p.querySelector('.gp-slice') && !p.classList.contains('gp-anomaly') && !p.classList.contains('glitch');
+  const lineCol = p => { p.getBoundingClientRect = () => ({ left: 10, top: 100, width: 300, height: 120 }); p.click(); const l = D.querySelector('.sfx-line'); return l ? l.style.getPropertyValue('--lc') : null; };
+  for (const [nm, ex] of [['100', 'FZ_T100'], ['большой подход', 'FZ_TBIG']]) {
+    let p = show(ex, 'warn');
+    if (SYS_THEME) {
+      check(`O1 ${nm}: окно «Системы» оранжевое, без сбоя и помех, текст оранжевый`, p.classList.contains('sn-orange') && p.dataset.sfScheme === 'orange' && noGlitch(p) && p.querySelector('.sn-body').classList.contains('tone-warn'));
+      await new Promise(r => setTimeout(r, 900));
+      check(`O2 ${nm}: и после развёртки сбоя нет`, noGlitch(p) && (!p._glitchTimers || p._glitchTimers.length === 0));
+      check(`O3 ${nm}: уходит оранжевой линией`, lineCol(p) === '#ff8a30');
+    } else {
+      check(`O1 ${nm}: «Классика» — обычное окно, оранжевый текст, без сбоя`, p.classList.contains('system-popup') && noGlitch(p) && !p.querySelector('.gp-inner') && p.querySelector('.system-popup-body').classList.contains('tone-warn'));
+    }
+  }
+  let p = show('FZ_T70', 'info');
+  check('O4 70 — обычное (голубое), без сбоя', noGlitch(p) && (SYS_THEME ? p.classList.contains('sn-blue') : !p.querySelector('.tone-warn')));
+  p = show('PACE_NOTICE', 'warn');
+  check('O5 перегрев темпа — по-прежнему оранжевый сбой', p.dataset.glitch === 'pace' && (!SYS_THEME || p.classList.contains('sn-orange')));
+  E(w, 'data.curseActiveToday = true');
+  for (const ex of ['FZ_T100', 'FZ_TBIG']) { p = show(ex, 'warn');
+    check(`O6 ${ex} под Бременем — красное, сбой Аномалии`, p.dataset.glitch === 'anomaly' && (SYS_THEME ? p.classList.contains('sn-red') : p.classList.contains('gp-anomaly'))); }
+  E(w, 'data.curseActiveToday = false; document.querySelectorAll(".sys-notice,.system-popup").forEach(n => { stopNotificationGlitch(n); n.remove(); })');
+}
 
 // ===== 9. Тексты =====
 { const w = fresh();
