@@ -761,6 +761,19 @@ const w = boot(); const D = w.document; await tick();
     cols.blue === 'true,#40c0ff,2001,true' && cols.orange === 'true,#ff8a30,2001,true' && cols.red === 'true,#ff5566,true'
     && /\.sys-notice\.sn-out \{ animation: snOut \.3s/.test(css) && /@keyframes snOut \{ 55% \{ transform: translate\(-50%,-50%\) scale\(1, \.02\); opacity: 1; \}/.test(css), JSON.stringify(cols)); }
 
+// ===== v7.4.2: заголовки глав Кодекса — 14 px в обеих темах, прочие заголовки разделов прежние =====
+{ const x = boot(); const XD = x.document; await tick();
+  const fs = sel => { const e = XD.querySelector(sel); return e ? parseFloat(x.getComputedStyle(e).fontSize) : null; };
+  const probe = th => { E(x, `setTheme('${th}')`); closeAll(x);
+    E(x, 'openCodex()'); const r = {}; return tick().then(() => { r.codex = fs('#codexOverlay .codex-chapter-title');
+      closeAll(x); E(x, 'openInv()'); return tick(); }).then(() => { r.sect = fs('#invOverlay .section-title');
+      closeAll(x); E(x, 'openBackupModal()'); return tick(); }).then(() => { r.arch = fs('#backupOverlay .backup-section-title');
+      closeAll(x); E(x, "document.getElementById('rankInfoBtn').click()"); return tick(); }).then(() => { r.st = fs('#statusOverlay .st-sec-title'); closeAll(x); return r; }); };
+  const sy = await probe('system'), cl = await probe('classic');
+  check('T114 «Система» и «Классика»: заголовок главы Кодекса — 0,875rem (14 px); заголовки разделов Инвентаря, Архива, «Статуса» — прежние (.76 / .8 / .8 / .72rem)',
+    sy.codex === 0.875 && cl.codex === 0.875 && sy.sect === 0.76 && sy.arch === 0.76 && sy.st === 0.76 && cl.sect === 0.8 && cl.arch === 0.8 && cl.st === 0.72,
+    JSON.stringify({ sy, cl })); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
