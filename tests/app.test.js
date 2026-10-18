@@ -923,7 +923,7 @@ async function creditIconTests() {
   // COMPLETE
   E(w, `data.completed = { squats: getDynamicTarget(120, data.dailyTargetLevel, 'squats') - 1 }; render()`);
   D.querySelector('.quest-item[data-id="squats"] .add').click();
-  const cp = D.querySelector('.quest-item[data-id="squats"] .complete-popup');
+  const cp = D.querySelector('.quest-item[data-id="squats"] .cpx');
   check('W6 «COMPLETE»: значок вместо «◈»', !!cp && noDiamond(cp) && hasIcon(cp));
   // отблеск только на карточке и в «СТАТУСЕ»
   const gl = sel => cs(D.querySelector(sel + ' .cr-ic .gl')).display;
@@ -978,23 +978,140 @@ async function limitActivateTests() {
   check('L8 закрытие раунда Предела работает как обычно', E(w, '!data.limitBreakRoundPending && data.isGoalMet'), E(w, 'JSON.stringify({p:data.limitBreakRoundPending,g:data.isGoalMet})'));
 }
 
-// ===== v6.6.7: надпись «COMPLETE» =====
+// ===== v7.4.4: надпись «COMPLETE» (демо 109) и порядок показа =====
 async function completeTests() {
-  const w = boot(); await new Promise(r => setTimeout(r, 300));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const w = boot(); await sleep(300);
   const D = w.document;
   E(w, `data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') - 1 }; render()`);
   D.querySelector('.quest-item[data-id="pushups"] .add').click();
-  const p = D.querySelector('.quest-item[data-id="pushups"] .complete-popup');
-  check('K1 надпись появляется при закрытии упражнения', !!p && /^COMPLETE\+\d+ EXP \+\d+/.test(p.textContent.replace(/\s+/g, ' ').replace('COMPLETE ', 'COMPLETE')) && !!p.querySelector('.cr-ic'), p && p.textContent);
-  const cs = w.getComputedStyle(p);
-  check('K2 Orbitron жирный 1,6rem', /^["']?Orbitron/.test(cs.fontFamily) && cs.fontSize === '1.6rem' && cs.fontWeight === '700', `${cs.fontFamily} ${cs.fontSize} ${cs.fontWeight}`);
-  check('K3 без переноса строк (опыт, кредиты, BONUS — одной строкой)', cs.whiteSpace === 'nowrap');
+  const p = D.querySelector('.quest-item[data-id="pushups"] .cpx');
+  check('K1 надпись появляется при закрытии упражнения: COMPLETE и строка наград со значком', !!p && p.querySelector('.cpx-t').textContent === 'COMPLETE'
+    && /^\+\d+ EXP \+\d+/.test(p.querySelector('.cpx-r').textContent.trim()) && !!p.querySelector('.cpx-r .cr-ic') && !/◈/.test(p.textContent), p && p.textContent);
+  const cs = el => w.getComputedStyle(el), t = p.querySelector('.cpx-t'), box = p.querySelector('.cpx-box');
+  check('K2 Orbitron жирный, 2rem, белые буквы с зелёным свечением', /^["']?Orbitron/.test(cs(t).fontFamily) && cs(p).fontSize === '2rem' && cs(t).fontWeight === '700'
+    && /#f2fff8|242, 255, 248/i.test(cs(t).color) && /#00ff88|0, 255, 136/i.test(cs(t).textShadow), `${cs(p).fontSize} ${cs(t).color} ${cs(t).textShadow}`);
+  check('K3 мягкая тень под надписью, без переноса строк', /radial-gradient/.test(cs(box).backgroundImage || cs(box).background) && cs(box).whiteSpace === 'nowrap');
+  check('K3a мягкая подсветка карточки', !!D.querySelector('.quest-item[data-id="pushups"] .cpx-flash'));
   const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
-  const kf = (css.match(/@keyframes completeText \{([^\n]*)\}/) || [])[1] || '';
-  check('K4 центрирующий сдвиг в каждом кадре анимации', (kf.match(/translate\(-50%,-50%\)/g) || []).length === 3, kf);
-  check('K5 длительность прежняя (1,8 с)', /\.complete-popup \{[^}]*animation:completeText 1\.8s forwards/.test(css));
-  await new Promise(r => setTimeout(r, 1900));
-  check('K6 надпись исчезает через 1,8 с', !D.querySelector('.quest-item[data-id="pushups"] .complete-popup'));
+  check('K4 старой надписи, её анимации и неиспользуемой вспышки нет', !/\.complete-popup|@keyframes completeText|\.completion-effect|@keyframes flash\b/.test(css) && !D.querySelector('.complete-popup'));
+  const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
+  check('K5 в коде нет отложенных на 4,5 с уведомлений и прямых показов доплат свитков', !/, 4500\)/.test(raw) && (raw.match(/fxNotice\(\(\) =>/g) || []).length === 18);
+  await sleep(1900);
+  check('K6 надпись ещё на экране в 1,9 с', !!D.querySelector('.quest-item[data-id="pushups"] .cpx'));
+  await sleep(250);
+  check('K6a через 2 с все слои удалены', !D.querySelector('.cpx, .cpx-flash, .cpx-spark'));
+}
+
+// v7.4.4: COMPLETE → 0,5 с → LEVEL UP (звук с надписью) → 1,2 с → уведомления; предел 14 с; без надписей — 4,5 с, как раньше
+async function sceneTests() {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const mk = async (extra) => {
+    const keep = SEED, o = JSON.parse(SEED); o.dailyNotices = Object.assign({}, o.dailyNotices, { morning: true }); SEED = JSON.stringify(o);   // без стартового уведомления
+    const w = boot(); SEED = keep; await sleep(300);
+    setup(w, `data.exp = 0; ${extra || ''}`);
+    E(w, `checkReminderNotice = () => {}; notificationQueue.length = 0; notificationActive = false; document.querySelectorAll('.system-popup, .sys-notice').forEach(n => n.remove())`);
+    E(w, `notificationQueue.length = 0; window.__ev = []; window.__t0 = 0;
+      const _d = displayNotificationNow; displayNotificationNow = function(o){ __ev.push({k:'N', t:Date.now()-__t0, b:o.body}); return _d.apply(this, arguments); };
+      const _l = levelUpFx; levelUpFx = function(){ __ev.push({k:'LV', t:Date.now()-__t0}); return _l.apply(this, arguments); };
+      const _s = playSound; playSound = function(n){ __ev.push({k:'S', t:Date.now()-__t0, b:n}); };
+      render();`);
+    return w;
+  };
+  const ev = w => JSON.parse(E(w, 'JSON.stringify(__ev)'));
+  const near = (a, b, d) => a !== undefined && Math.abs(a - b) <= (d || 250);
+  const click = (w, id) => E(w, `__t0 = __t0 || Date.now(); document.querySelector('.quest-item[data-id="${id}"] .add').click()`);
+  const almost = (w, id) => E(w, `data.completed['${id}'] = getDynamicTarget(parseInt(document.querySelector('.quest-item[data-id="${id}"]').dataset.target), data.dailyTargetLevel, '${id}') - 1; render()`);
+  const nearLv = w => E(w, `data.exp = getExpToNext(data.level) - 1; data.expDebt = 0`);
+
+  // 1) упражнение + новый уровень
+  let w = await mk(); almost(w, 'pushups'); nearLv(w); const lv0 = E(w, 'data.level'); click(w, 'pushups');
+  await sleep(300);
+  let e = ev(w);
+  check('SC1 при нажатии: COMPLETE, уровень уже вырос в данных, LEVEL UP ещё нет, звука уровня нет', !!w.document.querySelector('.cpx') && E(w, 'data.level') === lv0 + 1 && !e.some(x => x.k === 'LV') && !e.some(x => x.b === 'levelUp'), JSON.stringify(e));
+  check('SC1a звук выполнения упражнения — при нажатии', e.some(x => x.k === 'S' && x.b === 'questDone' && x.t < 50));
+  await sleep(7000); e = ev(w);
+  const lv = e.find(x => x.k === 'LV'), snd = e.filter(x => x.b === 'levelUp'), n1 = e.find(x => x.k === 'N');
+  check('SC2 LEVEL UP через 0,5 с после конца COMPLETE (≈2,5 с)', lv && near(lv.t, 2500), lv && lv.t);
+  check('SC3 звук уровня — один раз, вместе с надписью', snd.length === 1 && lv && near(snd[0].t, lv.t, 30), JSON.stringify(snd));
+  check('SC4 первое уведомление — через 1,2 с после LEVEL UP (≈6,7 с)', n1 && near(n1.t, 6700, 300), n1 && `${n1.t} ${n1.b}`);
+  const q1 = JSON.parse(E(w, 'JSON.stringify(notificationQueue.map(q => q.body))'));
+  check('SC4b порядок прежний: глава ранга, «Достигнут…», затем предметы, напоминание о сохранении, процент дня', (() => { const ix = re => q1.findIndex(x => re.test(x)); return ix(/Кодекс: C-Ранг/) >= 0 && ix(/Кодекс: C-Ранг/) < ix(/^Достигнут \d+-й уровень/) && ix(/^Достигнут \d+-й уровень/) < ix(/^Получен предмет/); })() && /сохранить прогресс/.test(q1[q1.length - 2]) && /выполнено на/.test(q1[q1.length - 1]), JSON.stringify(q1));
+  check('SC4a данные сохранены сразу', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).level === lv0 + 1);
+
+  // 2) упражнение без нового уровня
+  w = await mk(); almost(w, 'pushups'); click(w, 'pushups'); await sleep(3600); e = ev(w);
+  const p1 = e.find(x => x.k === 'N');
+  check('SC5 без уровня: уведомление через 1,2 с после COMPLETE (≈3,2 с), LEVEL UP нет', p1 && near(p1.t, 3200, 300) && /выполнено на/.test(p1.b) && !e.some(x => x.k === 'LV'), p1 && `${p1.t} ${p1.b}`);
+
+  // 3) два упражнения подряд — LEVEL UP ждёт последнего COMPLETE
+  w = await mk(); almost(w, 'pushups'); almost(w, 'squats'); click(w, 'pushups'); await sleep(1000); nearLv(w); click(w, 'squats');
+  await sleep(4000); e = ev(w);
+  const lv3 = e.find(x => x.k === 'LV');
+  check('SC6 два упражнения: LEVEL UP после конца второго COMPLETE (≈3,5 с), уведомлений до него нет', lv3 && near(lv3.t, 3500, 300) && !e.some(x => x.k === 'N' && x.t < lv3.t), JSON.stringify(e.filter(x => x.k !== 'S')));
+
+  // 4) новый уровень без COMPLETE — сразу; LEVEL UP на экране не перезапускается
+  w = await mk(); nearLv(w); E(w, '__t0 = Date.now(); gainExp(10); checkLevelUp()');
+  await sleep(500); E(w, 'data.exp = getExpToNext(data.level); checkLevelUp()');
+  await sleep(4000); e = ev(w);
+  const lvs = e.filter(x => x.k === 'LV'), n4 = e.find(x => x.k === 'N');
+  check('SC7 уровень не от упражнения: LEVEL UP сразу', lvs.length && lvs[0].t < 50, JSON.stringify(lvs));
+  check('SC8 повторное повышение во время LEVEL UP — без перезапуска надписи', lvs.length === 1, lvs.length);
+  check('SC9 уведомления — через 1,2 с после LEVEL UP (≈4,2 с)', n4 && near(n4.t, 4200, 300), n4 && n4.t);
+
+  // 5) несколько уровней за раз — один звук
+  w = await mk(); E(w, '__t0 = Date.now(); data.exp = 0; gainExp(getExpToNext(data.level) + getExpToNext(data.level + 1) + 5); checkLevelUp()');
+  await sleep(100); e = ev(w);
+  check('SC10 несколько уровней за раз — одна надпись и один звук', e.filter(x => x.k === 'LV').length === 1 && e.filter(x => x.b === 'levelUp').length === 1);
+
+  // 6) доплата Договора — после надписей, а не сразу поверх
+  w = await mk(`data.activeScroll='contract';`);
+  E(w, `document.querySelectorAll('.quest-item').forEach(i => { data.completed[i.dataset.id] = getDynamicTarget(parseInt(i.dataset.target), data.dailyTargetLevel, i.dataset.id); }); data.completed.press -= 1; render()`);
+  click(w, 'press'); await sleep(400); e = ev(w);
+  check('SC11 Договор: доплата не показана сразу поверх COMPLETE', !e.some(x => x.k === 'N'));
+  await sleep(9000); e = ev(w);
+  const ct = e.find(x => x.k === 'N' && /^Договор исполнен/.test(x.b)), firstN = e.find(x => x.k === 'N'), lv6 = e.find(x => x.k === 'LV');
+  check('SC12 Договор: доплата — первое уведомление, через 1,2 с после конца надписей', ct && firstN === ct && ct.t >= (lv6 ? lv6.t + 3000 : 2000) + 1100, JSON.stringify(e.filter(x => x.k !== 'S').map(x => x.k + x.t)));
+
+  // 7) предел ожидания 14 с
+  w = await mk(); E(w, `__t0 = Date.now(); completeFx(document.querySelector('.quest-item[data-id="pushups"]'), 1, 1, ''); showNotice('Проверка предела', 'info');
+    window.__iv = setInterval(() => fxNoteComplete(), 1500)`);
+  await sleep(14800); E(w, 'clearInterval(__iv)'); e = ev(w);
+  const n7 = e.find(x => x.k === 'N');
+  check('SC13 надписи идут дольше — уведомление не позже 14 с от начала', n7 && near(n7.t, 14000, 300), n7 && n7.t);
+
+  // 8) без надписей — как раньше: через 4,5 с
+  w = await mk(); E(w, `__t0 = Date.now(); fxNotice(() => showNotice('Проверка без надписей', 'info'))`);
+  await sleep(4200); e = ev(w);
+  const inQ = () => E(w, `notificationQueue.some(q => q.body === 'Проверка без надписей')`);
+  check('SC14 без надписей: уведомление не раньше 4,5 с', !e.some(x => x.k === 'N' && x.b === 'Проверка без надписей') && !inQ());
+  await sleep(600); e = ev(w);
+  check('SC15 без надписей: через 4,5 с поставлено в очередь (или показано)', e.some(x => x.k === 'N' && x.b === 'Проверка без надписей') || inQ(), JSON.stringify(e));
+  E(w, `notificationActive = false; notificationQueue.length = 0; __ev = []; __t0 = Date.now(); showNotice('Сразу', 'info')`); await sleep(50); e = ev(w);
+  check('SC16 обычное уведомление без надписей — сразу, как раньше', e.some(x => x.k === 'N' && x.b === 'Сразу'));
+
+  // 9) уведомления, поставленные во время нажатия до надписи (усталость), и темп — ждут; звук отказа — сразу
+  w = await mk(); E(w, `__t0 = Date.now(); fxHold(); showNotice('Усталость', 'info')`); await sleep(50); e = ev(w);
+  check('SC17 во время обработки нажатия уведомление ждёт', !e.some(x => x.k === 'N'));
+  E(w, 'fxRelease()'); await sleep(50); e = ev(w);
+  check('SC18 после нажатия без надписей — сразу', e.some(x => x.k === 'N' && x.b === 'Усталость'));
+  const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
+  const h0 = raw.indexOf("document.querySelectorAll('.add').forEach(btn => {"), hb = raw.slice(h0, raw.indexOf('function incStat', h0));
+  check('SC19 нажатие «+»: удержание до усталости, снятие после перерисовки', hb.indexOf('fxHold()') > 0 && hb.indexOf('fxHold()') < hb.indexOf('fzAdd(') && hb.indexOf('fxRelease()') > hb.lastIndexOf('saveData(); render();'));
+  w = await mk(); almost(w, 'pushups'); click(w, 'pushups'); await sleep(200);
+  E(w, `__ev = []; data.paceControl = true; data.paceWindow = { start: Date.now(), used: 2, locked: false, hot: [] }; data.completed.squats = 0; render();
+    document.querySelector('.quest-item[data-id="squats"] .add').click()`);
+  await sleep(100); e = ev(w);
+  check('SC20 темп во время надписи: звук отказа сразу, текст ждёт', e.some(x => x.b === 'denied') && !e.some(x => x.k === 'N'), JSON.stringify(e));
+  await sleep(3200); e = ev(w);
+  check('SC21 текст темпа — после надписи', e.some(x => x.k === 'N' && /недопустимый темп/.test(x.b)));
+
+  // 10) печать свитка и надписи — уведомление ждёт обоих
+  w = await mk(); almost(w, 'pushups'); E(w, `__t0 = Date.now(); sealBusyUntil = Date.now() + 5000; setTimeout(processNotificationQueue, 5020)`); click(w, 'pushups');
+  await sleep(4000); e = ev(w);
+  check('SC22 печать дольше надписей — уведомление ждёт печать', !e.some(x => x.k === 'N'));
+  await sleep(1300); e = ev(w);
+  check('SC23 после печати — показано', e.some(x => x.k === 'N'));
 }
 
 // ===== v6.6.6: запуск «Г+Д+З», полоса таймера, шрифты карточек упражнений =====
@@ -1384,6 +1501,7 @@ function noticeFor(scroll, item) {
   await nameAndSpacingTests();
   await bootTests();
   await completeTests();
+  await sceneTests();
   await limitActivateTests();
   await chipsTests();
   await creditIconTests();

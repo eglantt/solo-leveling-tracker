@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.4.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.4.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -705,15 +705,21 @@
     .code-input-area:focus { outline: none; box-shadow: 0 0 10px rgba(64,192,255,0.4); }
 
     /* ANIMATIONS & EFFECTS */
-    @keyframes flash { 0% { background: rgba(0,255,136,0.35); } 100% { background: transparent; } }
-    /* v6.6.7: центрирующий сдвиг — часть каждого кадра (раньше кадры его затирали, надпись уезжала вправо-вниз и переносилась). */
-    @keyframes completeText { 0% {opacity:0; transform:translate(-50%,-50%) scale(0.4) translateY(30px);} 40% {opacity:1; transform:translate(-50%,-50%) scale(1.35) translateY(0);} 100% {opacity:0; transform:translate(-50%,-50%) scale(2) translateY(-60px);} }
     /* v6.5.36: центрирующий сдвиг — часть анимации (раньше keyframes его затирали, и надпись уезжала вправо). */
     @keyframes pulse-bg { 0% { background: rgba(80,20,20,0.6); } 50% { background: rgba(120,30,30,0.8); } 100% { background: rgba(80,20,20,0.6); } }
     @keyframes pulse-text { 0% { opacity: 0.8; } 100% { opacity: 1; text-shadow: 0 0 20px #ff4444; } }
     
-    .completion-effect { position:absolute; inset:0; pointer-events:none; animation:flash 1.2s ease-out forwards; z-index: 1; }
-    .complete-popup { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ff88; font-family:'Orbitron','Exo 2',sans-serif; font-size:1.6rem; font-weight:700; white-space:nowrap; text-align:center; text-shadow:0 0 20px #00ff88; pointer-events:none; animation:completeText 1.8s forwards; z-index: 10; }
+    /* v7.4.4 (демо 109): надпись COMPLETE — обе темы: белые буквы с зелёным свечением на мягкой тени, 2rem; строка наград ниже;
+       рост 0,5 с → 1 с → растворение 0,5 с; искры вверх, мягкая подсветка карточки (completeFx). Движение — только transform/opacity. */
+    .cpx { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; display: flex; justify-content: center; font-size: 2rem; }
+    .cpx-box { position: relative; padding: .25em .9em .3em; text-align: center; transform-origin: 50% 50%; white-space: nowrap;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,.72) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,0) 78%); }
+    .cpx-t { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: 1em; letter-spacing: .08em; line-height: 1.15; color: #f2fff8; text-shadow: 0 0 6px #00ff88, 0 0 18px #00ff88; }
+    .cpx-r { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: .5em; margin-top: .25em; letter-spacing: .04em; }
+    .cpx-x { color: #88ffcc; text-shadow: 0 0 6px rgba(0,255,136,.6); }
+    .cpx-c { color: #ffd700; text-shadow: 0 0 6px rgba(255,200,0,.5); }
+    .cpx-flash { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; opacity: 0; background: radial-gradient(ellipse at center, rgba(0,255,136,.4), rgba(0,255,136,.12)); }
+    .cpx-spark { position: fixed; z-index: 101; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px 1px #00ff88; pointer-events: none; }
     /* v7.3.4 (демо 105): надпись повышения уровня — обе темы: «LEVEL UP» белая с голубым свечением на полосе-стекле, середина на 40% высоты экрана (v7.3.5; в 7.3.4 — верх на 25%);
        появление — фокусировка, шестиугольная волна, столб света, искры вверх, уход — сбой (levelUpFx). Движение — только transform/opacity. */
     .lvx { position: fixed; left: 0; right: 0; top: 40%; transform: translateY(-50%); z-index: 100; display: flex; justify-content: center; pointer-events: none; }   /* v7.3.5: середина надписи — на 40% высоты экрана */
@@ -2015,7 +2021,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.4.3';
+  const APP_VERSION = '7.4.4';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -3201,7 +3207,7 @@
     const chapter = CODEX_CHAPTERS[id];
     if (chapter) {
       playSound('titleCodex');
-      setTimeout(() => showNotice(`Записано в Кодекс: ${chapter.title}`, 'info'), 4500);
+      fxNotice(() => showNotice(`Записано в Кодекс: ${chapter.title}`, 'info'));
     }
   }
 
@@ -3994,7 +4000,7 @@
     const have = data.consumables.bone_bead || 0;
     if (have >= BEAD_MAX) return false;
     data.consumables.bone_bead = have + 1;
-    setTimeout(() => showNotice('Получен предмет: Костяная бусина', 'info'), 4500);
+    fxNotice(() => showNotice('Получен предмет: Костяная бусина', 'info'));
     unlockCodexChapter('bone_bead');
     return true;
   }
@@ -4350,13 +4356,17 @@
   let notificationActive = false;
 
   function enqueueNotification(payload) {
-    notificationQueue.push(payload);
+    // v7.4.4: во время надписей уведомления, которые раньше шли через 4,5 с (fxNotice), встают в конец; остальные — перед ними,
+    // как и было раньше (сразу показанное шло раньше отложенного).
+    if (fxS().late) { payload.fxLate = true; notificationQueue.push(payload); }
+    else { const k = notificationQueue.findIndex(q => q.fxLate); if (k < 0) notificationQueue.push(payload); else notificationQueue.splice(k, 0, payload); }
     processNotificationQueue();
   }
 
   function processNotificationQueue() {
     if (notificationActive) return;
     if (Date.now() < sealBusyUntil) return;   // v7.0.2
+    if (fxBusy()) return;   // v7.4.4: пока идут надписи COMPLETE / LEVEL UP — уведомления ждут
     if (notificationQueue.length === 0) return;
     displayNotificationNow(notificationQueue.shift());
   }
@@ -5932,7 +5942,7 @@
       data.titlesUnlocked.push(name);
       if (titleRank(name) < titleRank(data.activeTitle)) data.activeTitle = name;
       const t = TITLES_DB[name];
-      setTimeout(() => showSystemPopup(`Новый титул: ${name}`, t ? t.desc : ''), 4500);
+      fxNotice(() => showSystemPopup(`Новый титул: ${name}`, t ? t.desc : ''));
       if (TITLE_CODEX_MAP[name]) unlockCodexChapter(TITLE_CODEX_MAP[name]);
     }
   }
@@ -7152,6 +7162,79 @@
     document.getElementById('limitStatus').textContent = statusText;
   }
 
+  // ===== v7.4.4 (демо 109): порядок показа — COMPLETE → 0,5 с → LEVEL UP → 1,2 с → уведомления (обе темы) =====
+  // Сцена — время, пока на экране надписи. LEVEL UP ждёт конца последнего COMPLETE и не перезапускается; уведомления
+  // ждут 1,2 с после конца всех надписей, но не дольше 14 с от начала сцены. Звук уровня — в момент показа LEVEL UP.
+  // Состояние — в fxS() (функции-объявления: очередь и уведомления могут сработать при загрузке раньше этой строки).
+  function fxS() { return fxS.s || (fxS.s = { cEnd: 0, lvEnd: 0, lvPlanned: 0, lvTimer: null, start: 0, busy: 0, qTimer: null, holdUntil: 0, late: false }); }
+  function fxConst() { return { COMPLETE_MS: 2000, LV_MS: 3000, LV_PAUSE: 500, NOTICE_PAUSE: 1200, CAP: 14000, LEGACY: 4500 }; }
+  function fxBusy() { const S = fxS(), t = Date.now(); return t < S.holdUntil || t < S.busy; }
+  function fxSceneOn() { const S = fxS(); return !!S.lvTimer || Date.now() < S.busy; }
+  function fxRecalc() {
+    const S = fxS(), K = fxConst(), t = Date.now();
+    const end = Math.max(S.cEnd, S.lvTimer ? S.lvPlanned + K.LV_MS : S.lvEnd);
+    if (end <= t) { S.busy = 0; S.start = 0; return; }
+    if (t >= S.busy || !S.start) S.start = t;   // новая сцена
+    S.busy = Math.min(end + K.NOTICE_PAUSE, S.start + K.CAP);
+    clearTimeout(S.qTimer);
+    S.qTimer = setTimeout(processNotificationQueue, Math.max(0, S.busy - t) + 20);
+  }
+  // Уведомление, которое раньше шло через 4,5 с: во время сцены — сразу в очередь (ждёт конца надписей), без сцены — как раньше.
+  function fxNotice(fn, legacyMs) {
+    const d = legacyMs === undefined ? fxConst().LEGACY : legacyMs;
+    if (!d) fn();
+    else if (fxSceneOn()) { const S = fxS(); S.late = true; try { fn(); } finally { S.late = false; } }
+    else setTimeout(fn, d);
+  }
+  // Засчитанное нажатие «+»: уведомления, поставленные в очередь до надписи этого же нажатия (усталость), ждут конца его обработки.
+  // Удержание само снимается через 1 с — на случай ошибки посреди нажатия очередь не застрянет.
+  function fxHold() { fxS().holdUntil = Date.now() + 1000; setTimeout(processNotificationQueue, 1020); }
+  function fxRelease() { fxS().holdUntil = 0; processNotificationQueue(); }
+  function fxRunLevelUp() {
+    const S = fxS(); S.lvTimer = null; S.lvEnd = Date.now() + fxConst().LV_MS;
+    fxRecalc(); playSound('levelUp'); levelUpFx();
+  }
+  function fxLevelUp() {
+    const S = fxS(), t = Date.now();
+    if (S.lvTimer || t < S.lvEnd) return;   // уже ждёт или на экране — одна надпись на несколько повышений
+    if (S.cEnd > t) { S.lvPlanned = S.cEnd + fxConst().LV_PAUSE; S.lvTimer = setTimeout(fxRunLevelUp, S.lvPlanned - t); fxRecalc(); }
+    else fxRunLevelUp();
+  }
+  function fxNoteComplete() {
+    const S = fxS(), K = fxConst(), t = Date.now();
+    if (t >= S.busy && !S.lvTimer) S.start = 0;
+    S.cEnd = Math.max(S.cEnd, t + K.COMPLETE_MS);
+    if (S.lvTimer) { clearTimeout(S.lvTimer); S.lvPlanned = S.cEnd + K.LV_PAUSE; S.lvTimer = setTimeout(fxRunLevelUp, S.lvPlanned - t); }
+    fxRecalc();
+  }
+  // Надпись COMPLETE на карточке: рост 0,5 с (строка наград — с 0,2 с) → 1 с → растворение 0,5 с; искры, мягкая подсветка карточки.
+  // Без element.animate (jsdom) — без движения, удаляется через 2 с.
+  function completeFx(item, exp, creds, crit) {
+    const K = fxConst(), tin = 500, th = 1000, tout = 500, els = [];
+    const A = (el, kf, o) => el.animate ? el.animate(kf, o) : null;
+    const root = document.createElement('div'); root.className = 'cpx';
+    const box = document.createElement('div'); box.className = 'cpx-box';
+    const t = document.createElement('div'); t.className = 'cpx-t'; t.textContent = 'COMPLETE';
+    const r = document.createElement('div'); r.className = 'cpx-r';
+    r.innerHTML = `<span class="cpx-x">+${exp} EXP</span> <span class="cpx-c">${creditsHtml('+' + creds + ' ◈' + crit)}</span>`;
+    box.appendChild(t); box.appendChild(r); root.appendChild(box); item.appendChild(root); els.push(root);
+    const f = document.createElement('div'); f.className = 'cpx-flash'; item.appendChild(f); els.push(f);
+    A(f, [{ opacity: .28 }, { opacity: 0 }], { duration: 1000, easing: 'ease-out', fill: 'forwards' });
+    A(box, [{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.12)', opacity: 1, offset: .7 }, { transform: 'scale(1)', opacity: 1 }], { duration: tin, easing: 'ease-out', fill: 'backwards' });
+    A(r, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 350, delay: 200, easing: 'ease-out', fill: 'both' });
+    if (box.animate) setTimeout(() => {   // искры вверх
+      const q = t.getBoundingClientRect(), x = q.left + q.width / 2, y = q.top + q.height / 2;
+      for (let i = 0; i < 12; i++) {
+        const d = document.createElement('i'); d.className = 'cpx-spark'; d.style.left = (x + (Math.random() - .5) * q.width) + 'px'; d.style.top = (y + 6) + 'px';
+        document.body.appendChild(d); els.push(d);
+        A(d, [{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${((Math.random() - .5) * 24).toFixed(1)}px,${(-(30 + Math.random() * 50)).toFixed(1)}px) scale(.4)`, opacity: 0 }],
+          { duration: 700 + Math.random() * 500, delay: Math.random() * 300, easing: 'ease-out', fill: 'both' });
+      } }, tin * .4);
+    setTimeout(() => A(box, [{ opacity: 1, letterSpacing: '0em', transform: 'scale(1)' }, { opacity: 0, letterSpacing: '.22em', transform: 'scale(1.06)' }], { duration: tout, easing: 'ease-in', fill: 'forwards' }), tin + th);   // растворение
+    setTimeout(() => els.forEach(e => e.remove()), K.COMPLETE_MS + 60);
+    fxNoteComplete();
+  }
+
   // ===== v7.3.4 (демо 105): надпись повышения уровня — обе темы =====
   // 3 с: фокусировка 0,5 с → удержание → уход со сбоем 0,45 с; с 0,25 с — искры вверх, с 0,3 с — две шестиугольные волны, столб света — 1,6 с.
   // Повторный показ убирает прежнюю надпись. Все слои временные (удаляются через 3 с). Без element.animate (jsdom) — надпись без движения.
@@ -7208,7 +7291,6 @@
     while (data.exp >= getExpToNext(data.level)) {
       data.exp -= getExpToNext(data.level);
       data.level++;
-      playSound('levelUp');
       let statGain = 5;
       if (isArtifactEquipped('seal_growth')) statGain += 3;
       if (isArtifactEquipped('sphere_growth')) statGain += 4;
@@ -7238,27 +7320,27 @@
     }
     if (leveled) {
       data.pendingLevelUpToday = data.level;
-      levelUpFx();   // v7.3.4: надпись повышения уровня (несколько уровней за раз — одна надпись)
+      fxLevelUp();   // v7.4.4: LEVEL UP — после COMPLETE (одна надпись на несколько уровней), звук — вместе с надписью
       const levelReached = data.level;
-      setTimeout(() => showNotice(`Достигнут ${levelReached}-й уровень.`, 'info'), 4500);
+      fxNotice(() => showNotice(`Достигнут ${levelReached}-й уровень.`, 'info'));
       const rankAfter = getRank(data.level).name;
       if (rankAfter !== rankBefore) {
-        setTimeout(() => showSystemPopup(`Новый ранг: ${rankAfter}`, 'Способности Игрока признаны Системой'), 4500);
+        fxNotice(() => showSystemPopup(`Новый ранг: ${rankAfter}`, 'Способности Игрока признаны Системой'));
       }
       if (data.level >= 3 && !data.notifiedLimitBreakUnlock) {
         data.notifiedLimitBreakUnlock = true;
         const unlockText = SYSTEM_NOTICES.limitBreakUnlock[Math.floor(Math.random() * SYSTEM_NOTICES.limitBreakUnlock.length)];
-        setTimeout(() => showNotice(unlockText, 'info'), 4500);
+        fxNotice(() => showNotice(unlockText, 'info'));
         unlockCodexChapter('limit_break');
       }
       if (openContourCount(data.level) > contoursBefore) {
-        setTimeout(() => showNotice('Вместимость контура снаряжения увеличена.', 'info'), 4500);   // v6.7.0
+        fxNotice(() => showNotice('Вместимость контура снаряжения увеличена.', 'info'));   // v6.7.0
       }
       // Order per artifact: level notice (above) already queued first, then
       // "item received", then the Codex-chapter unlock — in that sequence.
       gainedArtefacts.forEach(k => {
         const art = ARTEFACTS[k];
-        if (art) setTimeout(() => showNotice(`Получен предмет: ${art.name}`, 'info'), 4500);
+        if (art) fxNotice(() => showNotice(`Получен предмет: ${art.name}`, 'info'));
         unlockCodexChapter(`artifact_${k}`);
       });
       const boxCounts = {};
@@ -7267,13 +7349,13 @@
         const box = BOX_CATALOG[id];
         if (!box) return;
         const suffix = boxCounts[id] > 1 ? ` ×${boxCounts[id]}` : '';
-        setTimeout(() => showNotice(`Получен предмет: ${box.name}${suffix}`, 'info'), 4500);
+        fxNotice(() => showNotice(`Получен предмет: ${box.name}${suffix}`, 'info'));
       });
       gainedShopItems.forEach(sid => {
         const item = SHOP_CATALOG[sid];
-        if (item) setTimeout(() => showNotice(`Магазин Системы: доступен новый товар — ${item.name}.`, 'info'), 4500);
+        if (item) fxNotice(() => showNotice(`Магазин Системы: доступен новый товар — ${item.name}.`, 'info'));
       });
-      setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger', false, 'saveReminder'), 4500);
+      fxNotice(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger', false, 'saveReminder'));
     }
   }
 
@@ -7469,6 +7551,7 @@
         return;
       }
       playSound('tap');
+      fxHold();   // v7.4.4: уведомления этого нажатия ждут его надписей
       fzAdd(id, val);   // v7.4.0: шкала усталости — только засчитанные внесения
       if (data.curseActiveToday) setTimeout(() => questGlitch(item, 360), 0);   // v6.9.0: сбой при засчитанном нажатии — после перерисовки (она переписывает число)
       data.completed[id] = current + val;
@@ -7508,8 +7591,7 @@
           data.focusRewardExp = (data.focusRewardExp || 0) + expGained;
           data.focusRewardCredits = (data.focusRewardCredits || 0) + Math.floor(creds);
         }
-        const p = document.createElement('div'); p.className='complete-popup'; p.innerHTML=`COMPLETE<br><span style="font-size:0.8rem; color:#40ffaa">+${expGained} EXP</span> <span style="font-size:0.8rem; color:#ffd700">${creditsHtml('+' + Math.floor(creds) + ' ◈' + critMsg)}</span>`; item.appendChild(p);
-        setTimeout(() => p.remove(), 1800);
+        completeFx(item, expGained, Math.floor(creds), critMsg);   // v7.4.4: новая надпись COMPLETE (демо 109)
         // Snapshot today's completion status BEFORE checkLevelUp() — a level-up
         // raises target thresholds, which would otherwise retroactively "undo"
         // progress just counted this same click (e.g. showing "0%" right after
@@ -7522,13 +7604,13 @@
           data.limitBreaksCount++;
           if (Math.random() < 0.05) {
             data.boxes['box_anomaly'] = (data.boxes['box_anomaly'] || 0) + 1;
-            setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_anomaly'].name}`, 'info'), 4500);
+            fxNotice(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_anomaly'].name}`, 'info'));
           }
         }
         checkLevelUp();
         if (donePct < 100 && !data.progressNoticesShown.includes(donePct)) {
           data.progressNoticesShown.push(donePct);
-          setTimeout(() => showNotice(`Задание дня выполнено на ${donePct}%.`, 'info'), 4500);
+          fxNotice(() => showNotice(`Задание дня выполнено на ${donePct}%.`, 'info'));
         }
         if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
@@ -7549,7 +7631,7 @@
             gainExp(bonusExp); checkLevelUp();
             data.credits += bonusCredits;
             data.activeScroll = null;
-            showNotice(`Договор исполнен. Система начисляет дополнительное вознаграждение: +${bonusExp} EXP и +${bonusCredits} ◈.`, 'info');
+            fxNotice(() => showNotice(`Договор исполнен. Система начисляет дополнительное вознаграждение: +${bonusExp} EXP и +${bonusCredits} ◈.`, 'info'), 0);
           }
           if (data.activeScroll === 'focus' && data.focusExerciseId) {
             // v7.2.0: доплата — ещё раз награда за выбранное упражнение; сам свиток действует до сброса (+50% в Пределе)
@@ -7558,25 +7640,26 @@
             gainExp(bonusExp); checkLevelUp();
             data.credits += bonusCredits;
             data.focusRewardExp = 0; data.focusRewardCredits = 0;
-            showNotice(`Условие Свитка Сосредоточения исполнено. Система повторно начисляет награду за упражнение «${QUEST_DISPLAY_NAMES[data.focusExerciseId]}»: +${bonusExp} EXP и +${bonusCredits} ◈.`, 'info');
+            fxNotice(() => showNotice(`Условие Свитка Сосредоточения исполнено. Система повторно начисляет награду за упражнение «${QUEST_DISPLAY_NAMES[data.focusExerciseId]}»: +${bonusExp} EXP и +${bonusCredits} ◈.`, 'info'), 0);
           }
           playSound('dayComplete');
           const completeText = pickRandomNoRepeat(SYSTEM_NOTICES.complete, 'complete');
-          setTimeout(() => showNotice(completeText, 'info', false, undefined, true), 4500);   // v6.9.0: с чекбоксом
+          fxNotice(() => showNotice(completeText, 'info', false, undefined, true));   // v6.9.0: с чекбоксом
           trySyncRegistry();   // v6.9.0: первый выполненный день может открыть отправку в Реестр
           if (!renouncedDay && isArtifactEquipped('crystal_shadow')) {
             if (Math.random() < 0.10) {
               data.boxes['box_obsidian'] = (data.boxes['box_obsidian'] || 0) + 1;
-              setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_obsidian'].name}`, 'info'), 4500);
+              fxNotice(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_obsidian'].name}`, 'info'));
             }
             if (Math.random() < 0.05) {
               data.boxes['box_crimson'] = (data.boxes['box_crimson'] || 0) + 1;
-              setTimeout(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_crimson'].name}`, 'info'), 4500);
+              fxNotice(() => showNotice(`Получен предмет: ${BOX_CATALOG['box_crimson'].name}`, 'info'));
             }
           }
         }
       }
       saveData(); render();
+      fxRelease();
     };
   });
 
