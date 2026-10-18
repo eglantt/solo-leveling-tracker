@@ -24,6 +24,8 @@ const results = []; const check = (n, c, i) => results.push((c ? 'OK  ' : 'FAIL'
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const tick = () => sleep(15);   // окна «одеваются» по слежению за стилем оверлея — отложенно
 { const w0 = boot(); SEED = E(w0, `JSON.stringify(Object.assign({}, data, {level:37, exp:2220, credits:9000, rulesAcknowledged:true, playerName:'T', lastReset: getLastResetThreshold(Date.now()), dailyTargetLevel:37, dailyNotices:{morning:true, complete:false}}))`); }
+// v7.4.5: правила по имени записаны как :is(#имя, [data-gid="имя"]) — для прежних проверок текста стилей приводим к #имя
+const GID_RE = /:is\(#([\w-]+), \[data-gid="\1"\]\)/g, normGid = t => t.replace(GID_RE, '#$1');
 const closeAll = w => E(w, `document.querySelectorAll('.status-overlay').forEach(o => { if (o.style.display === 'flex') o.style.display = 'none'; })`);
 // «подпись» разметки окна: порядок и классы прямых потомков (без служебных классов темы)
 const SIG = `(() => { const sig = el => [...el.children].map(c => c.tagName + '.' + [...c.classList].sort().join('.') + (c.id ? '#' + c.id : '')).join(' > ');
@@ -190,7 +192,7 @@ const w = boot(); const D = w.document; await tick();
       && ov.querySelectorAll('rect.sf-dot').length === 0 && ov.querySelectorAll('line').length === 1 && ov.querySelectorAll('polyline').length >= 15
       && un.querySelectorAll('polygon[fill="none"], polyline').length > 0 && /rgba\(5,16,50,\.7\)/.test(un.innerHTML)
       && /rgba\(196,28,56,/.test(r1.querySelector('svg.sf-over').innerHTML) && !/rgba\(34,112,236,/.test(r1.querySelector('svg.sf-over').innerHTML)
-      && /\.sf-win > \.sf-pat \{ position: absolute; z-index: 3; pointer-events: none; \}/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n')));
+      && /\.sf-win > \.sf-pat \{ position: absolute; z-index: 3; pointer-events: none; \}/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n')));
     r1.remove();
     // v7.1.2 (демо 93): два стекла — среднее (линии, энергия) и ближнее (без линий, сдвинуто), высота ×1,1 наружу, засечек и дорожек нет
     const svgs = [...a620.querySelectorAll(':scope > svg.sf-over')], near = a620.querySelector(':scope > svg.sf-over.sf-near');
@@ -209,7 +211,7 @@ const w = boot(); const D = w.document; await tick();
   [n1, m1, t1, t0, a460, a620, b620].forEach(x => x.remove()); }
 
 // ===== стили =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   check('T29 полосы темы «Система»: одна толщина — капсула 11px, зазор 3px (заливка 3px), обводка в цвет заливки',
     /body\.theme-sys \.sf-win\.mwin \.sc-bar, body\.theme-sys \.sf-win\.mwin \.dayline, body\.theme-sys \.sf-win\.mwin \.qbar \{ --f: #eaf8ff; box-sizing: border-box; height: 11px; padding: 3px;\s+border: 1px solid var\(--f\); border-radius: 999px;/.test(css)
     && !/body\.theme-sys[^{]*\.(qbar|dayline|sc-bar) \{[^}]*height: 1[2-9]px/.test(css));
@@ -238,7 +240,7 @@ const w = boot(); const D = w.document; await tick();
     && /\n    \.quest-item \.qcheck \{ position: absolute; left: 16px; bottom: 19px; width: 22px; height: 22px; pointer-events: none; \}/.test(css)); }
 
 // ===== v7.0.2 =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   check('T38 стартовое окно в теме «Система»: тёмный фон как в «Классике» (95% и размытие 10px), чёрная пауза — чёрная; правила из Архива — обычное затемнение',
     /body\.theme-sys #rulesOverlay\[data-notice="1"\] \{ background: rgba\(0,5,15,\.95\); -webkit-backdrop-filter: blur\(10px\); backdrop-filter: blur\(10px\); \}/.test(css)
     && /body\.theme-sys #rulesOverlay\[data-notice="1"\]\.sys-boot-black \{ background: #000; \}/.test(css));
@@ -277,7 +279,7 @@ const w = boot(); const D = w.document; await tick();
   const n = D.querySelector('.sys-notice');
   check('T44 активация свитка: пока на экране печать (2,5 с), уведомление ждёт в очереди; после неё — показывается',
     seal && during && queued && !!n && /Цели повышены/.test(n.textContent) && !D.getElementById('fullscreenSealOverlay').classList.contains('show'), `${seal} ${during} ${queued} ${!!n}`);
-  const css = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  const css = [...D.querySelectorAll('script')].map(x => normGid(x.textContent)).join('\n');
   const order = ['renunciation', 'contract', 'freeze', 'transfer'].every(k => { const i = css.indexOf(`showFullscreenSeal('${k}'`); const j = css.indexOf('showNotice(', i); return i > 0 && j > i && css.lastIndexOf(`showFullscreenSeal('${k}'`) === i; });
   check('T45 у всех четырёх свитков печать запускается раньше уведомления о свитке', order);
   E(w, "document.querySelectorAll('.sys-notice,.system-popup').forEach(n => n.remove()); notificationQueue.length = 0; notificationActive = false;"); }
@@ -288,10 +290,10 @@ const w = boot(); const D = w.document; await tick();
   check('T46 Длань в теме «Система»: раздел «Характеристики» внутри окна Системы, шаг — строка той же сетки, кнопки «1» / «10» над «−» / «+», выбрана «1»; стили строк и выбранной кнопки есть в обеих темах',
     win.classList.contains('mwin') && !!win.querySelector('.sf-panel.mw #sysStatStep.sys-stat-row') && win.querySelectorAll('.sf-panel.mw .sys-stat-row').length === 7
     && [...win.querySelectorAll('#sysStatStep .sys-step-btn.backup-action-btn')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|') === '1*|10'
-    && /\n    \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n'))
-    && /body\.theme-sys \.sf-win\.mwin \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n'))
-    && /\n    \.sys-stat-row \{ display: flex;/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n'))
-    && /body\.theme-sys \.sf-win\.mwin \.sys-stat-row \.backup-action-btn \{/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('\n')));
+    && /\n    \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'))
+    && /body\.theme-sys \.sf-win\.mwin \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'))
+    && /\n    \.sys-stat-row \{ display: flex;/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'))
+    && /body\.theme-sys \.sf-win\.mwin \.sys-stat-row \.backup-action-btn \{/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n')));
   closeAll(w); await tick(); }
 
 // ===== v7.0.6: Реестр — «Лучшая серия дней» =====
@@ -302,7 +304,7 @@ const w = boot(); const D = w.document; await tick();
   check('T48 на главном экране и в «СТАТУСЕ» подпись прежняя — «Серия дней» (текущая серия)', [...D.querySelectorAll('.sc-chip.st .k')].every(k => k.textContent === 'Серия дней') && D.querySelectorAll('.sc-chip.st .k').length === 2); }
 
 // ===== v7.0.7: Пелена покоя и лёд Заморозки — снизу так же, как сверху и по бокам =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   check('T49 тема «Система»: пелена и лёд выходят за карточки на 5px со всех сторон (inset: -5px), «Классика» прежняя',
     /body\.theme-sys \.mscr \.veil-overlay \{ inset: -5px; border-radius: 0; \}/.test(css)
     && /body\.theme-sys \.mscr \.freeze-ice-overlay, body\.theme-sys \.mscr \.freeze-tap-catcher \{ inset: -5px; \}/.test(css)
@@ -310,7 +312,7 @@ const w = boot(); const D = w.document; await tick();
     && /\.veil-overlay \{[^}]*inset: 10px 12px;/.test(css)); }
 
 // ===== v7.0.8: свечение всех текстов в теме «Система» =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   const i = css.indexOf('v7.0.8: свечение'), blk = i > 0 ? css.slice(i) : '';
   check('T50 тема «Система»: общее свечение (цвет надписи; v7.1.5 — 2 слоя; v7.1.7 — не наследуется, только у заголовков, цифр, имени), исключения и красное под Бременем',
     /body\.theme-sys \{\s*\/\*[^*]*\*\/\s*--tg: 0 0 \.2em color-mix\(in srgb, currentColor 58%, transparent\), 0 0 \.8em color-mix\(in srgb, currentColor 46%, transparent\);/.test(blk)
@@ -324,7 +326,7 @@ const w = boot(); const D = w.document; await tick();
     && /body\.theme-sys \.quest-item \.counter\.cursed-scroll \{ animation-name: sysCursedScrollPulse; \}/.test(blk)
     && /@keyframes cursedScrollPulse \{\s*0%, 100% \{ text-shadow: 0 0 4px rgba\(255,40,40,0\.7\)/.test(css)); }
 // ===== v7.0.9: общее свечение вместо своего слабого =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   { const i9 = css.indexOf('/* ===== v7.0.9:'), r9 = i9 < 0 ? '' : css.slice(i9, css.indexOf('var(--tgd); }', i9));
     const kf = css.lastIndexOf('@keyframes', i9), kfEnd = css.indexOf('\n    }', kf);
     const need = ['.codex-chapter-title', '.section-title', '.backup-section-title.danger', '.st-sec-title', '.cal-month-label',
@@ -335,13 +337,13 @@ const w = boot(); const D = w.document; await tick();
 
 
 // ===== v7.1.3: облегчение для телефонов (демо 94) =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   check('T54 v7.3.1: прежнего фона окон нет — ни «схемы» и «царапин», ни пятен света (и их анимации), ни дрейфа',
     !/sfDrift|sfShim|\.sf-shim|\.sf-circ|\.sf-scr\b|\.sf-bg \{|--sf-pat/.test(css));
   check('T55 правила паузы: под окном — обе темы (anim-paused); v7.1.7 — паузы во время прокрутки нет',
     /\.anim-paused, \.anim-paused \*, \.anim-paused \*::before, \.anim-paused \*::after \{ animation-play-state: paused !important; \}/.test(css)
     && !/sys-scrolling/.test(css));
-  const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  const src = [...D.querySelectorAll('script')].map(x => normGid(x.textContent)).join('\n');
   check('T56 узор полос — заготовленные кадры с перетеканием (CSS, замирает под окном), живого цикла нет; пробег руны под окном пропускается; текстур прежнего фона нет',
     /const PLC = \{[^}]*frames: 12, step: 1\.5,/.test(src) && !/patLoop|PAT_FRAMES|sfPatX|AnimPause\.scrolling|sys-scrolling/.test(src + css)
     && /!document\.hidden && !svg\.closest\('\.anim-paused'\)\) runRuneBolt/.test(src) && !/texBake|texCircuit|texScratch|TEXC|TEX_BLUR/.test(src)); }
@@ -371,12 +373,12 @@ const w = boot(); const D = w.document; await tick();
   check('T59 v7.1.7: прокрутка ничего не ставит на паузу (класса sys-scrolling нет)', !D.body.classList.contains('sys-scrolling') && typeof E(w, 'AnimPause.scrolling') === 'undefined'); }
 
 // ===== v7.1.5 =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'), src = [...D.querySelectorAll('script')].map(x => normGid(x.textContent)).join('\n');
   check('T60 v7.3.1: правил полосы виньетки нет (виньетка 16px — в картинке фона главного экрана); «Проверки нагрузки» в Длани нет, её запись стирается',
     !/\.sf-vig/.test(css) && /side\(red \? '18,4,10' : '2,14,24'\)/.test(src) && /const MBG_VIG = 16;/.test(src)
     && !D.getElementById('perfTestSection') && !/perf-tg|perf-col|perf-ico|perfTest/.test(css + src) && /localStorage\.removeItem\('sl_perf_test'\)/.test(src)); }
 // ===== v7.1.6 =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'), src = [...D.querySelectorAll('script')].map(x => normGid(x.textContent)).join('\n');
   check('T61 фон главного экрана — одна картинка размером с экран, «прилипает» к экрану; v7.3.1: без рисунка или холста — однотонная основа (под Бременем красно-тёмная)',
     /body\.theme-sys \.mscr > \.sf-screen \{ overflow: clip; \}/.test(css) && /body\.theme-sys \.mscr \.sf-mbg \{ position: sticky; top: 0; display: block; \}/.test(css)
     && !/MBG_PAT/.test(src) && /\} else \{ g\.fillStyle = red \? '#12040a' : '#030914'; g\.fillRect\(0, 0, cv\.width, H\); \}/.test(src) && /mbg = mainBg\(w, L, R, scheme === 'red'\);/.test(src)
@@ -387,7 +389,7 @@ const w = boot(); const D = w.document; await tick();
     JSON.parse(pool).includes('Задание выполнено в полном объёме.') && !/Задание исполнено/.test(pool) && new Set(JSON.parse(pool)).size === 9, pool); }
 
 // ===== v7.1.7 =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   const mk = () => { const el = D.createElement('div'); el.className = 'sf-win mwin'; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
     Object.defineProperty(el, 'offsetWidth', { value: 390 }); Object.defineProperty(el, 'offsetHeight', { value: 600 }); D.body.appendChild(el); return el; };
   const e1 = mk(); w.__el = e1; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
@@ -412,7 +414,7 @@ const w = boot(); const D = w.document; await tick();
 // ===== v7.1.8: маленькие иконки (icons/items-s) =====
 { const root = path.join(__dirname, '..'), small = new Set(fs.readdirSync(path.join(root, 'icons', 'items-s')));
   const ids = J(w, `[...Object.keys(SHOP_CATALOG), ...Object.keys(UNIQUE_CATALOG), ...Object.keys(BOX_CATALOG), ...Object.keys(KEY_CATALOG), ...Object.keys(ARTEFACTS), ...Object.values(TITLE_ICON_IDS)]`);
-  const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  const src = [...D.querySelectorAll('script')].map(x => normGid(x.textContent)).join('\n');
   const effStatic = [...src.matchAll(/icon: 'icons\/items\/([\w-]+)\.png'/g)].map(m => m[1]);
   const need = [...new Set([...JSON.parse(ids), ...effStatic])], miss = need.filter(id => !small.has(id + '.png'));
   const big = fs.readdirSync(path.join(root, 'icons', 'items')).filter(f => f.endsWith('.png') && f !== 'ice_layer_freeze.png');
@@ -439,7 +441,7 @@ const w = boot(); const D = w.document; await tick();
     [...small].every(f => listed.has(f)) && listed.size === small.size && /pathname\.includes\('\/icons\/items-s\/'\)/.test(sw)); }
 
 // ===== v7.1.9 =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   const mk = (ht) => { const el = D.createElement('div'); el.className = 'sf-win mwin'; el.innerHTML = '<div class="sf-content"><div class="sf-panel"></div></div>';
     Object.defineProperty(el, 'offsetWidth', { value: 390 }); Object.defineProperty(el, 'offsetHeight', { value: ht }); D.body.appendChild(el); return el; };
   const res = [600, 1700].map(ht => { const e = mk(ht); w.__el = e; E(w, "SysFrame.render(__el, 'blue', SYS_FRAME_OPT)");
@@ -450,7 +452,7 @@ const w = boot(); const D = w.document; await tick();
     && !/sfDotTw|\.sf-dot/.test(css), JSON.stringify(res)); }
 
 // ===== v7.1.10 =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   const m = css.match(/body\.theme-sys \.sf-win\.mwin #stTop \{ padding: ([^;]+); \}/);
   check('T71 «Система»: у шапки Статуса нет верхнего запаса 20px (промежуток до карточки как в «Классике»), боковые и нижний прежние',
     !!m && m[1].trim() === '0 4px 2px 10px', m && m[1]);
@@ -471,7 +473,7 @@ const w = boot(); const D = w.document; await tick();
 { closeAll(w); E(w, "setTheme('system'); backupModalStep = 'main'; openBackupModal()"); await tick();
   const btn = t => [...D.querySelectorAll('#backupContent .theme-seg button')].find(b => b.textContent.trim() === t);
   const ov = D.getElementById('backupOverlay'), win = ov.querySelector('.status-window');
-  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   check('T73 кнопки «Система» / «Классика» в Архиве запускают смену через сбой (switchThemeFx), сама setTheme — прежняя',
     /switchThemeFx\('classic'\)/.test(btn('Классика').getAttribute('onclick')) && /switchThemeFx\('system'\)/.test(btn('Система').getAttribute('onclick')));
   btn('Классика').click(); await sleep(150);
@@ -546,7 +548,7 @@ const w = boot(); const D = w.document; await tick();
   check('T88 «Система» не изменилась: карточка Магазина — 9 / 12 px, иконка в рамке 58 px', cs(ss).gap === '9px 12px' && cs(ss.querySelector('.item-icon')).width === '58px',
     cs(ss).gap + ' ' + cs(ss.querySelector('.item-icon')).width);
   check('T89 правила 7.2.2 стоят до блока темы «Система» и все ограничены «Классикой» (body:not(.theme-sys))',
-    (() => { const c = XD.querySelector('style').textContent; const a = c.indexOf('v7.2.2: карточки'), b = c.indexOf('ТЕМА «СИСТЕМА»');
+    (() => { const c = XD.querySelector('style').textContent.replace(GID_RE, '#$1'); const a = c.indexOf('v7.2.2: карточки'), b = c.indexOf('ТЕМА «СИСТЕМА»');
       const blk = c.slice(a, b).split('\n').filter(l => /\{/.test(l) && !/^\s*\/\*/.test(l));
       return a > 0 && a < b && blk.length >= 10 && blk.every(l => /^\s*body:not\(\.theme-sys\)/.test(l)); })()); }
 
@@ -565,7 +567,7 @@ const w = boot(); const D = w.document; await tick();
   check('T93 описание характеристики: касание по тексту, заголовку, карточке и фону закрывает окно, «Статус» остаётся открытым — в обеих темах', ok(r.system) && ok(r.classic), JSON.stringify(r)); }
 
 // ===== v7.2.8: подпись Заморозки, лёд «Классики», появление окон «Классики», плавный набор опыта =====
-{ const x = boot(); await tick(); const XD = x.document; const css = XD.querySelector('style').textContent;
+{ const x = boot(); await tick(); const XD = x.document; const css = XD.querySelector('style').textContent.replace(GID_RE, '#$1');
   E(x, `data.activeScroll='freeze'; data.freezeEndTimestamp=Date.now()+5*24*3600e3; data.freezeAnimPlayed=true; render(); updateTimer()`);
   const c = XD.getElementById('resetTimerContainer'), lab = c.querySelector('.reset-label');
   const frzOn = c.classList.contains('frz'), padSys = x.getComputedStyle(lab).paddingRight;
@@ -595,7 +597,7 @@ const w = boot(); const D = w.document; await tick();
 { const x = boot(); await tick(); const XD = x.document; E(x, `setTheme('classic')`); closeAll(x); await tick();
   const ov = XD.getElementById('invOverlay'), win = ov.firstElementChild;
   E(x, `openInv()`); await tick();
-  const css7 = XD.querySelector('style').textContent;
+  const css7 = XD.querySelector('style').textContent.replace(GID_RE, '#$1');
   const inOk = ov.classList.contains('cfx-ov-in') && win.classList.contains('cfx-win-in') && /\.status-overlay\.cfx-ov-in \{ animation: cfxOvIn \.25s/.test(css7) && /\.cfx-win-in \{ animation: cfxWinIn \.25s/.test(css7);
   await sleep(350); const cleared = !ov.classList.contains('cfx-ov-in') && !win.classList.contains('cfx-win-in');
   E(x, `closeInv()`); await tick();
@@ -639,11 +641,11 @@ const w = boot(); const D = w.document; await tick();
   check('X5 долг гасится набором: «Долг −N» уменьшается, затем опыт растёт от нуля', d0 === 'Долг −600 EXP' && /Долг −/.test(dMid) && dm < 600 && dm > 50 && dEnd.startsWith('400 / 3000'), [d0, dMid, dEnd].join(' | '));
   E(x, `data.exp=0; data.expDebt=0; render()`); XD.getElementById('rankInfoBtn').click(); await tick();
   E(x, `gainExp(1500); render(); updateStatusUI()`); await sleep(500); const a = $('hdrExp').textContent, b = $('stExp').textContent; await sleep(650);
-  const css = XD.querySelector('style').textContent;
+  const css = XD.querySelector('style').textContent.replace(GID_RE, '#$1');
   check('X6 шапка и «Статус» показывают одно и то же; у полосы нет прежнего сдвига 0,3 с',
     a === b && $('stExp').textContent.startsWith('1500 / 3000') && !/\.sc-bar i \{[^}]*transition/.test(css), [a, b, $('stExp').textContent].join(' | ')); }
 
-{ const x = boot(); await tick(); const css = x.document.querySelector('style').textContent;
+{ const x = boot(); await tick(); const css = x.document.querySelector('style').textContent.replace(GID_RE, '#$1');
   const st = /body\.theme-sys #statusOverlay \.sf-win\.mwin \.sc-hex b \{ filter: drop-shadow\(0 0 4px var\(--rk\)\) drop-shadow\(0 0 8px var\(--rk\)\); \}/.test(css);
   const main = /body\.theme-sys \.sf-win\.mwin \.sc-hex b \{[^}]*drop-shadow\(0 0 5px var\(--rk\)\) drop-shadow\(0 0 14px var\(--rk\)\)/.test(css);
   const pulse = /@keyframes lvPulse \{ 0%, 100% \{ filter: drop-shadow\(0 0 4px var\(--rk\)\) drop-shadow\(0 0 9px var\(--rk\)\); \}/.test(css)
@@ -651,7 +653,7 @@ const w = boot(); const D = w.document; await tick();
   check('T99 «Система»: свечение цифры уровня в «Статусе» 4 + 8 px, на главном экране 5 + 14; пульсация SSS и Монарха прежняя', st && main && pulse, [st, main, pulse].join('/')); }
 
 // ===== v7.2.4: пульсации «свиток + Бремя / Предел» в «Системе» — плавные (без var(--tg) в кадрах) =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   const kf = n => { const m = css.match(new RegExp('@keyframes ' + n + ' \\{([\\s\\S]*?)\\n    \\}')); return m ? m[1] : ''; };
   const names = ['sysCursedScrollPulse', 'sysCursedScrollPulseTarget', 'sysLimitScrollPulse', 'sysLimitScrollPulseTarget'];
   const bad = names.filter(n => { const b = kf(n); return !b || /var\(|currentColor|color-mix/.test(b); });
@@ -662,7 +664,7 @@ const w = boot(); const D = w.document; await tick();
   check('T91 общее свечение в кадрах — тот же цвет и размах, что var(--tg) у цифры и цели', ok); }
 
 // ===== v7.3.0: новый фон «Системы» (демо 101–102) =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), scripts = [...D.querySelectorAll('script')].map(x => x.textContent), src = scripts.join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'), scripts = [...D.querySelectorAll('script')].map(x => x.textContent), src = scripts.join('\n');
   const fn = n => { const m = src.match(new RegExp('function ' + n + '\\([\\s\\S]*?\\n    \\}')); return m ? m[0] : ''; };
   check('T100 рисунок по решению демо 101–102: вариант 24, основа и линии 85%, затемнение 50%, размытие 1 px; запоминается на устройстве (JPEG, с подписью настроек), чтение — первым скриптом в <head>; «Сбросить всё» его не трогает (не данные)',
     /const ART_OPT = \{ seed: 24, base: \.85, line: \.85, dim: \.5, soft: 1 \};/.test(src) && /const ART_KEY = 'sl_sys_art', ART_SIG = 'v1\|' \+ \[ART_OPT\.seed, ART_OPT\.base, ART_OPT\.line, ART_OPT\.dim, ART_OPT\.soft\]/.test(src)
@@ -692,7 +694,7 @@ const w = boot(); const D = w.document; await tick();
     oldOk && err === '' && anom && !shopRed && /SysFrame\.artRefresh\(\);/.test(src), [!!oldOk, err, anom, shopRed].join('/')); }
 
 // ===== v7.3.1: нити плазмы в полосах (демо 103); прежнего фона нет =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n'), src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'), src = [...D.querySelectorAll('script')].map(x => normGid(x.textContent)).join('\n');
   const fn = n => { const m = src.match(new RegExp('function ' + n + '\\([\\s\\S]*?\\n    \\}')); return m ? m[0] : ''; };
   check('T104 сборка демо 103 и 104: нитей 9 и 8 дальних, наклон 30°, извилистость 85%, середина 2,2 px (яркость 55%) и ореол 3,5 px, общая яркость 35%, ширина 50% (дыхание 45%), затухание 15%, узлы 10%, отражение 15% / 1 px, 12 кадров по 1,5 с, сдвиг 25%, мерцание 45%',
     /const PLC = \{ n: 9, far: 8, ang: 30, wig: \.85, core: 2\.2, ck: \.55, halo: 3\.5, br: \.35, span: \.5, breath: \.45, fade: \.15,\s+nodeK: \.1, reflK: \.15, reflD: 1, frames: 12, step: 1\.5, drift: \.25, flick: \.45, keep: 6 \};/.test(src)
@@ -715,7 +717,7 @@ const w = boot(); const D = w.document; await tick();
   check('T107 без холста (jsdom) — полосы без узора, основа однотонная, вспышка энергии на месте, ошибок нет', !!ok, err); }
 
 // ===== v7.3.3: текст в превью титулов =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   const tx = id => E(w, `itemPreviewText(${JSON.stringify(id)})`), tid = n => E(w, `TITLE_ICON_IDS[${JSON.stringify(n)}]`), ds = n => E(w, `TITLES_DB[${JSON.stringify(n)}].desc`);
   const names = JSON.parse(E(w, 'JSON.stringify(Object.keys(TITLE_ICON_IDS).filter(n => TITLES_DB[n]))'));
   const bad = names.filter(n => tx(tid(n)) !== (n === 'Новичок' ? `Титул\n${ds(n)}` : `Титул\nДействует, пока выбран активным\n${ds(n)}`) || /Тип:|Ранг:|Применение:|Эффект:/.test(tx(tid(n))));
@@ -726,7 +728,7 @@ const w = boot(); const D = w.document; await tick();
     && /\.item-preview-meta \{ font-family: 'Exo 2 Text', sans-serif; font-size: 0\.84rem; overflow-wrap: normal; word-break: normal; hyphens: manual; \}/.test(css)); }
 
 // ===== v7.3.4: надпись повышения уровня — одинаковая в обеих темах =====
-{ const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+{ const css = [...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n');
   check('T111 надпись повышения уровня — общие правила (без body.theme-sys / «Классики»), прежней (.levelup-popup, @keyframes levelUp) нет',
     /\n    \.lvx \{ position: fixed;/.test(css) && !/body\.theme-sys[^{]*\.lvx|body:not\(\.theme-sys\)[^{]*\.lvx/.test(css) && !/levelup-popup|@keyframes levelUp /.test(css)); }
 
@@ -734,7 +736,7 @@ const w = boot(); const D = w.document; await tick();
 // ===== v7.3.6: уход окон и уведомлений «Системы» (демо 106) =====
 { const x = boot(); await tick(); const XD = x.document; closeAll(x); await tick();
   x.Element.prototype.getBoundingClientRect = function () { return { left: 20, top: 100, width: 300, height: 400, right: 320, bottom: 500 }; };
-  const css = XD.querySelector('style').textContent;
+  const css = XD.querySelector('style').textContent.replace(GID_RE, '#$1');
   E(x, `openShop()`); await tick(); E(x, `document.getElementById('shopOverlay').style.display = 'none'`); await tick();
   const g = XD.querySelector('.status-overlay.sfx-ghost');
   const gOk = !!g && !g.id && !g.querySelector('[id]') && !g.querySelector('.mw-in') && x.getComputedStyle(g).pointerEvents === 'none' && g.firstElementChild.classList.contains('mwin') && !XD.querySelector('.sfx-line');
@@ -773,6 +775,27 @@ const w = boot(); const D = w.document; await tick();
   check('T114 «Система» и «Классика»: заголовок главы Кодекса — 0,875rem (14 px); заголовки разделов Инвентаря, Архива, «Статуса» — прежние (.76 / .8 / .8 / .72rem)',
     sy.codex === 0.875 && cl.codex === 0.875 && sy.sect === 0.76 && sy.arch === 0.76 && sy.st === 0.76 && cl.sect === 0.8 && cl.arch === 0.8 && cl.st === 0.72,
     JSON.stringify({ sy, cl })); }
+
+// ===== v7.4.5: копия уходящего окна сохраняет прежние имена пометкой data-gid — оформление по имени действует и на копию =====
+{ const x = boot(); const XD = x.document; await tick();
+  const css = XD.querySelectorAll('style')[0].textContent;   // без normGid — проверяем сами формы :is
+  const IDS = ['statusOverlay', 'stTop', 'appVersionTag', 'stats', 'equipBody', 'rulesOverlay', 'leaderboardOverlay'];
+  const cssOk = IDS.every(id => css.includes(`:is(#${id}, [data-gid="${id}"])`));
+  const plainLeft = IDS.filter(id => new RegExp(`(^|[^(\\w-])#${id}(?![\\w-])`).test(css.replace(/:is\(#[\w-]+, \[data-gid="[\w-]+"\]\)/g, '')));
+  const probe = th => { E(x, `setTheme('${th}')`); closeAll(x);
+    E(x, "document.getElementById('rankInfoBtn').click()"); return tick().then(() => {
+      const ov = XD.getElementById('statusOverlay'), b0 = ov.querySelector('.status-body');
+      const pad0 = x.getComputedStyle(b0).paddingTop;
+      E(x, `document.getElementById('statusOverlay').style.display = 'none'`); return tick().then(() => {
+        const gh = XD.querySelector('.status-overlay.cfx-ghost, .status-overlay.sfx-ghost');
+        const r = { gh: !!gh, gid: gh && gh.dataset.gid, noId: !!gh && !gh.id && !gh.querySelector('[id]'),
+          inner: !!gh && !!gh.querySelector('[data-gid="stTop"]'), pad0,
+          pad1: gh ? x.getComputedStyle(gh.querySelector('.status-body')).paddingTop : null };
+        return sleep(450).then(() => r); }); }); };
+  const cl = await probe('classic'), sy = await probe('system');
+  const okT = r => r.gh && r.gid === 'statusOverlay' && r.noId && r.inner && r.pad0 === r.pad1;
+  check('T115 (v7.4.5) копия закрываемого окна: имён (id) нет, прежнее имя — пометкой data-gid; правила оформления по имени записаны как :is(#имя, [data-gid="имя"]) и действуют на копию так же, как на окно (обе темы)',
+    cssOk && plainLeft.length === 0 && okT(cl) && okT(sy), JSON.stringify({ cssOk, plainLeft, cl, sy })); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);

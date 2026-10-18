@@ -141,7 +141,7 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   E(w, 'data.expDebt = 450; updateSysCurrent()');
   check('Z3 долг — красный', ['#ff5555', 'rgb(255,85,85)'].includes(rgb(D.querySelector('#sysExpNow .sv'))) && D.querySelector('#sysExpNow .sv').textContent === 'Долг −450 EXP');
   E(w, 'data.expDebt = 0');
-  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   const want = { 9: 'e', 10: 'd', 19: 'd', 20: 'c', 29: 'c', 30: 'b', 39: 'b', 40: 'a', 49: 'a', 50: 's', 59: 's', 60: 'national', 79: 'national', 80: 'sss', 99: 'sss', 100: 'monarch' };
   const bad = Object.entries(want).filter(([lv, rk]) => { E(w, `data.level = ${lv}; updateSysCurrent()`); const v = D.querySelector('#sysLevelNow .sv.lvl'); return !v || !v.classList.contains('rk-' + rk) || v.textContent !== String(lv); }).map(x => x[0]);
   check('Z4 уровень — в цвет ранга на всех границах, цвет только у числа', bad.length === 0 && D.querySelector('#sysLevelNow .sl').textContent === 'Уровень' && /\.sys-current \.sv\.lvl \{ color: var\(--rk\); \}/.test(css) && /\.sys-current \.sl \{[^}]*color: #88ddff;/.test(css), bad.join(','));
@@ -221,7 +221,7 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   E(w, "document.querySelectorAll('.sys-notice').forEach(n => n.remove()); displayNotificationNow({ body: 'x', tone: 'info', skipLog: true })");
   check('N19 уведомления выключены — окна нет', !D.querySelector('.sys-notice'));
   E(w, 'data.notificationsEnabled = true');
-  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('N20 появление — развёртка; размер рамки без учёта анимации (offsetWidth)', /\.sys-notice \{[^}]*animation: snUnfold \.65s[^}]*backwards/.test(css) && /const w = win\.offsetWidth, s = Math\.min\(w, /.test(require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8')));
   // выбор оформления в Архиве → Настройки
   E(w, "setTheme('system'); backupModalStep = 'main'; openBackupModal()");

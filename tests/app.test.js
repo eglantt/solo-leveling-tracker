@@ -204,7 +204,7 @@ async function effectSelectTests() {
   const glowOf = b => { const i = btns().indexOf(b); E(w, `toggleActiveEffect(${i})`); const f = cs(b.querySelector('img')).filter; E(w, `toggleActiveEffect(${i})`); return f; };
   const fr = glowOf(rune), fs = glowOf(seal), fc = glowOf(cryst);
   check('SE2 свечение: у руны и печати тёмно-синее (4px и 8px), у кристалла голубое', /#0d2f8f/i.test(fr) && /4px/.test(fr) && /8px/.test(fr) && /#0d2f8f/i.test(fs) && /#40c0ff/i.test(fc), `${fr} | ${fs} | ${fc}`);
-  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('SE3 чёрточка: голубая, 2px, на 7px ниже — у всех выбранных (в т. ч. Бремя)', /\.effect-icon-btn\.active::after \{ content: ''; position: absolute; left: 15%; right: 15%; bottom: -7px; height: 2px;[^}]*background: #40c0ff;/.test(css)
     && !/anomaly-active::after/.test(css));
   E(w, `toggleActiveEffect(${btns().indexOf(burden)})`);
@@ -220,7 +220,7 @@ async function effectSelectTests() {
 async function legendTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
   const D = w.document;
-  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   // цвета рамок дней календаря по статусам Летописи
   const dayColor = st => { const m = css.match(new RegExp('\\.day-cell\\.' + st + ' \\{ border-color: (#[0-9a-f]{6})')); return m ? m[1] : null; };
   const statuses = JSON.parse(E(w, `(() => { const f = sanitizeImportedData.toString(); const m = f.match(/VALID_STATUSES = (\\[[^\\]]+\\])/); return JSON.stringify(eval(m[1])); })()`));
@@ -297,7 +297,7 @@ async function v690Tests() {
   let p = show(texts[3], true);
   const nc = p.querySelector(':scope > .notice-check, .gp-inner > .notice-check') || p.querySelector('.notice-check');
   check('V20 уведомление о выполнении: чекбокс 32px по центру под текстом', !!nc && cs(nc).width === '32px' && cs(nc).marginLeft === 'auto' && nc.previousElementSibling.classList.contains('system-popup-body'));
-  const css690 = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const css690 = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('V21 галочка зелёная, прорисовывается после появления (через 0,3 с, за 0,5 с)', !nc.classList.contains('red') && /\.notice-check \.qc-tick \{ animation: qcDraw 0\.5s ease-out 0\.3s both; \}/.test(css690));
   clear();
   p = show('Получен предмет: Руна Роста', false);
@@ -383,7 +383,7 @@ async function glitchTests() {
   clear();
   check('G12 журнал уведомлений — обычный текст', E(w, 'data.notificationLog[0].text') === E(w, 'PACE_NOTICE'));
   const cs = w.getComputedStyle(D.querySelector('.system-popup') || show('x'));
-  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('G13 дрожь сдвигает только содержимое, не окно', /\.system-popup\.glitch\.gfx-shake \.gp-inner \{ transform:/.test(css) && !/\.system-popup\.glitch\.gfx-shake \{/.test(css));
   clear();
 }
@@ -993,7 +993,7 @@ async function completeTests() {
     && /#f2fff8|242, 255, 248/i.test(cs(t).color) && /#00ff88|0, 255, 136/i.test(cs(t).textShadow), `${cs(p).fontSize} ${cs(t).color} ${cs(t).textShadow}`);
   check('K3 мягкая тень под надписью, без переноса строк', /radial-gradient/.test(cs(box).backgroundImage || cs(box).background) && cs(box).whiteSpace === 'nowrap');
   check('K3a мягкая подсветка карточки', !!D.querySelector('.quest-item[data-id="pushups"] .cpx-flash'));
-  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('K4 старой надписи, её анимации и неиспользуемой вспышки нет', !/\.complete-popup|@keyframes completeText|\.completion-effect|@keyframes flash\b/.test(css) && !D.querySelector('.complete-popup'));
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
   check('K5 в коде нет отложенных на 4,5 с уведомлений и прямых показов доплат свитков', !/, 4500\)/.test(raw) && (raw.match(/fxNotice\(\(\) =>/g) || []).length === 18);
@@ -1121,7 +1121,7 @@ async function bootTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
   const D = w.document, $ = id => D.getElementById(id);
   check('B2 после первой отрисовки состояние загрузки снято', !D.documentElement.classList.contains('booting'));
-  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('B3 при загрузке скрыты значения карточки и упражнений, со страховкой через 5 с',
     /\.booting #hdrName,[^{]*\.booting \.quest-item \.counter, \.booting \.quest-item \.target, \.booting \.quest-item \.qbar-fill, \.booting \.quest-item \.reward \{\s*opacity: 0; animation: bootFailsafeShow 0s 5s forwards; \}/.test(css));
   check('B4 «Идентификация…» и «Синхронизация…» появляются через 0,25 с',
@@ -1206,7 +1206,7 @@ async function cleanupTests() {
   check('C1 карточка называется «Бег (шаги)»', D.querySelector('.quest-item[data-id="steps"] .quest-name').textContent === 'Бег (шаги)');
   check('C2 название для Летописи и уведомлений — «Бег (шаги)»', E(w, 'QUEST_DISPLAY_NAMES.steps') === 'Бег (шаги)');
   check('C3 «Пробежка» нигде не осталась', !html.includes('Пробежка'));
-  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   const gone = ['stat-row', 'stat-label', 'stat-value', 'stat-points-info'];
   check('C4 стили старого окна характеристик удалены', gone.every(c => !new RegExp('\\.' + c + '\\b').test(css)), gone.filter(c => new RegExp('\\.' + c + '\\b').test(css)).join(','));
   check('C5 и нигде не используются', gone.every(c => !D.querySelector('.' + c)));
@@ -1239,7 +1239,7 @@ async function limitTintTests() {
     E(w, code + ' render()');
     check(`T ${label}: ${exp || 'обычный зелёный'}`, tint() === exp, tint());
   }
-  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('T «Предел + свиток»: пульсирующий ореол у цифр и цели, свечение у полоски',
     /\.counter\.limit-scroll \{ color: #40c0ff; animation: limitScrollPulse/.test(css) && /\.target\.limit-scroll \{[^}]*animation: limitScrollPulseTarget/.test(css) && /\.qbar-fill\.limit-scroll \{ background: #40c0ff;/.test(css));
   // свечение эмблемы в окне «СТАТУС» помещается в запас прокручиваемой области
@@ -1271,7 +1271,7 @@ async function headerTests() {
     if ($('hdrTop').className !== 'sc-top rk-' + cls || $('hdrRank').textContent !== name || $('hdrLevel').textContent !== String(lv) || $('hdrLevel').className !== dcls) bad.push(lv + ':' + $('hdrTop').className + '/' + $('hdrRank').textContent + '/' + $('hdrLevel').className);
   }
   check('H1 эмблема: уровень, класс цифр, цвет и название ранга для всех рангов', bad.length === 0, bad.join(', '));
-  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('H2 у SSS и Monarch пульсируют эмблема и название', /\.rk-sss \.sc-hexw \{ animation: hexPulseSss/.test(css) && /\.rk-monarch \.sc-hexw \{ animation: hexPulseMonarch/.test(css)
     && /\.rk-sss \.sc-rank \{ animation: auraPulseSss/.test(css) && /\.rk-monarch \.sc-rank \{ animation: auraPulseMonarch/.test(css));
   check('H3 у карточки нет уголков', !/\.status-card::(before|after)/.test(css) && !$('rankInfoBtn').classList.contains('hud-frame'));
@@ -1384,7 +1384,7 @@ async function designTests() {
     check(`P5 цвет полоски = цвет цифр: ${label}`, tintOf() === cls && (cls === '' ? counterCls === 'counter' : counterCls.includes(cls)), tintOf() + ' | ' + counterCls);
   }
   // --- LEVEL UP ---
-  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   const lu = (css.match(/\.lvx-t \{([^}]*)\}/) || [])[1] || '', lr = (css.match(/\.lvx \{([^}]*)\}/) || [])[1] || '';
   check('L1 v7.3.4: надпись без поворота и раздувания (старых правил нет), середина надписи на 40% высоты экрана (v7.3.5), на полосе-стекле',
     !/@keyframes levelUp|levelup-popup|rotate\(/.test((css.match(/\.lvx[^{]*\{[^}]*\}/g) || []).join('') + (css.includes('levelup-popup') ? 'levelup-popup' : '') + (/@keyframes levelUp/.test(css) ? '@keyframes levelUp' : ''))
