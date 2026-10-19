@@ -797,6 +797,24 @@ const w = boot(); const D = w.document; await tick();
   check('T115 (v7.4.5) копия закрываемого окна: имён (id) нет, прежнее имя — пометкой data-gid; правила оформления по имени записаны как :is(#имя, [data-gid="имя"]) и действуют на копию так же, как на окно (обе темы)',
     cssOk && plainLeft.length === 0 && okT(cl) && okT(sy), JSON.stringify({ cssOk, plainLeft, cl, sy })); }
 
+// ===== v7.4.6: у прокручиваемого «Статуса» в «Системе» нижний запас 16 px (как у остальных окон темы) — рамка «Контура снаряжения» не гаснет в затухании =====
+{ const x = boot(); const XD = x.document; await tick();
+  const css = normGid(XD.querySelectorAll('style')[0].textContent);
+  const RULE = 'body.theme-sys #statusOverlay .sf-win.mw-scroll .status-body { padding-bottom: 16px; }';
+  const iRule = css.indexOf(RULE), iBase = css.indexOf('#statusOverlay .status-body { padding: 14px 14px 0'), iSys = css.indexOf('body.theme-sys .sf-win.mw-scroll .status-body {');
+  const cssOk = iRule > 0 && iRule > iBase && iRule > iSys && css.indexOf(RULE, iRule + 1) < 0;
+  const probe = th => { E(x, `setTheme('${th}')`); closeAll(x);
+    E(x, "document.getElementById('rankInfoBtn').click()"); return tick().then(() => {
+      const ov = XD.getElementById('statusOverlay'), win = ov.firstElementChild; win.classList.add('mw-scroll');
+      const b0 = ov.querySelector('.status-body'), pb0 = x.getComputedStyle(b0).paddingBottom, pt0 = x.getComputedStyle(b0).paddingTop;
+      E(x, `document.getElementById('statusOverlay').style.display = 'none'`); return tick().then(() => {
+        const gh = XD.querySelector('.status-overlay.cfx-ghost, .status-overlay.sfx-ghost');
+        const pb1 = gh ? x.getComputedStyle(gh.querySelector('.status-body')).paddingBottom : null;
+        win.classList.remove('mw-scroll'); return sleep(450).then(() => ({ pb0, pt0, pb1 })); }); }); };
+  const sy = await probe('system'), cl = await probe('classic');
+  check('T116 (v7.4.6) «Система»: у прокручиваемого «Статуса» нижний запас 16 px (правило :is после правила отступов «Статуса» и общего правила mw-scroll), у копии при закрытии — то же; «Классика» — прежние 0, верхний отступ прежний 14 px',
+    cssOk && sy.pb0 === '16px' && sy.pb1 === '16px' && cl.pb0 === '0px' && cl.pb1 === '0px' && sy.pt0 === '14px' && cl.pt0 === '14px', JSON.stringify({ cssOk, iRule, iBase, iSys, sy, cl })); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);

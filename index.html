@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.4.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.4.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1535,6 +1535,9 @@
     body.theme-sys .sf-win.mwin .fz-st .fz-v { text-shadow: var(--tg); }
     /* v7.4.2: заголовки глав Кодекса — 14 px (общее правило разделов темы даёт .76rem; меняется только размер глав) */
     body.theme-sys .sf-win.mwin .codex-chapter-title { font-size: .875rem; }
+    /* v7.4.6: у прокручиваемого «Статуса» запас снизу 16 px, как у остальных окон темы (.sf-win.mw-scroll): правило отступов «Статуса»
+       (padding 14px 14px 0) обнуляло его, и нижняя рамка «Контура снаряжения» попадала в затухание 18 px и гасла */
+    body.theme-sys :is(#statusOverlay, [data-gid="statusOverlay"]) .sf-win.mw-scroll .status-body { padding-bottom: 16px; }
   </style>
 </head>
 <body>
@@ -2021,7 +2024,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.4.5';
+  const APP_VERSION = '7.4.6';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
