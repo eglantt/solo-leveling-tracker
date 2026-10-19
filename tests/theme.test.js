@@ -523,10 +523,10 @@ const w = boot(); const D = w.document; await tick();
   E(x, "setTheme('classic')"); closeAll(x); E(x, 'data.consumables = { rune_cleansing: 2 }; data.boxes = { box_basalt: 1 }; openShop()'); await tick();
   const sc = XD.querySelector('#shopContent .item-card'), sp = sc.querySelector('.item-price');
   const s = { disp: cs(sc).display, gap: cs(sc).gap, pad: cs(sc).paddingTop, info: cs(sc.querySelector('.item-info')).display,
-    name: cs(sc.querySelector('.item-name')).gridColumn, img: cs(sc.querySelector('.item-icon-img')).width, frame: cs(sc.querySelector('.item-icon')).borderTopStyle,
+    name: cs(sc.querySelector('.item-name')).gridColumn, img: cs(sc.querySelector('.item-icon-img')).width, frame: cs(sc.querySelector('.item-icon')).borderTopStyle, fw: cs(sc.querySelector('.item-icon')).width,
     pCol: cs(sp).gridColumn, pJs: cs(sp).justifySelf, pW: cs(sp).width, pPad: cs(sp).paddingTop };
-  check('T85 «Классика», Магазин: сетка (название / иконка 44 px без рамки + описание / цена), строки через 4 px, поля карточки прежние 12 px; цена справа на месте второй кнопки, размер прежний',
-    s.disp === 'grid' && s.gap === '4px 10px' && s.pad === '12px' && s.info === 'contents' && /1 \/ -1/.test(s.name) && s.img === '44px' && s.frame !== 'solid'
+  check('T85 «Классика», Магазин: сетка (название / иконка 44 px в рамке 58 px (v7.4.7) + описание / цена), строки через 4 px, поля карточки прежние 12 px; цена справа на месте второй кнопки, размер прежний',
+    s.disp === 'grid' && s.gap === '4px 10px' && s.pad === '12px' && s.info === 'contents' && /1 \/ -1/.test(s.name) && s.img === '44px' && s.frame === 'solid' && s.fw === '58px'
     && /1 \/ -1/.test(s.pCol) && s.pJs === 'end' && /calc\(50% - 5px\)/.test(s.pW) && s.pPad === '5px', JSON.stringify(s));
   closeAll(x); E(x, 'openInv()'); await tick();
   const stack = XD.querySelector('#invContent [data-consumable-id] .item-btn-stack'), one = XD.querySelector('#invContent [data-box-id] > button');
@@ -814,6 +814,57 @@ const w = boot(); const D = w.document; await tick();
   const sy = await probe('system'), cl = await probe('classic');
   check('T116 (v7.4.6) «Система»: у прокручиваемого «Статуса» нижний запас 16 px (правило :is после правила отступов «Статуса» и общего правила mw-scroll), у копии при закрытии — то же; «Классика» — прежние 0, верхний отступ прежний 14 px',
     cssOk && sy.pb0 === '16px' && sy.pb1 === '16px' && cl.pb0 === '0px' && cl.pb1 === '0px' && sy.pt0 === '14px' && cl.pt0 === '14px', JSON.stringify({ cssOk, iRule, iBase, iSys, sy, cl })); }
+
+// ===== v7.4.7: рамки иконок в «Классике» (демо 110) и свечение Костяной бусины в панели «Активные эффекты» =====
+{ const x = boot(); const XD = x.document; await tick(); const cs = el => x.getComputedStyle(el);
+  const css = normGid(XD.querySelectorAll('style')[0].textContent);
+  const P = 'body:not(.theme-sys) .status-overlay:not(#leaderboardOverlay)';
+  const FR = 'border: 1px solid rgba(64,192,255,.3); background: rgba(0,10,22,.55); box-shadow: 0 0 6px rgba(64,192,255,.3);';
+  const RULES = [P + ' .item-card .item-icon { width: 58px; height: 58px; box-sizing: border-box; border-radius: 8px; ' + FR + ' }',
+    P + ' .eq-opt img { width: 42px; height: 42px; padding: 6px; box-sizing: border-box; border-radius: 6px; ' + FR + ' }',
+    P + ' .item-preview-box img { width: 180px; height: 180px; padding: 8px; box-sizing: border-box; border-radius: 10px; ' + FR + ' }',
+    P + ' .eq-big { width: 104px; height: 104px; padding: 11px; box-sizing: border-box; border-radius: 10px; ' + FR + ' margin-bottom: 12px; }'];
+  const iOld = css.indexOf(P + ' .item-card .item-icon { grid-column: 1;');
+  const cssOk = RULES.every(r => css.indexOf(r) > iOld && iOld > 0 && css.indexOf(r, css.indexOf(r) + 1) < 0);
+  E(x, "data.consumables = { crystal_clarity: 1 }; data.boxes = {}; data.level = 60; data.inventory = ['crystal_speed', 'amulet_will', 'seal_growth']; data.equippedArtifacts = ['seal_growth']");
+  const probe = async th => { const o = {}; E(x, `setTheme('${th}')`); closeAll(x); await tick();
+    const fr = el => el ? [cs(el).width, cs(el).borderTopStyle, cs(el).borderRadius] : null;
+    const win = async (js, sel, key) => { E(x, js); await tick(); o[key] = fr(XD.querySelector(sel)); closeAll(x); await sleep(450); };
+    await win('openShop()', '#shopContent .item-card .item-icon', 'shop');
+    await win('openInv()', '#invContent .item-card .item-icon', 'inv');
+    await win('openFullCatalog()', '#fullCatalogContent .item-card .item-icon', 'cat');
+    await win("showItemPreview('crystal_clarity', 'К')", '#itemPreviewImg', 'prev');
+    await win('onContourClick(0)', '#equipBody .eq-big', 'big');
+    E(x, 'onContourClick(1)'); await tick(); o.opt = fr(XD.querySelector('#equipBody .eq-opt img'));
+    E(x, `document.getElementById('equipOverlay').style.display = 'none'`); await tick();
+    const gh = XD.querySelector('.status-overlay.cfx-ghost, .status-overlay.sfx-ghost'); o.optGhost = fr(gh && gh.querySelector('.eq-opt img'));
+    await sleep(450); closeAll(x); XD.getElementById('leaderboardContent').innerHTML = '<div class="item-card"><div class="item-icon"><img src=""></div><div class="item-info"><div class="item-name">A</div></div></div>';
+    await win("document.getElementById('leaderboardOverlay').style.display = 'flex'", '#leaderboardContent .item-icon', 'lb');
+    return o; };
+  const cl = await probe('classic'), sy = await probe('system');
+  const eq = (a, w, r) => !!a && a[0] === w && a[1] === 'solid' && a[2] === r;
+  check('T117 (v7.4.7) «Классика»: рамки со скруглением — списки (Магазин, Инвентарь, каталог Длани) 58 px / 8, «Выберите артефакт» 42 / 6 (и у копии при закрытии), превью 180 / 10, окно артефакта 104 / 10; Реестр — без рамки; в «Системе» прежние квадратные 58 / 34 / 96',
+    cssOk && eq(cl.shop, '58px', '8px') && eq(cl.inv, '58px', '8px') && eq(cl.cat, '58px', '8px') && eq(cl.opt, '42px', '6px') && eq(cl.optGhost, '42px', '6px')
+    && eq(cl.prev, '180px', '10px') && eq(cl.big, '104px', '10px') && cl.lb && cl.lb[1] !== 'solid'
+    && sy.shop[0] === '58px' && sy.opt[0] === '34px' && sy.big[0] === '96px' && sy.shop[2] !== '8px', JSON.stringify({ cssOk, cl, sy })); }
+
+{ const x = boot(); const XD = x.document; await tick(); const cs = el => x.getComputedStyle(el);
+  const css = XD.querySelectorAll('style')[0].textContent;
+  const RULE = '.effect-icon-btn.bead-glow:not(.active) img { filter: drop-shadow(0 0 3px rgba(64,192,255,.5)) drop-shadow(0 0 6px rgba(64,192,255,.3)); }';
+  const cssOk = css.indexOf(RULE) > css.indexOf('.effect-icon-btn.active img {') && css.indexOf(RULE) > 0;
+  const probe = th => { E(x, `setTheme('${th}')`); E(x, "data.pendingScroll = 'veil'; data.activeScroll = null; renderActiveEffects()");
+    const btns = [...XD.querySelectorAll('#effectsRow .effect-icon-btn')], bead = btns.find(b => /bone_bead/.test(b.querySelector('img').getAttribute('src')));
+    const o = { bead: !!bead, cls: bead && bead.classList.contains('bead-glow'), others: btns.filter(b => b !== bead && b.classList.contains('bead-glow')).length,
+      f0: bead && cs(bead.querySelector('img')).filter };
+    bead.click(); o.f1 = cs(bead.querySelector('img')).filter; bead.click();
+    E(x, "data.pendingScroll = null; data.activeScroll = 'veil'; data.veilLifted = false; renderActiveEffects()");
+    const b2 = [...XD.querySelectorAll('#effectsRow .effect-icon-btn')].find(b => /bone_bead/.test(b.querySelector('img').getAttribute('src')));
+    o.act = !!b2 && b2.classList.contains('bead-glow') && b2.classList.contains('bead-eff');
+    E(x, 'data.activeScroll = null; renderActiveEffects()'); return o; };
+  const cl = probe('classic'), sy = probe('system');
+  const ok = o => o.bead && o.cls && o.others === 0 && /3px/.test(o.f0) && /6px/.test(o.f0) && /4px/.test(o.f1) && /8px/.test(o.f1) && o.act;
+  check('T118 (v7.4.7) Костяная бусина в панели «Активные эффекты» (ожидает и действует, обе темы): всегда слабое голубое свечение 3 / 6 px, при нажатии — прежнее полное 4 / 8 px; у других иконок свечения нет',
+    cssOk && ok(cl) && ok(sy), JSON.stringify({ cssOk, cl, sy })); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);

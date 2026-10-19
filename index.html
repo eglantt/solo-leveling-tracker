@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.4.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.4.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -834,6 +834,9 @@
     .effect-icon-btn img { width: 32px; height: 32px; object-fit: contain; }
     .effect-icon-btn.active img { filter: drop-shadow(0 0 4px #40c0ff) drop-shadow(0 0 8px #40c0ff); }
     .effect-icon-btn.active.anomaly-active img { filter: drop-shadow(0 0 4px #ff5555) drop-shadow(0 0 8px #ff5555); }
+    /* v7.4.7 (демо 110, вариант Б): Костяная бусина в панели — всегда слабое голубое свечение, чтобы тёмный край шара не сливался с панелью
+       (иначе бусина кажется сжатой сверху и снизу). Обе темы. При нажатии — прежнее полное свечение (.active). */
+    .effect-icon-btn.bead-glow:not(.active) img { filter: drop-shadow(0 0 3px rgba(64,192,255,.5)) drop-shadow(0 0 6px rgba(64,192,255,.3)); }
     .effect-detail { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
     .effect-detail.open { max-height: 120px; }
     .effect-detail-inner { padding-top: 10px; border-top: 1px solid #1a3550; margin-top: 10px; }
@@ -1168,13 +1171,20 @@
     .fz-st .fz-cap { flex: 0 0 auto; }
     .fz-st .fz-fill { transition: width 1s ease-out, background-color .4s, box-shadow .4s; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
-       название во всю ширину → иконка 44 px (без рамки) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
+       название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
        Только «Классика» (body:not(.theme-sys)); Реестр игроков — прежний вид. ===== */
     body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; }
     body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card .item-info { display: contents; }
     body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card .item-name { grid-column: 1 / -1; grid-row: 1; line-height: 1.25; }
     body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card .item-icon { grid-column: 1; grid-row: 2; align-self: start; width: 44px; min-width: 0; }
+    /* v7.4.7 (демо 110): рамки иконок «Классики» — как в «Системе», но со скруглением; линия тусклая голубая, мягкое свечение, тёмная подложка.
+       Списки (Магазин, Инвентарь, каталог Длани): рамка 58, иконка 44, скругление 8. «Выберите артефакт» и выбор ячейки: 42 (отступ 6), скругление 6.
+       Превью: 180 (отступ 8), скругление 10. Окно артефакта из контура: 104 (отступ 11), скругление 10. Реестр игроков — без рамок. */
+    body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card .item-icon { width: 58px; height: 58px; box-sizing: border-box; border-radius: 8px; border: 1px solid rgba(64,192,255,.3); background: rgba(0,10,22,.55); box-shadow: 0 0 6px rgba(64,192,255,.3); }
+    body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .eq-opt img { width: 42px; height: 42px; padding: 6px; box-sizing: border-box; border-radius: 6px; border: 1px solid rgba(64,192,255,.3); background: rgba(0,10,22,.55); box-shadow: 0 0 6px rgba(64,192,255,.3); }
+    body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-preview-box img { width: 180px; height: 180px; padding: 8px; box-sizing: border-box; border-radius: 10px; border: 1px solid rgba(64,192,255,.3); background: rgba(0,10,22,.55); box-shadow: 0 0 6px rgba(64,192,255,.3); }
+    body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .eq-big { width: 104px; height: 104px; padding: 11px; box-sizing: border-box; border-radius: 10px; border: 1px solid rgba(64,192,255,.3); background: rgba(0,10,22,.55); box-shadow: 0 0 6px rgba(64,192,255,.3); margin-bottom: 12px; }
     body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card .item-icon-img,
     body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card .item-icon img { width: 44px; height: 44px; }
     body:not(.theme-sys) .status-overlay:not(:is(#leaderboardOverlay, [data-gid="leaderboardOverlay"])) .item-card .item-desc { grid-column: 2; grid-row: 2; margin-top: 0; line-height: 1.35; }
@@ -2024,7 +2034,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.4.6';
+  const APP_VERSION = '7.4.7';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -3000,7 +3010,7 @@
     let sparkN = 0;   // v7.1.10: каждое кольцо искр стартует со своего места на круге (шаг «золотого сечения»), скорость общая
     const sparkPhase = () => `animation-delay:-${(((sparkN++) * 0.618034) % 1 * 0.84).toFixed(3)}s`;
     document.getElementById('effectsRow').innerHTML = effects.map((e, i) =>
-      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}${e.beadTrace ? ' bead-trace' : ''}${e.beadSparks || e.beadTrace ? ' bead-eff' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}" style="${sparkPhase()}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${smallIconSrc(e.icon)}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${e.beadSparks ? beadSparksHtml() : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
+      `<div class="effect-icon-btn${/icons\/items\/(rune_|mag_seal_)/.test(e.icon) ? ' glow-deep' : ''}${e.beadTrace ? ' bead-trace' : ''}${e.beadSparks || e.beadTrace ? ' bead-eff' : ''}${/bone_bead/.test(e.icon) ? ' bead-glow' : ''}" onclick="toggleActiveEffect(${i})">${e.isPending ? `<div class="spark-ring-wrap${e.sparkCount === 1 ? ' spark-count-1' : ''}" style="${sparkPhase()}"><div class="trail"></div><div class="head"></div><div class="head"></div><div class="head"></div></div>` : ''}<img class="${e.spinning ? 'spinning' : ''}${e.isSuppressed ? ' suppressed' : ''}" src="${smallIconSrc(e.icon)}" alt="">${e.isArtifact ? '<span class="eff-dot art"></span>' : e.isTitle ? '<span class="eff-dot ttl"></span>' : ''}${e.beadSparks ? beadSparksHtml() : ''}${isWorkingRune(e) ? runeBoltSvg(i, e) : ''}</div>`
     ).join('');
     document.querySelectorAll('#effectsRow .rune-bolt').forEach(scheduleRuneBolt);
     updateEffectsFade();
