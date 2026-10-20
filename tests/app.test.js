@@ -1445,18 +1445,23 @@ async function rulesTests() {
   check('R4 жирное «Кодексе»', D.querySelector('#rulesText strong').textContent === 'Кодексе');
   const ctlPending = () => [...D.querySelectorAll('#rulesOverlay .rules-controls')].every(e => e.classList.contains('pending'));
   check('R5 галочка и кнопка скрыты в начале', ctlPending());
-  // v6.9.0: перед печатью — «запуск Системы» (1 с чёрного экрана + ~1,45 с раскрытия)
+  // v6.9.0: перед печатью — «запуск Системы» (с v7.4.8: 1,5 с чёрного экрана + ~1,45 с раскрытия, затем 1,8 с мигает курсор)
   const ov = D.getElementById('rulesOverlay');
   await new Promise(r => setTimeout(r, 400));
   check('R5a первый запуск: чёрный экран, окно скрыто, печать не идёт', ov.classList.contains('sys-boot-black') && D.querySelectorAll('#rulesText .rules-ch.on').length === 0);
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 1500));
   const win = ov.querySelector('.status-window');
   check('R5b затем окно раскрывается с помехами', !ov.classList.contains('sys-boot-black') && win.classList.contains('sys-boot-open') && win.querySelectorAll('.sb-slice').length === 3 && !!win.querySelector('.sb-noise')
     && D.querySelectorAll('#rulesText .rules-ch.on').length === 0);
-  await new Promise(r => setTimeout(r, 2250));
+  await new Promise(r => setTimeout(r, 1300));
+  { const first = D.querySelector('#rulesText .rules-ch');
+    check('R5d (v7.4.8) после раскрытия 1,8 с мигает курсор в начале первой строки, букв ещё нет',
+      first.classList.contains('caret-pre') && D.querySelectorAll('#rulesText .rules-ch.caret-pre').length === 1 && D.querySelectorAll('#rulesText .rules-ch.on').length === 0
+      && /\.rules-ch\.caret-pre::after \{[^}]*left: 0;[^}]*visibility: visible;[^}]*animation: rulesCaretBlink/.test(D.querySelectorAll('style')[0].textContent)); }
+  await new Promise(r => setTimeout(r, 2000));
   check('R5c после стабилизации следов запуска нет, печать идёт', !win.classList.contains('sys-boot-open') && !win.querySelector('.sb-slice,.sb-noise') && win.querySelectorAll('[id="rulesText"]').length === 1);
   const on1 = D.querySelectorAll('#rulesText .rules-ch.on').length, all = D.querySelectorAll('#rulesText .rules-ch').length;
-  check('R6 через 1.2 с печати напечатана часть текста', on1 > 0 && on1 < all, `${on1}/${all}`);
+  check('R6 через 0,45 с печати (после курсора) напечатана часть текста, курсор в начале убран', on1 > 0 && on1 < all && !D.querySelector('#rulesText .caret-pre'), `${on1}/${all}`);
   D.getElementById('rulesText').click();
   check('R7 касание: весь текст и управление видны', D.querySelectorAll('#rulesText .rules-ch.on').length === all && !ctlPending());
   check('R8 «Принять» неактивна без галочки', D.getElementById('rulesAcceptBtn').disabled);
@@ -1468,7 +1473,22 @@ async function rulesTests() {
   const t0 = Date.now();
   await new Promise(res => { const iv = setInterval(() => { if (!ctlPending()) { clearInterval(iv); res(); } }, 50); });
   const dt = (Date.now() - t0) / 1000;
-  check('R10 запуск Системы (~2,45 с) и печать целиком (≈ 18 с)', dt > 19.9 && dt < 21.3, dt.toFixed(1) + ' с');
+  check('R10 (v7.4.8) запуск Системы (1,5 + 1,45 с), курсор 1,8 с, печать 17,5 с и 6 пауз по 1,8 с — до галочки и кнопки ≈ 33,05 с', dt > 32.5 && dt < 33.8, dt.toFixed(1) + ' с');
+  { // v7.4.8: числа хронометража, шестая пауза, появление галочки и кнопки 1 с; касание текста во время курсора — сразу всё
+    const L = JSON.parse(E(w, 'JSON.stringify(RULES_LINES_ONBOARDING)'));
+    const pauses = L.map((l, i) => l.pause ? i : -1).filter(i => i >= 0).join(',');
+    const nums = E(w, '[BOOT_BLACK_MS, BOOT_OPEN_MS, RULES_START_PAUSE_MS, RULES_TYPE_TOTAL_MS, RULES_PAUSE_MS].join(",")');
+    const fade = w.getComputedStyle(D.querySelector('#rulesOverlay .rules-controls')).transition;
+    check('R10a (v7.4.8) хронометраж: чёрный экран 1500, раскрытие 1200, курсор 1800, печать 17500, пауза 1800 мс; паузы после строк 1–4, 6 (обратный отсчёт) и 8; галочка и кнопка — 1 с',
+      nums === '1500,1200,1800,17500,1800' && pauses === '0,1,2,3,5,7' && /обратным отсчётом на экране\.$/.test(L[5].t) && /opacity 1s/.test(fade) && /transform 1s/.test(fade), `${nums} | ${pauses} | ${fade}`);
+    E(w, `showRulesOverlay('onboarding')`);
+    await new Promise(r => setTimeout(r, 3300));
+    const pre = !!D.querySelector('#rulesText .caret-pre') && D.querySelectorAll('#rulesText .rules-ch.on').length === 0;
+    D.getElementById('rulesText').click();
+    const allN = D.querySelectorAll('#rulesText .rules-ch').length;
+    check('R10b (v7.4.8) касание текста во время мигающего курсора: весь текст сразу, курсор снят, галочка и кнопка видны',
+      pre && D.querySelectorAll('#rulesText .rules-ch.on').length === allN && !D.querySelector('#rulesText .caret-pre, #rulesText .caret') && !ctlPending(), String(pre));
+  }
   // Архив
   E(w, `showRulesOverlay('archive')`);
   const aLines = [...D.querySelectorAll('#rulesText .rules-line')].map(l => l.textContent);

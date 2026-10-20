@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.4.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.4.8 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -668,9 +668,10 @@
     /* Символы занимают место с самого начала — окно не «прыгает» при печати. */
     .rules-typing .rules-ch { visibility: hidden; position: relative; }
     .rules-typing .rules-ch.on { visibility: visible; }
+    .rules-ch.caret-pre::after { content: ''; position: absolute; left: 0; top: 0.15em; width: 0.5em; height: 1.05em; background: #40c0ff; box-shadow: 0 0 8px #40c0ff; visibility: visible; animation: rulesCaretBlink 0.7s steps(1) infinite; }   /* v7.4.8: курсор до первой буквы (буква ещё скрыта) */
     .rules-ch.caret::after { content: ''; position: absolute; left: 100%; top: 0.15em; width: 0.5em; height: 1.05em; background: #40c0ff; box-shadow: 0 0 8px #40c0ff; animation: rulesCaretBlink 0.7s steps(1) infinite; }
     @keyframes rulesCaretBlink { 50% { opacity: 0; } }
-    .rules-controls { transition: opacity 0.6s ease, transform 0.6s ease; }
+    .rules-controls { transition: opacity 1s ease, transform 1s ease; }   /* v7.4.8: 1 с (было 0,6) */
     .rules-controls.pending { opacity: 0; transform: translateY(6px); pointer-events: none; }
     .danger-list { list-style: none; padding: 0; margin: 0 0 14px; text-align: left; }
     .danger-list li { font-size: 0.8rem; color: #ffcccc; padding: 4px 0 4px 18px; position: relative; }
@@ -2034,7 +2035,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.4.7';
+  const APP_VERSION = '7.4.8';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -3306,14 +3307,16 @@
     { t: 'С этого момента Игрок обязан исполнять его каждые сутки.', pause: true },
     { t: 'Слабость определяется недостатком дисциплины — Система устраняет эту недостачу через ежедневное задание.', pause: true },
     { t: 'ПРАВИЛА:', heading: true },
-    { t: 'Протокол задания включает пять упражнений; засчитывается только полное исполнение всех пяти — частичное расценивается как неисполнение, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Время до завершения цикла отображается обратным отсчётом на экране.' },
+    { t: 'Протокол задания включает пять упражнений; засчитывается только полное исполнение всех пяти — частичное расценивается как неисполнение, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Время до завершения цикла отображается обратным отсчётом на экране.', pause: true },
     { t: 'Неисполнение влечёт !!штраф!!: часть накопленного опыта аннулируется, а при нехватке опыта для покрытия !!штрафа!! образуется долг перед Системой.' },
     { t: 'Подробности изложены в **Кодексе**.', pause: true }
   ];
   const RULES_LINES_ARCHIVE = RULES_LINES_ONBOARDING.slice(5);
-  // Хронометраж печати (утверждён по demo_30): ~10.5 с набор + 5 пауз по 1.5 с ≈ 18 с.
-  const RULES_TYPE_TOTAL_MS = 10500;
-  const RULES_PAUSE_MS = 1500;
+  // Хронометраж печати (v7.4.8, демо 111): курсор мигает 1,8 с до первой буквы, набор 17,5 с (≈40 букв/с),
+  // 6 пауз по 1,8 с; вместе с запуском (1,5 + 1,2 + 0,25 с) и появлением галочки и кнопки (1 с) ≈ 34,1 с.
+  const RULES_TYPE_TOTAL_MS = 17500;
+  const RULES_PAUSE_MS = 1800;
+  const RULES_START_PAUSE_MS = 1800;
 
   // Строит текст в #rulesText: каждая буква — отдельный span (для печати).
   // Возвращает плоский список {ch, line, pauseAfter} в порядке вывода.
@@ -3360,13 +3363,14 @@
 
   function startRulesAnimation(chars) {
     const perChar = RULES_TYPE_TOTAL_MS / Math.max(1, chars.length);
-    let t = 0;
+    let t = RULES_START_PAUSE_MS;   // v7.4.8: сначала мигает курсор
     const schedule = chars.map(c => { t += perChar; const at = t; if (c.pauseAfter) t += RULES_PAUSE_MS; return at; });
     const endAt = t;
     const startTs = performance.now();
     const body = document.getElementById('rulesBody');
     let shown = 0, caretEl = null, lastLine = null;
     rulesAnim = { chars, raf: null };
+    if (chars.length) chars[0].ch.classList.add('caret-pre');   // v7.4.8: курсор до первой буквы
     const step = (now) => {
       if (!rulesAnim) return;
       const elapsed = now - startTs;
@@ -3380,6 +3384,7 @@
         }
       }
       if (shown > 0 && chars[shown - 1].ch !== caretEl) {
+        chars[0].ch.classList.remove('caret-pre');
         if (caretEl) caretEl.classList.remove('caret');
         caretEl = chars[shown - 1].ch;
         caretEl.classList.add('caret');
@@ -3395,7 +3400,7 @@
   function finishRulesAnimation() {
     if (!rulesAnim) return;
     if (rulesAnim.raf) cancelAnimationFrame(rulesAnim.raf);
-    rulesAnim.chars.forEach(c => { c.ch.classList.add('on'); c.ch.classList.remove('caret'); });
+    rulesAnim.chars.forEach(c => { c.ch.classList.add('on'); c.ch.classList.remove('caret', 'caret-pre'); });
     rulesAnim = null;
     document.querySelectorAll('#rulesOverlay .rules-controls').forEach(el => el.classList.remove('pending'));
   }
@@ -3429,9 +3434,9 @@
     if (onboarding) playSystemBoot(() => startRulesAnimation(chars));   // v6.9.0
   }
 
-  // v6.9.0: первый запуск Системы — 1 с чёрного экрана, затем окно раскрывается из центра за 1,2 с
+  // v6.9.0: первый запуск Системы — 1 с чёрного экрана (с v7.4.8 — 1,5 с), затем окно раскрывается из центра за 1,2 с
   // с голубыми помехами и после стабилизации начинается печать правил.
-  const BOOT_BLACK_MS = 1000, BOOT_OPEN_MS = 1200;
+  const BOOT_BLACK_MS = 1500, BOOT_OPEN_MS = 1200;   // v7.4.8: чёрный экран 1,5 с (было 1)
   let bootTimers = [];
   function stopSystemBoot() {
     bootTimers.forEach(clearTimeout); bootTimers = [];
