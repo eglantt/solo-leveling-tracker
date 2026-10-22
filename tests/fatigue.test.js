@@ -134,18 +134,27 @@ function scen(w, n, rest, mult) {
   check('SC3 восстановление: на 410 и 610 одинаково быстрее, чем на 10', r410 < r10 && near(r410, r610), [r10, r410, r610]); }
 
 // ===== 5. Пороги и предупреждения =====
-{ const w = fresh(); E(w, 'data.fatigue.slow = 69'); add(w, 'pushups', 10);
-  check('T1 70: «Зафиксирована высокая нагрузка…» — один раз', N(w) === 'Зафиксирована высокая нагрузка. Требуется время на восстановление сил Игрока.', N(w));
+{ const w = fresh(); E(w, 'data.fatigue.slow = 74'); add(w, 'pushups', 10);
+  check('T1 75 (v7.4.9; было 70): «Зафиксирована высокая нагрузка…» — один раз', N(w) === 'Зафиксирована высокая нагрузка. Требуется время на восстановление сил Игрока.', N(w));
   E(w, 'window.__N=[]'); add(w, 'squats', 10);
-  check('T2 выше 70 — без повтора', N(w) === '', N(w));
+  check('T2 выше 75 — без повтора', N(w) === '', N(w));
   E(w, 'data.fatigue.slow = 99; data.fatigue.fast = 0; window.__N=[]'); add(w, 'pullups', 10);
   check('T3 100: «Усталость достигла критической отметки…»', N(w).includes('Усталость достигла критической отметки. Система настоятельно рекомендует отдых.'), N(w));
-  check('T4 у 100 и у большого подхода — без сбоя, окно оранжевое (v7.4.3); у 70 — голубое', E(w, 'notificationGlitchKind(FZ_T100)') === null && E(w, 'notificationGlitchKind(FZ_TBIG)') === null && E(w, 'notificationGlitchKind(FZ_T70)') === null
-    && E(w, 'noticeScheme(FZ_T100, null)') === 'orange' && E(w, 'noticeScheme(FZ_TBIG, null)') === 'orange' && E(w, 'noticeScheme(FZ_T70, null)') === 'blue');
+  check('T4 (v7.4.9) все три без сбоя; окно: 100 — красное, 75 — оранжевое, большой подход — голубое', E(w, 'notificationGlitchKind(FZ_T100)') === null && E(w, 'notificationGlitchKind(FZ_TBIG)') === null && E(w, 'notificationGlitchKind(FZ_T70)') === null
+    && E(w, 'noticeScheme(FZ_T100, null)') === 'red' && E(w, 'noticeScheme(FZ_TBIG, null)') === 'blue' && E(w, 'noticeScheme(FZ_T70, null)') === 'orange');
   E(w, 'window.__N=[]; data.fatigue.slow = 55; data.fatigue.fast = 0; fzTick()'); add(w, 'press', 1);
   check('T5 после спада до 55 (не ниже 50) — без повтора', N(w) === '', N(w));
   E(w, 'data.fatigue.slow = 40; fzTick(); data.fatigue.slow = 75; window.__N=[]'); add(w, 'press', 1);
-  check('T6 после спада ниже 50 предупреждение 70 снова', N(w).includes('высокая нагрузка'), N(w)); }
+  check('T6 после спада ниже 50 предупреждение 75 снова', N(w).includes('высокая нагрузка'), N(w)); }
+{ // v7.4.9: тон и звук; на одном нажатии большой подход и 75 — сначала голубое, потом оранжевое
+  const w = fresh(); E(w, 'window.__NT=[]; showNotice=(m,t,sk,snd)=>window.__NT.push([m,t||"",snd||""])');
+  E(w, 'data.fatigue.slow = 60; data.fatigue.t = Date.now()'); add(w, 'pushups', 60);
+  const a = JSON.parse(E(w, 'JSON.stringify(window.__NT)'));
+  const ok1 = a.length === 2 && /перегрузка/.test(a[0][0]) && a[0][1] === 'info' && a[0][2] === '' && /высокая нагрузка/.test(a[1][0]) && a[1][1] === 'warn' && a[1][2] === 'none';
+  E(w, 'window.__NT=[]; data.fatigue.slow = 99; data.fatigue.fast = 0; data.fatigue.w100 = false'); add(w, 'squats', 10);
+  const b = JSON.parse(E(w, 'JSON.stringify(window.__NT)'));
+  const ok2 = b.length === 1 && /критической/.test(b[0][0]) && b[0][1] === 'danger' && b[0][2] === 'none';
+  check('T8a (v7.4.9) тон и звук: перегрузка — голубое, 75 — оранжевое, 100 — красное (оба без звука); одно нажатие — сначала голубое, потом оранжевое', ok1 && ok2, JSON.stringify([a, b])); }
 { const w = fresh(); add(w, 'pushups', 50); add(w, 'pushups', 5);
   check('T7 подход до 55% — без предупреждения о перегрузке', !N(w).includes('перегрузка'), N(w));
   add(w, 'pushups', 5);
@@ -228,7 +237,7 @@ const BAR = w => E(w, "document.getElementById('fzBar').classList.contains('on')
   add(w, 'pushups', 10);
   check('P4 выключено: после подхода шкала не всплывает, усталость считается', !BAR(w) && F(w) > 0);
   E(w, 'data.fatigue.fast=40; data.fatigue.slow=40; data.fatigue.w70=false; data.fatigue.w100=false; fzThresholds(true); fzTick()');
-  check('P5 выключено: от 70 не всплывает, уведомление 70 приходит', !BAR(w) && N(w).includes('Зафиксирована высокая нагрузка'), N(w));
+  check('P5 выключено: от 70 не всплывает, уведомление 75 приходит (80)', !BAR(w) && N(w).includes('Зафиксирована высокая нагрузка'), N(w));
   E(w, 'data.fatigue.fast=60; data.fatigue.slow=40; fzThresholds(true); fzTick()');
   check('P6 выключено: уведомление 100 приходит', N(w).includes('критической отметки'), N(w));
   E(w, 'data.completed={}'); min(w, 10); add(w, 'squats', 80);
@@ -262,13 +271,18 @@ const SET = (w, v) => { E(w, `document.getElementById('fzSetInput').value = ${JS
   check('L4 строка значения', DV(w) === 'Усталость: 63 (свежая 32, накопленная 32)' || /^Усталость: 63 \(свежая \d+, накопленная \d+\)$/.test(DV(w)), DV(w));
   check('L5 число в цвет шкалы', E(w, "document.querySelector('#fzSysValue .fz-dv').style.color") === E(w, 'fzColor(63)').replace(/,/g, ', '), E(w, "document.querySelector('#fzSysValue .fz-dv').style.color"));
   SET(w, 75); E(w, 'fzTick()');
-  check('L6 75 → отметка 70 стоит, уведомления 70 нет', E(w, 'data.fatigue.w70') === true && E(w, 'data.fatigue.w100') === false && N(w) === '', N(w));
+  check('L6 75 → отметка 75 стоит (поле w70), уведомления нет', E(w, 'data.fatigue.w70') === true && E(w, 'data.fatigue.w100') === false && N(w) === '', N(w));
+  SET(w, 74); E(w, 'fzTick()');
+  check('L6a (v7.4.9) 74 → отметка 75 не стоит (в 7.4.8 стояла бы — порог был 70)', E(w, 'data.fatigue.w70') === false && N(w) === '', N(w));
+  SET(w, 75); E(w, 'fzTick()');
   E(w, 'data.fatigue.fast=50; data.fatigue.slow=50; fzThresholds(true)');
   check('L7 после 75 → рост до 100: приходит только 100', N(w).includes('критической') && !N(w).includes('высокая нагрузка'), N(w));
   E(w, 'window.__N=[]'); SET(w, 40);
   check('L8 40 → обе отметки сняты', E(w, 'data.fatigue.w70') === false && E(w, 'data.fatigue.w100') === false);
   E(w, 'data.fatigue.fast=36; data.fatigue.slow=36; fzThresholds(true)');
-  check('L9 после 40 → 72: приходит 70', N(w).includes('высокая нагрузка'), N(w));
+  check('L9a (v7.4.9) после 40 → 72: уведомления 75 ещё нет', N(w) === '', N(w));
+  E(w, 'data.fatigue.fast=38; data.fatigue.slow=38; fzThresholds(true)');
+  check('L9 после 72 → 76: приходит 75', N(w).includes('высокая нагрузка'), N(w));
   const before = P(w); SET(w, ''); const e1 = P(w); SET(w, 'abc'); const e2 = P(w);
   check('L10 пусто и не число — ничего', before === e1 && before === e2);
   SET(w, 250);
@@ -307,23 +321,24 @@ const SET = (w, v) => { E(w, `document.getElementById('fzSetInput').value = ${JS
     return D.querySelector('.sys-notice') || D.querySelector('.system-popup'); };
   const noGlitch = p => !p.dataset.glitch && !p.querySelector('.gp-noise') && !p.querySelector('.gp-slice') && !p.classList.contains('gp-anomaly') && !p.classList.contains('glitch');
   const lineCol = p => { p.getBoundingClientRect = () => ({ left: 10, top: 100, width: 300, height: 120 }); p.click(); const l = D.querySelector('.sfx-line'); return l ? l.style.getPropertyValue('--lc') : null; };
-  for (const [nm, ex] of [['100', 'FZ_T100'], ['большой подход', 'FZ_TBIG']]) {
-    let p = show(ex, 'warn');
+  // v7.4.9: 75 — оранжевое, 100 — красное (оба без сбоя), большой подход — голубое
+  for (const [nm, ex, tone, sch, cls, col] of [['75', 'FZ_T70', 'warn', 'orange', 'tone-warn', '#ff8a30'], ['100', 'FZ_T100', 'danger', 'red', 'tone-danger', '#ff5566']]) {
+    let p = show(ex, tone);
     if (SYS_THEME) {
-      check(`O1 ${nm}: окно «Системы» оранжевое, без сбоя и помех, текст оранжевый`, p.classList.contains('sn-orange') && p.dataset.sfScheme === 'orange' && noGlitch(p) && p.querySelector('.sn-body').classList.contains('tone-warn'));
+      check(`O1 ${nm}: окно «Системы» ${sch === 'red' ? 'красное' : 'оранжевое'}, без сбоя и помех, текст в цвет`, p.classList.contains('sn-' + sch) && p.dataset.sfScheme === sch && noGlitch(p) && p.querySelector('.sn-body').classList.contains(cls));
       await new Promise(r => setTimeout(r, 900));
       check(`O2 ${nm}: и после развёртки сбоя нет`, noGlitch(p) && (!p._glitchTimers || p._glitchTimers.length === 0));
-      check(`O3 ${nm}: уходит оранжевой линией`, lineCol(p) === '#ff8a30');
+      check(`O3 ${nm}: уходит линией своего цвета`, lineCol(p) === col);
     } else {
-      check(`O1 ${nm}: «Классика» — обычное окно, оранжевый текст, без сбоя`, p.classList.contains('system-popup') && noGlitch(p) && !p.querySelector('.gp-inner') && p.querySelector('.system-popup-body').classList.contains('tone-warn'));
+      check(`O1 ${nm}: «Классика» — обычное окно, текст ${sch === 'red' ? 'красный' : 'оранжевый'}, без сбоя`, p.classList.contains('system-popup') && noGlitch(p) && !p.querySelector('.gp-inner') && p.querySelector('.system-popup-body').classList.contains(cls));
     }
   }
-  let p = show('FZ_T70', 'info');
-  check('O4 70 — обычное (голубое), без сбоя', noGlitch(p) && (SYS_THEME ? p.classList.contains('sn-blue') : !p.querySelector('.tone-warn')));
+  let p = show('FZ_TBIG', 'info');
+  check('O4 большой подход — обычное (голубое), без сбоя', noGlitch(p) && (SYS_THEME ? p.classList.contains('sn-blue') : !p.querySelector('.tone-warn, .tone-danger')));
   p = show('PACE_NOTICE', 'warn');
   check('O5 перегрев темпа — по-прежнему оранжевый сбой', p.dataset.glitch === 'pace' && (!SYS_THEME || p.classList.contains('sn-orange')));
   E(w, 'data.curseActiveToday = true');
-  for (const ex of ['FZ_T100', 'FZ_TBIG']) { p = show(ex, 'warn');
+  for (const ex of ['FZ_T100', 'FZ_T70', 'FZ_TBIG']) { p = show(ex, 'warn');
     check(`O6 ${ex} под Бременем — красное, сбой Аномалии`, p.dataset.glitch === 'anomaly' && (SYS_THEME ? p.classList.contains('sn-red') : p.classList.contains('gp-anomaly'))); }
   E(w, 'data.curseActiveToday = false; document.querySelectorAll(".sys-notice,.system-popup").forEach(n => { stopNotificationGlitch(n); n.remove(); })');
 }

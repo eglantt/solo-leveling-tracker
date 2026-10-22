@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.4.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.4.9 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2035,7 +2035,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.4.8';
+  const APP_VERSION = '7.4.9';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2055,7 +2055,7 @@
     t1: 20, t2: 80,                                            // спад свежей и накопленной, мин
     s0: 0.25, s1: 0.50,                                        // доля в накопленную: s0 + s1·d (шаги — пополам)
     glueMs: 30000,                                             // нажатия по одному упражнению в пределах 30 с — один подход
-    big: 0.6, rearm: 50, popMs: 4000,
+    big: 0.6, rearm: 50, high: 75, popMs: 4000,                // high — порог «высокой нагрузки» (v7.4.9: было 70)
     base: { pushups: 100, squats: 120, pullups: 40, press: 100, steps: 10000 }
   };
   const FZ_T70 = 'Зафиксирована высокая нагрузка. Требуется время на восстановление сил Игрока.';
@@ -4266,20 +4266,21 @@
     const sh = steps ? 0.5 : Math.min(1, Math.max(0, FZ.s0 + FZ.s1 * L.d));
     f.slow += g * sh; f.fast += g * (1 - sh);
     fzPopUntil = now + FZ.popMs;
-    if (!steps && xOld < FZ.big && L.x >= FZ.big) fzNotice(FZ_TBIG, 'warn');
+    if (!steps && xOld < FZ.big && L.x >= FZ.big) fzNotice(FZ_TBIG, 'info');   // v7.4.9: голубое (было оранжевое)
     fzThresholds(true);
     fzDraw(true);
   }
-  // Пороги: 70 — предупреждение, 100 — критическое; снова — только после спада ниже 50.
+  // Пороги: 75 — предупреждение (оранжевое; до v7.4.9 — 70, голубое), 100 — критическое (красное); снова — только после спада ниже 50.
+  // Отметка 75 хранится в поле w70 (имя прежнее — формат сохранений не менялся).
   function fzThresholds(warn) {
     const f = data.fatigue; if (!f) return;
     const v = fzValue();
     if (v < FZ.rearm) { f.w70 = false; f.w100 = false; }
     if (!warn || !data.fatigueOn) return;
-    if (v >= 99.9 && !f.w100) { f.w100 = true; f.w70 = true; fzNotice(FZ_T100, 'warn'); }
-    else if (v >= 70 && !f.w70) { f.w70 = true; fzNotice(FZ_T70, 'info'); }
+    if (v >= 99.9 && !f.w100) { f.w100 = true; f.w70 = true; fzNotice(FZ_T100, 'danger'); }
+    else if (v >= FZ.high && !f.w70) { f.w70 = true; fzNotice(FZ_T70, 'warn'); }
   }
-  function fzNotice(text, tone) { showNotice(text, tone, false, tone === 'warn' ? 'none' : undefined); }
+  function fzNotice(text, tone) { showNotice(text, tone, false, tone === 'info' ? undefined : 'none'); }   // v7.4.9: оранжевое и красное — без звука
   function fzColor(v) {
     for (let i = 1; i < FZ_STOPS.length; i++) if (v <= FZ_STOPS[i][0]) {
       const [a, ca] = FZ_STOPS[i - 1], [b, cb] = FZ_STOPS[i], k = (v - a) / (b - a);
@@ -4343,7 +4344,7 @@
     fzAdvance();
     const f = data.fatigue;
     f.fast = v / 2; f.slow = v / 2;
-    f.w70 = v >= 70; f.w100 = v >= 99.9;
+    f.w70 = v >= FZ.high; f.w100 = v >= 99.9;
     saveData(); fzDraw(false);
   }
   // v7.4.1: Длань — промотать восстановление (только спад усталости; часы, задание и «склейка» подхода не меняются)
@@ -5537,7 +5538,8 @@
   function noticeScheme(body, glitchKind) {
     if (glitchKind === 'anomaly') return 'red';
     if (glitchKind === 'pace') return 'orange';
-    if (body === FZ_T100 || body === FZ_TBIG) return 'orange';
+    if (body === FZ_T100) return 'red';      // v7.4.9: критическая отметка — красное окно без сбоя
+    if (body === FZ_T70) return 'orange';    // v7.4.9: высокая нагрузка — оранжевое; перегрузка подхода — голубое
     return 'blue';
   }
   function buildGlitchPopupHtml(content, kind) {
