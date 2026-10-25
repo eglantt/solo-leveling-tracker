@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2042,7 +2042,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.2';
+  const APP_VERSION = '7.5.3';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -6717,7 +6717,7 @@
               const hasAnyClosed = Object.keys(targets).some(qid => (data.completed[qid] || 0) >= getDynamicTarget(targets[qid], data.dailyTargetLevel, qid));
               const zeroIds = Object.keys(targets).filter(qid => (data.completed[qid] || 0) === 0);
               if (hasAnyClosed || zeroIds.length === 0) {
-                  showNotice(hasAnyClosed ? "Свиток Переноса нельзя использовать: одно из упражнений уже выполнено."
+                  showNotice(hasAnyClosed ? "Свиток Переноса нельзя использовать: уже есть выполненные упражнения."   // v7.5.3: и для дня, и для раунда Предела
                                           : "Свиток Переноса нельзя использовать: все упражнения уже начаты.", 'warn', true);   // v6.9.0
               } else {
                   showExerciseChoice(zeroIds, (chosenId) => {

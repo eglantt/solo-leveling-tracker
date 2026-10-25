@@ -137,7 +137,7 @@ const lastDay = w => { const k = Object.keys(E(w, 'data.history')).sort().pop();
     reset(w);
     check('SV6a … день Пелены без Переноса — счётчик «подряд» обнулён', E(w, 'data.transferStreakDays') === 0 && lastDay(w) === 'veil'); }
   { const w = fresh("data.pendingScroll = 'veil';"); pick(w); complete1(w); const v = use(w, 'scroll_transfer');
-    check('SV7 Перенос: упражнение выполнено — прежний отказ', !v.spent && v.notice === 'Свиток Переноса нельзя использовать: одно из упражнений уже выполнено.', v.notice); }
+    check('SV7 Перенос: упражнение выполнено — прежний отказ', !v.spent && v.notice === 'Свиток Переноса нельзя использовать: уже есть выполненные упражнения.', v.notice); }
   // Отречение
   { const w = fresh("data.pendingScroll = 'veil';"); const v = use(w, 'scroll_renunciation');
     check('SV8 Отречение при ожидающей Пелене, ничего не выполнено — включается сразу', v.spent && E(w, 'data.activeScroll') === 'renunciation' && E(w, 'data.pendingScroll') === 'veil', v.notice);

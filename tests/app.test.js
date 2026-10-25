@@ -320,7 +320,9 @@ async function v690Tests() {
   const tr = async (setup) => { const w3 = boot(); await sleep(250); E(w3, `window.__N = []; showNotice = (m) => window.__N.push(m); data.consumables = { scroll_transfer: 1 }; data.activeScroll = null; data.pendingScroll = null; ${setup}; performUseItem('scroll_transfer')`); return E(w3, 'window.__N[0]'); };
   const t1 = await tr(`data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') }`);
   const t2 = await tr(`data.completed = { pushups: 1, squats: 1, pullups: 1, press: 1, steps: 100 }`);
-  check('V26 Перенос: причина — упражнение уже выполнено', t1 === 'Свиток Переноса нельзя использовать: одно из упражнений уже выполнено.', t1);
+  check('V26 Перенос: причина — упражнение уже выполнено', t1 === 'Свиток Переноса нельзя использовать: уже есть выполненные упражнения.', t1);
+  const t3 = await tr(`data.isGoalMet = true; data.limitBreaksToday = 1; data.dailyNotices.complete = true; data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups'), squats: getDynamicTarget(120, data.dailyTargetLevel, 'squats'), pullups: getDynamicTarget(40, data.dailyTargetLevel, 'pullups'), press: getDynamicTarget(100, data.dailyTargetLevel, 'press'), steps: getDynamicTarget(10000, data.dailyTargetLevel, 'steps') }`);
+  check('V26a (v7.5.3) Перенос после пройденного раунда Предела — тот же универсальный текст', t3 === 'Свиток Переноса нельзя использовать: уже есть выполненные упражнения.', t3);
   check('V27 Перенос: причина — все упражнения уже начаты', t2 === 'Свиток Переноса нельзя использовать: все упражнения уже начаты.', t2);
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
   check('V28 текста «Свиток нельзя применить сейчас» больше нет', !raw.includes('Свиток нельзя применить сейчас'));
