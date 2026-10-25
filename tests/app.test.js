@@ -1508,6 +1508,33 @@ function noticeFor(scroll, item) {
   E(w, `window.__n=[]; const _o=showNotice; showNotice=(m)=>window.__n.push(m); performUseItem('${item}');`);
   return new Promise(r => setTimeout(() => r(E(w,'window.__n.join(" / ")')), 900));
 }
+
+// ===== v7.4.10: ревизия текстов — окно нового ранга, описания титулов =====
+async function textRevisionTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50));
+  const src = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'index.html'), 'utf-8');
+  check('TX1 в приложении нет «признан… Системой» / «Система признаёт»', !/признан[а-яё]*\s+Систем|Систем[а-яё]*\s+призна/i.test(src));
+  const descs = JSON.parse(E(w, 'JSON.stringify(Object.values(TITLES_DB).map(t => t.desc))'));
+  const youRe = /(^|[^А-Яа-яЁё])(вы|вас|ваш[а-яё]*|вам|вами)(?![А-Яа-яЁё])/i;
+  check('TX2 описания титулов — без «вы / вас / ваш»', descs.every(d => !youRe.test(d)), descs.filter(d => youRe.test(d)).join(' | '));
+  check('TX3 Несокрушимый и Торговец Врат — новые тексты',
+    E(w, 'TITLES_DB["Несокрушимый"].desc').startsWith('Пять тысяч отжиманий — тело закалено, воля не дрогнула. ')
+    && E(w, 'TITLES_DB["Торговец Врат"].desc').startsWith('Пятьдесят проданных предметов — излишки обращены в выгоду. '));
+  const EXP = { d: 'Первый этап эволюции. Базовая слабость преодолена.', c: 'Прогресс стал устойчивым.', b: 'Предел стандартной физической формы сломан.',
+    a: 'Рубеж, до которого доходят немногие. Физические возможности вышли на пиковый уровень.', s: 'Игрок входит в категорию сильнейших.',
+    national: 'Масштаб сил сопоставим с потенциалом целого государства.', sss: 'Предел человеческих возможностей оставлен позади.', monarch: 'Высшая точка развития.' };
+  check('TX4 у каждого из восьми рангов своя строка окна', E(w, 'typeof RANK_POPUP_LINES === "undefined" ? "" : JSON.stringify(RANK_POPUP_LINES)') === JSON.stringify(EXP));
+  E(w, 'window.__P = []; showSystemPopup = (t, m) => window.__P.push([t, m]); fxNotice = fn => fn(); fxLevelUp = () => {}');
+  const up = (from) => { E(w, `window.__P = []; data.level = ${from}; data.exp = getExpToNext(${from}); checkLevelUp()`); return JSON.parse(E(w, 'JSON.stringify(window.__P)')).filter(p => /^Новый ранг/.test(p[0])); };
+  const r10 = up(9), r30 = up(29), r40 = up(39), r100 = up(99), r15 = up(14);
+  check('TX5 окно ранга: 10-й → D со своей строкой, 30-й → B, 40-й → A, 100-й → Shadow Monarch; без смены ранга окна нет',
+    r10.length === 1 && r10[0][0] === 'Новый ранг: D-Rank' && r10[0][1] === EXP.d && r30[0][1] === EXP.b && r40[0][1] === EXP.a
+    && r100[0][0] === 'Новый ранг: Shadow Monarch' && r100[0][1] === EXP.monarch && r15.length === 0, JSON.stringify([r10, r30, r40, r100, r15]));
+  E(w, 'window.__P = []; data.level = 5; data.exp = 0; for (let l = 5; l < 32; l++) data.exp += getExpToNext(l); checkLevelUp()');
+  const multi = JSON.parse(E(w, 'JSON.stringify(window.__P)')).filter(p => /^Новый ранг/.test(p[0]));
+  check('TX6 несколько рангов за раз — одно окно, последний ранг (B) и его строка', multi.length === 1 && multi[0][0] === 'Новый ранг: B-Rank' && multi[0][1] === EXP.b, JSON.stringify(multi));
+}
+
 (async () => {
   for (const [sc, it] of [['contract','rune_burden_release'],['transfer','rune_burden_release'],['contract','rune_protection'],['transfer','rune_protection_charged'],['contract','rune_freedom'],['transfer','rune_freedom']]) {
     const n = await noticeFor(sc, it);
@@ -1539,6 +1566,7 @@ function noticeFor(scroll, item) {
   await v690Tests();
   await legendTests();
   await effectSelectTests();
+  await textRevisionTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
