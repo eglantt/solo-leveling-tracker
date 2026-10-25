@@ -462,7 +462,7 @@ async function renunciationTests() {
     E(w, `data.pendingScroll = 'renunciation'; render()`);
     check('RN16 ожидающее Отречение ничего не подавляет', eff().filter(e => e.a || e.ti).every(e => !e.s)); }
   { const w = await mk('');
-    check('RN17 описание Шкатулки Тёмного Кварца', E(w, `BOX_CATALOG.box_dark_quartz.desc`).includes('включая более сильные версии расходников') && !E(w, `BOX_CATALOG.box_dark_quartz.desc`).includes('усиленн')); }
+    check('RN17 описание Шкатулки Тёмного Кварца (v7.5.6: «…, иногда — кредиты. Среди предметов — более сильные версии расходников…»)', E(w, `BOX_CATALOG.box_dark_quartz.desc`) === 'Содержит 2–5 предметов высокого качества, иногда — кредиты. Среди предметов — более сильные версии расходников, могут быть ключи от запертых шкатулок.' && !E(w, `BOX_CATALOG.box_dark_quartz.desc`).includes('усиленн')); }
 }
 
 // ===== v6.8.2: артефакты в панели эффектов, четыре контура =====
@@ -1634,6 +1634,62 @@ async function contourMarkTests() {
 
 
 // ===== v7.5.4: окно Реестра — полная высота, «Загрузка» с точками, цвет ранга, закрытие =====
+// ===== v7.5.6: каталог Длани — «В Инвентаре: N»; описания ключей и шкатулок; окно предмета без «Эффект:» у ключей и шкатулок =====
+async function catalogKeyBoxTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  E(w, "data.boxes = { box_basalt: 2 }; data.keys = { key_scarlet: 1 }; data.consumables = { rune_protection: 3, potion_restoration: 12, scroll_transfer: 1, bone_bead: 3, potion_restoration_full: 1 }; saveData(); openFullCatalog()");
+  const q = id => { const c = D.querySelector(`#fullCatalogContent [data-cat-id="${id}"]`); const e = c && c.querySelector('.item-desc .cat-qty'); return e ? [e.textContent, e.classList.contains('zero'), e.querySelector('b') ? e.querySelector('b').textContent : null] : null; };
+  const exp = { box_basalt: 2, box_onyx: 0, rune_protection: 3, potion_restoration: 12, rune_cleansing: 0, scroll_transfer: 1, scroll_freeze: 0, bone_bead: 3, potion_restoration_full: 1, key_scarlet: 1, key_shadow: 0 };
+  const bad = Object.entries(exp).filter(([id, n]) => { const r = q(id); return !r || r[0] !== `В Инвентаре: ${n}` || r[1] !== (n === 0) || r[2] !== String(n); });
+  const artNone = [...D.querySelectorAll('#fullCatalogContent [data-cat-id]')].filter(c => E(w, `!!ARTEFACTS['${c.dataset.catId}']`)).every(c => !c.querySelector('.cat-qty'));
+  const allHave = [...D.querySelectorAll('#fullCatalogContent [data-cat-id]')].filter(c => !E(w, `!!ARTEFACTS['${c.dataset.catId}']`)).every(c => !!c.querySelector('.item-desc .cat-qty'));
+  check('CQ1 каталог Длани: «В Инвентаре: N» у шкатулок, расходников, свитков, редких расходников, бусины и ключей (числа = Инвентарь, при 0 — тусклая); у артефактов строки нет',
+    bad.length === 0 && artNone && allHave, JSON.stringify(bad.map(([id]) => [id, q(id)])));
+  const card = D.querySelector('#fullCatalogContent [data-cat-id="rune_cleansing"]');
+  E(w, "devAddItem('rune_cleansing')"); await wait(700);
+  const after1 = q('rune_cleansing'), same1 = card === D.querySelector('#fullCatalogContent [data-cat-id="rune_cleansing"]');
+  E(w, "devRemoveItem('rune_cleansing')"); await wait(700);
+  const after0 = q('rune_cleansing');
+  E(w, "devAddBox('box_onyx')"); await wait(700); const box1 = q('box_onyx');
+  E(w, "devRemoveKey('key_scarlet')"); await wait(700); const key0 = q('key_scarlet');
+  check('CQ2 после «+1» / «−1» число и яркость меняются на месте (карточка — тот же элемент): 0 → 1 → 0, шкатулка 0 → 1, ключ 1 → 0',
+    same1 && after1 && after1[0] === 'В Инвентаре: 1' && !after1[1] && after0 && after0[0] === 'В Инвентаре: 0' && after0[1] && box1 && box1[0] === 'В Инвентаре: 1' && key0 && key0[0] === 'В Инвентаре: 0' && key0[1],
+    JSON.stringify({ same1, after1, after0, box1, key0 }));
+  E(w, "devAddKey('key_scarlet')"); await wait(700);
+  const plusOff = id => { const b = D.querySelectorAll(`#fullCatalogContent [data-cat-id="${id}"] .item-btn-stack button`); return b[1] && b[1].disabled; };
+  check('CQ3 бусина 3 из 3 и ключ 1 из 1: «+1» неактивна, строка «В Инвентаре: 3» / «1»', plusOff('bone_bead') && plusOff('key_scarlet') && q('bone_bead')[0] === 'В Инвентаре: 3' && q('key_scarlet')[0] === 'В Инвентаре: 1', JSON.stringify([q('bone_bead'), q('key_scarlet')]));
+  const KD = {
+    key_scarlet: 'Открывает Алую Шкатулку с редкими предметами.', key_crimson: 'Открывает Багровую Шкатулку с редкими предметами.',
+    key_purple: 'Открывает Пурпурную Шкатулку с особо редкими предметами.', key_shadow: 'Открывает Шкатулку Теней с предметами высшей ценности.' };
+  const BD = {
+    box_basalt: 'Содержит 1–3 предмета базового уровня, иногда — кредиты.', box_onyx: 'Содержит 1–3 качественных предмета, иногда — кредиты.',
+    box_obsidian: 'Содержит 1–4 предмета высокого качества, иногда — кредиты. Среди предметов могут быть ключи от запертых шкатулок.',
+    box_dark_quartz: 'Содержит 2–5 предметов высокого качества, иногда — кредиты. Среди предметов — более сильные версии расходников, могут быть ключи от запертых шкатулок.',
+    box_scarlet: 'Заперта. Для открытия нужен Алый ключ. Содержит 1–4 редких предмета, иногда — кредиты.',
+    box_crimson: 'Заперта. Для открытия нужен Багровый ключ. Содержит 2–4 редких предмета, иногда — кредиты.',
+    box_purple: 'Заперта. Для открытия нужен Пурпурный ключ. Содержит 2–5 особо редких предметов, иногда — кредиты.',
+    box_shadow: 'Заперта. Для открытия нужен Ключ Теней. Содержит 3–5 предметов высшей ценности, иногда — кредиты.',
+    box_anomaly: 'Содержимое непредсказуемо — ценная награда либо временное усложнение дневного задания.' };
+  const catDesc = id => { const d = D.querySelector(`#fullCatalogContent [data-cat-id="${id}"] .item-desc`); return d ? d.firstChild.textContent : null; };
+  const badCatK = Object.keys(KD).filter(id => catDesc(id) !== KD[id] + ' Расходуется при открытии.');
+  const badCatB = Object.keys(BD).filter(id => catDesc(id) !== BD[id]);
+  E(w, "document.getElementById('fullCatalogOverlay').style.display = 'none'; data.keys = { key_scarlet: 1, key_crimson: 1, key_purple: 1, key_shadow: 1 }; data.boxes = {}; Object.keys(BOX_CATALOG).forEach(b => data.boxes[b] = 1); openInv()");
+  const invDesc = id => { const card = [...D.querySelectorAll('#invContent .item-card')].find(c => { const im = c.querySelector('img'); return im && im.getAttribute('onclick') && im.getAttribute('onclick').includes(`'${id}'`) && !c.dataset.catId; }); const d = card && card.querySelector('.item-desc'); return d ? d.textContent : null; };
+  const badInvK = Object.keys(KD).filter(id => invDesc(id) !== KD[id] + ' Расходуется при открытии.');
+  const badInvB = Object.keys(BD).filter(id => invDesc(id) !== BD[id]);
+  check('CQ4 описания: четыре ключа («…» + «Расходуется при открытии.») и девять шкатулок — дословно в каталоге Длани и в Инвентаре',
+    !badCatK.length && !badCatB.length && !badInvK.length && !badInvB.length, JSON.stringify({ badCatK, badCatB, badInvK, badInvB, ex: invDesc('key_scarlet') }));
+  const pv = id => E(w, `itemPreviewText('${id}')`);
+  const badPK = Object.keys(KD).filter(id => { const t = pv(id).split('\n'); return t[2] !== 'Применение: Расходуется при открытии шкатулки' || t[3] !== KD[id] || t.length !== 4 || /Эффект/.test(pv(id)); });
+  const badPB = Object.keys(BD).filter(id => { const t = pv(id).split('\n'); return t[1] !== 'Тип: Награда' || t[2] !== 'Применение: Расходуется при открытии' || t[3] !== BD[id] || t.length !== 4 || /Эффект/.test(pv(id)); });
+  check('KB1 окно предмета: ключ — «Применение: Расходуется при открытии шкатулки» + фраза без «Эффект:»; шкатулка — «Применение: Расходуется при открытии» + описание без «Эффект:» (все девять, без повтора «Содержит»)',
+    !badPK.length && !badPB.length && pv('key_scarlet') === 'Ранг: B\nТип: Ключ\nПрименение: Расходуется при открытии шкатулки\nОткрывает Алую Шкатулку с редкими предметами.'
+    && pv('box_basalt') === 'Ранг: E\nТип: Награда\nПрименение: Расходуется при открытии\nСодержит 1–3 предмета базового уровня, иногда — кредиты.', JSON.stringify({ badPK, badPB, k: pv('key_scarlet'), b: pv('box_basalt') }));
+  check('KB2 у остальных предметов в окне предмета «Эффект:» остался (расходник, свиток, редкий расходник, артефакт)',
+    ['rune_protection', 'scroll_transfer', 'bone_bead', 'crystal_speed'].every(id => /\nЭффект: /.test(pv(id))), ['rune_protection', 'scroll_transfer', 'bone_bead', 'crystal_speed'].map(pv).join(' | '));
+}
+
 async function registryTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
   E(w, `window.__lbRes = null; fetch = () => new Promise(res => { window.__lbRes = res; })`);
@@ -1690,6 +1746,7 @@ async function registryTests() {
   await penaltyV750Tests();
   await contourMarkTests();
   await registryTests();
+  await catalogKeyBoxTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

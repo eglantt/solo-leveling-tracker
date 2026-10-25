@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1196,6 +1196,10 @@
     .fz-st .fz-v { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; font-size: .85rem; color: var(--fc); min-width: 3.2em; text-align: right; white-space: nowrap; }
     .fz-st .fz-cap { flex: 0 0 auto; }
     .fz-st .fz-fill { transition: width 1s ease-out, background-color .4s, box-shadow .4s; }
+    /* v7.5.6: каталог Длани — «В Инвентаре: N» в конце описания; число жирное шрифтом описания (без перечёркнутого нуля Orbitron) */
+    .item-desc .cat-qty { display: block; margin-top: 4px; }
+    .item-desc .cat-qty b { font-weight: 700; }
+    .item-desc .cat-qty.zero { opacity: .4; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -2064,7 +2068,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.5';
+  const APP_VERSION = '7.5.6';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2471,11 +2475,13 @@
   };
 
   const KEY_CATALOG = {
-    "key_scarlet": { name: "Алый ключ", icon: "🔑" },
-    "key_crimson": { name: "Багровый ключ", icon: "🔑" },
-    "key_purple": { name: "Пурпурный ключ", icon: "🔑" },
-    "key_shadow": { name: "Ключ Теней", icon: "🔑" }
+    "key_scarlet": { name: "Алый ключ", icon: "🔑", use: "Открывает Алую Шкатулку с редкими предметами." },
+    "key_crimson": { name: "Багровый ключ", icon: "🔑", use: "Открывает Багровую Шкатулку с редкими предметами." },
+    "key_purple": { name: "Пурпурный ключ", icon: "🔑", use: "Открывает Пурпурную Шкатулку с особо редкими предметами." },
+    "key_shadow": { name: "Ключ Теней", icon: "🔑", use: "Открывает Шкатулку Теней с предметами высшей ценности." }
   };
+  // v7.5.6: описание ключа в карточках (Инвентарь, каталог Длани) — фраза «что открывает» + расход; в окне предмета — только фраза
+  for (const k in KEY_CATALOG) KEY_CATALOG[k].desc = KEY_CATALOG[k].use + ' Расходуется при открытии.';
 
   // Unique consumables — only ever obtained from boxes, never sold in the
   // Shop (SHOP_CATALOG's generic for-loop in openShop() would otherwise list
@@ -3079,14 +3085,14 @@
   }
 
   const BOX_CATALOG = {
-    "box_basalt": { name: "Базальтовая Шкатулка", icon: "📦", desc: "Содержит 1–3 предмета базового уровня.", weight: 70, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.06, creditChance: 0.25, creditAmount: 500 },
-    "box_onyx": { name: "Ониксовая Шкатулка", icon: "🎁", desc: "Содержит 1–3 качественных предмета.", weight: 30, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.08, creditChance: 0.22, creditAmount: 750 },
-    "box_obsidian": { name: "Обсидиановая Шкатулка", icon: "📦", desc: "Содержит 1–4 предмета высокого качества. Среди них могут быть ключи от запертых шкатулок.", weight: 18, minItems: 1, maxItems: 4, level: 10, keyDropChance: 0.12, creditChance: 0.20, creditAmount: 1000 },
-    "box_dark_quartz": { name: "Шкатулка Тёмного Кварца", icon: "📦", desc: "Содержит 2–5 предметов высокого качества, включая более сильные версии расходников. Среди них могут быть ключи от запертых шкатулок.", weight: 10, minItems: 2, maxItems: 5, level: 20, keyDropChance: 0.22, creditChance: 0.18, creditAmount: 1500 },
-    "box_scarlet": { name: "Алая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Алый ключ. Содержит 1–4 редких предмета.", weight: 6, minItems: 1, maxItems: 4, level: 30, requiresKey: "key_scarlet", creditChance: 0.15, creditAmount: 2500 },
-    "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Багровый ключ. Содержит 2–4 редких предмета.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
-    "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Пурпурный ключ. Содержит 2–5 особо редких предметов.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
-    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Заперта. Для открытия нужен Ключ Теней. Содержит 3–5 предметов высшей ценности.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 },
+    "box_basalt": { name: "Базальтовая Шкатулка", icon: "📦", desc: "Содержит 1–3 предмета базового уровня, иногда — кредиты.", weight: 70, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.06, creditChance: 0.25, creditAmount: 500 },
+    "box_onyx": { name: "Ониксовая Шкатулка", icon: "🎁", desc: "Содержит 1–3 качественных предмета, иногда — кредиты.", weight: 30, minItems: 1, maxItems: 3, level: 1, keyDropChance: 0.08, creditChance: 0.22, creditAmount: 750 },
+    "box_obsidian": { name: "Обсидиановая Шкатулка", icon: "📦", desc: "Содержит 1–4 предмета высокого качества, иногда — кредиты. Среди предметов могут быть ключи от запертых шкатулок.", weight: 18, minItems: 1, maxItems: 4, level: 10, keyDropChance: 0.12, creditChance: 0.20, creditAmount: 1000 },
+    "box_dark_quartz": { name: "Шкатулка Тёмного Кварца", icon: "📦", desc: "Содержит 2–5 предметов высокого качества, иногда — кредиты. Среди предметов — более сильные версии расходников, могут быть ключи от запертых шкатулок.", weight: 10, minItems: 2, maxItems: 5, level: 20, keyDropChance: 0.22, creditChance: 0.18, creditAmount: 1500 },
+    "box_scarlet": { name: "Алая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Алый ключ. Содержит 1–4 редких предмета, иногда — кредиты.", weight: 6, minItems: 1, maxItems: 4, level: 30, requiresKey: "key_scarlet", creditChance: 0.15, creditAmount: 2500 },
+    "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Багровый ключ. Содержит 2–4 редких предмета, иногда — кредиты.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
+    "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Пурпурный ключ. Содержит 2–5 особо редких предметов, иногда — кредиты.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
+    "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Заперта. Для открытия нужен Ключ Теней. Содержит 3–5 предметов высшей ценности, иногда — кредиты.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 },
     "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое непредсказуемо — ценная награда либо временное усложнение дневного задания.", level: 3 }
   };
 
@@ -3549,19 +3555,19 @@
     "rune_limit_charged": { rank: "B", type: "Расходный предмет", usage: "Одноразовое использование" },
     "crystal_restoration": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "crystal_clarity": { rank: "A", type: "Расходный предмет", usage: "Одноразовое использование" },
-    "box_basalt": { rank: "E", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "box_onyx": { rank: "E", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "box_anomaly": { rank: "E", type: "Награда", usage: "Награда или перегрузка задания, расходуется при открытии" },
-    "box_obsidian": { rank: "D", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "box_dark_quartz": { rank: "C", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "box_scarlet": { rank: "B", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "box_crimson": { rank: "A", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "box_purple": { rank: "A", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "box_shadow": { rank: "S", type: "Награда", usage: "Содержит предметы и кредиты, расходуется при открытии." },
-    "key_scarlet": { rank: "B", type: "Ключ", usage: "Расходуется при открытии" },
-    "key_crimson": { rank: "A", type: "Ключ", usage: "Расходуется при открытии" },
-    "key_purple": { rank: "A", type: "Ключ", usage: "Расходуется при открытии" },
-    "key_shadow": { rank: "S", type: "Ключ", usage: "Расходуется при открытии" },
+    "box_basalt": { rank: "E", type: "Награда", usage: "Расходуется при открытии" },
+    "box_onyx": { rank: "E", type: "Награда", usage: "Расходуется при открытии" },
+    "box_anomaly": { rank: "E", type: "Награда", usage: "Расходуется при открытии" },
+    "box_obsidian": { rank: "D", type: "Награда", usage: "Расходуется при открытии" },
+    "box_dark_quartz": { rank: "C", type: "Награда", usage: "Расходуется при открытии" },
+    "box_scarlet": { rank: "B", type: "Награда", usage: "Расходуется при открытии" },
+    "box_crimson": { rank: "A", type: "Награда", usage: "Расходуется при открытии" },
+    "box_purple": { rank: "A", type: "Награда", usage: "Расходуется при открытии" },
+    "box_shadow": { rank: "S", type: "Награда", usage: "Расходуется при открытии" },
+    "key_scarlet": { rank: "B", type: "Ключ", usage: "Расходуется при открытии шкатулки" },
+    "key_crimson": { rank: "A", type: "Ключ", usage: "Расходуется при открытии шкатулки" },
+    "key_purple": { rank: "A", type: "Ключ", usage: "Расходуется при открытии шкатулки" },
+    "key_shadow": { rank: "S", type: "Ключ", usage: "Расходуется при открытии шкатулки" },
     "rune_redemption": { rank: "C", type: "Расходный предмет", usage: "Одноразовое использование" },
     "rune_fate_cleansing": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_cleansing_full": { rank: "B", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
@@ -6278,11 +6284,18 @@
   // тестирования, бесплатно, без учёта уровня. Артефакты показываются
   // только для просмотра (постоянный пассивный эффект, выдаются
   // автоматически по уровню) — намеренно без кнопки добавления.
+  // v7.5.6: строка «В Инвентаре: N» в конце описания (при 0 — тусклая, видна всегда)
+  function catalogQtyHtml(n) { return `<span class="cat-qty${n > 0 ? '' : ' zero'}">В Инвентаре: <b>${n}</b></span>`; }
+  function catalogCount(id) {
+    if (BOX_CATALOG[id]) return data.boxes[id] || 0;
+    if (KEY_CATALOG[id]) return data.keys[id] > 0 ? 1 : 0;
+    return data.consumables[id] || 0;
+  }
   function catalogCard(id, item, addFn, removeFn, hasNone, addDisabled) {
     return `
       <div class="item-card" data-cat-id="${id}">
         <div class="item-icon"><img${glowAttrs(id)} src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
-        <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc || ''}</div></div>
+        <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc || ''}${catalogQtyHtml(catalogCount(id))}</div></div>
         <div class="item-btn-stack">
           <button onclick="${removeFn}('${id}')" class="use-btn sell-btn" ${hasNone ? 'disabled' : ''}>-1</button>
           <button onclick="${addFn}('${id}')" class="use-btn" ${addDisabled ? 'disabled' : ''}>+1</button>
@@ -6316,7 +6329,7 @@
       html += `
         <div class="item-card" data-cat-id="${id}">
           <div class="item-icon"><img class="item-icon-img" src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(KEY_CATALOG[id].name)}')"></div>
-          <div class="item-info"><div class="item-name">${KEY_CATALOG[id].name}</div><div class="item-desc">${KEY_CATALOG[id].desc || ''}</div></div>
+          <div class="item-info"><div class="item-name">${KEY_CATALOG[id].name}</div><div class="item-desc">${KEY_CATALOG[id].desc || ''}${catalogQtyHtml(catalogCount(id))}</div></div>
           <div class="item-btn-stack">
             <button onclick="devRemoveKey('${id}')" class="use-btn sell-btn" ${has ? '' : 'disabled'}>-1</button>
             <button onclick="devAddKey('${id}')" class="use-btn" ${has ? 'disabled' : ''}>+1</button>
@@ -6347,6 +6360,8 @@
     else { has = data.consumables[id] > 0; addOff = id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX; }
     if (minus) minus.disabled = !has;
     if (plus) plus.disabled = addOff;
+    const q = card.querySelector('.cat-qty');   // v7.5.6
+    if (q) { const n = catalogCount(id); q.classList.toggle('zero', !(n > 0)); q.querySelector('b').textContent = n; }
   }
 
   function devAddItem(id) {
@@ -6504,7 +6519,7 @@
       cont.innerHTML += `
         <div class="item-card">
           <div class="item-icon"><img class="item-icon-img" src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(key.name)}')"></div>
-          <div class="item-info"><div class="item-name">${key.name}</div></div>
+          <div class="item-info"><div class="item-name">${key.name}</div><div class="item-desc">${key.desc}</div></div>
         </div>`;
     });
     cont.innerHTML += `<div class="section-title">Свитки</div>`;
@@ -6599,6 +6614,9 @@
     if (tName && TITLES_DB[tName]) return tName === 'Новичок' ? `Титул\n${TITLES_DB[tName].desc}` : `Титул\nДействует, пока выбран активным\n${TITLES_DB[tName].desc}`;
     const meta = ITEM_META[iconId];
     let text = meta ? `Ранг: ${meta.rank}\nТип: ${meta.type}\nПрименение: ${meta.usage}` : '';
+    // v7.5.6: ключ и шкатулка эффекта не оказывают — описание без метки «Эффект:» (у ключа — только фраза «что открывает»)
+    if (KEY_CATALOG[iconId]) return text + `\n${KEY_CATALOG[iconId].use}`;
+    if (BOX_CATALOG[iconId]) return text + `\n${BOX_CATALOG[iconId].desc}`;
     const desc = ARTEFACTS[iconId] ? artifactEffectText(iconId) : getItemDesc(iconId);
     if (desc) text += `\nЭффект: ${desc}`;
     return text;
