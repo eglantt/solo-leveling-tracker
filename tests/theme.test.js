@@ -896,15 +896,32 @@ const w = boot(); const D = w.document; await tick();
   const probe = async (th, id) => { E(x, `setTheme('${th}')`); closeAll(x); await tick(); E(x, `document.getElementById('${id}').style.display = 'flex'`); await tick();
     E(x, `document.getElementById('${id}').style.display = 'none'`); await tick();
     const g = XD.querySelector(`.status-overlay.cfx-ghost[data-gid="${id}"], .status-overlay.sfx-ghost[data-gid="${id}"]`);
-    const r = g ? [cs(g).animationDuration, cs(g.firstElementChild).animationDuration, cs(g).backdropFilter || cs(g).getPropertyValue('backdrop-filter')] : null;
+    const r = g ? [cs(g).animationDuration, cs(g.firstElementChild).animationDuration, cs(g).backdropFilter || cs(g).getPropertyValue('backdrop-filter'), cs(g.firstElementChild).animationName] : null;
     await sleep(500); return r; };
-  const ghostCss = has('.status-overlay.cfx-ghost[data-gid="leaderboardOverlay"], .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] { animation-duration: .45s; -webkit-backdrop-filter: none; backdrop-filter: none; }')
+  const ghostCss = has('.status-overlay.cfx-ghost[data-gid="leaderboardOverlay"], .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] { animation-duration: .4s; -webkit-backdrop-filter: none; backdrop-filter: none; }')
+    && has('.status-overlay.cfx-ghost[data-gid="leaderboardOverlay"] > *, .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] > * { animation-name: cfxWinFade; animation-duration: .4s; }')
+    && has('@keyframes cfxWinFade { to { opacity: 0; } }') && has('.status-overlay.cfx-ghost > * { animation: cfxWinOut .3s ease-in both; }') && has('.status-overlay.sfx-ghost > * { animation: cfxWinOut .35s ease-in both; }') && has('@keyframes cfxWinOut { to { opacity: 0; transform: translateY(12px); } }')
     && has('.status-overlay.cfx-ghost { pointer-events: none; animation: cfxOvOut .3s ease-in both; }') && has('.status-overlay.sfx-ghost { pointer-events: none; animation: cfxOvOut .35s ease-in both; }')
-    && ((js) => /LB_OUT_MS = 450/.test(js) && /g\.dataset\.gid === 'leaderboardOverlay' \? LB_OUT_MS/.test(js))([...XD.querySelectorAll('script')].map(x => x.textContent).join(''));
+    && ((js) => /LB_OUT_MS = 400;/.test(js) && /g\.dataset\.gid === 'leaderboardOverlay' \? LB_OUT_MS/.test(js))([...XD.querySelectorAll('script')].map(x => x.textContent).join(''));
   const lc = await probe('classic', 'leaderboardOverlay'), ls = await probe('system', 'leaderboardOverlay'), sc = await probe('classic', 'statusOverlay'), ss = await probe('system', 'statusOverlay');
-  check('T120 (v7.5.4) Реестр: полная высота с открытия (90vh / 92vh в блоке «Системы»), точки (шаг 0,4 с, место зарезервировано), цвет ранга со свечением; копия при закрытии — 0,45 с без размытия; у «Статуса» — прежние 0,3 / 0,35 с с размытием',
-    cssOk && ghostCss && lc && ls && /^0?\.45s$/.test(lc[0]) && /^0?\.45s$/.test(lc[1]) && /^0?\.45s$/.test(ls[0]) && /^0?\.45s$/.test(ls[1])
-    && sc && ss && !/45/.test(sc[0] + sc[1] + ss[0] + ss[1]), JSON.stringify({ cssOk, ghostCss, lc, ls, sc, ss })); }   /* jsdom не знает backdrop-filter — оно проверено текстом стилей и в Chromium */
+  const q4 = v => /^0?\.4s$/.test(v);
+  check('T120 (v7.5.4–7.5.5) Реестр: полная высота с открытия (90vh / 92vh в блоке «Системы»), точки (шаг 0,4 с, место зарезервировано), цвет ранга со свечением; копия при закрытии (обе темы) — угасание на месте 0,4 с (cfxWinFade, без сдвига) без размытия; у «Статуса» — прежние 0,3 / 0,35 с со сдвигом вниз',
+    cssOk && ghostCss && lc && ls && q4(lc[0]) && q4(lc[1]) && q4(ls[0]) && q4(ls[1]) && lc[3] === 'cfxWinFade' && ls[3] === 'cfxWinFade'
+    && sc && ss && !/^0?\.4s$/.test(sc[0] + sc[1] + ss[0] + ss[1]) && !/cfxWinFade/.test(sc[3] + ss[3]),   /* jsdom не раскрывает сокращённое «animation» у прежних правил — их 0,3 / 0,35 с и сдвиг проверены текстом стилей и в Chromium */ JSON.stringify({ cssOk, ghostCss, lc, ls, sc, ss })); }   /* jsdom не знает backdrop-filter — оно проверено текстом стилей и в Chromium */
+
+// ===== v7.5.5: «Система» — прокрутка Реестра перепроверяется после вывода списка, ошибки и пустого Реестра =====
+{ const x = boot(); const XD = x.document; await tick();
+  E(x, "setTheme('system')"); closeAll(x); await tick();
+  E(x, "window.__lbs = []; SysTheme.syncScroll = ov => window.__lbs.push(ov && ov.id)");
+  E(x, "window.fetch = () => new Promise(() => {}); openLeaderboard()"); await tick();
+  E(x, "renderLeaderboard([{ rank: 1, name: 'А', level: 5, bestStreak: 1 }], null)"); const a = E(x, "window.__lbs.join(',')");
+  E(x, "renderLeaderboard([], null)"); const b = E(x, "window.__lbs.join(',')");
+  E(x, "window.fetch = () => Promise.reject(new Error('net')); openLeaderboard()"); await tick(); await sleep(20);
+  const c = E(x, "window.__lbs.join(',') + '|' + document.getElementById('leaderboardContent').textContent");
+  const fnOk = /function syncScroll\(ov\)[\s\S]{0,400}classList\.toggle\('mw-scroll', b\.scrollHeight > b\.clientHeight \+ 2\)/.test([...XD.querySelectorAll('script')].map(s => s.textContent).join(''));
+  E(x, "document.getElementById('leaderboardOverlay').style.display = 'none'"); await tick(); await sleep(450);
+  check('T121 (v7.5.5) «Система»: после вывода списка, «Реестр пока пуст.» и «Реестр сейчас недоступен.» затухание у края перепроверяется (SysTheme.syncScroll по окну Реестра)',
+    a === 'leaderboardOverlay' && b === 'leaderboardOverlay,leaderboardOverlay' && c === 'leaderboardOverlay,leaderboardOverlay,leaderboardOverlay|Реестр сейчас недоступен.' && fnOk, JSON.stringify({ a, b, c, fnOk })); }   /* jsdom не знает backdrop-filter — оно проверено текстом стилей и в Chromium */
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
