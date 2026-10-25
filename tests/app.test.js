@@ -1602,6 +1602,26 @@ async function penaltyV750Tests() {
     && lore.endsWith('тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание, а силовые упражнения приносят больше опыта.'), pen);
 }
 
+
+// ===== v7.5.1: знак открытой пустой ячейки контура; «резонанс Аномалии» =====
+async function contourMarkTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  const st = (lv, eq) => { E(w, `data.level = ${lv}; data.inventory = Object.keys(ARTEFACTS); data.equippedArtifacts = ${JSON.stringify(eq)}; renderEquipment()`);
+    return [...D.querySelectorAll('#eqSlots .eq-slot')].map(el => (el.classList.contains('locked') ? 'L' : el.classList.contains('filled') ? 'F' : 'E') + (el.querySelector('svg.eq-mark') ? '+' : '-')); };
+  const r = [st(5, [null, null, null, null]), st(10, [null, null, null, null]), st(30, ['seal_growth', null, null, null]), st(50, ['seal_growth', null, null, null]), st(70, ['seal_growth', 'amulet_will', null, null]), st(70, ['seal_growth', 'amulet_will', 'crystal_speed', 'sphere_growth'])];
+  check('CM1 знак только в открытых пустых ячейках (0–4 открыто, с артефактами и без); в заполненных и закрытых — нет',
+    JSON.stringify(r) === JSON.stringify([['L-','L-','L-','L-'], ['E+','L-','L-','L-'], ['F-','E+','L-','L-'], ['F-','E+','E+','L-'], ['F-','F-','E+','E+'], ['F-','F-','F-','F-']]), JSON.stringify(r));
+  st(30, [null, null, null, null]);
+  const m = D.querySelector('#eqSlots .eq-slot svg.eq-mark'), ds = m ? [...m.querySelectorAll('path')].map(p => p.getAttribute('d')) : [];
+  check('CM2 знак — шестигранник вершиной вверх и плюс, без касаний (pointer-events: none)',
+    ds.length === 2 && ds[0] === 'M50 4 L90 27 L90 73 L50 96 L10 73 L10 27 Z' && ds[1] === 'M50 32 V68 M32 50 H68' && w.getComputedStyle(m).pointerEvents === 'none', JSON.stringify(ds));
+  E(w, 'window.__eq = []; openEquipOverlay = (h, b) => window.__eq.push(h)'); D.querySelector('#eqSlots .eq-slot:not(.filled):not(.locked)').click();
+  check('CM3 касание пустой ячейки со знаком — по-прежнему окно выбора артефакта', E(w, 'window.__eq.length') === 1, E(w, 'JSON.stringify(window.__eq)'));
+  const src = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'index.html'), 'utf-8');
+  check('CM4 «Зафиксирован резонанс Аномалии.» — с большой буквы в обоих местах, маленькой нет',
+    (src.match(/Зафиксирован резонанс Аномалии\./g) || []).length === 2 && !/резонанс аномалии/.test(src));
+}
+
 (async () => {
   for (const [sc, it] of [['contract','rune_burden_release'],['transfer','rune_burden_release'],['contract','rune_protection'],['transfer','rune_protection_charged'],['contract','rune_freedom'],['transfer','rune_freedom']]) {
     const n = await noticeFor(sc, it);
@@ -1635,6 +1655,7 @@ async function penaltyV750Tests() {
   await effectSelectTests();
   await textRevisionTests();
   await penaltyV750Tests();
+  await contourMarkTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

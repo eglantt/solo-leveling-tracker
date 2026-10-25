@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -308,6 +308,10 @@
     .eq-slot .eq-rk { position: absolute; top: 3px; right: 5px; font-family: 'Orbitron', sans-serif; font-size: 0.55rem; font-weight: 700; color: #40c0ff; }
     .eq-slot.filled { border-color: #40c0ff; box-shadow: 0 0 10px rgba(64,192,255,0.35), inset 0 0 8px rgba(64,192,255,0.35); }
     .eq-slot.locked { cursor: default; opacity: 0.6; background: rgba(0,0,0,0.45); border-color: #40c0ff1a; }
+    /* v7.5.1 (демо 112): знак открытой пустой ячейки — шестигранник с плюсом, 55% ячейки, линия 2 px, яркость 35%, цвет рамки */
+    .eq-slot .eq-mark { position: absolute; left: 50%; top: 50%; width: 55%; height: auto; aspect-ratio: 1 / 1; transform: translate(-50%, -50%);
+      color: #40c0ff; opacity: 0.35; pointer-events: none; overflow: visible; }
+    .eq-slot .eq-mark path { fill: none; stroke: currentColor; stroke-width: 2px; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
     .item-card.eq-on { border-color: #40c0ff; box-shadow: 0 0 8px rgba(64,192,255,0.35); }
     .eq-btn { width: 96px; flex-shrink: 0; text-align: center; }
     .eq-btn.eq-extract { background: rgba(0,0,0,0.2); border-color: #6f93b5; color: #9fc4e6; }
@@ -1300,6 +1304,7 @@
     /* --- СТАТУС --- */
     body.theme-sys .sf-win.mwin .st-sec { border: 1px solid var(--sl2); border-radius: 0; background: rgba(3,9,20,.3); }
     body.theme-sys .sf-win.mwin .eq-slot { border-radius: 0; border-color: var(--sl2); background: rgba(3,9,20,.45); }
+    body.theme-sys .sf-win.mwin .eq-slot .eq-mark { color: var(--sl); }   /* v7.5.1: знак открытой ячейки — цветом рамок темы */
     body.theme-sys .sf-win.mwin .eq-slot.filled { border-color: var(--sl); box-shadow: var(--sg), inset 0 0 8px rgba(80,160,255,.25); }
     body.theme-sys .sf-win.mwin .eq-opt { border-radius: 0; border-color: var(--sl2); background: rgba(3,9,20,.35); padding: 7px; }
     body.theme-sys .sf-win.mwin .eq-opt img { width: 34px; height: 34px; padding: 5px; border: 1px solid var(--sl); box-shadow: var(--sg); background: rgba(3,9,20,.5); }
@@ -2037,7 +2042,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.0';
+  const APP_VERSION = '7.5.1';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -5819,7 +5824,7 @@
         pendingStartupNoticeAfterPenalty = true;
       } else {
         setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
-        if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирован резонанс аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
+        if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирован резонанс Аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
       }
     }
     schedulePreciseResetCheck();
@@ -5834,7 +5839,7 @@
     if (pendingStartupNoticeAfterPenalty) {
       pendingStartupNoticeAfterPenalty = false;
       setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
-      if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирован резонанс аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
+      if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирован резонанс Аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
     }
   }
 
@@ -7800,6 +7805,8 @@
   function artifactRank(id) { return (ITEM_META[id] && ITEM_META[id].rank) || ''; }
   function freeArtifacts() { return sortByRank(data.inventory.filter(k => ARTEFACTS[k] && !isArtifactEquipped(k))); }
   // Видны открытые контуры и ровно один следующий закрытый (затемнённый); остальные скрыты.
+  // v7.5.1 (демо 112): шестигранник вершиной вверх (как эмблема уровня) и плюс; вид — в стилях .eq-mark
+  var EQ_MARK_SVG = '<svg class="eq-mark" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L90 27 L90 73 L50 96 L10 73 L10 27 Z"/><path d="M50 32 V68 M32 50 H68"/></svg>';
   function renderEquipment() {
     const box = document.getElementById('eqSlots');
     if (!box) return;
@@ -7810,7 +7817,7 @@
       const id = data.equippedArtifacts[i];
       html += id
         ? `<div class="eq-slot filled" onclick="onContourClick(${i})"><span class="eq-rk">${artifactRank(id)}</span><img src="icons/items/${id}.png" alt=""></div>`
-        : `<div class="eq-slot" onclick="onContourClick(${i})"></div>`;
+        : `<div class="eq-slot" onclick="onContourClick(${i})">${EQ_MARK_SVG}</div>`;   // v7.5.1: знак открытой пустой ячейки
     }
     box.innerHTML = html;
   }

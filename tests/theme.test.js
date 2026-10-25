@@ -866,6 +866,24 @@ const w = boot(); const D = w.document; await tick();
   check('T118 (v7.4.7) Костяная бусина в панели «Активные эффекты» (ожидает и действует, обе темы): всегда слабое голубое свечение 3 / 6 px, при нажатии — прежнее полное 4 / 8 px; у других иконок свечения нет',
     cssOk && ok(cl) && ok(sy), JSON.stringify({ cssOk, cl, sy })); }
 
+// ===== v7.5.1: знак открытой пустой ячейки контура (демо 112) =====
+{ const x = boot(); const XD = x.document; await tick(); const cs = el => x.getComputedStyle(el);
+  const css = XD.querySelectorAll('style')[0].textContent;
+  const base = css.indexOf('.eq-slot .eq-mark { position: absolute;'), sys = css.indexOf('body.theme-sys .sf-win.mwin .eq-slot .eq-mark { color: var(--sl); }'), sysBlock = css.indexOf('ТЕМА «СИСТЕМА»');
+  const cssOk = base > 0 && sys > sysBlock && sysBlock > base && /\.eq-slot \.eq-mark path \{ fill: none; stroke: currentColor; stroke-width: 2px; vector-effect: non-scaling-stroke;/.test(css);
+  E(x, "data.level = 50; data.inventory = Object.keys(ARTEFACTS); data.equippedArtifacts = ['seal_growth', null, null, null]");
+  const probe = async th => { E(x, `setTheme('${th}')`); closeAll(x); await tick(); E(x, "document.getElementById('rankInfoBtn').click()"); await tick();
+    const m = XD.querySelector('#eqSlots .eq-mark'), c = m ? cs(m) : null;
+    const o = m ? { w: c.width, op: c.opacity, col: c.color, n: XD.querySelectorAll('#eqSlots .eq-mark').length } : null;
+    E(x, `document.getElementById('statusOverlay').style.display = 'none'`); await tick();
+    const gh = XD.querySelector('.status-overlay.cfx-ghost, .status-overlay.sfx-ghost'); const gm = gh && gh.querySelector('.eq-mark');
+    if (o) o.ghost = gm ? [cs(gm).width, cs(gm).opacity].join(' ') : null;
+    await sleep(450); return o; };
+  const cl = await probe('classic'), sy = await probe('system');
+  check('T119 (v7.5.1) знак открытой пустой ячейки: 55% ячейки, яркость 0,35, линия 2 px; «Классика» — #40c0ff, «Система» — цвет рамок темы (правило в блоке темы); у копии при закрытии — то же',
+    cssOk && cl && sy && cl.n === 2 && sy.n === 2 && cl.w === '55%' && cl.op === '0.35' && sy.op === '0.35' && /64,\s*192,\s*255|#40c0ff/i.test(cl.col) && sy.col === 'var(--sl)'   /* jsdom не раскрывает переменные — настоящий цвет проверен в Chromium */
+    && cl.ghost === '55% 0.35' && sy.ghost === '55% 0.35', JSON.stringify({ cssOk, cl, sy })); }
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);
