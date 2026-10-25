@@ -58,7 +58,7 @@ check('1b Панель после угасания Договора: ожида�
 reset(w);
 check('1c После сброса: руна жива, hold очищен, день успешен', E(w,'data.insurance && data.insuranceHoldScroll===null && data.consecutiveDays===6'), st(w));
 check('1d Панель на обычном цикле: руна без «ожидает»', !/ожидает/.test(effects(w)), effects(w));
-const full1 = E(w,'(()=>{let p=Math.max(0.05,0.15-Math.floor(data.level/20)*0.03-Math.max(0,data.stats.str-10)*0.0025); if(isArtifactEquipped("amulet_will"))p*=0.85; return Math.floor(getExpToNext(data.level)*p);})()');
+const full1 = E(w,'(()=>{let p=Math.max(0.05,0.15+Math.floor(data.level/10)*0.01-Math.max(0,data.stats.str-10)*0.0015)*Math.max([1,1.5,2,2.5,3][Math.min(4,data.penaltyStreak||0)],data.curseActiveToday?3:1); if(isArtifactEquipped("amulet_will"))p*=0.85; return Math.floor(getExpToNext(data.level)*p+1e-6);})()');
 reset(w);
 check('1e Провал обычного цикла: штраф вдвое, руна сгорела, серия 0', E(w,`(data.penaltyStack.length ? data.penaltyStack[data.penaltyStack.length-1].loss : 0)===Math.floor(${full1}*0.5) && !data.insurance && data.consecutiveDays===0`), st(w)+' полный='+full1+' уровень='+E(w,'data.level'));
 
@@ -412,7 +412,7 @@ async function renunciationTests() {
     E(w, `data.level = 80; data.inventory = Object.keys(ARTEFACTS); data.curseActiveToday = false; data.pendingCurse = false; data.insurance = false; data.insuranceSourceId = null;
           data.stats.str = 60; data.stats.int = 10; data.stats.agi = 10; data.stats.sta = 10; data.expBoostToday = 0; data.creditBoostToday = 0; data.paceControl = false; ${extra || ''}; render();`); return w; };
   { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', null, null, null]`);
-    const exp = (r, eq) => E(w, `(() => { data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.equippedArtifacts = ${eq ? "['crystal_shadow', null, null, null]" : '[null, null, null, null]'}; return getDynamicExp(1000, 1, 'pushups'); })()`);
+    const exp = (r, eq) => E(w, `(() => { data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.equippedArtifacts = ${eq ? "['crystal_shadow', null, null, null]" : '[null, null, null, null]'}; return getDynamicExp(1000, 1, 'steps'); })()`);   // v7.5.0: шаги — без бонуса Силы
     check('RN1 опыт: Кристалл Теней (+5%) действует без Отречения и не действует под ним',
       exp(false, true) - exp(false, false) === 50 && exp(true, true) === exp(true, false), `${exp(false, true)}-${exp(false, false)} / ${exp(true, true)}-${exp(true, false)}`); }
   { const creds = async r => { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', null, null, null]; data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.activeTitle = 'Новичок';
@@ -427,14 +427,14 @@ async function renunciationTests() {
     check('RN3 шкатулка Кристалла Теней за полный день: без Отречения есть, под Отречением нет (Отречение снято)', b0[0] === 1 && b1[0] === 0 && b1[1] === null, JSON.stringify([b0, b1])); }
   { const pen = async (r, eq) => { const w = await mk(`data.equippedArtifacts = ${JSON.stringify(eq)}; data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.exp = 90000;`);
       return E(w, `computePenaltyAndApply('2026-09-01').loss`); };
-    const expected = async (useStr, useAmulet) => { const w = await mk(''); return E(w, `(() => { const base = 0.15 - Math.floor(data.level / 20) * 0.03; let p = Math.max(0.05, base - ${useStr ? '(data.stats.str - 10) * 0.0025' : '0'}); ${useAmulet ? 'p *= 0.85;' : ''} return Math.floor(getExpToNext(data.level) * p); })()`); };
+    const expected = async (useStr, useAmulet) => { const w = await mk(''); return E(w, `(() => { const base = 0.15 + Math.floor(data.level / 10) * 0.01; let p = Math.max(0.05, base - ${useStr ? '(data.stats.str - 10) * 0.0015' : '0'}) * Math.max([1,1.5,2,2.5,3][Math.min(4, data.penaltyStreak || 0)], data.curseActiveToday ? 3 : 1); ${useAmulet ? 'p *= 0.85;' : ''} return Math.floor(getExpToNext(data.level) * p + 1e-6); })()`); };
     const withAll = await pen(false, ['amulet_will', null, null, null]), renounced = await pen(true, ['amulet_will', null, null, null]);
     check('RN4 штраф без Отречения: Сила и Амулет Воли снижают', withAll === await expected(true, true), `${withAll} vs ${await expected(true, true)}`);
     check('RN5 штраф под Отречением: без Силы и без Амулета Воли', renounced === await expected(false, false), `${renounced} vs ${await expected(false, false)}`); }
   { const w = await mk(`data.equippedArtifacts = ['amulet_will', null, null, null]; data.activeScroll = 'renunciation'; data.isGoalMet = false; data.completed = {}; data.exp = 90000; data.lastReset -= 86400000;`);
     E(w, 'checkMissedDays()');
     const st = JSON.parse(E(w, 'JSON.stringify(data.penaltyStack[data.penaltyStack.length - 1])'));
-    const exp = await (async () => { const w2 = await mk(''); return E(w2, `Math.floor(getExpToNext(data.level) * Math.max(0.05, 0.15 - Math.floor(data.level / 20) * 0.03))`); })();
+    const exp = await (async () => { const w2 = await mk(''); return E(w2, `Math.floor(getExpToNext(data.level) * Math.max(0.05, 0.15 + Math.floor(data.level / 10) * 0.01) * Math.max([1,1.5,2,2.5,3][Math.min(4, data.penaltyStreak || 0)], data.curseActiveToday ? 3 : 1) + 1e-6)`); })();
     check('RN6 проваленный день под Отречением: штраф на сбросе без Силы и Амулета Воли', st && st.loss === exp, `${st && st.loss} vs ${exp}`); }
   { const w = await mk(`data.equippedArtifacts = ['seal_limit', null, null, null]; data.activeScroll = 'renunciation'`);
     check('RN7 Печать Предела под Отречением действует', E(w, 'getDailyLimitBreakCap()') === 2 + E(w, 'data.extraLimitBreaksToday || 0'));
@@ -1535,6 +1535,73 @@ async function textRevisionTests() {
   check('TX6 несколько рангов за раз — одно окно, последний ранг (B) и его строка', multi.length === 1 && multi[0][0] === 'Новый ранг: B-Rank' && multi[0][1] === EXP.b, JSON.stringify(multi));
 }
 
+
+// ===== v7.5.0: прогрессивный штраф, Сила, цены =====
+async function penaltyV750Tests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  const reset0 = () => E(w, `data.completed={}; data.isGoalMet=false; data.dailyNotices.complete=false; data.insurance=false; data.insuranceSourceId=null; data.activeScroll=null; data.pendingScroll=null;
+    data.curseActiveToday=false; data.pendingCurse=false; data.streakShield=false; data.insuranceHoldScroll=null; data.expDebt=0; data.exp=100000; data.stats.str=10; data.equippedArtifacts=[null,null,null,null]; data.penaltyStreak=0`);
+  const base = JSON.parse(E(w, 'typeof penaltyBasePct === "undefined" ? "[]" : JSON.stringify([1, 9, 10, 19, 20, 50, 100].map(l => Math.round(penaltyBasePct(l) * 1000) / 10))'));
+  check('PN1 база штрафа: 15% на 1–9, 16% на 10–19, 17% на 20, 20% на 50, 25% на 100', JSON.stringify(base) === '[15,15,16,16,17,20,25]', JSON.stringify(base));
+  reset0(); E(w, 'data.level = 30');
+  const seq = []; for (let i = 0; i < 6; i++) seq.push([E(w, "computePenaltyAndApply('2026-10-01').loss"), E(w, 'data.penaltyStreak')]);
+  check('PN2 ступени подряд (30-й уровень, 4500 до уровня, 18%): 810 / 1215 / 1620 / 2025 / 2430 / 2430, счёт 1…6',
+    JSON.stringify(seq) === '[[810,1],[1215,2],[1620,3],[2025,4],[2430,5],[2430,6]]', JSON.stringify(seq));
+  reset0(); E(w, 'data.level = 30; data.stats.str = 70');
+  const l70 = E(w, "computePenaltyAndApply('2026-10-01').loss"); reset0(); E(w, 'data.level = 30; data.stats.str = 210');
+  const l210 = E(w, "computePenaltyAndApply('2026-10-01').loss"); reset0(); E(w, "data.level = 30; data.stats.str = 70; data.activeScroll = 'renunciation'");
+  const lRen = E(w, "computePenaltyAndApply('2026-10-01').loss");
+  check('PN3 Сила −0,15% за очко (70 → 18 − 9 = 9%: 405), минимум 5% (210 → 225), при Отречении Силы нет (810)', l70 === 405 && l210 === 225 && lRen === 810, [l70, l210, lRen].join(' / '));
+  const curse = st => { reset0(); E(w, `data.level = 30; data.curseActiveToday = true; data.penaltyStreak = ${st}`); return E(w, "computePenaltyAndApply('2026-10-01').loss"); };
+  const c = [curse(0), curse(2), curse(4)];
+  check('PN4 Бремя: больший множитель — без цепи ×3 (2430), на 3-й ступени ×3, не ×6 (2430), на 5-й ×3 (2430)', c.every(x => x === 2430), c.join(' / '));
+  reset0(); E(w, "data.level = 30; data.penaltyStreak = 2; data.insurance = true; data.insuranceSourceId = 'rune_protection'");
+  const half = [E(w, "computePenaltyAndApply('2026-10-01').loss"), E(w, 'data.penaltyStreak')];
+  const prot = id => { reset0(); E(w, `data.level = 30; data.penaltyStreak = 2; data.insurance = true; data.insuranceSourceId = '${id}'`); return [E(w, "computePenaltyAndApply('2026-10-01')"), E(w, 'data.penaltyStreak')]; };
+  const pc = prot('rune_protection_charged'), pa = prot('rune_protection_absolute');
+  check('PN5 обычная руна: ½ увеличенного (810 × 2 ÷ 2 = 810) и +1; Надёжная и Абсолютная — штрафа нет, счёт не меняется',
+    half[0] === 810 && half[1] === 3 && pc[0] === 'protected' && pc[1] === 2 && pa[0] === 'protected' && pa[1] === 2, JSON.stringify([half, pc, pa]));
+  const day = extra => { reset0(); E(w, `data.level = 30; data.penaltyStreak = 3; ${extra}; data.lastReset -= 86400000; checkMissedDays()`); return E(w, 'data.penaltyStreak'); };
+  const dOk = day('data.isGoalMet = true'), dVeil = day("data.activeScroll = 'veil'; data.veilLifted = false"),
+        dFr = day("data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 9 * 86400000"), dFail = day('');
+  check('PN6 итог дня: выполнено — сброс до 0; Пелена и Заморозка — без изменений (3); провал — +1 (4)', dOk === 0 && dVeil === 3 && dFr === 3 && dFail === 4, [dOk, dVeil, dFr, dFail].join(' / '));
+  reset0(); E(w, 'data.level = 30; data.exp = 100000; data.lastReset -= 3 * 86400000; checkMissedDays()');
+  const lost = 100000 - E(w, 'data.exp'), st3 = E(w, 'data.penaltyStreak');
+  check('PN7 три пропущенных дня: 810 + 1215 + 1620 = 3645, счёт 3', lost === 3645 && st3 === 3, `${lost} / ${st3}`);
+  reset0(); E(w, 'data.level = 30; data.exp = 300; data.penaltyStreak = 4'); const dl = E(w, "computePenaltyAndApply('2026-10-01').loss");
+  check('PN8 нехватка опыта — в долг, потолка нет', dl === 2430 && E(w, 'data.exp') === 0 && E(w, 'data.expDebt') === 2130, `${dl} / ${E(w, 'data.expDebt')}`);
+  // поле
+  const old = SEED; SEED = JSON.stringify(Object.assign(JSON.parse(old), { penaltyStreak: -3 })); const wb = boot(); const v1 = E(wb, 'data.penaltyStreak');
+  SEED = JSON.stringify(Object.assign(JSON.parse(old), { penaltyStreak: 2.7 })); const v2 = E(boot(), 'data.penaltyStreak');
+  const o2 = JSON.parse(old); delete o2.penaltyStreak; SEED = JSON.stringify(o2); const v3 = E(boot(), 'data.penaltyStreak'); SEED = old;
+  const si = E(w, `[sanitizeImportedData({ state: Object.assign({}, data, { penaltyStreak: 'abc' }), total: totalStats }).state.penaltyStreak,
+    sanitizeImportedData({ state: Object.assign({}, data, { penaltyStreak: 3 }), total: totalStats }).state.penaltyStreak].join(',')`);
+  check('PN9 поле penaltyStreak: испорченное → 0, дробное → целое, нет поля → 0; импорт бэкапа — проверка', v1 === 0 && v2 === 2 && v3 === 0 && si === '0,3', [v1, v2, v3, si].join(' / '));
+  // строка в Статусе и окно штрафа
+  const line = (th, n) => { E(w, `setTheme('${th}'); data.penaltyStreak = ${n}; fillStatusBlock('st')`); const el = D.getElementById('stPStreak'); return el ? [el.style.display, el.textContent.trim(), w.getComputedStyle(el).color] : ['нет строки', '', '']; };
+  const L = ['classic', 'system'].map(th => [line(th, 0), line(th, 1), line(th, 2), line(th, 5)]);
+  check('PN10 «Штрафов подряд: N» в Статусе — скрыта при 0 и 1, видна с 2, оранжевая; обе темы',
+    L.every(t => t[0][0] === 'none' && t[1][0] === 'none' && t[2][0] === 'block' && t[2][1] === 'Штрафов подряд: 2' && t[3][1] === 'Штрафов подряд: 5' && t[2][2].replace(/\s/g, '') === 'rgb(255,170,68)')
+    && !D.getElementById('hdrPStreak'), JSON.stringify(L));
+  E(w, 'showPenaltyBanner(810, 18, 1, 2, false, 2)'); const b2 = D.getElementById('penaltyContent').textContent;
+  E(w, 'showPenaltyBanner(810, 18, 1, 2, false, 1)'); const b1 = D.getElementById('penaltyContent').textContent;
+  check('PN11 окно штрафа: строка «Штрафов подряд: N» при 2 и больше', b2.includes('Штрафов подряд: 2') && !b1.includes('Штрафов подряд'));
+  E(w, "document.getElementById('penaltyOverlay').style.display = 'none'; setTheme('classic')");
+  // Сила и опыт
+  reset0(); E(w, "data.activeTitle = 'Новичок'; data.stats.int = 10; data.expBoostToday = 0; data.isGoalMet = false");
+  const ex = (str, id, ren) => E(w, `data.stats.str = ${str}; data.activeScroll = ${ren ? "'renunciation'" : 'null'}; getDynamicExp(80, 30, '${id}')`);
+  const p10 = ex(10, 'pushups'), p70 = ex(70, 'pushups'), s10 = ex(10, 'steps'), s70 = ex(70, 'steps'), r70 = ex(70, 'pushups', true);
+  check('PN12 Сила: силовые ×(1 + 0,15% за очко) — 70: ×1,09; шаги без бонуса; при Отречении бонуса нет',
+    p70 === Math.floor(80 * 2.45 * 1.09) && p10 === Math.floor(80 * 2.45) && s70 === s10 && r70 === p10, [p10, p70, s10, s70, r70].join(' / '));
+  const prices = E(w, `JSON.stringify(['rune_protection','rune_stability','rune_protection_charged','rune_cleansing','potion_restoration','rune_restoration_charged','rune_redemption','crystal_clarity'].map(k => SHOP_CATALOG[k] && SHOP_CATALOG[k].price))`);
+  check('PN13 цены: 5000 / 7200 / 10600 / 2200 / 3000 / 5400 / 6600 / 15000; Кристалл Ясности — в Магазине с 40-го', prices === '[5000,7200,10600,2200,3000,5400,6600,15000]' && E(w, 'SHOP_CATALOG.crystal_clarity.level') === 40, prices);
+  const pen = E(w, 'CODEX_CHAPTERS.penalty.content'), sts = E(w, 'CODEX_CHAPTERS.stats.content'), lore = E(w, 'STAT_LORE.str.text');
+  check('PN14 тексты: глава «Наказание за Слабость», «Характеристики», описание Силы',
+    pen === 'Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Чем выше уровень Игрока, тем тяжелее штраф; сила смягчает его. Каждый следующий провал подряд обходится дороже предыдущего — цепь обрывает только выполненное задание. Если накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия!'
+    && sts.includes('Сила снижает тяжесть штрафа за невыполненное задание и увеличивает опыт за силовые упражнения.')
+    && lore.endsWith('тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание, а силовые упражнения приносят больше опыта.'), pen);
+}
+
 (async () => {
   for (const [sc, it] of [['contract','rune_burden_release'],['transfer','rune_burden_release'],['contract','rune_protection'],['transfer','rune_protection_charged'],['contract','rune_freedom'],['transfer','rune_freedom']]) {
     const n = await noticeFor(sc, it);
@@ -1567,6 +1634,7 @@ async function textRevisionTests() {
   await legendTests();
   await effectSelectTests();
   await textRevisionTests();
+  await penaltyV750Tests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
