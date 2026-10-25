@@ -884,6 +884,28 @@ const w = boot(); const D = w.document; await tick();
     cssOk && cl && sy && cl.n === 2 && sy.n === 2 && cl.w === '55%' && cl.op === '0.35' && sy.op === '0.35' && /64,\s*192,\s*255|#40c0ff/i.test(cl.col) && sy.col === 'var(--sl)'   /* jsdom не раскрывает переменные — настоящий цвет проверен в Chromium */
     && cl.ghost === '55% 0.35' && sy.ghost === '55% 0.35', JSON.stringify({ cssOk, cl, sy })); }
 
+// ===== v7.5.4: окно Реестра (демо 113) =====
+{ const x = boot(); const XD = x.document; await tick(); const cs = el => x.getComputedStyle(el);
+  const css = normGid(XD.querySelectorAll('style')[0].textContent), sysBlock = css.indexOf('ТЕМА «СИСТЕМА»');
+  const has = r => css.indexOf(r) >= 0;
+  const cssOk = has('#leaderboardOverlay .status-window { height: 90vh; }') && css.indexOf('body.theme-sys #leaderboardOverlay .sf-win.mwin > .sf-content { height: 92vh; }') > sysBlock
+    && css.indexOf('body.theme-sys .sf-win.mwin #leaderboardContent .item-desc.rank { color: var(--rk); text-shadow: 0 0 8px var(--rk); }') > sysBlock
+    && has('#leaderboardContent .item-desc.rank { color: var(--rk); text-shadow: 0 0 8px var(--rk); }')
+    && /\.lb-dots i:nth-child\(1\) \{ animation: lbDot1 1\.6s steps\(1\) infinite; \}/.test(css) && has('.lb-dots i { font-style: normal; visibility: hidden; }')
+    && has('.item-desc.rank.monarch { --rk: #aa00ff; }') && has('.item-desc.rank.e { --rk: #aaaaaa; }');
+  const probe = async (th, id) => { E(x, `setTheme('${th}')`); closeAll(x); await tick(); E(x, `document.getElementById('${id}').style.display = 'flex'`); await tick();
+    E(x, `document.getElementById('${id}').style.display = 'none'`); await tick();
+    const g = XD.querySelector(`.status-overlay.cfx-ghost[data-gid="${id}"], .status-overlay.sfx-ghost[data-gid="${id}"]`);
+    const r = g ? [cs(g).animationDuration, cs(g.firstElementChild).animationDuration, cs(g).backdropFilter || cs(g).getPropertyValue('backdrop-filter')] : null;
+    await sleep(500); return r; };
+  const ghostCss = has('.status-overlay.cfx-ghost[data-gid="leaderboardOverlay"], .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] { animation-duration: .45s; -webkit-backdrop-filter: none; backdrop-filter: none; }')
+    && has('.status-overlay.cfx-ghost { pointer-events: none; animation: cfxOvOut .3s ease-in both; }') && has('.status-overlay.sfx-ghost { pointer-events: none; animation: cfxOvOut .35s ease-in both; }')
+    && ((js) => /LB_OUT_MS = 450/.test(js) && /g\.dataset\.gid === 'leaderboardOverlay' \? LB_OUT_MS/.test(js))([...XD.querySelectorAll('script')].map(x => x.textContent).join(''));
+  const lc = await probe('classic', 'leaderboardOverlay'), ls = await probe('system', 'leaderboardOverlay'), sc = await probe('classic', 'statusOverlay'), ss = await probe('system', 'statusOverlay');
+  check('T120 (v7.5.4) Реестр: полная высота с открытия (90vh / 92vh в блоке «Системы»), точки (шаг 0,4 с, место зарезервировано), цвет ранга со свечением; копия при закрытии — 0,45 с без размытия; у «Статуса» — прежние 0,3 / 0,35 с с размытием',
+    cssOk && ghostCss && lc && ls && /^0?\.45s$/.test(lc[0]) && /^0?\.45s$/.test(lc[1]) && /^0?\.45s$/.test(ls[0]) && /^0?\.45s$/.test(ls[1])
+    && sc && ss && !/45/.test(sc[0] + sc[1] + ss[0] + ss[1]), JSON.stringify({ cssOk, ghostCss, lc, ls, sc, ss })); }   /* jsdom не знает backdrop-filter — оно проверено текстом стилей и в Chromium */
+
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
 process.exit(0);

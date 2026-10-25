@@ -1632,6 +1632,29 @@ async function contourMarkTests() {
     (src.match(/Зафиксирован резонанс Аномалии\./g) || []).length === 2 && !/резонанс аномалии/.test(src));
 }
 
+
+// ===== v7.5.4: окно Реестра — полная высота, «Загрузка» с точками, цвет ранга, закрытие =====
+async function registryTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  E(w, `window.__lbRes = null; fetch = () => new Promise(res => { window.__lbRes = res; })`);
+  E(w, "document.getElementById('progressOverlay').style.display = 'flex'; openLeaderboard()");
+  const ld = D.querySelector('#leaderboardContent .lb-load'), dots = ld ? ld.querySelectorAll('.lb-dots i').length : 0;
+  check('LB1 при открытии — «Загрузка» по центру с тремя точками-ячейками (без «...» в тексте), окно Реестра открыто',
+    !!ld && ld.firstChild.textContent === 'Загрузка' && dots === 3 && D.getElementById('leaderboardOverlay').style.display === 'flex', ld ? ld.outerHTML : 'нет');
+  const top = [104, 86, 63, 52, 45, 33, 24, 15, 5].map((lv, i) => ({ rank: i + 1, name: 'И' + i, level: lv, bestStreak: 3 }));
+  E(w, `window.__lbRes({ json: () => Promise.resolve(${JSON.stringify({ ok: true, top, you: null })}) })`); await new Promise(r => setTimeout(r, 30));
+  const ranks = [...D.querySelectorAll('#leaderboardContent .item-desc.rank')].map(e => [...e.classList].filter(c => c !== 'item-desc' && c !== 'rank').join(''));
+  check('LB2 список встал на место «Загрузки»; у строки ранга — пометка ранга (все девять)', !D.querySelector('#leaderboardContent .lb-load') && ranks.join(',') === 'monarch,sss,national,s,a,b,c,d,e', ranks.join(','));
+  E(w, `fetch = () => Promise.resolve({ json: () => Promise.resolve({}) }); openLeaderboard()`); await new Promise(r => setTimeout(r, 30));
+  const m1 = D.querySelector('#leaderboardContent .lb-msg');
+  E(w, `fetch = () => Promise.resolve({ json: () => Promise.resolve({ ok: true, top: [], you: null }) }); openLeaderboard()`); await new Promise(r => setTimeout(r, 30));
+  const m2 = D.querySelector('#leaderboardContent .lb-msg');
+  check('LB3 ошибка — «Реестр сейчас недоступен.», пусто — «Реестр пока пуст.» (по центру, тексты прежние)', m1 && m1.textContent === 'Реестр сейчас недоступен.' && m2 && m2.textContent === 'Реестр пока пуст.', [m1 && m1.textContent, m2 && m2.textContent].join(' / '));
+  const ov = D.getElementById('leaderboardOverlay'); ov.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+  const stillOpen = ov.style.display === 'flex'; ov.querySelector('.close-status').click();
+  check('LB4 касание мимо окна не закрывает, «Закрыть» — закрывает', stillOpen && ov.style.display === 'none');
+}
+
 (async () => {
   for (const [sc, it] of [['contract','rune_burden_release'],['transfer','rune_burden_release'],['contract','rune_protection'],['transfer','rune_protection_charged'],['contract','rune_freedom'],['transfer','rune_freedom']]) {
     const n = await noticeFor(sc, it);
@@ -1666,6 +1689,7 @@ async function contourMarkTests() {
   await textRevisionTests();
   await penaltyV750Tests();
   await contourMarkTests();
+  await registryTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -761,6 +761,24 @@
     .status-overlay.sfx-ghost { pointer-events: none; animation: cfxOvOut .35s ease-in both; }
     .status-overlay.sfx-ghost * { pointer-events: none !important; }
     .status-overlay.sfx-ghost > * { animation: cfxWinOut .35s ease-in both; }
+    /* v7.5.4 (демо 113): Реестр игроков — уходящая копия 0,45 с и без размытия фона (поверх «Прогресса» двойное размытие на телефоне съедало угасание) */
+    .status-overlay.cfx-ghost[data-gid="leaderboardOverlay"], .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] { animation-duration: .45s; -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .status-overlay.cfx-ghost[data-gid="leaderboardOverlay"] > *, .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] > * { animation-duration: .45s; }
+    /* v7.5.4: Реестр — полная высота с открытия (без рывка при загрузке), «Загрузка» с точками, цвет ранга */
+    :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .status-window { height: 90vh; }
+    :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .status-body { display: flex; flex-direction: column; }
+    :is(#leaderboardContent, [data-gid="leaderboardContent"]) { flex: 1 0 auto; display: flex; flex-direction: column; }
+    .lb-load, .lb-msg { margin: auto; text-align: center; padding: 30px 0; opacity: 0.7; }
+    .lb-dots i { font-style: normal; visibility: hidden; }
+    .lb-dots i:nth-child(1) { animation: lbDot1 1.6s steps(1) infinite; }
+    .lb-dots i:nth-child(2) { animation: lbDot2 1.6s steps(1) infinite; }
+    .lb-dots i:nth-child(3) { animation: lbDot3 1.6s steps(1) infinite; }
+    @keyframes lbDot1 { 0% { visibility: hidden; } 25%, 100% { visibility: visible; } }
+    @keyframes lbDot2 { 0%, 25% { visibility: hidden; } 50%, 100% { visibility: visible; } }
+    @keyframes lbDot3 { 0%, 50% { visibility: hidden; } 75%, 100% { visibility: visible; } }
+    .item-desc.rank.e { --rk: #aaaaaa; } .item-desc.rank.d { --rk: #88ffcc; } .item-desc.rank.c { --rk: #40ffaa; } .item-desc.rank.b { --rk: #00ff88; } .item-desc.rank.a { --rk: #00ddff; }
+    .item-desc.rank.s { --rk: #0088ff; } .item-desc.rank.national { --rk: #ffaa00; } .item-desc.rank.sss { --rk: #cc00ff; } .item-desc.rank.monarch { --rk: #aa00ff; }
+    :is(#leaderboardContent, [data-gid="leaderboardContent"]) .item-desc.rank { color: var(--rk); text-shadow: 0 0 8px var(--rk); }
     .sfx-line { position: fixed; height: 2px; margin-top: -1px; pointer-events: none; transform-origin: 50% 50%; --lc: #40c0ff;
       background: linear-gradient(90deg, transparent, var(--lc) 15%, #fff 50%, var(--lc) 85%, transparent); box-shadow: 0 0 12px var(--lc);
       animation: sfxLine .3s ease-in both; }
@@ -1275,6 +1293,8 @@
     body.theme-sys .sf-win.mwin :is(#leaderboardContent, [data-gid="leaderboardContent"]) .item-card { display: block; }
     body.theme-sys .sf-win.mwin :is(#leaderboardContent, [data-gid="leaderboardContent"]) .item-info { display: block; }
     body.theme-sys .sf-win.mwin :is(#leaderboardContent, [data-gid="leaderboardContent"]) .item-desc { margin-top: 2px; }
+    body.theme-sys :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .sf-win.mwin > .sf-content { height: 92vh; }   /* v7.5.4: полная высота с открытия */
+    body.theme-sys .sf-win.mwin :is(#leaderboardContent, [data-gid="leaderboardContent"]) .item-desc.rank { color: var(--rk); text-shadow: 0 0 8px var(--rk); }   /* v7.5.4: цвет ранга + слабое свечение */
 
     /* --- заголовки разделов: маркер и линия --- */
     body.theme-sys .sf-win.mwin .section-title, body.theme-sys .sf-win.mwin .backup-section-title, body.theme-sys .sf-win.mwin .st-sec-title, body.theme-sys .sf-win.mwin .codex-chapter-title {
@@ -2042,7 +2062,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.3';
+  const APP_VERSION = '7.5.4';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4554,7 +4574,7 @@
   // на 12 px с угасанием, 0,35 с (свёртывание 7.3.6 на телефоне не успевало проиграться). Без эффекта: стартовое окно первого запуска
   // и смена оформления в Архиве (идёт свой сбой).
   const ClassicFx = (() => {
-    const IN_MS = 250, OUT_MS = 300, SYS_OUT_MS = 350;
+    const IN_MS = 250, OUT_MS = 300, SYS_OUT_MS = 350, LB_OUT_MS = 450;
     const prev = new WeakMap();
     const scrollPos = new Map();   // элемент окна → последняя прокрутка
     const isOpen = ov => !!ov.style.display && ov.style.display !== 'none';
@@ -4578,7 +4598,7 @@
       // по которой правила оформления «:is(#имя, [data-gid="имя"])» узнают элемент копии (иначе копия при уходе дёргается).
       [g, ...g.querySelectorAll('[id]')].forEach(el => { if (el.id) { el.dataset.gid = el.id; el.removeAttribute('id'); } });
       g.removeAttribute('onclick'); g.classList.remove('anim-paused');
-      const isSys = sys(), ms = isSys ? SYS_OUT_MS : OUT_MS;
+      const isSys = sys(), ms = g.dataset.gid === 'leaderboardOverlay' ? LB_OUT_MS : (isSys ? SYS_OUT_MS : OUT_MS);   // v7.5.4: Реестр — 0,45 с
       if (isSys) g.querySelectorAll('.mw-in, .anim-paused').forEach(el => el.classList.remove('mw-in', 'anim-paused'));
       g.classList.add(isSys ? 'sfx-ghost' : 'cfx-ghost');
       const z = parseInt(getComputedStyle(ov).zIndex, 10) || 1000;
@@ -8915,7 +8935,7 @@
   function openLeaderboard() {
     const overlay = document.getElementById('leaderboardOverlay');
     const content = document.getElementById('leaderboardContent');
-    content.innerHTML = `<div style="text-align:center; padding:30px 0; opacity:0.7;">Загрузка...</div>`;
+    content.innerHTML = `<div class="lb-load">Загрузка<span class="lb-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></div>`;   // v7.5.4: точки по кругу
     overlay.style.display = 'flex';
 
     const url = `${LEADERBOARD_URL}?token=${encodeURIComponent(LEADERBOARD_TOKEN)}&id=${encodeURIComponent(data.playerId)}`;
@@ -8926,7 +8946,7 @@
         renderLeaderboard(res.top || [], res.you || null);
       })
       .catch(() => {
-        content.innerHTML = `<div style="text-align:center; padding:30px 0; opacity:0.7;">Реестр сейчас недоступен.</div>`;
+        content.innerHTML = `<div class="lb-msg">Реестр сейчас недоступен.</div>`;
       });
   }
 
@@ -8946,7 +8966,7 @@
   function renderLeaderboard(top, you) {
     const content = document.getElementById('leaderboardContent');
     if (!top.length) {
-      content.innerHTML = `<div style="text-align:center; padding:30px 0; opacity:0.7;">Реестр пока пуст.</div>`;
+      content.innerHTML = `<div class="lb-msg">Реестр пока пуст.</div>`;
       return;
     }
     let html = top.map(entry => leaderboardCard(entry, false)).join('');
