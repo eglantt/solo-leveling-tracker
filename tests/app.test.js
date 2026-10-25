@@ -58,7 +58,7 @@ check('1b Панель после угасания Договора: ожида�
 reset(w);
 check('1c После сброса: руна жива, hold очищен, день успешен', E(w,'data.insurance && data.insuranceHoldScroll===null && data.consecutiveDays===6'), st(w));
 check('1d Панель на обычном цикле: руна без «ожидает»', !/ожидает/.test(effects(w)), effects(w));
-const full1 = E(w,'(()=>{let p=Math.max(0.05,0.15+Math.floor(data.level/10)*0.01-Math.max(0,data.stats.str-10)*0.0015)*Math.max([1,1.5,2,2.5,3][Math.min(4,data.penaltyStreak||0)],data.curseActiveToday?3:1); if(isArtifactEquipped("amulet_will"))p*=0.85; return Math.floor(getExpToNext(data.level)*p+1e-6);})()');
+const full1 = E(w,'(()=>{let p=Math.max(0.05,0.15+Math.floor(data.level/10)*0.01-Math.max(0,data.stats.str-10)*0.0015)*[1,1.5,2,2.5,3][Math.min(4,data.penaltyStreak||0)]*(data.curseActiveToday?3:1); if(isArtifactEquipped("amulet_will"))p*=0.85; return Math.floor(getExpToNext(data.level)*p+1e-6);})()');
 reset(w);
 check('1e Провал обычного цикла: штраф вдвое, руна сгорела, серия 0', E(w,`(data.penaltyStack.length ? data.penaltyStack[data.penaltyStack.length-1].loss : 0)===Math.floor(${full1}*0.5) && !data.insurance && data.consecutiveDays===0`), st(w)+' полный='+full1+' уровень='+E(w,'data.level'));
 
@@ -427,14 +427,14 @@ async function renunciationTests() {
     check('RN3 шкатулка Кристалла Теней за полный день: без Отречения есть, под Отречением нет (Отречение снято)', b0[0] === 1 && b1[0] === 0 && b1[1] === null, JSON.stringify([b0, b1])); }
   { const pen = async (r, eq) => { const w = await mk(`data.equippedArtifacts = ${JSON.stringify(eq)}; data.activeScroll = ${r ? "'renunciation'" : 'null'}; data.exp = 90000;`);
       return E(w, `computePenaltyAndApply('2026-09-01').loss`); };
-    const expected = async (useStr, useAmulet) => { const w = await mk(''); return E(w, `(() => { const base = 0.15 + Math.floor(data.level / 10) * 0.01; let p = Math.max(0.05, base - ${useStr ? '(data.stats.str - 10) * 0.0015' : '0'}) * Math.max([1,1.5,2,2.5,3][Math.min(4, data.penaltyStreak || 0)], data.curseActiveToday ? 3 : 1); ${useAmulet ? 'p *= 0.85;' : ''} return Math.floor(getExpToNext(data.level) * p + 1e-6); })()`); };
+    const expected = async (useStr, useAmulet) => { const w = await mk(''); return E(w, `(() => { const base = 0.15 + Math.floor(data.level / 10) * 0.01; let p = Math.max(0.05, base - ${useStr ? '(data.stats.str - 10) * 0.0015' : '0'}) * [1,1.5,2,2.5,3][Math.min(4, data.penaltyStreak || 0)] * (data.curseActiveToday ? 3 : 1); ${useAmulet ? 'p *= 0.85;' : ''} return Math.floor(getExpToNext(data.level) * p + 1e-6); })()`); };
     const withAll = await pen(false, ['amulet_will', null, null, null]), renounced = await pen(true, ['amulet_will', null, null, null]);
     check('RN4 штраф без Отречения: Сила и Амулет Воли снижают', withAll === await expected(true, true), `${withAll} vs ${await expected(true, true)}`);
     check('RN5 штраф под Отречением: без Силы и без Амулета Воли', renounced === await expected(false, false), `${renounced} vs ${await expected(false, false)}`); }
   { const w = await mk(`data.equippedArtifacts = ['amulet_will', null, null, null]; data.activeScroll = 'renunciation'; data.isGoalMet = false; data.completed = {}; data.exp = 90000; data.lastReset -= 86400000;`);
     E(w, 'checkMissedDays()');
     const st = JSON.parse(E(w, 'JSON.stringify(data.penaltyStack[data.penaltyStack.length - 1])'));
-    const exp = await (async () => { const w2 = await mk(''); return E(w2, `Math.floor(getExpToNext(data.level) * Math.max(0.05, 0.15 + Math.floor(data.level / 10) * 0.01) * Math.max([1,1.5,2,2.5,3][Math.min(4, data.penaltyStreak || 0)], data.curseActiveToday ? 3 : 1) + 1e-6)`); })();
+    const exp = await (async () => { const w2 = await mk(''); return E(w2, `Math.floor(getExpToNext(data.level) * Math.max(0.05, 0.15 + Math.floor(data.level / 10) * 0.01) * [1,1.5,2,2.5,3][Math.min(4, data.penaltyStreak || 0)] * (data.curseActiveToday ? 3 : 1) + 1e-6)`); })();
     check('RN6 проваленный день под Отречением: штраф на сбросе без Силы и Амулета Воли', st && st.loss === exp, `${st && st.loss} vs ${exp}`); }
   { const w = await mk(`data.equippedArtifacts = ['seal_limit', null, null, null]; data.activeScroll = 'renunciation'`);
     check('RN7 Печать Предела под Отречением действует', E(w, 'getDailyLimitBreakCap()') === 2 + E(w, 'data.extraLimitBreaksToday || 0'));
@@ -1553,8 +1553,16 @@ async function penaltyV750Tests() {
   const lRen = E(w, "computePenaltyAndApply('2026-10-01').loss");
   check('PN3 Сила −0,15% за очко (70 → 18 − 9 = 9%: 405), минимум 5% (210 → 225), при Отречении Силы нет (810)', l70 === 405 && l210 === 225 && lRen === 810, [l70, l210, lRen].join(' / '));
   const curse = st => { reset0(); E(w, `data.level = 30; data.curseActiveToday = true; data.penaltyStreak = ${st}`); return E(w, "computePenaltyAndApply('2026-10-01').loss"); };
-  const c = [curse(0), curse(2), curse(4)];
-  check('PN4 Бремя: больший множитель — без цепи ×3 (2430), на 3-й ступени ×3, не ×6 (2430), на 5-й ×3 (2430)', c.every(x => x === 2430), c.join(' / '));
+  const c = [curse(0), curse(1), curse(2), curse(4), curse(7)];
+  check('PN4 (v7.5.2) Бремя: ступень × 3 — 30-й уровень: 2430 / 3645 / 4860 / 7290 / 7290 при 0 / 1 / 2 / 4 / 7 штрафах подряд', c.join(' / ') === '2430 / 3645 / 4860 / 7290 / 7290', c.join(' / '));
+  { reset0(); E(w, "data.level = 30; data.curseActiveToday = true; data.penaltyStreak = 2; data.insurance = true; data.insuranceSourceId = 'rune_protection_absolute'");
+    const ab = [E(w, "computePenaltyAndApply('2026-10-01')"), E(w, 'data.penaltyStreak')];
+    reset0(); E(w, "data.level = 30; data.curseActiveToday = true; data.penaltyStreak = 2; data.insurance = true; data.insuranceSourceId = 'rune_protection'");
+    const r = E(w, "computePenaltyAndApply('2026-10-01')"); const ord = [r.loss, r.halved, E(w, 'data.insurance'), E(w, 'data.penaltyStreak')];
+    reset0(); E(w, "data.level = 30; data.curseActiveToday = true; data.penaltyStreak = 4; data.exp = 1000");
+    const d = [E(w, "computePenaltyAndApply('2026-10-01').loss"), E(w, 'data.exp'), E(w, 'data.expDebt')];
+    check('PN4a (v7.5.2) под Бременем: Абсолютная руна — штрафа нет, цепь 2; обычная — тратится впустую, штраф полный (4860), цепь 3; 7290 при 1000 опыта — 6290 в долг',
+      ab[0] === 'protected' && ab[1] === 2 && ord[0] === 4860 && ord[1] === false && ord[2] === false && ord[3] === 3 && d[0] === 7290 && d[1] === 0 && d[2] === 6290, JSON.stringify([ab, ord, d])); }
   reset0(); E(w, "data.level = 30; data.penaltyStreak = 2; data.insurance = true; data.insuranceSourceId = 'rune_protection'");
   const half = [E(w, "computePenaltyAndApply('2026-10-01').loss"), E(w, 'data.penaltyStreak')];
   const prot = id => { reset0(); E(w, `data.level = 30; data.penaltyStreak = 2; data.insurance = true; data.insuranceSourceId = '${id}'`); return [E(w, "computePenaltyAndApply('2026-10-01')"), E(w, 'data.penaltyStreak')]; };

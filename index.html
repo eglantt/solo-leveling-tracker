@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2042,7 +2042,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.1';
+  const APP_VERSION = '7.5.2';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -5915,13 +5915,13 @@
     // нетронутой, сработает уже на первом цикле без Договора/Переноса.
     playSound('penalty');
     // v7.5.0: база растёт с уровнем (+1% за каждые 10), Сила −0,15% за очко, минимум 5% — до нарастания;
-    // множитель дня — больший из ступени «штрафов подряд» и Бремени ×3.
+    // множитель дня — ступень «штрафов подряд»; под Бременем — втрое (v7.5.2: было «больший из ступени и ×3»).
     const basePen = penaltyBasePct(data.level);
     const renounced = data.activeScroll === 'renunciation';   // v6.8.4: Отречение — без Силы и Амулета Воли
     const bonusStr = renounced ? 0 : Math.max(0, data.stats.str - 10);
     const strReduction = bonusStr * PENALTY_STR_STEP;
     let finalPen = Math.max(0.05, basePen - strReduction);
-    finalPen *= Math.max(penaltyStreakMult(data.penaltyStreak), data.curseActiveToday ? 3 : 1);
+    finalPen *= penaltyStreakMult(data.penaltyStreak) * (data.curseActiveToday ? 3 : 1);
     if (!renounced && isArtifactEquipped('amulet_will')) finalPen *= 0.85;
     let loss = Math.floor(getExpToNext(data.level) * finalPen + 1e-6);   // v7.5.0: без потери единицы на дробях (4500 × 0,18 × 2,5)
     if (halfBlock) loss = Math.floor(loss * 0.5);
