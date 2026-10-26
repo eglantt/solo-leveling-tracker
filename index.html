@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.8 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.9 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1204,6 +1204,10 @@
     .sys-pen-info .spn { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; }
     .sys-pen-info .spi-gap { margin-top: 6px; }
     .sys-pen-info .spi-extra { opacity: .85; }
+    /* v7.5.9: Длань — «Цели задания: уровень N» под уровнем */
+    .sys-target-now { margin: 6px 0 8px; }
+    .sys-target-now .stn { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; }
+    .sys-target-now .stn-note { opacity: .7; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -1815,6 +1819,7 @@
           <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, addExpAction)">Добавить EXP</button>
         </div>
         <div class="sys-current" id="sysLevelNow" style="margin-top:10px;"></div>
+        <div class="backup-summary sys-target-now" id="sysTargetNow"></div>   <!-- v7.5.9 -->
         <input type="number" id="sysLevelInput" class="code-input-area" style="min-height:auto; text-align:center;" placeholder="Уровень">
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, setLevelAction)">Установить уровень</button>
         <div class="danger-btn-row" style="margin-top:10px;">
@@ -2076,7 +2081,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.8';
+  const APP_VERSION = '7.5.9';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -3159,7 +3164,7 @@
       "Система напоминает: задание ожидает завершения.",
       "Задание пока не выполнено.",
       "Прогресс дня неполон.",
-      "Система фиксирует: задание не выполнено.",
+      "Задание не выполнено. Время идёт.",
       "Время до сброса сокращается.",
       "Задание остаётся открытым.",
       "Незавершённое задание требует внимания.",
@@ -3174,7 +3179,7 @@
     reminderFinal: [
       "До завершения цикла осталось критически мало времени.",
       "Время почти истекло. Задание не выполнено.",
-      "Система фиксирует: срок задания почти истёк.",
+      "Срок задания почти истёк.",
       "Финальное окно для завершения задания."
     ],
     complete: [
@@ -3235,7 +3240,7 @@
     title_limit_conqueror: { title: "Покоритель предела", content: "Титул подчинённого предела — двадцать пять раз предел был пройден так же легко, как обычный день. Кредиты во время самого Преодоления предела начисляются особенно щедро." },
     title_gate_trader: { title: "Торговец Врат", content: "Титул торгового расчёта — полсотни сделок, достаточно, чтобы перестать теряться в ценах Магазина. Продажа расходников приносит больше обычного." },
     rank_d: { title: "D-Ранг", content: "Первый этап эволюции. Игрок преодолел базовую слабость E-ранга — организм адаптировался к минимальным нагрузкам. С этого момента дневная нагрузка возрастает." },
-    rank_c: { title: "C-Ранг", content: "Зафиксирован устойчивый прогресс. Физическая выносливость и скорость восстановления Игрока после нагрузок значительно превышают показатели обычного человека." },
+    rank_c: { title: "C-Ранг", content: "Достигнут устойчивый прогресс. Физическая выносливость и скорость восстановления Игрока после нагрузок значительно превышают показатели обычного человека." },
     rank_b: { title: "B-Ранг", content: "Предел стандартной человеческой формы сломан. Выносливость и показатели силы Игрока выходят за рамки обычных физиологических ограничений. Открывается доступ к более высоким наградам." },
     rank_a: { title: "A-Ранг", content: "Элита. До этого рубежа доходят немногие. Физические возможности Игрока вышли на пиковый уровень, а контроль над телом стал практически полным." },
     rank_s: { title: "S-Ранг", content: "Рубеж высших показателей. Игрок входит в категорию сильнейших. На этом уровне физическая форма и дисциплина находятся на пределе человеческих возможностей." },
@@ -5686,7 +5691,7 @@
     cont.innerHTML = `
       <div class="danger-warning-step">
         <div class="danger-icon">⚠</div>
-        <div class="danger-text">Система зафиксировала невыполнение задания.</div>
+        <div class="danger-text">Дневное задание не выполнено.</div>
         <ul class="danger-list">
           <li>Закрыто упражнений: ${completedCount} из 5</li>
           <li>Потеряно опыта: ${totalLoss}${pctText}</li>
@@ -8851,6 +8856,9 @@
     document.getElementById('sysCreditsNow').innerHTML = `<span class="sv cr">${creditsHtml(Math.floor(data.credits) + ' ◈')}</span>`;
     updateSysStats();   // v7.0.3
     updateSysPenalty();   // v7.5.7
+    // v7.5.9: по какому уровню считаются цели задания (меняются только со сменой цикла)
+    const tg = document.getElementById('sysTargetNow');
+    if (tg) { const tl = data.dailyTargetLevel || data.level; tg.innerHTML = `Цели задания: уровень <span class="stn">${tl}</span>` + (tl !== data.level ? ' <span class="stn-note">— обновятся при сбросе дня</span>' : ''); }
   }
   // v7.0.3: Длань — характеристики. Изменение прямое: свободные очки не тратит и не возвращает (иначе при нуле очков ничего не добавить).
   // Характеристики — не ниже 10 (стартовое значение, от него считаются все бонусы), свободные очки — не ниже 0; верхней границы нет.
@@ -8891,8 +8899,7 @@
     const val = sysInputAmount('sysExpInput');
     if (val === null) return;
     gainExp(val);   // сначала гасит долг, остаток — в опыт
-    checkLevelUp();
-    data.dailyTargetLevel = data.level;
+    checkLevelUp();   // v7.5.9: цели задания не меняются — только со сменой цикла
     saveData(); render(); updateSysCurrent();
   }
   // Не штраф: только до нуля, долг не создаёт и не меняет, уровень не меняет.
@@ -8905,8 +8912,7 @@
 
   function quickExpAction() {
     gainExp(1000);
-    checkLevelUp();
-    data.dailyTargetLevel = data.level;
+    checkLevelUp();   // v7.5.9: цели задания не меняются — только со сменой цикла
     saveData(); render();
   }
 
@@ -8924,14 +8930,13 @@
       data.level = target;
       data.exp = 0;
     }
-    data.dailyTargetLevel = data.level;
+    // v7.5.9: цели задания не меняются — только со сменой цикла (было «сразу под новый уровень», v5.9.14)
     xpSnap(); saveData(); render();
   }
 
   function quickLevelAction() {
     data.exp = getExpToNext(data.level);
-    checkLevelUp();
-    data.dailyTargetLevel = data.level;
+    checkLevelUp();   // v7.5.9: цели задания не меняются — только со сменой цикла
     xpSnap(); saveData(); render();
   }
 

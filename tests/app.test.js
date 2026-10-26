@@ -1634,6 +1634,43 @@ async function contourMarkTests() {
 
 
 // ===== v7.5.4: окно Реестра — полная высота, «Загрузка» с точками, цвет ранга, закрытие =====
+// ===== v7.5.9: тексты без «фиксирует» (три места + Кодекс C-Ранг); Длань не меняет цели задания посреди цикла =====
+async function v759Tests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n');
+  const rem = E(w, 'JSON.stringify([SYSTEM_NOTICES.reminder, SYSTEM_NOTICES.reminderFinal, SYSTEM_NOTICES.complete])');
+  const [r1, r2, c] = JSON.parse(rem);
+  check('FX1 напоминания: «Задание не выполнено. Время идёт.» и «Срок задания почти истёк.» вместо «Система фиксирует: …»; «Задание выполнено…» — без изменений',
+    r1.includes('Задание не выполнено. Время идёт.') && r2.includes('Срок задания почти истёк.') && !r1.concat(r2).some(t => /фиксир/i.test(t))
+    && c.includes('Задание выполнено. Система фиксирует прогресс.') && c.includes('Система фиксирует выполнение задания.'), rem);
+  check('FX2 окно штрафа — «Дневное задание не выполнено.»; глава «C-Ранг» — «Достигнут устойчивый прогресс. …»',
+    src.includes('<div class="danger-text">Дневное задание не выполнено.</div>') && !src.includes('Система зафиксировала невыполнение задания.')
+    && E(w, 'CODEX_CHAPTERS.rank_c.content').startsWith('Достигнут устойчивый прогресс. Физическая выносливость'), E(w, 'CODEX_CHAPTERS.rank_c.content'));
+  check('FX3 оставлены без изменений: темп, высокая нагрузка, перегрузка, Бремя Аномалии (2 места при запуске + отказ Шкатулки)',
+    E(w, 'PACE_NOTICE').startsWith('Зафиксирован недопустимый темп.') && E(w, 'FZ_T70').startsWith('Зафиксирована высокая нагрузка.') && E(w, 'FZ_TBIG').startsWith('Зафиксирована перегрузка:')
+    && (src.match(/Зафиксирован резонанс Аномалии\./g) || []).length === 2 && src.includes('Зафиксирован активный эффект резонанса Аномалии.'));
+  // Длань
+  const T = () => E(w, "JSON.stringify([data.level, data.dailyTargetLevel, getDynamicTarget(100, data.dailyTargetLevel, 'pushups')])");
+  const line = () => D.getElementById('sysTargetNow').textContent.replace(/\s+/g, ' ').trim();
+  E(w, "data.level = 20; data.exp = 0; data.dailyTargetLevel = 20; data.completed = {}; data.isGoalMet = false; sysToolsAuthorized = true; openSysTools()");
+  const l0 = line(), t0 = JSON.parse(T());
+  const res = {};
+  for (const [name, code] of [['quickLevel', 'quickLevelAction()'], ['quickExp', 'data.exp = 2500; quickExpAction()'], ['addExp', "document.getElementById('sysExpInput').value = '50000'; addExpAction()"], ['setLevel', "document.getElementById('sysLevelInput').value = '40'; setLevelAction()"], ['setLower', "document.getElementById('sysLevelInput').value = '5'; setLevelAction()"]]) {
+    E(w, `data.level = 20; data.exp = 0; data.dailyTargetLevel = 20; ${code}; updateSysCurrent()`); res[name] = [JSON.parse(T()), line()];
+  }
+  const okTools = Object.entries(res).every(([k, [t, l]]) => t[1] === 20 && t[2] === t0[2] && t[0] !== 20 && l === 'Цели задания: уровень 20 — обновятся при сбросе дня');
+  check('DT1 Длань: «+1 уровень», «+1000 EXP», «Добавить EXP», «Установить уровень» (выше и ниже) — уровень меняется, цели задания прежние (уровень 20); строка «Цели задания: уровень 20 — обновятся при сбросе дня»; до этого — «Цели задания: уровень 20» без приписки',
+    l0 === 'Цели задания: уровень 20' && okTools, JSON.stringify({ l0, res }));
+  // выполненный день не «расвыполняется»
+  E(w, "data.level = 20; data.exp = 0; data.dailyTargetLevel = 20; ['pushups','squats','pullups','press','steps'].forEach(id => { const base = {pushups:100,squats:120,pullups:40,press:100,steps:10000}[id]; data.completed[id] = getDynamicTarget(base, data.dailyTargetLevel, id); }); data.isGoalMet = false");
+  const doneBefore = E(w, 'allQuestsDone()'); E(w, 'quickLevelAction(); quickLevelAction()'); const doneAfter = E(w, 'allQuestsDone()');
+  check('DT2 выполненный день после «+1 уровень» ×2 остаётся выполненным (ложного штрафа в 05:00 не будет)', doneBefore === true && doneAfter === true, `${doneBefore} → ${doneAfter}`);
+  // принудительный сброс — цели нового уровня
+  E(w, "data.level = 20; data.exp = 0; data.dailyTargetLevel = 20; quickLevelAction(); forceFullResetAction(); updateSysCurrent()");
+  const afterReset = JSON.parse(T()), lR = line();
+  check('DT3 «Принудительный сброс дня» — цели нового уровня (21), строка без приписки', afterReset[0] === 21 && afterReset[1] === 21 && lR === 'Цели задания: уровень 21', JSON.stringify([afterReset, lR]));
+}
+
 // ===== v7.5.8: база 20%, лестница шагом 0,5 до ×5 =====
 async function penaltyV758Tests() {
   const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
@@ -1826,6 +1863,7 @@ async function registryTests() {
   await catalogKeyBoxTests();
   await sysPenaltyTests();
   await penaltyV758Tests();
+  await v759Tests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
