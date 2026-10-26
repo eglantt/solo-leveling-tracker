@@ -1548,7 +1548,7 @@ async function penaltyV750Tests() {
   reset0(); E(w, 'data.level = 30');
   const seq = []; for (let i = 0; i < 10; i++) seq.push([E(w, "computePenaltyAndApply('2026-10-01').loss"), E(w, 'data.penaltyStreak')]);
   check('PN2 (v7.5.8) ступени подряд ×1 … ×5 шагом 0,5 (30-й уровень, 4500 до уровня, 23%): 1035 / 1552 / 2070 / 2587 / 3105 / 3622 / 4140 / 4657 / 5175 / 5175, счёт 1…10',
-    JSON.stringify(seq) === '[[1035,1],[1552,2],[2070,3],[2587,4],[3105,5],[3622,6],[4140,7],[4657,8],[5175,9],[5175,10]]', JSON.stringify(seq));
+    JSON.stringify(seq) === '[[1035,1],[1552,2],[2070,3],[2587,4],[3105,5],[3622,6],[4140,7],[4657,8],[5175,8],[5175,8]]'   /* v7.5.10: тяжесть — не выше 8 шагов */, JSON.stringify(seq));
   reset0(); E(w, 'data.level = 30; data.stats.str = 70');
   const l70 = E(w, "computePenaltyAndApply('2026-10-01').loss"); reset0(); E(w, 'data.level = 30; data.stats.str = 210');
   const l210 = E(w, "computePenaltyAndApply('2026-10-01').loss"); reset0(); E(w, "data.level = 30; data.stats.str = 70; data.activeScroll = 'renunciation'");
@@ -1574,7 +1574,7 @@ async function penaltyV750Tests() {
   const day = extra => { reset0(); E(w, `data.level = 30; data.penaltyStreak = 3; ${extra}; data.lastReset -= 86400000; checkMissedDays()`); return E(w, 'data.penaltyStreak'); };
   const dOk = day('data.isGoalMet = true'), dVeil = day("data.activeScroll = 'veil'; data.veilLifted = false"),
         dFr = day("data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 9 * 86400000"), dFail = day('');
-  check('PN6 итог дня: выполнено — сброс до 0; Пелена и Заморозка — без изменений (3); провал — +1 (4)', dOk === 0 && dVeil === 3 && dFr === 3 && dFail === 4, [dOk, dVeil, dFr, dFail].join(' / '));
+  check('PN6 (v7.5.10) итог дня: выполнено — тяжесть 3 → 1 (−2 шага); Пелена и Заморозка — без изменений (3); провал — +1 (4)', dOk === 1 && dVeil === 3 && dFr === 3 && dFail === 4, [dOk, dVeil, dFr, dFail].join(' / '));
   reset0(); E(w, 'data.level = 30; data.exp = 100000; data.lastReset -= 3 * 86400000; checkMissedDays()');
   const lost = 100000 - E(w, 'data.exp'), st3 = E(w, 'data.penaltyStreak');
   check('PN7 три пропущенных дня: 1035 + 1552 + 2070 = 4657, счёт 3', lost === 4657 && st3 === 3, `${lost} / ${st3}`);
@@ -1588,7 +1588,7 @@ async function penaltyV750Tests() {
     sanitizeImportedData({ state: Object.assign({}, data, { penaltyStreak: 3 }), total: totalStats }).state.penaltyStreak].join(',')`);
   check('PN9 поле penaltyStreak: испорченное → 0, дробное → целое, нет поля → 0; импорт бэкапа — проверка', v1 === 0 && v2 === 2 && v3 === 0 && si === '0,3', [v1, v2, v3, si].join(' / '));
   // строка в Статусе и окно штрафа
-  const line = (th, n) => { E(w, `setTheme('${th}'); data.penaltyStreak = ${n}; fillStatusBlock('st')`); const el = D.getElementById('stPStreak'); return el ? [el.style.display, el.textContent.trim(), w.getComputedStyle(el).color] : ['нет строки', '', '']; };
+  const line = (th, n) => { E(w, `setTheme('${th}'); data.penaltyRun = ${n}; fillStatusBlock('st')`);   /* v7.5.10: «подряд» — penaltyRun */ const el = D.getElementById('stPStreak'); return el ? [el.style.display, el.textContent.trim(), w.getComputedStyle(el).color] : ['нет строки', '', '']; };
   const L = ['classic', 'system'].map(th => [line(th, 0), line(th, 1), line(th, 2), line(th, 5)]);
   check('PN10 «Штрафов подряд: N» в Статусе — скрыта при 0 и 1, видна с 2, оранжевая; обе темы',
     L.every(t => t[0][0] === 'none' && t[1][0] === 'none' && t[2][0] === 'block' && t[2][1] === 'Штрафов подряд: 2' && t[3][1] === 'Штрафов подряд: 5' && t[2][2].replace(/\s/g, '') === 'rgb(255,170,68)')
@@ -1607,7 +1607,7 @@ async function penaltyV750Tests() {
   check('PN13 цены: 5000 / 7200 / 10600 / 2200 / 3000 / 5400 / 6600 / 15000; Кристалл Ясности — в Магазине с 40-го', prices === '[5000,7200,10600,2200,3000,5400,6600,15000]' && E(w, 'SHOP_CATALOG.crystal_clarity.level') === 40, prices);
   const pen = E(w, 'CODEX_CHAPTERS.penalty.content'), sts = E(w, 'CODEX_CHAPTERS.stats.content'), lore = E(w, 'STAT_LORE.str.text');
   check('PN14 тексты: глава «Наказание за Слабость», «Характеристики», описание Силы',
-    pen === 'Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Чем выше уровень Игрока, тем тяжелее штраф; сила смягчает его. Каждый следующий провал подряд обходится дороже предыдущего — цепь обрывает только выполненное задание. Если накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия!'
+    pen === 'Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Чем выше уровень Игрока, тем тяжелее штраф; сила смягчает его. Каждый следующий провал обходится дороже предыдущего, а выполненное задание лишь постепенно снижает тяжесть штрафа. Если накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия!'
     && sts.includes('Сила снижает тяжесть штрафа за невыполненное задание и увеличивает опыт за силовые упражнения.')
     && lore.endsWith('тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание, а силовые упражнения приносят больше опыта.'), pen);
 }
@@ -1634,6 +1634,77 @@ async function contourMarkTests() {
 
 
 // ===== v7.5.4: окно Реестра — полная высота, «Загрузка» с точками, цвет ранга, закрытие =====
+// ===== v7.5.10: тяжесть штрафа (выполненный день −2 шага) и «штрафов подряд» отдельно =====
+async function v7510Tests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  const reset0 = () => E(w, `data.completed={}; data.isGoalMet=false; data.dailyNotices.complete=false; data.insurance=false; data.insuranceSourceId=null; data.activeScroll=null; data.pendingScroll=null;
+    data.curseActiveToday=false; data.pendingCurse=false; data.streakShield=false; data.insuranceHoldScroll=null; data.expDebt=0; data.exp=100000; data.stats.str=10; data.equippedArtifacts=[null,null,null,null]; data.level=30`);
+  const SR = () => E(w, 'JSON.stringify([data.penaltyStreak, data.penaltyRun])');
+  // выполненный день: −2 шага, подряд → 0
+  const succ = [];
+  E(w, 'data.penaltyStreak = 8; data.penaltyRun = 8');
+  for (let i = 0; i < 5; i++) { reset0(); E(w, "applyPenaltyLogic('2026-10-01')".replace('applyPenaltyLogic', 'data.isGoalMet = true; applyPenaltyLogic')); succ.push(JSON.parse(SR())); }
+  E(w, 'data.penaltyStreak = 1; data.penaltyRun = 1'); reset0(); E(w, "data.isGoalMet = true; applyPenaltyLogic('2026-10-01')"); const one = JSON.parse(SR());
+  check('PS1 выполненный день: тяжесть 8 → 6 → 4 → 2 → 0 → 0 (×5 → ×4 → ×3 → ×2 → ×1), с 1 → 0; «подряд» → 0',
+    JSON.stringify(succ) === '[[6,0],[4,0],[2,0],[0,0],[0,0]]' && JSON.stringify(one) === '[0,0]', JSON.stringify([succ, one]));
+  // штраф: +1 шаг до 8, подряд +1 без потолка
+  E(w, 'data.penaltyStreak = 0; data.penaltyRun = 0'); const pen = [];
+  for (let i = 0; i < 10; i++) { reset0(); const r = E(w, "JSON.stringify((({ loss, mult, streak }) => [loss, mult, streak])(computePenaltyAndApply('2026-10-01')))"); pen.push(JSON.parse(r).concat(JSON.parse(SR()))); }
+  check('PS2 штраф: тяжесть +1 шаг до ×5 (8 шагов), «подряд» +1 (без потолка); множитель этого штрафа — ×1 … ×5; потери 1035 … 5175',
+    pen.map(x => x[1]).join(',') === '1,1.5,2,2.5,3,3.5,4,4.5,5,5' && pen.map(x => x[3]).join(',') === '1,2,3,4,5,6,7,8,8,8' && pen.map(x => x[4]).join(',') === '1,2,3,4,5,6,7,8,9,10'
+    && pen.map(x => x[0]).join(',') === '1035,1552,2070,2587,3105,3622,4140,4657,5175,5175', JSON.stringify(pen));
+  // сценарий: 3 провала, выполненный день, провал — ×1,5
+  E(w, 'data.penaltyStreak = 0; data.penaltyRun = 0');
+  for (let i = 0; i < 3; i++) { reset0(); E(w, "computePenaltyAndApply('2026-10-01')"); }
+  reset0(); E(w, "data.isGoalMet = true; applyPenaltyLogic('2026-10-02')"); const mid = JSON.parse(SR());
+  reset0(); const r4 = E(w, "JSON.stringify((({ loss, mult, streak }) => [loss, mult, streak])(computePenaltyAndApply('2026-10-03')))");
+  check('PS3 3 провала → выполненный день → провал: тяжесть 3 → 1, подряд 3 → 0; следующий штраф ×1,5 (1552), подряд 1',
+    JSON.stringify(mid) === '[1,0]' && r4 === '[1552,1.5,1]', JSON.stringify([mid, r4]));
+  // Пелена / Заморозка / полная защита — без изменений
+  const day = extra => { reset0(); E(w, `data.penaltyStreak = 5; data.penaltyRun = 5; ${extra}; data.lastReset -= 86400000; checkMissedDays()`); return SR(); };
+  const dV = day("data.activeScroll = 'veil'; data.veilLifted = false"), dF = day("data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 9 * 86400000");
+  reset0(); E(w, "data.penaltyStreak = 5; data.penaltyRun = 5; data.insurance = true; data.insuranceSourceId = 'rune_protection_charged'; computePenaltyAndApply('2026-10-01')"); const dP = SR();
+  check('PS4 Пелена, Заморозка, полная защита руной — тяжесть и «подряд» без изменений (5 / 5)', dV === '[5,5]' && dF === '[5,5]' && dP === '[5,5]', [dV, dF, dP].join(' '));
+  // поле penaltyRun: перенос и проверка
+  const old = SEED; const o = JSON.parse(old); delete o.penaltyRun; o.penaltyStreak = 3; SEED = JSON.stringify(o); const m1 = E(boot(), 'JSON.stringify([data.penaltyStreak, data.penaltyRun])');
+  SEED = JSON.stringify(Object.assign(JSON.parse(old), { penaltyStreak: 14, penaltyRun: 2.7 })); const m2 = E(boot(), 'JSON.stringify([data.penaltyStreak, data.penaltyRun])');
+  SEED = JSON.stringify(Object.assign(JSON.parse(old), { penaltyRun: -4 })); const m3 = E(boot(), 'data.penaltyRun'); SEED = old;
+  const si = E(w, `JSON.stringify([sanitizeImportedData({ state: Object.assign({}, data, { penaltyStreak: 4, penaltyRun: undefined }), total: totalStats }).state.penaltyRun,
+    sanitizeImportedData({ state: Object.assign({}, data, { penaltyRun: 'x' }), total: totalStats }).state.penaltyRun, sanitizeImportedData({ state: Object.assign({}, data, { penaltyRun: 6, penaltyStreak: 20 }), total: totalStats }).state])`);
+  const siP = JSON.parse(si);
+  check('PS5 поле penaltyRun: старое сохранение без поля — берётся из цепи (3 / 3); тяжесть выше ×5 → 8, дробное → целое; отрицательное → 0; импорт бэкапа: нет поля — из цепи (4), испорчено — из цепи, 6 → 6, тяжесть 20 → 8',
+    m1 === '[3,3]' && m2 === '[8,2]' && m3 === 0 && siP[0] === 4 && Number.isInteger(siP[1]) && siP[2].penaltyRun === 6 && siP[2].penaltyStreak === 8, JSON.stringify([m1, m2, m3, siP[0], siP[1], siP[2].penaltyRun, siP[2].penaltyStreak]));
+  // Статус: две строки, обе темы
+  const st = (th, sv, run) => { E(w, `setTheme('${th}'); data.penaltyStreak = ${sv}; data.penaltyRun = ${run}; fillStatusBlock('st')`);
+    const a = D.getElementById('stPSev'), b = D.getElementById('stPStreak'); return [a.style.display, a.textContent.trim(), b.style.display, b.textContent.trim(), w.getComputedStyle(a).color.replace(/\s/g, '')]; };
+  const S = ['classic', 'system'].map(th => [st(th, 3, 3), st(th, 1, 0), st(th, 0, 0), st(th, 0, 2)]);
+  check('PS6 Статус: «Тяжесть штрафа: ×2,5» и «Штрафов подряд: 3»; ×1,5 без «подряд»; ×1 и 0 — ничего; «подряд» 2 при ×1 — только «подряд»; оранжевые, обе темы',
+    S.every(t => t[0][0] === 'block' && t[0][1] === 'Тяжесть штрафа: ×2,5' && t[0][2] === 'block' && t[0][3] === 'Штрафов подряд: 3' && t[0][4] === 'rgb(255,170,68)'
+      && t[1][0] === 'block' && t[1][1] === 'Тяжесть штрафа: ×1,5' && t[1][2] === 'none' && t[2][0] === 'none' && t[2][2] === 'none' && t[3][0] === 'none' && t[3][2] === 'block'), JSON.stringify(S));
+  E(w, "setTheme('classic')");
+  // окно штрафа
+  E(w, 'showPenaltyBanner(2587, 57.5, 1, 0, false, 3, 2.5)'); const b1 = D.getElementById('penaltyContent').textContent.replace(/\s+/g, ' ');
+  E(w, 'showPenaltyBanner(1035, 23, 1, 0, false, 1, 1)'); const b2 = D.getElementById('penaltyContent').textContent.replace(/\s+/g, ' ');
+  E(w, "document.getElementById('penaltyOverlay').style.display = 'none'");
+  check('PS7 окно штрафа: «Тяжесть штрафа: ×2,5» и «Штрафов подряд: 3»; при ×1 и одном штрафе — без этих строк',
+    b1.includes('Тяжесть штрафа: ×2,5') && b1.includes('Штрафов подряд: 3') && !b2.includes('Тяжесть штрафа') && !b2.includes('Штрафов подряд'), b1 + ' | ' + b2);
+  // Длань
+  E(w, "reset0 = null; data.level = 37; data.exp = 5000; data.penaltyStreak = 0; data.penaltyRun = 0; data.insurance = false; data.curseActiveToday = false; data.activeScroll = null; sysToolsAuthorized = true; openSysTools()");
+  const dl = () => [D.getElementById('sysPSevV').textContent, D.getElementById('sysPSevM').disabled, D.getElementById('sysPSevP').disabled, D.getElementById('sysPStreakV').textContent, D.getElementById('sysPStreakM').disabled, D.getElementById('sysPStreakReset').disabled, D.getElementById('sysPenInfo').textContent.includes('Ступень')];
+  const d0 = dl(); const sev = [];
+  for (let i = 0; i < 9; i++) { E(w, 'sysPenaltySevChange(1); updateSysCurrent()'); sev.push(D.getElementById('sysPSevV').textContent); }
+  const dMax = dl(); E(w, 'sysPenaltyStreakChange(1); sysPenaltyStreakChange(1); updateSysCurrent()'); const dRun = dl();
+  const info = D.getElementById('sysPenInfo').innerHTML.replace(/<br>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  E(w, 'resetPenaltyStreakAction(); updateSysCurrent()'); const dReset = dl().concat([E(w, 'JSON.stringify([data.penaltyStreak, data.penaltyRun])')]);
+  check('PS8 Длань: «Тяжесть штрафа» ×1 … ×5 (шаг 0,5, на ×1 «−» и на ×5 «+» неактивны), «Штрафов подряд» отдельно; «Ступень следующего штрафа» убрана; «Следующий штраф» — по тяжести (×5 → 115% или 6382); «Сбросить цепь штрафов» — оба к нулю, затем неактивна',
+    d0.join() === '×1,true,false,0,true,true,false' && sev.join(' ') === '×1,5 ×2 ×2,5 ×3 ×3,5 ×4 ×4,5 ×5 ×5' && dMax[2] === true && dRun[3] === '2' && dRun[5] === false
+    && /Следующий штраф: 115% или 6382 EXP/.test(info) && dReset[0] === '×1' && dReset[3] === '0' && dReset[5] === true && dReset[7] === '[0,0]', JSON.stringify({ d0, sev, dMax, dRun, info, dReset }));
+  // тексты
+  const cx = E(w, 'CODEX_CHAPTERS.penalty.content');
+  check('PS9 Кодекс «Наказание за Слабость»: «…а выполненное задание лишь постепенно снижает тяжесть штрафа.»',
+    cx.includes('Каждый следующий провал обходится дороже предыдущего, а выполненное задание лишь постепенно снижает тяжесть штрафа.') && !cx.includes('цепь обрывает'), cx);
+}
+
 // ===== v7.5.9: тексты без «фиксирует» (три места + Кодекс C-Ранг); Длань не меняет цели задания посреди цикла =====
 async function v759Tests() {
   const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
@@ -1680,7 +1751,7 @@ async function penaltyV758Tests() {
   const t = D.getElementById('sysPenInfo').innerHTML.replace(/<br>|<\/div><div[^>]*>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   const r = E(w, "computePenaltyAndApply('2026-10-01').loss"), debt = E(w, 'data.expDebt');
   check('NL2 Длань на потолке (37-й уровень, цепь 8): «×5», «Следующий штраф: 115% или 6382 EXP», «Из них в долг: 1382 EXP»; настоящий штраф — 6382, долг 1382',
-    /Ступень следующего штрафа: ×5/.test(t) && /Следующий штраф: 115% или 6382 EXP/.test(t) && /Из них в долг: 1382 EXP/.test(t) && r === 6382 && debt === 1382, t + ' | ' + r + ' / ' + debt);
+    D.getElementById('sysPSevV').textContent === '×5' && /Следующий штраф: 115% или 6382 EXP/.test(t) && /Из них в долг: 1382 EXP/.test(t) && r === 6382 && debt === 1382, t + ' | ' + r + ' / ' + debt);
 }
 
 // ===== v7.5.7: Длань — цепь «штрафов подряд», показ следующего штрафа (совпадает с настоящим) =====
@@ -1688,28 +1759,28 @@ async function sysPenaltyTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
   const info = () => D.getElementById('sysPenInfo').innerHTML.replace(/<br>|<\/div><div[^>]*>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   const btn = id => D.getElementById(id);
-  E(w, "data.level = 37; data.exp = 5000; data.expDebt = 0; data.stats.str = 10; data.penaltyStreak = 0; data.insurance = false; data.insuranceSourceId = null; data.curseActiveToday = false; data.activeScroll = null; data.equippedArtifacts = [null, null, null, null]; sysToolsAuthorized = true; openSysTools()");
+  E(w, "data.level = 37; data.exp = 5000; data.expDebt = 0; data.stats.str = 10; data.penaltyStreak = 0; data.penaltyRun = 0; data.insurance = false; data.insuranceSourceId = null; data.curseActiveToday = false; data.activeScroll = null; data.equippedArtifacts = [null, null, null, null]; sysToolsAuthorized = true; openSysTools()");
   const t0 = info();
-  check('SP1 Длань: при цепи 0 — «×1», уровень, «До следующего уровня», «Опыт», «Следующий штраф: 23% или 1276 EXP» (v7.5.8); «−» и «Сбросить цепь» неактивны',
-    t0 === 'Ступень следующего штрафа: ×1 Текущий уровень: 37 До следующего уровня: 5550 EXP Опыт: 5000 / 5550 EXP Следующий штраф: 23% или 1276 EXP'
-    && btn('sysPStreakV').textContent === '0' && btn('sysPStreakM').disabled && btn('sysPStreakReset').disabled && !btn('sysPStreakP').disabled, t0);
+  check('SP1 Длань (v7.5.10): тяжесть ×1, подряд 0 — уровень, «До следующего уровня», «Опыт», «Следующий штраф: 23% или 1276 EXP»; «−» у обоих и «Сбросить цепь» неактивны',
+    t0 === 'Текущий уровень: 37 До следующего уровня: 5550 EXP Опыт: 5000 / 5550 EXP Следующий штраф: 23% или 1276 EXP'
+    && btn('sysPStreakV').textContent === '0' && btn('sysPStreakM').disabled && btn('sysPStreakReset').disabled && !btn('sysPStreakP').disabled && btn('sysPSevV').textContent === '×1' && btn('sysPSevM').disabled, t0);
   const snap = () => E(w, "JSON.stringify([data.exp, data.expDebt, data.totalPenalties, data.consecutiveDays, Object.keys(data.history || {}).length, (data.penaltyStack || []).length])");
   const before = snap(), mults = [];
-  for (let i = 0; i < 9; i++) { E(w, 'sysPenaltyStreakChange(1); updateSysCurrent()'); mults.push(info().match(/×([\d,]+)/)[1]); }
-  check('SP2 (v7.5.8) «+» — ступени ×1,5 / ×2 / ×2,5 / ×3 / ×3,5 / ×4 / ×4,5 / ×5 / ×5; штраф пересчитывается (×2,5 → 57,5% или 3191)', mults.join(' ') === '1,5 2 2,5 3 3,5 4 4,5 5 5' && snap() === before,
+  for (let i = 0; i < 9; i++) { E(w, 'sysPenaltySevChange(1); updateSysCurrent()'); mults.push(btn('sysPSevV').textContent.slice(1)); }
+  check('SP2 (v7.5.8, v7.5.10) «+» тяжести — ×1,5 ×1,5 / ×2 / ×2,5 / ×3 / ×3,5 / ×4 / ×4,5 / ×5 / ×5; штраф пересчитывается (×2,5 → 57,5% или 3191)', mults.join(' ') === '1,5 2 2,5 3 3,5 4 4,5 5 5' && snap() === before,
     mults.join(' '));
   E(w, 'data.penaltyStreak = 3; updateSysCurrent()'); const t3 = info();
   E(w, 'for (let i = 0; i < 12; i++) sysPenaltyStreakChange(1); updateSysCurrent()');
-  const at10 = [E(w, 'data.penaltyStreak'), btn('sysPStreakP').disabled, btn('sysPStreakM').disabled];
-  E(w, 'data.penaltyStreak = 14; updateSysCurrent(); sysPenaltyStreakChange(1); const a = data.penaltyStreak; sysPenaltyStreakChange(-1); window.__p = [a, data.penaltyStreak]; updateSysCurrent()');
+  const at10 = [E(w, 'data.penaltyRun'), btn('sysPStreakP').disabled, btn('sysPStreakM').disabled];
+  E(w, 'data.penaltyRun = 14; updateSysCurrent(); sysPenaltyStreakChange(1); const a = data.penaltyRun; sysPenaltyStreakChange(-1); window.__p = [a, data.penaltyRun]; updateSysCurrent()');
   const over = E(w, 'window.__p'), overBtn = btn('sysPStreakP').disabled;
-  E(w, 'resetPenaltyStreakAction(); updateSysCurrent()'); const afterReset = [E(w, 'data.penaltyStreak'), btn('sysPStreakReset').disabled, btn('sysPStreakM').disabled];
-  E(w, 'sysPenaltyStreakChange(-1)'); const notNeg = E(w, 'data.penaltyStreak');
-  check('SP3 пределы: «+» до 10 (на 10 неактивна), 14 от настоящих штрафов — «+» не прибавляет, «−» → 13; «Сбросить цепь» → 0 и неактивна; ниже 0 нет; опыт, долг, общее число штрафов, серия, Летопись — не тронуты',
+  E(w, 'resetPenaltyStreakAction(); updateSysCurrent()'); const afterReset = [E(w, 'data.penaltyRun + data.penaltyStreak'), btn('sysPStreakReset').disabled, btn('sysPStreakM').disabled];
+  E(w, 'sysPenaltyStreakChange(-1); sysPenaltySevChange(-1)'); const notNeg = E(w, 'data.penaltyRun + data.penaltyStreak');
+  check('SP3 (v7.5.10: «Штрафов подряд») пределы: «+» до 10 (на 10 неактивна), 14 от настоящих штрафов — «+» не прибавляет, «−» → 13; «Сбросить цепь» → 0 и неактивна; ниже 0 нет; опыт, долг, общее число штрафов, серия, Летопись — не тронуты',
     /Следующий штраф: 57,5% или 3191 EXP/.test(t3) && at10.join() === '10,true,false' && over.join() === '14,13' && overBtn && afterReset.join() === '0,true,true' && notNeg === 0 && snap() === before,
     JSON.stringify({ t3, at10, over, afterReset, notNeg, b: before, a: snap() }));
   const stLine = () => { E(w, "fillStatusBlock('st')"); const e = D.getElementById('stPStreak'); return e ? e.style.display + ':' + D.getElementById('stPStreakVal').textContent : 'нет'; };
-  E(w, 'data.penaltyStreak = 1; render()'); const st1 = stLine();
+  E(w, 'data.penaltyRun = 1; render()'); const st1 = stLine();
   E(w, 'sysPenaltyStreakChange(1)'); const st2 = stLine();
   check('SP4 строка «Штрафов подряд» в Статусе (при открытии Статуса): при 1 скрыта, после «+» (2) — видна, «2»', st1.startsWith('none') && st2 === 'block:2', st1 + ' / ' + st2);
   // совпадение показа с настоящим штрафом
@@ -1864,6 +1935,7 @@ async function registryTests() {
   await sysPenaltyTests();
   await penaltyV758Tests();
   await v759Tests();
+  await v7510Tests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

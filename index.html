@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.9 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.10 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1613,6 +1613,7 @@
         <div class="sc-exp" id="stExpRow"><span class="k">Опыт</span><span class="n" id="stExp">0 / 1 000 EXP</span></div>
         <div class="sc-bar" id="stBar"><i id="stBarFill"></i></div>
         <div class="sc-debt" id="stDebt" style="display:none;">Долг перед Системой: −<span id="stDebtVal">0</span> EXP</div>
+        <div class="sc-debt sc-pstreak" id="stPSev" style="display:none;">Тяжесть штрафа: <span id="stPSevVal">×1</span></div>   <!-- v7.5.10 -->
         <div class="sc-debt sc-pstreak" id="stPStreak" style="display:none;">Штрафов подряд: <span id="stPStreakVal">0</span></div>
         <div class="sc-chips"><div class="sc-chip cr"><span class="k">Кредиты</span><span class="n" id="stCredits">0 <span class="cr-ic" role="img" aria-label="кредитов"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#credSeal"/></svg><span class="gl"></span></span></span></div><div class="sc-chip st"><span class="k">Серия дней</span><span class="n" id="stStreak">0</span></div></div>
       </div>
@@ -1855,7 +1856,8 @@
         <div class="backup-section-title">Штрафы</div>
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, applyPenaltyAction)">Применить штраф сейчас</button>
         <!-- v7.5.7: цепь «штрафов подряд» и что снимет следующий штраф -->
-        <div class="sys-stat-row" style="margin-top:12px;"><span class="ssn">Штрафов подряд</span><span class="ssv" id="sysPStreakV"></span><button class="backup-action-btn" id="sysPStreakM" aria-label="Штрафов подряд: меньше" onclick="sysToolsFlashThenRun(this, () => sysPenaltyStreakChange(-1))">−</button><button class="backup-action-btn" id="sysPStreakP" aria-label="Штрафов подряд: больше" onclick="sysToolsFlashThenRun(this, () => sysPenaltyStreakChange(1))">+</button></div>
+        <div class="sys-stat-row" style="margin-top:12px;"><span class="ssn">Тяжесть штрафа</span><span class="ssv" id="sysPSevV"></span><button class="backup-action-btn" id="sysPSevM" aria-label="Тяжесть штрафа: меньше" onclick="sysToolsFlashThenRun(this, () => sysPenaltySevChange(-1))">−</button><button class="backup-action-btn" id="sysPSevP" aria-label="Тяжесть штрафа: больше" onclick="sysToolsFlashThenRun(this, () => sysPenaltySevChange(1))">+</button></div>   <!-- v7.5.10 -->
+        <div class="sys-stat-row"><span class="ssn">Штрафов подряд</span><span class="ssv" id="sysPStreakV"></span><button class="backup-action-btn" id="sysPStreakM" aria-label="Штрафов подряд: меньше" onclick="sysToolsFlashThenRun(this, () => sysPenaltyStreakChange(-1))">−</button><button class="backup-action-btn" id="sysPStreakP" aria-label="Штрафов подряд: больше" onclick="sysToolsFlashThenRun(this, () => sysPenaltyStreakChange(1))">+</button></div>
         <div class="backup-summary sys-pen-info" id="sysPenInfo" style="margin-top:6px;"></div>
         <button class="backup-action-btn" id="sysPStreakReset" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyStreakAction)">Сбросить цепь штрафов</button>
         <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyCountAction)">Обнулить общее число штрафов</button>
@@ -2081,13 +2083,15 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.9';
+  const APP_VERSION = '7.5.10';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
   // v6.7.0: снаряжение — контуры открываются на этих уровнях (в текстах уровни не упоминаются).
   const CONTOUR_LEVELS = [10, 30, 50, 70];
   // v6.8.0: контроль темпа — «подход» по упражнению, окно и его запас (в подходах работы). Шаги не контролируются.
+  // v7.5.10: тяжесть штрафа — не выше ×5 (8 шагов по 0,5); выполненный день снижает на 2 шага (−1,0). Объявлено здесь — нужно при загрузке.
+  var PENALTY_SEV_MAX = 8, PENALTY_SEV_DROP = 2;
   const PACE_SET = { pushups: 60, squats: 80, pullups: 40, press: 60 };
   const PACE_WINDOW_MS = 2 * 60 * 1000;
   const PACE_BUDGET = 2;
@@ -2243,7 +2247,8 @@
         curseActiveToday: !!oldData.curseActiveToday,
         limitBreakRoundPending: !!oldData.limitBreakRoundPending,
         expDebt: oldData.expDebt || 0,
-        penaltyStreak: 0   // v7.5.0: у всех с нуля
+        penaltyStreak: 0,   // v7.5.0: у всех с нуля
+        penaltyRun: 0   // v7.5.10
       };
     } else {
       isFreshInstall = true;
@@ -2272,7 +2277,7 @@
         keys: {}, extraLimitBreaksToday: 0, expGainedToday: 0, creditsGainedToday: 0, playerId: null,
         opensToday: 0, totalOpens: 0, opensYesterday: 0, lastSyncPeriod: null, syncNoticeShown: false,
         freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false, freezeNextAvailableAt: null,
-        dailyTargetLevel: 1, expDebt: 0, penaltyStreak: 0, dailyExerciseLog: {},
+        dailyTargetLevel: 1, expDebt: 0, penaltyStreak: 0, penaltyRun: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, theme: 'system'
       };
@@ -2369,6 +2374,9 @@
   if (typeof data.dailyTargetLevel !== 'number' || data.dailyTargetLevel < 1) data.dailyTargetLevel = data.level || 1;
   if (typeof data.expDebt !== 'number' || data.expDebt < 0) data.expDebt = 0;
   data.penaltyStreak = Number.isFinite(data.penaltyStreak) && data.penaltyStreak > 0 ? Math.floor(data.penaltyStreak) : 0;   // v7.5.0
+  // v7.5.10: «штрафов подряд» — отдельное поле; до 7.5.10 оно совпадало с цепью — берётся из неё. Тяжесть — не выше ×5 (8 шагов).
+  data.penaltyRun = Number.isFinite(data.penaltyRun) ? Math.max(0, Math.floor(data.penaltyRun)) : data.penaltyStreak;
+  data.penaltyStreak = Math.min(PENALTY_SEV_MAX, data.penaltyStreak);
   if (!data.dailyExerciseLog || typeof data.dailyExerciseLog !== 'object' || Array.isArray(data.dailyExerciseLog)) data.dailyExerciseLog = {};
   data.pendingCurse = !!data.pendingCurse;
   data.curseActiveToday = !!data.curseActiveToday;
@@ -3201,7 +3209,7 @@
 
   const CODEX_CHAPTERS = {
     daily_quota: { title: "Дневное Задание", content: "Система назначает Игроку пять ежедневных упражнений: отжимания, приседания, подтягивания, пресс и бег, отслеживаемый по количеству пройденных шагов. Объём задач возрастает по мере роста уровня Игрока. До достижения 10-го уровня задействован протокол адаптации: требования временно снижены. Задание исполнено только при закрытии всех пяти пунктов — частичное выполнение приравнивается к неисполнению, за исключением случаев, когда особый расходный предмет или активированный эффект изменяет это условие. Смена цикла отслеживается обратным отсчётом на экране — по его истечении начинается новый цикл. Выполненное задание приносит опыт и кредиты. Система следит за темпом выполнения: повторения, внесённые быстрее, чем их возможно совершить, не засчитываются." },
-    penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Чем выше уровень Игрока, тем тяжелее штраф; сила смягчает его. Каждый следующий провал подряд обходится дороже предыдущего — цепь обрывает только выполненное задание. Если накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия!" },
+    penalty: { title: "Наказание за Слабость", content: "Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Чем выше уровень Игрока, тем тяжелее штраф; сила смягчает его. Каждый следующий провал обходится дороже предыдущего, а выполненное задание лишь постепенно снижает тяжесть штрафа. Если накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия!" },
     stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание и увеличивает опыт за силовые упражнения. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку, увеличивает опыт при превышении задания, облегчает усталость и ускоряет восстановление." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Магазин Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
@@ -5682,9 +5690,10 @@
     enqueueNotification({ body: message, tone, skipLog, sound, check: !!check });
   }
 
-  function showPenaltyBanner(totalLoss, pct, daysCount, completedCount, runeHalved, streak) {
+  function showPenaltyBanner(totalLoss, pct, daysCount, completedCount, runeHalved, streak, mult) {
     const cont = document.getElementById('penaltyContent');
     const streakLine = streak >= 2 ? `<li>Штрафов подряд: ${streak}</li>` : '';   // v7.5.0
+    const sevLine = mult > 1 ? `<li>Тяжесть штрафа: ×${String(mult).replace('.', ',')}</li>` : '';   // v7.5.10: множитель этого штрафа (без Бремени)
     const daysLine = daysCount > 1 ? `<li>Пропущено дней: ${daysCount}</li>` : '';
     const pctText = daysCount > 1 ? '' : ` (-${String(pct).replace('.', ',')}%)`;
     const runeLine = runeHalved ? `<li>${daysCount > 1 ? 'Руна Защиты снизила штраф за один из дней вдвое.' : 'Руна Защиты: штраф снижен вдвое.'}</li>` : '';
@@ -5695,6 +5704,7 @@
         <ul class="danger-list">
           <li>Закрыто упражнений: ${completedCount} из 5</li>
           <li>Потеряно опыта: ${totalLoss}${pctText}</li>
+          ${sevLine}
           ${daysLine}
           ${streakLine}
           ${runeLine}
@@ -5715,7 +5725,7 @@
     let nextReset = getNextCleanReset(data.lastReset);
     let penalizedDays = 0;
     let totalLoss = 0;
-    let lastPct = 0;
+    let lastPct = 0, lastMult = 1;   // v7.5.10
     let runeHalvedAny = false;
     let lastCompletedCount = 0;
     while (now >= nextReset) {
@@ -5761,7 +5771,7 @@
       } else {
         const result = applyPenaltyLogic(dayKey);
         if (result === 'protected') { dayStatus = 'protected'; }
-        else if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; if (result.halved) runeHalvedAny = true; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
+        else if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; lastMult = result.mult || 1; if (result.halved) runeHalvedAny = true; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
         else { dayStatus = 'success'; }
       }
       const historyEntry = { status: dayStatus, donePercent };
@@ -5865,7 +5875,7 @@
     }
     saveData(); render();
     if (penalizedDays > 0) {
-      { const st = data.penaltyStreak; setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny, st), 3000); }
+      { const st = data.penaltyRun, ml = lastMult; setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny, st, ml), 3000); }
     }
     if (!data.dailyNotices.morning && data.activeScroll !== 'freeze' && data.activeScroll !== 'veil') {
       data.dailyNotices.morning = true;
@@ -5933,6 +5943,8 @@
   var PENALTY_STR_STEP = 0.0015;   // var — функции могут вызваться при загрузке раньше этого места
   function penaltyBasePct(level) { return 0.20 + Math.floor(Math.max(1, level) / 10) * 0.01; }   // v7.5.8: база 20% (было 15%)
   var PENALTY_STREAK_STEPS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];   // v7.5.8: шаг 0,5 до ×5 (было до ×3)
+  // v7.5.10: data.penaltyStreak — «тяжесть штрафа» в шагах (0 = ×1 … 8 = ×5): штраф +1 шаг, выполненный день −2 шага (−1,0), не ниже ×1.
+  // data.penaltyRun — «штрафов подряд»: штраф +1, выполненный день — 0. Пелена, Заморозка, полная защита руной — без изменений.
   function penaltyStreakMult(n) { return PENALTY_STREAK_STEPS[Math.min(PENALTY_STREAK_STEPS.length - 1, Math.max(0, Math.floor(n || 0)))]; }
   // v7.5.7: доля штрафа (до рун) — одна для настоящего штрафа и показа в Длани: база по уровню, Сила (−0,15% за очко),
   // минимум 5%, ступень цепи, Бремя Аномалии ×3, Амулет Воли ×0,85; Отречение — без Силы и Амулета.
@@ -5993,6 +6005,7 @@
     playSound('penalty');
     // v7.5.0: база растёт с уровнем (+1% за каждые 10), Сила −0,15% за очко, минимум 5% — до нарастания;
     // множитель дня — ступень «штрафов подряд»; под Бременем — втрое (v7.5.2: было «больший из ступени и ×3»).
+    const multUsed = penaltyStreakMult(data.penaltyStreak);   // v7.5.10: тяжесть этого штрафа — для окна
     const finalPen = penaltyFraction();   // v7.5.7: общий расчёт с показом в Длани
     let loss = penaltyLossOf(finalPen);
     if (halfBlock) loss = Math.floor(loss * 0.5);
@@ -6000,7 +6013,8 @@
     data.exp = Math.max(0, data.exp - loss);
     if (shortfall > 0) data.expDebt += shortfall;
     data.totalPenalties++;
-    data.penaltyStreak = (data.penaltyStreak || 0) + 1;   // v7.5.0: штраф (и под обычной руной, и под Бременем) — ступень растёт
+    data.penaltyStreak = Math.min(PENALTY_SEV_MAX, (data.penaltyStreak || 0) + 1);   // v7.5.0: штраф (и под обычной руной, и под Бременем) — тяжесть растёт (v7.5.10: до ×5)
+    data.penaltyRun = (data.penaltyRun || 0) + 1;   // v7.5.10
     const streakBeforePenalty = data.consecutiveDays;
     const brokeStreak = !data.streakShield;
     pushPenaltyRecord({
@@ -6028,12 +6042,13 @@
     }
     // Фактический процент — уже после снижения Руной Защиты (одна цифра после запятой).
     const effectivePct = Math.round(finalPen * (halfBlock ? 0.5 : 1) * 1000) / 10;
-    return { loss, pct: effectivePct, completedExercises, halved: halfBlock, streak: data.penaltyStreak };
+    return { loss, pct: effectivePct, completedExercises, halved: halfBlock, streak: data.penaltyRun, mult: multUsed };
   }
 
   function applyPenaltyLogic(dayKey) {
     if (data.isGoalMet || allQuestsDone()) {
-      data.penaltyStreak = 0;   // v7.5.0: выполненный день обрывает цепь штрафов
+      data.penaltyStreak = Math.max(0, (data.penaltyStreak || 0) - PENALTY_SEV_DROP);   // v7.5.10: выполненный день снижает тяжесть на 1,0 (было — сброс)
+      data.penaltyRun = 0;   // v7.5.10: серия провалов прервана
       data.consecutiveDays++;
       if (data.consecutiveDays > data.bestStreak) data.bestStreak = data.consecutiveDays;
       updateTitleStatus();
@@ -7868,7 +7883,9 @@
     document.getElementById(prefix + 'Debt').style.display = inDebt ? 'block' : 'none';
     document.getElementById(prefix + 'DebtVal').textContent = v.debt;
     const ps = document.getElementById(prefix + 'PStreak');   // v7.5.0: только в «Статусе», с двух штрафов подряд
-    if (ps) { const n = data.penaltyStreak || 0; ps.style.display = n >= 2 ? 'block' : 'none'; document.getElementById(prefix + 'PStreakVal').textContent = n; }
+    if (ps) { const n = data.penaltyRun || 0; ps.style.display = n >= 2 ? 'block' : 'none'; document.getElementById(prefix + 'PStreakVal').textContent = n; }   // v7.5.10: штрафов подряд
+    const pv = document.getElementById(prefix + 'PSev');   // v7.5.10: тяжесть штрафа — выше ×1
+    if (pv) { const m = penaltyStreakMult(data.penaltyStreak); pv.style.display = m > 1 ? 'block' : 'none'; document.getElementById(prefix + 'PSevVal').textContent = '×' + String(m).replace('.', ','); }
   }
 
   function fillStatusBlock(prefix) {
@@ -8391,7 +8408,8 @@
       extraLimitBreaksToday: Math.max(0, Math.floor(sanitizeNumber(s.extraLimitBreaksToday, 0))),
       dailyTargetLevel: Math.max(1, Math.floor(sanitizeNumber(s.dailyTargetLevel, sanitizeNumber(s.level, 1)))),
       expDebt: Math.max(0, Math.floor(sanitizeNumber(s.expDebt, 0))),
-      penaltyStreak: Math.max(0, Math.floor(sanitizeNumber(s.penaltyStreak, 0)))   // v7.5.0
+      penaltyStreak: Math.min(PENALTY_SEV_MAX, Math.max(0, Math.floor(sanitizeNumber(s.penaltyStreak, 0)))),   // v7.5.0; v7.5.10 — тяжесть, не выше ×5
+      penaltyRun: Math.max(0, Math.floor(sanitizeNumber(s.penaltyRun, Math.max(0, Math.floor(sanitizeNumber(s.penaltyStreak, 0))))))   // v7.5.10
     };
 
     const cleanTotal = {
@@ -8957,36 +8975,42 @@
     const result = computePenaltyAndApply();
     saveData(); render();
     if (result === 'protected') { showNotice(`Штраф отменён — сработала ${getConsumableInfo(lastProtectedBy || 'rune_protection_absolute').name}.`, 'info'); }
-    else { const { loss, pct, completedExercises, halved, streak } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length, halved, streak); }
+    else { const { loss, pct, completedExercises, halved, streak, mult } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length, halved, streak, mult); }
   }
 
-  // v7.5.7: Длань — цепь «штрафов подряд» (только data.penaltyStreak: без опыта, Летописи, окна штрафа).
-  // − / + в пределах 0…10; больше 10 бывает только от настоящих штрафов — тогда «+» недоступна, «−» убавляет.
+  // v7.5.7: Длань — цепь штрафов (без опыта, Летописи, окна штрафа). v7.5.10: два счётчика — «Тяжесть штрафа»
+  // (data.penaltyStreak, шаг 0,5, ×1…×5) и «Штрафов подряд» (data.penaltyRun, 0…10; больше 10 — только от настоящих штрафов:
+  // «+» недоступна, «−» убавляет). «Сбросить цепь штрафов» — оба к нулю.
   var SYS_PSTREAK_MAX = 10;
+  function sysPenaltySevChange(d) {
+    data.penaltyStreak = Math.min(PENALTY_SEV_MAX, Math.max(0, (data.penaltyStreak || 0) + d));
+    saveData(); render();
+  }
   function sysPenaltyStreakChange(d) {
-    const n = data.penaltyStreak || 0;
+    const n = data.penaltyRun || 0;
     if (d > 0 && n >= SYS_PSTREAK_MAX) return;
-    data.penaltyStreak = Math.max(0, n + d);
+    data.penaltyRun = Math.max(0, n + d);
     saveData(); render();
   }
   function resetPenaltyStreakAction() {
-    data.penaltyStreak = 0;
+    data.penaltyStreak = 0; data.penaltyRun = 0;
     saveData(); render();
   }
   function updateSysPenalty() {
     const box = document.getElementById('sysPenInfo');
     if (!box) return;
-    const n = data.penaltyStreak || 0;
+    const sv = data.penaltyStreak || 0, n = data.penaltyRun || 0;   // v7.5.10
+    document.getElementById('sysPSevV').textContent = '×' + String(penaltyStreakMult(sv)).replace('.', ',');
+    document.getElementById('sysPSevM').disabled = sv <= 0;
+    document.getElementById('sysPSevP').disabled = sv >= PENALTY_SEV_MAX;
     document.getElementById('sysPStreakV').textContent = n;
     document.getElementById('sysPStreakM').disabled = n <= 0;
     document.getElementById('sysPStreakP').disabled = n >= SYS_PSTREAK_MAX;
-    document.getElementById('sysPStreakReset').disabled = n <= 0;
+    document.getElementById('sysPStreakReset').disabled = sv <= 0 && n <= 0;
     const N = v => `<span class="spn">${v}</span>`;
     const pctTxt = f => String(Math.round(f * 1000) / 10).replace('.', ',') + '%';
-    const multTxt = String(penaltyStreakMult(n)).replace('.', ',');
     const pv = penaltyPreview(), toNext = getExpToNext(data.level);
-    const lines = [
-      `Ступень следующего штрафа: ${N('×' + multTxt)}`,
+    const lines = [   // v7.5.10: «Ступень следующего штрафа» убрана — множитель стоит в счётчике «Тяжесть штрафа»
       `Текущий уровень: ${N(data.level)}`,
       `До следующего уровня: ${N(toNext)} EXP`,
       `Опыт: ${N(Math.floor(data.exp) + ' / ' + toNext)} EXP`,
@@ -9000,7 +9024,7 @@
       else extra.push(`Действует ${name}: не сработает — Бремя Аномалии`);
     }
     if (pv.debt > 0) extra.push(`Из них в долг: ${N(pv.debt)} EXP`);
-    box.innerHTML = `<div>${lines.slice(0, 1).join('')}</div><div class="spi-gap">${lines.slice(1).join('<br>')}</div>` + (extra.length ? `<div class="spi-gap spi-extra">${extra.join('<br>')}</div>` : '');
+    box.innerHTML = `<div>${lines.join('<br>')}</div>` + (extra.length ? `<div class="spi-gap spi-extra">${extra.join('<br>')}</div>` : '');
   }
 
   function resetPenaltyCountAction() {

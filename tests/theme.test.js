@@ -288,7 +288,7 @@ const w = boot(); const D = w.document; await tick();
 { closeAll(w); await tick(); E(w, 'sysToolsAuthorized = true; openSysTools()'); await tick();
   const win = D.querySelector('#sysToolsOverlay > .status-window');
   check('T46 Длань в теме «Система»: раздел «Характеристики» внутри окна Системы, шаг — строка той же сетки, кнопки «1» / «10» над «−» / «+», выбрана «1»; стили строк и выбранной кнопки есть в обеих темах',
-    win.classList.contains('mwin') && !!win.querySelector('.sf-panel.mw #sysStatStep.sys-stat-row') && win.querySelectorAll('.sf-panel.mw .sys-stat-row').length === 7
+    win.classList.contains('mwin') && !!win.querySelector('.sf-panel.mw #sysStatStep.sys-stat-row') && [...win.querySelectorAll('.sf-panel.mw .sys-stat-row')].filter(r => !r.closest('.backup-section').textContent.includes('Штрафы')).length === 7   /* v7.5.10: строки раздела «Штрафы» (с v7.5.7) не считаются */
     && [...win.querySelectorAll('#sysStatStep .sys-step-btn.backup-action-btn')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|') === '1*|10'
     && /\n    \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'))
     && /body\.theme-sys \.sf-win\.mwin \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'))
