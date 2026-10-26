@@ -1634,6 +1634,29 @@ async function contourMarkTests() {
 
 
 // ===== v7.5.4: окно Реестра — полная высота, «Загрузка» с точками, цвет ранга, закрытие =====
+// ===== v7.5.11: Длань — «Штрафов подряд» двигает и тяжесть; Статус при 14 подряд =====
+async function v7511Tests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  const SR = () => E(w, 'JSON.stringify([data.penaltyRun, data.penaltyStreak])');
+  E(w, 'data.penaltyStreak = 0; data.penaltyRun = 0; sysToolsAuthorized = true; openSysTools()');
+  E(w, 'sysPenaltyStreakChange(1); sysPenaltyStreakChange(1); sysPenaltyStreakChange(1); updateSysCurrent()'); const p3 = [SR(), D.getElementById('sysPSevV').textContent, D.getElementById('sysPStreakV').textContent];
+  E(w, 'sysPenaltyStreakChange(-1); updateSysCurrent()'); const m1 = [SR(), D.getElementById('sysPSevV').textContent];
+  E(w, 'data.penaltyStreak = 8; data.penaltyRun = 4; sysPenaltyStreakChange(1)'); const cap = SR();
+  E(w, 'data.penaltyStreak = 0; data.penaltyRun = 2; sysPenaltyStreakChange(-1)'); const floor = SR();
+  E(w, 'data.penaltyStreak = 3; data.penaltyRun = 0; sysPenaltyStreakChange(-1); updateSysCurrent()'); const zero = [SR(), D.getElementById('sysPStreakM').disabled];
+  E(w, 'data.penaltyStreak = 2; data.penaltyRun = 10; updateSysCurrent(); sysPenaltyStreakChange(1)'); const top = [SR(), D.getElementById('sysPStreakP').disabled];
+  E(w, 'data.penaltyStreak = 2; data.penaltyRun = 3; sysPenaltySevChange(1); sysPenaltySevChange(-1); sysPenaltySevChange(-1)'); const sevOnly = SR();
+  check('DS1 Длань «Штрафов подряд»: «+» ×3 — 3 / ×2,5; «−» — 2 / ×2; при ×5 «+» — только подряд (5 / 8 шагов); тяжесть не ниже ×1 (2 → 1 / ×1); при 0 «−» неактивна и тяжесть не трогает; на 10 «+» неактивна; счётчик тяжести не трогает «подряд»',
+    p3[0] === '[3,3]' && p3[1] === '×2,5' && p3[2] === '3' && m1[0] === '[2,2]' && m1[1] === '×2' && cap === '[5,8]' && floor === '[1,0]'
+    && zero[0] === '[0,3]' && zero[1] === true && top[0] === '[10,2]' && top[1] === true && sevOnly === '[3,1]', JSON.stringify({ p3, m1, cap, floor, zero, top, sevOnly }));
+  // Статус: 14 настоящих штрафов подряд
+  E(w, `data.penaltyStreak = 0; data.penaltyRun = 0; data.exp = 1e7; data.insurance = false; data.curseActiveToday = false; data.activeScroll = null; for (let i = 0; i < 14; i++) computePenaltyAndApply('2026-10-01'); fillStatusBlock('st')`);
+  const s14 = [D.getElementById('stPStreak').style.display, D.getElementById('stPStreak').textContent.trim(), D.getElementById('stPSev').textContent.trim()];
+  E(w, 'updateSysCurrent()'); const d14 = D.getElementById('sysPStreakV').textContent;
+  check('DS2 14 настоящих штрафов подряд: Статус — «Штрафов подряд: 14», «Тяжесть штрафа: ×5»; Длань — 14',
+    s14[0] === 'block' && s14[1] === 'Штрафов подряд: 14' && s14[2] === 'Тяжесть штрафа: ×5' && d14 === '14', JSON.stringify([s14, d14]));
+}
+
 // ===== v7.5.10: тяжесть штрафа (выполненный день −2 шага) и «штрафов подряд» отдельно =====
 async function v7510Tests() {
   const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
@@ -1936,6 +1959,7 @@ async function registryTests() {
   await penaltyV758Tests();
   await v759Tests();
   await v7510Tests();
+  await v7511Tests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);

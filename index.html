@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.10 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.11 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2083,7 +2083,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.10';
+  const APP_VERSION = '7.5.11';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -8986,10 +8986,13 @@
     data.penaltyStreak = Math.min(PENALTY_SEV_MAX, Math.max(0, (data.penaltyStreak || 0) + d));
     saveData(); render();
   }
+  // v7.5.11: «Штрафов подряд» — как настоящие штрафы: «+» — подряд +1 и тяжесть +0,5 (до ×5), «−» — подряд −1 и тяжесть −0,5 (не ниже ×1).
   function sysPenaltyStreakChange(d) {
     const n = data.penaltyRun || 0;
     if (d > 0 && n >= SYS_PSTREAK_MAX) return;
+    if (d < 0 && n <= 0) return;
     data.penaltyRun = Math.max(0, n + d);
+    data.penaltyStreak = Math.min(PENALTY_SEV_MAX, Math.max(0, (data.penaltyStreak || 0) + d));
     saveData(); render();
   }
   function resetPenaltyStreakAction() {
