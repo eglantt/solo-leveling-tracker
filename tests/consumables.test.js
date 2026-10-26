@@ -38,7 +38,7 @@ const complete = w => {
   ids.forEach(id => E(w, `document.querySelector('.quest-item[data-id="${id}"] .add').click()`));
 };
 const J = (w, c) => E(w, `JSON.stringify(${c})`);
-const fullLoss = w => E(w, `Math.floor(getExpToNext(data.level)*Math.max(0.05,0.15+Math.floor(data.level/10)*0.01-Math.max(0,data.stats.str-10)*0.0015)*[1,1.5,2,2.5,3][Math.min(4,data.penaltyStreak||0)]*(data.curseActiveToday?3:1)*(isArtifactEquipped("amulet_will")?0.85:1)+1e-6)`);
+const fullLoss = w => E(w, `Math.floor(getExpToNext(data.level)*Math.max(0.05,0.20+Math.floor(data.level/10)*0.01-Math.max(0,data.stats.str-10)*0.0015)*[1,1.5,2,2.5,3,3.5,4,4.5,5][Math.min(8,data.penaltyStreak||0)]*(data.curseActiveToday?3:1)*(isArtifactEquipped("amulet_will")?0.85:1)+1e-6)`);
 
 const results = []; const check = (n, c, i) => results.push((c ? 'OK  ' : 'FAIL') + ' ' + n + (i !== undefined && !c ? '  → ' + i : ''));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -103,11 +103,11 @@ for (const [label, extra, reason, refusal] of B_CASES) {
 const bannerText = w => E(w, `document.getElementById('penaltyContent').textContent.replace(/\\s+/g,' ').trim()`);
 { const w = fresh(`data.insurance=true; data.insuranceSourceId='rune_protection';`); reset(w); await sleep(3200);
   const t = bannerText(w);
-  check('C Один день с Руной Защиты: фактический процент и строка руны', t.includes('(-8,5%)') && t.includes('Руна Защиты: штраф снижен вдвое.'), t); }
-{ const w = fresh(`data.level=5; data.dailyTargetLevel=5; data.insurance=true; data.insuranceSourceId='rune_protection';`); reset(w); await sleep(3200);
-  const t = bannerText(w); check('C Дробный процент с запятой (7,5%: 5-й уровень, 15% ÷ 2)', t.includes('(-7,5%)'), t); }
+  check('C Один день с Руной Защиты: фактический процент и строка руны', t.includes('(-11%)') && t.includes('Руна Защиты: штраф снижен вдвое.'), t); }
+{ const w = fresh(`data.level=10; data.dailyTargetLevel=10; data.insurance=true; data.insuranceSourceId='rune_protection';`); reset(w); await sleep(3200);
+  const t = bannerText(w); check('C Дробный процент с запятой (v7.5.8: 10,5% — 10-й уровень, 21% ÷ 2)', t.includes('(-10,5%)'), t); }
 { const w = fresh(); reset(w); await sleep(3200);
-  const t = bannerText(w); check('C Один день без руны: полный процент, без строки руны', /\(-17%\)/.test(t) && !t.includes('Руна Защиты'), t); }
+  const t = bannerText(w); check('C Один день без руны: полный процент, без строки руны', /\(-22%\)/.test(t) && !t.includes('Руна Защиты'), t); }
 { const w = fresh(`data.insurance=true; data.insuranceSourceId='rune_protection';`); E(w,'data.lastReset -= 2*86400000'); reset(w); await sleep(3200);
   const t = bannerText(w);
   check('C Три дня: без процента, дни и строка руны', !/%/.test(t) && t.includes('Пропущено дней: 3') && t.includes('Руна Защиты снизила штраф за один из дней вдвое.'), t); }
