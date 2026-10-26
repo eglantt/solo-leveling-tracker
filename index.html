@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1200,6 +1200,10 @@
     .item-desc .cat-qty { display: block; margin-top: 4px; }
     .item-desc .cat-qty b { font-weight: 700; }
     .item-desc .cat-qty.zero { opacity: .4; }
+    /* v7.5.7: Длань — строки цепи штрафов: числа Orbitron жирные; отступы между группами строк */
+    .sys-pen-info .spn { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; }
+    .sys-pen-info .spi-gap { margin-top: 6px; }
+    .sys-pen-info .spi-extra { opacity: .85; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -1845,7 +1849,11 @@
       <div class="backup-section">
         <div class="backup-section-title">Штрафы</div>
         <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, applyPenaltyAction)">Применить штраф сейчас</button>
-        <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyCountAction)">Обнулить счётчик штрафов</button>
+        <!-- v7.5.7: цепь «штрафов подряд» и что снимет следующий штраф -->
+        <div class="sys-stat-row" style="margin-top:12px;"><span class="ssn">Штрафов подряд</span><span class="ssv" id="sysPStreakV"></span><button class="backup-action-btn" id="sysPStreakM" aria-label="Штрафов подряд: меньше" onclick="sysToolsFlashThenRun(this, () => sysPenaltyStreakChange(-1))">−</button><button class="backup-action-btn" id="sysPStreakP" aria-label="Штрафов подряд: больше" onclick="sysToolsFlashThenRun(this, () => sysPenaltyStreakChange(1))">+</button></div>
+        <div class="backup-summary sys-pen-info" id="sysPenInfo" style="margin-top:6px;"></div>
+        <button class="backup-action-btn" id="sysPStreakReset" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyStreakAction)">Сбросить цепь штрафов</button>
+        <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyCountAction)">Обнулить общее число штрафов</button>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Реестр Игроков</div>
@@ -2068,7 +2076,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.6';
+  const APP_VERSION = '7.5.7';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -5920,6 +5928,32 @@
   var PENALTY_STR_STEP = 0.0015;   // var — функции могут вызваться при загрузке раньше этого места
   function penaltyBasePct(level) { return 0.15 + Math.floor(Math.max(1, level) / 10) * 0.01; }
   function penaltyStreakMult(n) { return [1, 1.5, 2, 2.5, 3][Math.min(4, Math.max(0, Math.floor(n || 0)))]; }
+  // v7.5.7: доля штрафа (до рун) — одна для настоящего штрафа и показа в Длани: база по уровню, Сила (−0,15% за очко),
+  // минимум 5%, ступень цепи, Бремя Аномалии ×3, Амулет Воли ×0,85; Отречение — без Силы и Амулета.
+  function penaltyFraction() {
+    const renounced = data.activeScroll === 'renunciation';   // v6.8.4: Отречение — без Силы и Амулета Воли
+    const bonusStr = renounced ? 0 : Math.max(0, data.stats.str - 10);
+    let finalPen = Math.max(0.05, penaltyBasePct(data.level) - bonusStr * PENALTY_STR_STEP);
+    finalPen *= penaltyStreakMult(data.penaltyStreak) * (data.curseActiveToday ? 3 : 1);
+    if (!renounced && isArtifactEquipped('amulet_will')) finalPen *= 0.85;
+    return finalPen;
+  }
+  function penaltyLossOf(f) { return Math.floor(getExpToNext(data.level) * f + 1e-6); }   // v7.5.0: без потери единицы на дробях; функция — может вызваться при загрузке раньше этого места
+  // v7.5.7: что сделает следующий штраф — без изменений данных (руна не тратится, опыт не снимается, звука нет).
+  // Руны — как в computePenaltyAndApply: Абсолютная — всегда; спящая под сделкой — не участвует; под Бременем обычная
+  // и Надёжная тратятся впустую; Надёжная — штрафа нет; обычная — вдвое меньше.
+  function penaltyPreview() {
+    const f = penaltyFraction(), full = penaltyLossOf(f);
+    let rune = null, loss = full, pct = f;
+    if (data.insurance && data.insuranceSourceId === 'rune_protection_absolute') { rune = { id: 'rune_protection_absolute', kind: 'full' }; loss = 0; pct = 0; }
+    else if (data.insurance && getInsuranceHoldScroll() === null) {
+      const id = data.insuranceSourceId || 'rune_protection';
+      if (data.curseActiveToday) rune = { id, kind: 'void' };
+      else if (id === 'rune_protection_charged') { rune = { id, kind: 'full' }; loss = 0; pct = 0; }
+      else { rune = { id, kind: 'half' }; loss = Math.floor(full * 0.5); pct = f * 0.5; }
+    }
+    return { pct: f, loss: full, rune, runeLoss: loss, runePct: pct, debt: Math.max(0, loss - data.exp), burden: !!data.curseActiveToday };
+  }
   function computePenaltyAndApply(dayKey) {
     lastProtectedBy = null;
     if (data.insurance && data.insuranceSourceId === 'rune_protection_absolute') {
@@ -5953,14 +5987,8 @@
     playSound('penalty');
     // v7.5.0: база растёт с уровнем (+1% за каждые 10), Сила −0,15% за очко, минимум 5% — до нарастания;
     // множитель дня — ступень «штрафов подряд»; под Бременем — втрое (v7.5.2: было «больший из ступени и ×3»).
-    const basePen = penaltyBasePct(data.level);
-    const renounced = data.activeScroll === 'renunciation';   // v6.8.4: Отречение — без Силы и Амулета Воли
-    const bonusStr = renounced ? 0 : Math.max(0, data.stats.str - 10);
-    const strReduction = bonusStr * PENALTY_STR_STEP;
-    let finalPen = Math.max(0.05, basePen - strReduction);
-    finalPen *= penaltyStreakMult(data.penaltyStreak) * (data.curseActiveToday ? 3 : 1);
-    if (!renounced && isArtifactEquipped('amulet_will')) finalPen *= 0.85;
-    let loss = Math.floor(getExpToNext(data.level) * finalPen + 1e-6);   // v7.5.0: без потери единицы на дробях (4500 × 0,18 × 2,5)
+    const finalPen = penaltyFraction();   // v7.5.7: общий расчёт с показом в Длани
+    let loss = penaltyLossOf(finalPen);
     if (halfBlock) loss = Math.floor(loss * 0.5);
     const shortfall = Math.max(0, loss - data.exp);
     data.exp = Math.max(0, data.exp - loss);
@@ -8821,6 +8849,7 @@
     document.getElementById('sysLevelNow').innerHTML = `<span class="sl">Уровень</span> <span class="sv lvl rk-${getRank(data.level).class}">${data.level}</span>`;
     document.getElementById('sysCreditsNow').innerHTML = `<span class="sv cr">${creditsHtml(Math.floor(data.credits) + ' ◈')}</span>`;
     updateSysStats();   // v7.0.3
+    updateSysPenalty();   // v7.5.7
   }
   // v7.0.3: Длань — характеристики. Изменение прямое: свободные очки не тратит и не возвращает (иначе при нуле очков ничего не добавить).
   // Характеристики — не ниже 10 (стартовое значение, от него считаются все бонусы), свободные очки — не ниже 0; верхней границы нет.
@@ -8923,6 +8952,49 @@
     saveData(); render();
     if (result === 'protected') { showNotice(`Штраф отменён — сработала ${getConsumableInfo(lastProtectedBy || 'rune_protection_absolute').name}.`, 'info'); }
     else { const { loss, pct, completedExercises, halved, streak } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length, halved, streak); }
+  }
+
+  // v7.5.7: Длань — цепь «штрафов подряд» (только data.penaltyStreak: без опыта, Летописи, окна штрафа).
+  // − / + в пределах 0…10; больше 10 бывает только от настоящих штрафов — тогда «+» недоступна, «−» убавляет.
+  var SYS_PSTREAK_MAX = 10;
+  function sysPenaltyStreakChange(d) {
+    const n = data.penaltyStreak || 0;
+    if (d > 0 && n >= SYS_PSTREAK_MAX) return;
+    data.penaltyStreak = Math.max(0, n + d);
+    saveData(); render();
+  }
+  function resetPenaltyStreakAction() {
+    data.penaltyStreak = 0;
+    saveData(); render();
+  }
+  function updateSysPenalty() {
+    const box = document.getElementById('sysPenInfo');
+    if (!box) return;
+    const n = data.penaltyStreak || 0;
+    document.getElementById('sysPStreakV').textContent = n;
+    document.getElementById('sysPStreakM').disabled = n <= 0;
+    document.getElementById('sysPStreakP').disabled = n >= SYS_PSTREAK_MAX;
+    document.getElementById('sysPStreakReset').disabled = n <= 0;
+    const N = v => `<span class="spn">${v}</span>`;
+    const pctTxt = f => String(Math.round(f * 1000) / 10).replace('.', ',') + '%';
+    const multTxt = String(penaltyStreakMult(n)).replace('.', ',');
+    const pv = penaltyPreview(), toNext = getExpToNext(data.level);
+    const lines = [
+      `Ступень следующего штрафа: ${N('×' + multTxt)}`,
+      `Текущий уровень: ${N(data.level)}`,
+      `До следующего уровня: ${N(toNext)} EXP`,
+      `Опыт: ${N(Math.floor(data.exp) + ' / ' + toNext)} EXP`,
+      `Следующий штраф: ${N(pctTxt(pv.pct))} или ${N(pv.loss)} EXP${pv.burden ? ' (с Бременем Аномалии ×3)' : ''}`
+    ];
+    const extra = [];
+    if (pv.rune) {
+      const name = getConsumableInfo(pv.rune.id) ? getConsumableInfo(pv.rune.id).name : 'Руна Защиты';
+      if (pv.rune.kind === 'half') extra.push(`Действует ${name}: ${N(pctTxt(pv.runePct))} или ${N(pv.runeLoss)} EXP`);
+      else if (pv.rune.kind === 'full') extra.push(`Действует ${name}: штрафа не будет`);
+      else extra.push(`Действует ${name}: не сработает — Бремя Аномалии`);
+    }
+    if (pv.debt > 0) extra.push(`Из них в долг: ${N(pv.debt)} EXP`);
+    box.innerHTML = `<div>${lines.slice(0, 1).join('')}</div><div class="spi-gap">${lines.slice(1).join('<br>')}</div>` + (extra.length ? `<div class="spi-gap spi-extra">${extra.join('<br>')}</div>` : '');
   }
 
   function resetPenaltyCountAction() {

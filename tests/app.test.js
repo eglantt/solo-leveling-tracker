@@ -1634,6 +1634,71 @@ async function contourMarkTests() {
 
 
 // ===== v7.5.4: окно Реестра — полная высота, «Загрузка» с точками, цвет ранга, закрытие =====
+// ===== v7.5.7: Длань — цепь «штрафов подряд», показ следующего штрафа (совпадает с настоящим) =====
+async function sysPenaltyTests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  const info = () => D.getElementById('sysPenInfo').innerHTML.replace(/<br>|<\/div><div[^>]*>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const btn = id => D.getElementById(id);
+  E(w, "data.level = 37; data.exp = 5000; data.expDebt = 0; data.stats.str = 10; data.penaltyStreak = 0; data.insurance = false; data.insuranceSourceId = null; data.curseActiveToday = false; data.activeScroll = null; data.equippedArtifacts = [null, null, null, null]; sysToolsAuthorized = true; openSysTools()");
+  const t0 = info();
+  check('SP1 Длань: при цепи 0 — «×1», уровень, «До следующего уровня», «Опыт», «Следующий штраф: 18% или 999 EXP»; «−» и «Сбросить цепь» неактивны',
+    t0 === 'Ступень следующего штрафа: ×1 Текущий уровень: 37 До следующего уровня: 5550 EXP Опыт: 5000 / 5550 EXP Следующий штраф: 18% или 999 EXP'
+    && btn('sysPStreakV').textContent === '0' && btn('sysPStreakM').disabled && btn('sysPStreakReset').disabled && !btn('sysPStreakP').disabled, t0);
+  const snap = () => E(w, "JSON.stringify([data.exp, data.expDebt, data.totalPenalties, data.consecutiveDays, Object.keys(data.history || {}).length, (data.penaltyStack || []).length])");
+  const before = snap(), mults = [];
+  for (let i = 0; i < 5; i++) { E(w, 'sysPenaltyStreakChange(1); updateSysCurrent()'); mults.push(info().match(/×([\d,]+)/)[1]); }
+  check('SP2 «+» — ступени ×1,5 / ×2 / ×2,5 / ×3 / ×3; штраф пересчитывается (×2,5 → 45% или 2497)', mults.join(' ') === '1,5 2 2,5 3 3' && snap() === before,
+    mults.join(' '));
+  E(w, 'data.penaltyStreak = 3; updateSysCurrent()'); const t3 = info();
+  E(w, 'for (let i = 0; i < 12; i++) sysPenaltyStreakChange(1); updateSysCurrent()');
+  const at10 = [E(w, 'data.penaltyStreak'), btn('sysPStreakP').disabled, btn('sysPStreakM').disabled];
+  E(w, 'data.penaltyStreak = 14; updateSysCurrent(); sysPenaltyStreakChange(1); const a = data.penaltyStreak; sysPenaltyStreakChange(-1); window.__p = [a, data.penaltyStreak]; updateSysCurrent()');
+  const over = E(w, 'window.__p'), overBtn = btn('sysPStreakP').disabled;
+  E(w, 'resetPenaltyStreakAction(); updateSysCurrent()'); const afterReset = [E(w, 'data.penaltyStreak'), btn('sysPStreakReset').disabled, btn('sysPStreakM').disabled];
+  E(w, 'sysPenaltyStreakChange(-1)'); const notNeg = E(w, 'data.penaltyStreak');
+  check('SP3 пределы: «+» до 10 (на 10 неактивна), 14 от настоящих штрафов — «+» не прибавляет, «−» → 13; «Сбросить цепь» → 0 и неактивна; ниже 0 нет; опыт, долг, общее число штрафов, серия, Летопись — не тронуты',
+    /Следующий штраф: 45% или 2497 EXP/.test(t3) && at10.join() === '10,true,false' && over.join() === '14,13' && overBtn && afterReset.join() === '0,true,true' && notNeg === 0 && snap() === before,
+    JSON.stringify({ t3, at10, over, afterReset, notNeg, b: before, a: snap() }));
+  const stLine = () => { E(w, "fillStatusBlock('st')"); const e = D.getElementById('stPStreak'); return e ? e.style.display + ':' + D.getElementById('stPStreakVal').textContent : 'нет'; };
+  E(w, 'data.penaltyStreak = 1; render()'); const st1 = stLine();
+  E(w, 'sysPenaltyStreakChange(1)'); const st2 = stLine();
+  check('SP4 строка «Штрафов подряд» в Статусе (при открытии Статуса): при 1 скрыта, после «+» (2) — видна, «2»', st1.startsWith('none') && st2 === 'block:2', st1 + ' / ' + st2);
+  // совпадение показа с настоящим штрафом
+  const cases = [
+    { lv: 10, ps: 0 }, { lv: 37, ps: 2 }, { lv: 70, ps: 5 }, { lv: 37, ps: 3, str: 70 }, { lv: 37, ps: 1, amulet: true },
+    { lv: 37, ps: 3, curse: true, exp: 1000 }, { lv: 37, ps: 2, renounce: true, str: 70, amulet: true },
+    { lv: 37, ps: 3, rune: 'rune_protection' }, { lv: 37, ps: 3, rune: 'rune_protection_charged' }, { lv: 37, ps: 3, rune: 'rune_protection_absolute', curse: true },
+    { lv: 37, ps: 3, rune: 'rune_protection', curse: true }, { lv: 37, ps: 3, rune: 'rune_protection', scroll: 'contract' }, { lv: 20, ps: 4, exp: 100 } ];
+  const bad = []; let viewDebt = null, viewRune = null, viewVoid = null, viewCurse = null;
+  for (const c of cases) {
+    E(w, `data.level = ${c.lv}; data.exp = ${c.exp == null ? 2000 : c.exp}; data.expDebt = 0; data.stats.str = ${c.str || 10}; data.penaltyStreak = ${c.ps};
+      data.curseActiveToday = ${!!c.curse}; data.activeScroll = ${c.renounce ? "'renunciation'" : c.scroll ? `'${c.scroll}'` : 'null'};
+      data.equippedArtifacts = [${c.amulet ? "'amulet_will'" : 'null'}, null, null, null]; if (${c.amulet ? 1 : 0} && !data.inventory.includes('amulet_will')) data.inventory.push('amulet_will');
+      data.insurance = ${!!c.rune}; data.insuranceSourceId = ${c.rune ? `'${c.rune}'` : 'null'}; data.insuranceHoldScroll = null; window.__pv = penaltyPreview(); updateSysCurrent();`);
+    const pv = E(w, 'window.__pv'), txt = info(), runeKept = E(w, `JSON.stringify([data.insurance, data.insuranceSourceId, data.exp])`);
+    const r = E(w, 'const r = computePenaltyAndApply(); window.__r = r; r === "protected" ? "protected" : JSON.stringify([r.loss, r.pct])');
+    const exp = pv.rune && pv.rune.kind === 'full' ? 'protected' : JSON.stringify([pv.runeLoss, Math.round(pv.runePct * 1000) / 10]);
+    const afterExp = E(w, 'data.exp'), afterDebt = E(w, 'data.expDebt');
+    const startExp = c.exp == null ? 2000 : c.exp;
+    const debtOk = r === 'protected' ? pv.debt === 0 : afterDebt === pv.debt && afterExp === Math.max(0, startExp - pv.runeLoss);
+    if (r !== exp || !debtOk || JSON.parse(runeKept)[2] !== startExp) bad.push(JSON.stringify({ c, r, exp, pv, afterDebt }));
+    if (c.lv === 20) viewDebt = txt; if (c.rune === 'rune_protection' && !c.curse && !c.scroll) viewRune = txt;
+    if (c.rune === 'rune_protection' && c.curse) viewVoid = txt; if (c.curse && !c.rune) viewCurse = txt;
+  }
+  check('SP5 показ в Длани совпадает с настоящим штрафом (уровни 10 / 37 / 70 / 20, цепь 0–5, Сила 70, Амулет Воли, Бремя, Отречение, Руна Защиты, Надёжная, Абсолютная под Бременем, руна под Бременем, руна под Договором, долг); показ ничего не меняет',
+    bad.length === 0, bad.join('\n'));
+  check('SP6 строки руны, Бремени и долга: «Действует Руна Защиты: …% или … EXP»; «…: не сработает — Бремя Аномалии»; «(с Бременем Аномалии ×3)»; «Из них в долг: … EXP»',
+    /Действует Руна Защиты: 22,5% или \d+ EXP/.test(viewRune) && /Действует Руна Защиты: не сработает — Бремя Аномалии/.test(viewVoid)
+    && /\(с Бременем Аномалии ×3\)/.test(viewCurse) && /Из них в долг: \d+ EXP/.test(viewDebt) && !/в долг/.test(viewRune), JSON.stringify({ viewRune, viewVoid, viewCurse, viewDebt }));
+  E(w, "data.insurance = true; data.insuranceSourceId = 'rune_protection_charged'; data.curseActiveToday = false; data.activeScroll = null; updateSysCurrent()");
+  const tFull = info();
+  E(w, 'data.totalPenalties = 7; data.penaltyStreak = 3; resetPenaltyCountAction()');
+  const rc = E(w, 'JSON.stringify([data.totalPenalties, data.penaltyStreak])');
+  const lbl = [...D.querySelectorAll('#sysToolsOverlay button')].map(b => b.textContent.trim());
+  check('SP7 Надёжная — «штрафа не будет»; «Обнулить общее число штрафов» (бывшее «Обнулить счётчик штрафов») обнуляет только общее число, цепь не трогает',
+    /Действует Руна Надёжной Защиты: штрафа не будет/.test(tFull) && rc === '[0,3]' && lbl.includes('Обнулить общее число штрафов') && !lbl.includes('Обнулить счётчик штрафов'), tFull + ' ' + rc);
+}
+
 // ===== v7.5.6: каталог Длани — «В Инвентаре: N»; описания ключей и шкатулок; окно предмета без «Эффект:» у ключей и шкатулок =====
 async function catalogKeyBoxTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
@@ -1747,6 +1812,7 @@ async function registryTests() {
   await contourMarkTests();
   await registryTests();
   await catalogKeyBoxTests();
+  await sysPenaltyTests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
