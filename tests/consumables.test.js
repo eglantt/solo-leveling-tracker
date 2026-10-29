@@ -127,7 +127,7 @@ for (const a of X) for (const b of X) {
     w = fresh(setBoost(b) + ` data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`); const wr = warn(w, a); const u2 = use(w, a);
     const head = b === 'rune_return' ? 'Увеличение получаемого опыта уже действует' : 'Действует более высокое увеличение получаемого опыта';
     check(label + ', штраф есть: только возврат', u2.spent && !E(w,'findReturnRecord(1)') && E(w,'data.expBoostSourceId')===b
-      && wr === `${head}: активен эффект ${GEN[b]}. Руна сработает только для возврата опыта.` && u2.notice === 'Руна использована. Опыт восстановлен.', wr + ' | ' + u2.notice);
+      && wr === `${head}: активен эффект ${GEN[b]}. Руна сработает только для возврата опыта.` && u2.notice === 'Руна Возврата использована. Опыт восстановлен.', wr + ' | ' + u2.notice);
     continue;
   }
   const w = fresh(setBoost(b)); const wr = warn(w, a); const u = use(w, a);
@@ -145,7 +145,7 @@ for (const a of X) for (const b of X) {
 { const w = fresh(); const u = use(w,'crystal_impulse');
   check('D Импульс без усилений: опыт и кредиты +40%', u.spent && E(w,'data.expBoostToday')===0.4 && E(w,'data.creditBoostToday')===0.4); }
 { const w = fresh(`data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`); const u = use(w,'rune_return');
-  check('D Руна Возврата без усилений: возврат и +15%', u.spent && E(w,'data.expBoostToday')===0.15 && !E(w,'findReturnRecord(1)') && u.notice==='Руна использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса.', u.notice); }
+  check('D Руна Возврата без усилений: возврат и +15%', u.spent && E(w,'data.expBoostToday')===0.15 && !E(w,'findReturnRecord(1)') && u.notice==='Руна Возврата использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса.', u.notice); }
 
 // ===== E. Заморозка =====
 { const w = fresh(); complete(w); const u = use(w,'scroll_freeze');
@@ -224,7 +224,7 @@ const tw = (extra) => { const w = fresh(extra); clock(w); return w; };
 // --- доводка возврата ---
 { const w = tw(); nextDay(w,'fail'); const loss = lastRec(w).loss;
   const a = use(w,'potion_restoration'); const b = use(w,'potion_restoration_full');
-  check('I5 Зелье 50% → Полное: доводит до 100%', a.spent && b.spent && lastRec(w).returned === loss && b.notice === `Зелье использовано. Восстановлено ${loss - Math.floor(loss*0.5)} EXP.`, a.notice + ' | ' + b.notice); }
+  check('I5 Зелье 50% → Полное: доводит до 100%', a.spent && b.spent && lastRec(w).returned === loss && b.notice === `Зелье Полного Восстановления использовано. Восстановлено ${loss - Math.floor(loss*0.5)} EXP.`, a.notice + ' | ' + b.notice); }
 { const w = tw(); nextDay(w,'fail'); nextDay(w,'success'); nextDay(w,'fail');
   const [older] = stack(w);
   use(w,'potion_restoration_full'); const c = use(w,'crystal_restoration');
@@ -315,18 +315,18 @@ const CQ = 'Свиток вступит в силу со следующим ци
 
 // ===== J. v6.6.11: «увеличение получаемого» вместо «усиления», кредиты значком (19 согласованных текстов) =====
 { const w = fresh(); const t = [
-    ['J10 Зелье Роста', 'potion_growth', 'Зелье использовано. Получаемый опыт увеличен до следующего сброса.'],
-    ['J10 Руна Роста', 'rune_growth_charged', 'Руна использована. Получаемый опыт увеличен до следующего сброса.'] ];
+    ['J10 Зелье Роста', 'potion_growth', 'Зелье Роста использовано. Получаемый опыт увеличен до следующего сброса.'],
+    ['J10 Руна Роста', 'rune_growth_charged', 'Руна Роста использована. Получаемый опыт увеличен до следующего сброса.'] ];
   for (const [label, id, exp] of t) { const w1 = fresh(); const u = use(w1, id); check(label, u.notice === exp, u.notice); }
-  const w2 = fresh(); const u2 = use(w2, 'crystal_clarity'); check('J10 Кристалл Ясности', u2.notice === 'Кристалл использован. Получаемый опыт увеличен до следующего сброса.', u2.notice);
-  const w3 = fresh(); const u3 = use(w3, 'crystal_impulse'); check('J11 Кристалл Импульса', u3.notice === 'Кристалл использован. Получаемые опыт и кредиты увеличены до следующего сброса.', u3.notice);
+  const w2 = fresh(); const u2 = use(w2, 'crystal_clarity'); check('J10 Кристалл Ясности', u2.notice === 'Кристалл Ясности использован. Получаемый опыт увеличен до следующего сброса.', u2.notice);
+  const w3 = fresh(); const u3 = use(w3, 'crystal_impulse'); check('J11 Кристалл Импульса', u3.notice === 'Кристалл Импульса использован. Получаемые опыт и кредиты увеличены до следующего сброса.', u3.notice);
   const w4 = fresh(`data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
-  const u4 = use(w4, 'rune_return'); check('J12 Руна Возврата: возврат и увеличение', u4.notice === 'Руна использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса.', u4.notice);
+  const u4 = use(w4, 'rune_return'); check('J12 Руна Возврата: возврат и увеличение', u4.notice === 'Руна Возврата использована. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса.', u4.notice);
   const w5 = fresh(`data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false},{day:'2026-09-02',loss:300,returned:300,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
-  const u5 = use(w5, 'rune_return'); check('J12 Руна Возврата: с датой штрафа', /^Руна использована\. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса \(штраф за [^)]+\)\.$/.test(u5.notice), u5.notice);
-  const w6 = fresh(); const u6 = use(w6, 'rune_return'); check('J13 Руна Возврата: только увеличение', u6.notice === 'Руна использована. Получаемый опыт увеличен до следующего сброса.', u6.notice);
+  const u5 = use(w5, 'rune_return'); check('J12 Руна Возврата: с датой штрафа', /^Руна Возврата использована\. Потерянный опыт восстановлен, получаемый опыт увеличен до следующего сброса \(штраф за [^)]+\)\.$/.test(u5.notice), u5.notice);
+  const w6 = fresh(); const u6 = use(w6, 'rune_return'); check('J13 Руна Возврата: только увеличение', u6.notice === 'Руна Возврата использована. Получаемый опыт увеличен до следующего сброса.', u6.notice);
   const w7 = fresh(`data.expBoostToday=0.55; data.expBoostSourceId='crystal_clarity'; data.penaltyStack=[{day:'2026-09-01',loss:300,returned:0,fixedBy:null,brokeStreak:true,streakBefore:0,streakHandled:false,chainBroken:false}];`);
-  const u7 = use(w7, 'rune_return'); check('J Руна Возврата: только возврат (без изменений)', u7.notice === 'Руна использована. Опыт восстановлен.', u7.notice);
+  const u7 = use(w7, 'rune_return'); check('J Руна Возврата: только возврат (без изменений)', u7.notice === 'Руна Возврата использована. Опыт восстановлен.', u7.notice);
   const w8 = fresh(); E(w8, `window.__N=[]; useCreditBoostItem(0.35, 'Использовано', false, 'crystal_impulse'); useCreditBoostItem(0.35, 'Использовано', false, 'crystal_impulse')`);
   const n8 = JSON.parse(J(w8, 'window.__N'));
   check('J14 общая функция кредитов: успех', n8[0] === 'Использовано. Получаемые кредиты увеличены до следующего сброса.', n8[0]);
@@ -484,7 +484,7 @@ const CQ = 'Свиток вступит в силу со следующим ци
     complete(w);
     use(w, 'rune_freedom'); await sleep(700);   // карточка руны в Инвентаре — действие после вспышки (0,6 с)
     const fN = E(w, 'window.__N.join(" / ")');
-    check('F39 после выполнения дня руна нагрузки доступна', fN === 'Руна использована. Нагрузка на сегодня снижена.' && E(w, `data.targetDiscountSourceId==='rune_freedom'`), fN);
+    check('F39 после выполнения дня руна нагрузки доступна', fN === 'Руна Освобождения использована. Нагрузка на сегодня снижена.' && E(w, `data.targetDiscountSourceId==='rune_freedom'`), fN);
   }
   { const w = fresh(); use(w, 'rune_burden_release'); useF(w, 'pullups');
     const nd = (q, bb) => E(w, `(() => { const a = data.targetDiscountToday; data.targetDiscountToday = false; data.activeScroll = null; const v = getDynamicTarget(${bb}, data.dailyTargetLevel, '${q}'); data.targetDiscountToday = a; data.activeScroll = 'focus'; return v; })()`);

@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.11 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.12 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -670,6 +670,7 @@
     .rules-line:last-child { margin-bottom: 0; }
     .rules-line.rules-heading { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; color: #40c0ff; letter-spacing: 1px; margin: 0.2em 0 0.35em; }
     .rules-pen { color: #ff5555; font-weight: 700; text-shadow: 0 0 6px rgba(255,40,40,0.55); }
+    .notice-pen { color: #ff5555; font-weight: 700; text-shadow: 0 0 6px rgba(255,40,40,0.55); }   /* v7.5.12: !!…!! в уведомлениях */
     /* Символы занимают место с самого начала — окно не «прыгает» при печати. */
     .rules-typing .rules-ch { visibility: hidden; position: relative; }
     .rules-typing .rules-ch.on { visibility: visible; }
@@ -2083,7 +2084,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.11';
+  const APP_VERSION = '7.5.12';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2347,10 +2348,10 @@
   // Needed so players who already have this title stored keep it after the
   // comparison strings throughout the code were unified to use ё.
   if (data.activeTitle === 'Целеустремленный') data.activeTitle = 'Целеустремлённый';
-  if (data.activeTitle === 'Вечный странник') data.activeTitle = 'Странник';
+  if (data.activeTitle === 'Вечный странник' || data.activeTitle === 'Странник') data.activeTitle = 'Бегущий';   // v7.5.12: «Странник» → «Бегущий»
   if (Array.isArray(data.titlesUnlocked)) {
     data.titlesUnlocked = data.titlesUnlocked.map(t => t === 'Целеустремленный' ? 'Целеустремлённый' : t);
-    data.titlesUnlocked = data.titlesUnlocked.map(t => t === 'Вечный странник' ? 'Странник' : t);
+    data.titlesUnlocked = data.titlesUnlocked.map(t => (t === 'Вечный странник' || t === 'Странник') ? 'Бегущий' : t);
   }
   if (!Array.isArray(data.notificationLog)) data.notificationLog = [];
   if (!Array.isArray(data.remindersFiredHours)) data.remindersFiredHours = [];
@@ -2460,12 +2461,12 @@
 
   const TITLES_DB = {
     "Новичок": { icon: "🔰", desc: "Статус начинающего Игрока. Без бонусов." },
-    "Пробужденный": { icon: "✨", desc: "Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 1%." },
+    "Пробужденный": { icon: "✨", desc: "Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 3%." },
     "Целеустремлённый": { icon: "🔥", desc: "Ни один день не был потерян зря — семь дней подряд без единого срыва. Весь получаемый опыт увеличен на 5%." },
     "Преодолевший предел": { icon: "⚡", desc: "Предел преодолён пять раз. Награда в кредитах во время Преодоления предела увеличена на 5%." },
-    "Странник": { icon: "👣", desc: "Сто тысяч шагов остались позади. Опыт за шаги увеличен на 10%." },
-    "Марафонец": { icon: "🏃", desc: "Полмиллиона шагов пройдено — выносливость закалена долгим путём. Опыт за шаги увеличен на 20%, а награда в кредитах — на 10%." },
-    "Покоритель горизонта": { icon: "🌅", desc: "Миллион шагов пройден — горизонт, что казался недостижимым, остался позади. Опыт за шаги увеличен на 30%, а награда в кредитах — на 20%." },
+    "Бегущий": { icon: "👣", desc: "Сто тысяч шагов преодолено. Опыт за бег увеличен на 10%." },   // v7.5.12: было «Странник»
+    "Марафонец": { icon: "🏃", desc: "Полмиллиона шагов остались позади — выносливость закалена долгим путём. Опыт за бег увеличен на 20%, а награда в кредитах — на 10%." },
+    "Покоритель горизонта": { icon: "🌅", desc: "Миллион шагов преодолён — горизонт, что казался недостижимым, остался позади. Опыт за бег увеличен на 30%, а награда в кредитах — на 20%." },
     "Неутомимый": { icon: "👊", desc: "Две тысячи отжиманий позади. Опыт за отжимания увеличен на 10%." },
     "Несокрушимый": { icon: "🛡️", desc: "Пять тысяч отжиманий — тело закалено, воля не дрогнула. Опыт за отжимания увеличен на 20%, а награда в кредитах — на 10%." },
     "Сокрушитель": { icon: "💥", desc: "Десять тысяч отжиманий — путь силы пройден. Опыт за отжимания увеличен на 30%, а награда в кредитах — на 20%." },
@@ -3164,7 +3165,7 @@
     return tiers[0];
   }
 
-  const STARTUP_NOTICE_TEXT = "Получено задание на день. Невыполнение приведёт к штрафу.";
+  const STARTUP_NOTICE_TEXT = "Получено задание на день. Невыполнение приведёт к !!штрафу!!.";   // v7.5.12: «штрафу» — красным жирным (как в правилах)
 
   const SYSTEM_NOTICES = {
     reminder: [
@@ -3236,11 +3237,11 @@
     artifact_crystal_insight: { title: "Кристалл Прозрения", content: "Артефакт S-ранга. Носящий его будто начинает яснее видеть саму суть тренировки — не рутину, а путь. Весь получаемый опыт заметно увеличен." },
     artifact_crystal_shadow: { title: "Кристалл Теней", content: "Артефакт S-ранга — кристалл, обостряющий внимание к деталям, которые обычно ускользают из виду. Кредиты и опыт Игрока заметно увеличены, а полное выполнение дневного задания иногда приносит дополнительную находку." },
     title_celeustremlenny: { title: "Целеустремлённый", content: "Титул стойкой воли — семь дней без единого срыва, планка, которую держат немногие. Опыт в такие дни начисляется заметно щедрее обычного." },
-    title_vechny_strannik: { title: "Странник", content: "Титул пройденного пути — сто тысяч шагов, расстояние, которое редко проходят случайно. Шаги отныне вознаграждаются щедрее." },
+    title_vechny_strannik: { title: "Бегущий", content: "Титул преодолённого пути — сто тысяч шагов: расстояние, которое редко пробегают случайно. Бег отныне вознаграждается щедрее." },
     title_preodolevshy_predel: { title: "Преодолевший предел", content: "Титул превзойдённой границы — пять раз предел был не просто достигнут, а пройден насквозь. Кредиты за такие дни начисляются щедрее обычного." },
     title_probuzhdenny: { title: "Пробужденный", content: "Титул нового рубежа — десятый уровень оставлен позади, черта, за которой новичок перестаёт быть новичком. Опыт, получаемый отныне, чуть весомее прежнего." },
-    title_marathoner: { title: "Марафонец", content: "Титул закалённой выносливости — полмиллиона шагов позади, путь, что закаляет не хуже самой суровой тренировки. Награда за шаги растёт вместе с пройденным расстоянием." },
-    title_horizon_conqueror: { title: "Покоритель горизонта", content: "Титул покорённой дали — миллион шагов, цифра, что для большинства остаётся абстракцией, не личным опытом. Здесь она пройдена. Награда за шаги — самая высокая из возможных." },
+    title_marathoner: { title: "Марафонец", content: "Титул закалённой выносливости — полмиллиона шагов остались позади, путь, что закаляет не хуже самой суровой тренировки. Награда за бег растёт вместе с преодолённым расстоянием." },
+    title_horizon_conqueror: { title: "Покоритель горизонта", content: "Титул покорённой дали — миллион шагов, цифра, что для большинства остаётся абстракцией, не личным опытом. Здесь она преодолена. Награда за бег — самая высокая из возможных." },
     title_tireless: { title: "Неутомимый", content: "Титул неослабевающего усилия — две тысячи отжиманий, повторённых достаточно раз, чтобы перестать быть усилием и стать привычкой. Отжимания вознаграждаются щедрее." },
     title_unbreakable: { title: "Несокрушимый", content: "Титул несломленного духа — пять тысяч отжиманий, нагрузка, способная сломить многих, но не сломившая. Награда за отжимания растёт вместе с пройденным путём." },
     title_breaker: { title: "Сокрушитель", content: "Титул методичной силы — десять тысяч отжиманий, итог не одной случайной попытки, а долгого, методичного повторения. Награда за отжимания — самая высокая из возможных." },
@@ -3258,7 +3259,7 @@
   };
 
   const RANK_CODEX_MAP = { d:'rank_d', c:'rank_c', b:'rank_b', a:'rank_a', s:'rank_s', national:'rank_national', sss:'rank_sss', monarch:'rank_monarch' };
-  const TITLE_CODEX_MAP = { "Целеустремлённый": "title_celeustremlenny", "Странник": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel", "Пробужденный": "title_probuzhdenny", "Марафонец": "title_marathoner", "Покоритель горизонта": "title_horizon_conqueror", "Неутомимый": "title_tireless", "Несокрушимый": "title_unbreakable", "Сокрушитель": "title_breaker", "Непреклонный": "title_unyielding", "Покоритель предела": "title_limit_conqueror", "Торговец Врат": "title_gate_trader" };
+  const TITLE_CODEX_MAP = { "Целеустремлённый": "title_celeustremlenny", "Бегущий": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel", "Пробужденный": "title_probuzhdenny", "Марафонец": "title_marathoner", "Покоритель горизонта": "title_horizon_conqueror", "Неутомимый": "title_tireless", "Несокрушимый": "title_unbreakable", "Сокрушитель": "title_breaker", "Непреклонный": "title_unyielding", "Покоритель предела": "title_limit_conqueror", "Торговец Врат": "title_gate_trader" };
 
   function pickRandomNoRepeat(pool, category) {
     let choice = pool[Math.floor(Math.random() * pool.length)];
@@ -3844,7 +3845,8 @@
   function getDynamicExp(base, lvl, id) { 
     let mul = 1 + (lvl - 1) * 0.05;
     if (data.activeScroll !== 'renunciation') {
-      if (data.activeTitle === "Пробужденный") mul += 0.01; 
+      if (data.activeTitle === "Пробужденный") mul += 0.03;   // v7.5.12: было +1%
+      
       const bonusInt = Math.max(0, data.stats.int - 10);
       mul += (bonusInt * 0.01);
       if (data.activeTitle === "Целеустремлённый") {
@@ -3852,7 +3854,7 @@
         if (isArtifactEquipped('amulet_continuity')) determinedBonus *= 1.5;
         mul += determinedBonus;
       }
-      if (data.activeTitle === "Странник" && id === "steps") mul += 0.10;
+      if (data.activeTitle === "Бегущий" && id === "steps") mul += 0.10;
       if (data.activeTitle === "Марафонец" && id === "steps") mul += 0.20;
       if (data.activeTitle === "Покоритель горизонта" && id === "steps") mul += 0.30;
       if (data.activeTitle === "Неутомимый" && id === "pushups") mul += 0.10;
@@ -4165,6 +4167,14 @@
   const LIMIT_ITEM_ACC = { shard_limit: 'Осколок Предела', shard_limit_double: 'Осколок Преодоления Предела', rune_limit_charged: 'Руну Преодоления Предела' };
   // Что сейчас «держит» дневные эффекты: 'veil' | 'freeze' | null.
   function dayEffectHold() { return isVeilActive() ? 'veil' : (data.activeScroll === 'freeze' ? 'freeze' : null); }
+  // v7.5.12: в уведомлении об использовании — полное название предмета вместо общего слова («Руна использована» → «Руна Исправления использована»)
+  function namedUseNotice(id, m) {
+    const info = typeof getConsumableInfo === 'function' ? getConsumableInfo(id) : null;
+    if (!info || typeof m !== 'string') return m;
+    const mm = /^(Руна|Зелье|Кристалл|Осколок|Скрижаль) (использован[аоы]?)/.exec(m);
+    if (!mm || !info.name.startsWith(mm[1] + ' ')) return m;
+    return info.name + ' ' + mm[2] + m.slice(mm[0].length);
+  }
   function holdEffectText(id) {
     const h = dayEffectHold();
     return `Эффект ${HOLD_EFFECT_GEN[id]} начнёт действовать после окончания или досрочного снятия ${h === 'veil' ? 'Пелены покоя' : 'Заморозки'}.`;
@@ -4478,7 +4488,7 @@
     const p = document.createElement('div');
     if (isSysTheme()) return displaySystemNotice(p, { body, sub, toneClass, check });   // v6.11.0; v7.0.0: по выбранной теме
     p.className = 'system-popup hud-frame';
-    const content = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${creditsHtml(body)}</div>` +
+    const content = `<div class="system-popup-header">УВЕДОМЛЕНИЕ</div><div class="system-popup-body ${toneClass}">${noticeHtml(body)}</div>` +
       (sub ? `<div class="system-popup-sub">${creditsHtml(sub)}</div>` : '') +
       (check ? `<div class="notice-check${data.curseActiveToday ? ' red' : ''}" aria-hidden="true">${CHECK_SVG_DONE}</div>` : '');   // v6.9.0
     const glitchKind = notificationGlitchKind(body);   // v6.8.6: сбой вывода — Аномалия / перегрев
@@ -4536,7 +4546,7 @@
     const glitchKind = notificationGlitchKind(body);
     const scheme = noticeScheme(body, glitchKind);
     const inner = `<div class="sn-hdr"><div class="sn-ic">${SN_ICON}</div><div class="sn-tt">УВЕДОМЛЕНИЕ</div></div>` +
-      `<div class="sn-body ${toneClass}">${creditsHtml(body)}</div>` +
+      `<div class="sn-body ${toneClass}">${noticeHtml(body)}</div>` +
       (sub ? `<div class="sn-sub">${creditsHtml(sub)}</div>` : '') +
       (check ? `<div class="notice-check${data.curseActiveToday ? ' red' : ''}" aria-hidden="true">${CHECK_SVG_DONE}</div>` : '');
     const slices = glitchKind && GLITCH_CFG[glitchKind].fx.includes('slice') ? [0, 1, 2].map(() => `<div class="gp-slice" aria-hidden="true"><div class="gp-inner">${inner}</div></div>`).join('') : '';
@@ -5679,7 +5689,11 @@
     if (delay) later(begin, delay); else begin();   // v6.11.0: в оформлении Системы — после развёртки окна
   }
 
+  // v7.5.12: разметка уведомлений — !!…!! — красный жирный (как «штраф» в правилах); в журнал — без пометок
+  function stripNoticeMarkup(text) { return String(text).replace(/!!([^!]+)!!/g, '$1'); }
+  function noticeHtml(text) { return creditsHtml(text).replace(/!!([^!]+)!!/g, '<span class="notice-pen">$1</span>'); }
   function logNotification(text) {
+    text = stripNoticeMarkup(text);
     const now = new Date();
     const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     data.notificationLog.unshift({ time, text });
@@ -5690,8 +5704,11 @@
     enqueueNotification({ body: message, tone, skipLog, sound, check: !!check });
   }
 
-  function showPenaltyBanner(totalLoss, pct, daysCount, completedCount, runeHalved, streak, mult) {
+  function showPenaltyBanner(totalLoss, pct, daysCount, completedCount, runeHalved, streak, mult, debt) {
     const cont = document.getElementById('penaltyContent');
+    // v7.5.12: долг от этого штрафа (сколько опыта не хватило) — «Из них в долг» / «Весь потерянный опыт — в долг»; потеря — со знаком «-»
+    const debtTxt = debt > 0 ? (debt >= totalLoss ? `Весь потерянный опыт — в долг: -${debt} EXP` : `Из них в долг: -${debt} EXP`) : '';
+    const debtLine = debtTxt ? `<li>${debtTxt}</li>` : '';
     const streakLine = streak >= 2 ? `<li>Штрафов подряд: ${streak}</li>` : '';   // v7.5.0
     const sevLine = mult > 1 ? `<li>Тяжесть штрафа: ×${String(mult).replace('.', ',')}</li>` : '';   // v7.5.10: множитель этого штрафа (без Бремени)
     const daysLine = daysCount > 1 ? `<li>Пропущено дней: ${daysCount}</li>` : '';
@@ -5703,7 +5720,8 @@
         <div class="danger-text">Дневное задание не выполнено.</div>
         <ul class="danger-list">
           <li>Закрыто упражнений: ${completedCount} из 5</li>
-          <li>Потеряно опыта: ${totalLoss}${pctText}</li>
+          <li>Потеряно опыта: -${totalLoss}${pctText}</li>
+          ${debtLine}
           ${sevLine}
           ${daysLine}
           ${streakLine}
@@ -5711,6 +5729,13 @@
         </ul>
       </div>`;
     document.getElementById('penaltyOverlay').style.display = 'flex';
+    // v7.5.12: запись о штрафе в журнале «Уведомления системы» (окно штрафа — не уведомление; журнал очищается при сбросе дня — запись идёт после)
+    const parts = [daysCount > 1 ? `Штраф: пропущено дней ${daysCount}, потеряно опыта -${totalLoss}.` : `Штраф: потеряно опыта -${totalLoss}${pctText}.`];
+    if (debtTxt) parts.push(debtTxt + '.');
+    if (runeHalved) parts.push(daysCount > 1 ? 'Руна Защиты снизила штраф за один из дней вдвое.' : 'Руна Защиты: штраф снижен вдвое.');
+    if (mult > 1) parts.push(`Тяжесть штрафа: ×${String(mult).replace('.', ',')}.`);
+    if (streak >= 2) parts.push(`Штрафов подряд: ${streak}.`);
+    logNotification(parts.join(' '));
   }
 
   function checkMissedDays() {
@@ -5725,7 +5750,7 @@
     let nextReset = getNextCleanReset(data.lastReset);
     let penalizedDays = 0;
     let totalLoss = 0;
-    let lastPct = 0, lastMult = 1;   // v7.5.10
+    let lastPct = 0, lastMult = 1, totalDebt = 0;   // v7.5.10; v7.5.12: долг за все пропущенные дни
     let runeHalvedAny = false;
     let lastCompletedCount = 0;
     while (now >= nextReset) {
@@ -5771,7 +5796,7 @@
       } else {
         const result = applyPenaltyLogic(dayKey);
         if (result === 'protected') { dayStatus = 'protected'; }
-        else if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; lastMult = result.mult || 1; if (result.halved) runeHalvedAny = true; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
+        else if (result) { penalizedDays++; totalLoss += result.loss; lastPct = result.pct; lastMult = result.mult || 1; totalDebt += result.debt || 0; if (result.halved) runeHalvedAny = true; dayStatus = 'penalty'; expLostThatDay = result.loss; completedExercisesThatDay = result.completedExercises; lastCompletedCount = (result.completedExercises || []).length; }
         else { dayStatus = 'success'; }
       }
       const historyEntry = { status: dayStatus, donePercent };
@@ -5875,7 +5900,7 @@
     }
     saveData(); render();
     if (penalizedDays > 0) {
-      { const st = data.penaltyRun, ml = lastMult; setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny, st, ml), 3000); }
+      { const st = data.penaltyRun, ml = lastMult, db = totalDebt; setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny, st, ml, db), 3000); }
     }
     if (!data.dailyNotices.morning && data.activeScroll !== 'freeze' && data.activeScroll !== 'veil') {
       data.dailyNotices.morning = true;
@@ -6042,7 +6067,7 @@
     }
     // Фактический процент — уже после снижения Руной Защиты (одна цифра после запятой).
     const effectivePct = Math.round(finalPen * (halfBlock ? 0.5 : 1) * 1000) / 10;
-    return { loss, pct: effectivePct, completedExercises, halved: halfBlock, streak: data.penaltyRun, mult: multUsed };
+    return { loss, pct: effectivePct, completedExercises, halved: halfBlock, streak: data.penaltyRun, mult: multUsed, debt: shortfall };
   }
 
   function applyPenaltyLogic(dayKey) {
@@ -6058,7 +6083,7 @@
   }
 
   // Order matters: index 0 = most significant title. Unknown/default title = least significant.
-  const TITLE_PRIORITY = ["Покоритель горизонта", "Сокрушитель", "Покоритель предела", "Марафонец", "Несокрушимый", "Непреклонный", "Неутомимый", "Странник", "Преодолевший предел", "Целеустремлённый", "Торговец Врат", "Пробужденный", "Новичок"];
+  const TITLE_PRIORITY = ["Покоритель горизонта", "Сокрушитель", "Покоритель предела", "Марафонец", "Несокрушимый", "Непреклонный", "Неутомимый", "Бегущий", "Преодолевший предел", "Целеустремлённый", "Торговец Врат", "Пробужденный", "Новичок"];
 
   function titleRank(name) {
     const idx = TITLE_PRIORITY.indexOf(name);
@@ -6107,7 +6132,7 @@
     // see the click handler and the wasAllDone check in the "+" handler).
     if (data.limitBreaksCount >= 5) unlockTitle("Преодолевший предел");
     if (data.limitBreaksCount >= 25) unlockTitle("Покоритель предела");
-    if (totalStats.steps >= 100000) unlockTitle("Странник");
+    if (totalStats.steps >= 100000) unlockTitle("Бегущий");
     if (totalStats.steps >= 500000) unlockTitle("Марафонец");
     if (totalStats.steps >= 1000000) unlockTitle("Покоритель горизонта");
     if (totalStats.pushups >= 2000) unlockTitle("Неутомимый");
@@ -6625,7 +6650,7 @@
     "Пробужденный": "title_awakened",
     "Целеустремлённый": "title_determined",
     "Преодолевший предел": "title_limitbreaker",
-    "Странник": "title_wanderer",
+    "Бегущий": "title_wanderer",
     "Марафонец": "title_marathoner",
     "Покоритель горизонта": "title_horizon_conqueror",
     "Неутомимый": "title_tireless",
@@ -6749,7 +6774,9 @@
       const holdNotice = hold && HOLD_EFFECT_GEN[id];
       // Обычное «…до следующего сброса» неверно — эффект ждёт: на время использования пропускаем только отказы.
       const noticeFn = showNotice;
-      if (holdNotice) showNotice = (m, t, ...rest) => { if (t === 'warn') noticeFn(m, t, ...rest); };
+      // v7.5.12: «Руна / Зелье / Кристалл / Осколок / Скрижаль использован(а/о)» — с полным названием предмета
+      const named = (m, t, ...rest) => noticeFn(namedUseNotice(id, m), t, ...rest);
+      showNotice = holdNotice ? (m, t, ...rest) => { if (t === 'warn') named(m, t, ...rest); } : named;
       try {
       if (id === 'bone_bead') {   // v6.10.0
           const why = beadRefusal();
@@ -8234,7 +8261,7 @@
     // Same one-time spelling fix as on load, applied to imported backups too.
     const fixTitleSpelling = t => {
       if (t === 'Целеустремленный') return 'Целеустремлённый';
-      if (t === 'Вечный странник') return 'Странник';
+      if (t === 'Вечный странник' || t === 'Странник') return 'Бегущий';   // v7.5.12
       return t;
     };
     let cleanTitlesUnlocked = Array.isArray(s.titlesUnlocked) ? s.titlesUnlocked.map(fixTitleSpelling).filter(k => TITLES_DB[k]) : [];
@@ -8975,7 +9002,7 @@
     const result = computePenaltyAndApply();
     saveData(); render();
     if (result === 'protected') { showNotice(`Штраф отменён — сработала ${getConsumableInfo(lastProtectedBy || 'rune_protection_absolute').name}.`, 'info'); }
-    else { const { loss, pct, completedExercises, halved, streak, mult } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length, halved, streak, mult); }
+    else { const { loss, pct, completedExercises, halved, streak, mult, debt } = result; showPenaltyBanner(loss, pct, 1, (completedExercises || []).length, halved, streak, mult, debt); }
   }
 
   // v7.5.7: Длань — цепь штрафов (без опыта, Летописи, окна штрафа). v7.5.10: два счётчика — «Тяжесть штрафа»

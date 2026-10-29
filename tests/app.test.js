@@ -1634,6 +1634,75 @@ async function contourMarkTests() {
 
 
 // ===== v7.5.4: окно Реестра — полная высота, «Загрузка» с точками, цвет ранга, закрытие =====
+// ===== v7.5.12: «Пробужденный» 3%, «Бегущий», тексты бега, окно штрафа и журнал, названия расходников, «штрафу» в задании дня =====
+async function v7512Tests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
+  // Пробужденный
+  const aw = E(w, `(() => { data.activeScroll = null; data.stats.int = 10; data.expBoostToday = 0; data.equippedArtifacts = [null,null,null,null]; data.isGoalMet = false;
+    data.activeTitle = 'Новичок'; const a = getDynamicExp(1000, 1, 'press'); data.activeTitle = 'Пробужденный'; const b = getDynamicExp(1000, 1, 'press'); return [a, b, TITLES_DB['Пробужденный'].desc]; })()`);
+  check('TT1 «Пробужденный»: +3% к опыту (1000 → 1030), описание «…увеличен на 3%.»', aw[0] === 1000 && aw[1] === 1030 && aw[2] === 'Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 3%.', JSON.stringify(aw));
+  // Бегущий: перенос
+  const old = SEED;
+  SEED = JSON.stringify(Object.assign(JSON.parse(old), { activeTitle: 'Странник', titlesUnlocked: ['Новичок', 'Странник'] })); const m1 = E(boot(), 'JSON.stringify([data.activeTitle, data.titlesUnlocked])');
+  SEED = JSON.stringify(Object.assign(JSON.parse(old), { activeTitle: 'Вечный странник', titlesUnlocked: ['Новичок', 'Вечный странник'] })); const m2 = E(boot(), 'JSON.stringify([data.activeTitle, data.titlesUnlocked])'); SEED = old;
+  const si = E(w, `JSON.stringify((({ activeTitle, titlesUnlocked }) => [activeTitle, titlesUnlocked])(sanitizeImportedData({ state: Object.assign({}, data, { activeTitle: 'Странник', titlesUnlocked: ['Новичок', 'Странник'] }), total: totalStats }).state))`);
+  const bonus = E(w, `(() => { data.activeTitle = 'Бегущий'; return getDynamicExp(1000, 1, 'steps') - getDynamicExp(1000, 1, 'press') * 0 - 1000; })()`);
+  const src = [...D.querySelectorAll('script')].map(x => x.textContent).join('\n').replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '');
+  const leftover = (src.match(/"Странник"/g) || []).length;
+  check('TT2 «Странник» и «Вечный странник» → «Бегущий» (активный и в списке; импорт бэкапа); бонус к бегу +10%; «Странник» в коде остался только в переносе',
+    [m1, m2].every(m => { const [at, tl] = JSON.parse(m); return at === 'Бегущий' && tl.includes('Бегущий') && !tl.some(t => /странник/i.test(t)); })   /* список дополняется титулами по уровню */ && si === '["Бегущий",["Новичок","Бегущий"]]' && bonus === 100 && leftover === 0, JSON.stringify({ m1, m2, si, bonus, leftover }));
+  const T = n => E(w, `TITLES_DB['${n}'].desc`), C = k => E(w, `CODEX_CHAPTERS.${k}.content`), CT = k => E(w, `CODEX_CHAPTERS.${k}.title`);
+  check('TT3 тексты бега: «Бегущий», «Марафонец», «Покоритель горизонта» — описания и Кодекс дословно',
+    T('Бегущий') === 'Сто тысяч шагов преодолено. Опыт за бег увеличен на 10%.'
+    && T('Марафонец') === 'Полмиллиона шагов остались позади — выносливость закалена долгим путём. Опыт за бег увеличен на 20%, а награда в кредитах — на 10%.'
+    && T('Покоритель горизонта') === 'Миллион шагов преодолён — горизонт, что казался недостижимым, остался позади. Опыт за бег увеличен на 30%, а награда в кредитах — на 20%.'
+    && CT('title_vechny_strannik') === 'Бегущий' && C('title_vechny_strannik') === 'Титул преодолённого пути — сто тысяч шагов: расстояние, которое редко пробегают случайно. Бег отныне вознаграждается щедрее.'
+    && C('title_marathoner') === 'Титул закалённой выносливости — полмиллиона шагов остались позади, путь, что закаляет не хуже самой суровой тренировки. Награда за бег растёт вместе с преодолённым расстоянием.'
+    && C('title_horizon_conqueror') === 'Титул покорённой дали — миллион шагов, цифра, что для большинства остаётся абстракцией, не личным опытом. Здесь она преодолена. Награда за бег — самая высокая из возможных.',
+    [T('Бегущий'), T('Марафонец'), T('Покоритель горизонта')].join(' | '));
+  // окно штрафа и журнал
+  const ban = (args) => { E(w, `data.notificationLog = []; showPenaltyBanner(${args})`); const t = D.getElementById('penaltyContent').textContent.replace(/\s+/g, ' '); const l = E(w, 'data.notificationLog[0] ? data.notificationLog[0].text : ""'); E(w, "document.getElementById('penaltyOverlay').style.display='none'"); return [t, l]; };
+  const b1 = ban('7492, 135, 1, 0, false, 3, 2.5, 2492'), b2 = ban('3105, 69, 1, 0, false, 4, 3, 3105'), b3 = ban('1293, 28.8, 1, 0, true, 1, 2.5, 0'), b4 = ban('9315, 0, 3, 0, false, 3, 2, 4315'), b5 = ban('1035, 23, 1, 0, false, 1, 1, 0');
+  check('PL1 окно штрафа: «Потеряно опыта: -7492 (-135%)», «Из них в долг: -2492 EXP»; при нуле опыта — «Весь потерянный опыт — в долг: -3105 EXP»; без долга — строки нет; несколько дней — «-9315», «Из них в долг: -4315 EXP»',
+    b1[0].includes('Потеряно опыта: -7492 (-135%)') && b1[0].includes('Из них в долг: -2492 EXP') && b2[0].includes('Весь потерянный опыт — в долг: -3105 EXP') && !b2[0].includes('Из них')
+    && !b3[0].includes('долг') && b4[0].includes('Потеряно опыта: -9315') && b4[0].includes('Из них в долг: -4315 EXP') && b5[0].includes('Потеряно опыта: -1035 (-23%)'), JSON.stringify([b1[0], b2[0], b4[0]]));
+  check('PL2 журнал: запись штрафа дословно (долг, весь в долг, руна, несколько дней, без долга)',
+    b1[1] === 'Штраф: потеряно опыта -7492 (-135%). Из них в долг: -2492 EXP. Тяжесть штрафа: ×2,5. Штрафов подряд: 3.'
+    && b2[1] === 'Штраф: потеряно опыта -3105 (-69%). Весь потерянный опыт — в долг: -3105 EXP. Тяжесть штрафа: ×3. Штрафов подряд: 4.'
+    && b3[1] === 'Штраф: потеряно опыта -1293 (-28,8%). Руна Защиты: штраф снижен вдвое. Тяжесть штрафа: ×2,5.'
+    && b4[1] === 'Штраф: пропущено дней 3, потеряно опыта -9315. Из них в долг: -4315 EXP. Тяжесть штрафа: ×2. Штрафов подряд: 3.'
+    && b5[1] === 'Штраф: потеряно опыта -1035 (-23%).', JSON.stringify([b1[1], b2[1], b3[1], b4[1], b5[1]]));
+  // настоящий штраф при сбросе дня — запись не стирается очисткой журнала
+  E(w, `data.completed = {}; data.isGoalMet = false; data.insurance = false; data.activeScroll = null; data.curseActiveToday = false; data.penaltyStreak = 0; data.penaltyRun = 0; data.level = 30; data.exp = 500; data.expDebt = 0;
+    data.notificationLog = [{ time: '01:00', text: 'старое' }]; data.lastReset -= 86400000; checkMissedDays()`);
+  await new Promise(r => setTimeout(r, 3300));
+  const log = E(w, 'JSON.stringify(data.notificationLog.map(x => x.text))'), win = D.getElementById('penaltyContent').textContent.replace(/\s+/g, ' ');
+  E(w, "closePenaltyOverlay()");
+  check('PL3 настоящий штраф при сбросе дня (30-й ур., опыт 500): окно «-1035 (-23%)», «Из них в долг: -535 EXP»; журнал очищен сбросом, запись штрафа есть',
+    win.includes('Потеряно опыта: -1035 (-23%)') && win.includes('Из них в долг: -535 EXP') && !log.includes('старое') && log.includes('Штраф: потеряно опыта -1035 (-23%). Из них в долг: -535 EXP.'), log + ' | ' + win);
+  E(w, "data.notificationLog = []; data.exp = 100000; sysToolsAuthorized = true; applyPenaltyAction(); document.getElementById('penaltyOverlay').style.display = 'none'");
+  const lg2 = E(w, 'data.notificationLog[0] ? data.notificationLog[0].text : ""');
+  check('PL4 «Применить штраф сейчас» в Длани — тоже пишет в журнал', /^Штраф: потеряно опыта -\d+ \(-[\d,]+%\)\./.test(lg2), lg2);
+  // названия расходников
+  const nm = E(w, `JSON.stringify([
+    namedUseNotice('rune_correction', 'Руна использована. Опыт восстановлен.'), namedUseNotice('rune_cleansing', 'Руна использована. Один штраф удалён из истории.'),
+    namedUseNotice('potion_restoration', 'Зелье использовано. Восстановлено 900 EXP.'), namedUseNotice('rune_growth_charged', 'Руна использована. Получаемый опыт увеличен до следующего сброса.'),
+    namedUseNotice('crystal_impulse', 'Кристалл использован. Получаемые опыт и кредиты увеличены до следующего сброса.'), namedUseNotice('shard_limit', 'Осколок использован. +1 использование Преодоления предела сегодня.'),
+    namedUseNotice('tablet_of_reassessment', 'Скрижаль использована. Возвращено очков характеристик: 40.'), namedUseNotice('rune_redemption', 'Руна использована: восстановлено 55%.'),
+    namedUseNotice('potion_restoration', 'Восстанавливать нечего: потерь опыта нет.')])`);
+  const NM = JSON.parse(nm);
+  check('UN1 название расходника в начале: Руна Исправления / Очищения / Роста / Искупления, Зелье Восстановления, Кристалл Импульса, Осколок Предела, Скрижаль Пересмотра; эффект прежний; отказы — без изменений',
+    NM[0] === 'Руна Исправления использована. Опыт восстановлен.' && NM[1] === 'Руна Очищения использована. Один штраф удалён из истории.' && NM[2] === 'Зелье Восстановления использовано. Восстановлено 900 EXP.'
+    && NM[3] === 'Руна Роста использована. Получаемый опыт увеличен до следующего сброса.' && NM[4] === 'Кристалл Импульса использован. Получаемые опыт и кредиты увеличены до следующего сброса.'
+    && NM[5] === 'Осколок Предела использован. +1 использование Преодоления предела сегодня.' && NM[6] === 'Скрижаль Пересмотра использована. Возвращено очков характеристик: 40.'
+    && NM[7] === 'Руна Искупления использована: восстановлено 55%.' && NM[8] === 'Восстанавливать нечего: потерь опыта нет.', nm);
+  // настоящее использование: Руна Очищения
+  E(w, "data.totalPenalties = 3; data.consumables.rune_cleansing = 1; data.notificationLog = []; window.__nt = []; const _sn = showNotice; displayNotificationNow = o => { window.__nt.push(o.body); logNotification(o.body); }; notificationQueue.length = 0; notificationActive = false; performUseItem('rune_cleansing')");
+  await new Promise(r => setTimeout(r, 900)); E(w, 'processNotificationQueue()');
+  const used = E(w, 'JSON.stringify([window.__nt, data.notificationLog.map(x => x.text)])');
+  check('UN2 настоящее использование Руны Очищения: «Руна Очищения использована. Один штраф удалён из истории.» — и в уведомлении, и в журнале', used.includes('Руна Очищения использована. Один штраф удалён из истории.') && !/"Руна использована/.test(used), used);
+}
+
 // ===== v7.5.11: Длань — «Штрафов подряд» двигает и тяжесть; Статус при 14 подряд =====
 async function v7511Tests() {
   const w = boot(); await new Promise(r => setTimeout(r, 50)); const D = w.document;
@@ -1960,6 +2029,7 @@ async function registryTests() {
   await v759Tests();
   await v7510Tests();
   await v7511Tests();
+  await v7512Tests();
   console.log(results.join('\n'));
   const failed = results.filter(r => r.startsWith('FAIL')).length;
   console.log(`\nИтого: ${results.length - failed} OK, ${failed} FAIL`);
