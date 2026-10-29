@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.12 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.13 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -765,8 +765,10 @@
     /* v7.5.4 (демо 113): Реестр игроков — уходящая копия 0,45 с и без размытия фона (поверх «Прогресса» двойное размытие на телефоне съедало угасание) */
     /* v7.5.5: Реестр (обе темы) — угасание на месте 0,4 с, без ухода вниз и без размытия фона у копии */
     @keyframes cfxWinFade { to { opacity: 0; } }
-    .status-overlay.cfx-ghost[data-gid="leaderboardOverlay"], .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] { animation-duration: .4s; -webkit-backdrop-filter: none; backdrop-filter: none; }
-    .status-overlay.cfx-ghost[data-gid="leaderboardOverlay"] > *, .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] > * { animation-name: cfxWinFade; animation-duration: .4s; }
+    /* v7.5.13: то же угасание (класс cfx-fade) — у Правил из Архива и у страниц Архива при возврате на главную (cfx-page — без своего затемнения) */
+    .status-overlay.cfx-ghost.cfx-fade, .status-overlay.sfx-ghost.cfx-fade { animation-duration: .4s; -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .status-overlay.cfx-ghost.cfx-fade > *, .status-overlay.sfx-ghost.cfx-fade > * { animation-name: cfxWinFade; animation-duration: .4s; }
+    .status-overlay.cfx-ghost.cfx-page, .status-overlay.sfx-ghost.cfx-page { background: none !important; animation: none; }
     /* v7.5.4: Реестр — полная высота с открытия (без рывка при загрузке), «Загрузка» с точками, цвет ранга */
     :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .status-window { height: 90vh; }
     :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .status-body { display: flex; flex-direction: column; }
@@ -2084,7 +2086,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.12';
+  const APP_VERSION = '7.5.13';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4637,7 +4639,10 @@
       // по которой правила оформления «:is(#имя, [data-gid="имя"])» узнают элемент копии (иначе копия при уходе дёргается).
       [g, ...g.querySelectorAll('[id]')].forEach(el => { if (el.id) { el.dataset.gid = el.id; el.removeAttribute('id'); } });
       g.removeAttribute('onclick'); g.classList.remove('anim-paused');
-      const isSys = sys(), ms = g.dataset.gid === 'leaderboardOverlay' ? LB_OUT_MS : (isSys ? SYS_OUT_MS : OUT_MS);   // v7.5.4–7.5.5: Реестр — своё время (0,4 с)
+      // v7.5.13: угасание на месте 0,4 с (как у Реестра с v7.5.5) — и у Правил, открытых из Архива (поверх Архива)
+      const fade = g.dataset.gid === 'leaderboardOverlay' || g.dataset.gid === 'rulesOverlay';
+      if (fade) g.classList.add('cfx-fade');
+      const isSys = sys(), ms = fade ? LB_OUT_MS : (isSys ? SYS_OUT_MS : OUT_MS);   // v7.5.4–7.5.5: Реестр — своё время (0,4 с)
       if (isSys) g.querySelectorAll('.mw-in, .anim-paused').forEach(el => el.classList.remove('mw-in', 'anim-paused'));
       g.classList.add(isSys ? 'sfx-ghost' : 'cfx-ghost');
       const z = parseInt(getComputedStyle(ov).zIndex, 10) || 1000;
@@ -4648,6 +4653,22 @@
       g.querySelectorAll('[data-cfx-sy]').forEach(el => { el.scrollTop = +el.dataset.cfxSy; el.removeAttribute('data-cfx-sy'); });
       ov.querySelectorAll('[data-cfx-sy]').forEach(el => el.removeAttribute('data-cfx-sy'));
       setTimeout(() => g.remove(), ms + 40);
+    }
+    // v7.5.13: возврат со страницы Архива на главную — окно остаётся открытым, а копия прежней страницы гаснет поверх
+      // на месте 0,4 с (без своего затемнения: под ней тот же Архив). Вызывать до смены содержимого.
+    function pageFade(ov) {
+      if (!ov || !isOpen(ov) || themeFxOn()) return;
+      scrollPos.forEach((y, el) => { if (!el.isConnected) scrollPos.delete(el); else if (y > 0 && ov.contains(el)) el.dataset.cfxSy = y; });
+      const g = ov.cloneNode(true);
+      [g, ...g.querySelectorAll('[id]')].forEach(el => { if (el.id) { el.dataset.gid = el.id; el.removeAttribute('id'); } });
+      g.removeAttribute('onclick'); g.classList.remove('anim-paused', 'cfx-ov-in');
+      g.querySelectorAll('.cfx-win-in, .mw-in, .anim-paused').forEach(el => el.classList.remove('cfx-win-in', 'mw-in', 'anim-paused'));
+      g.classList.add(sys() ? 'sfx-ghost' : 'cfx-ghost', 'cfx-fade', 'cfx-page');
+      g.style.display = 'flex'; g.style.zIndex = parseInt(getComputedStyle(ov).zIndex, 10) || 1000;
+      document.body.appendChild(g);
+      g.querySelectorAll('[data-cfx-sy]').forEach(el => { el.scrollTop = +el.dataset.cfxSy; el.removeAttribute('data-cfx-sy'); });
+      ov.querySelectorAll('[data-cfx-sy]').forEach(el => el.removeAttribute('data-cfx-sy'));
+      setTimeout(() => g.remove(), LB_OUT_MS + 40);
     }
     function check(ov) {
       const o = isOpen(ov), was = prev.get(ov) || false;
@@ -4663,7 +4684,7 @@
       const mo = new MutationObserver(recs => { if (typeof document === 'undefined' || !document) return; new Set(recs.map(r => r.target)).forEach(check); });
       ovs.forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['style'] }));
     }
-    return { init, IN_MS, OUT_MS, SYS_OUT_MS };
+    return { init, pageFade, IN_MS, OUT_MS, SYS_OUT_MS, LB_OUT_MS };
   })();
 
   const SysFrame = (() => {
@@ -8571,7 +8592,7 @@
           <div class="notif-log-list">${rows}</div>
         </div>
         <div class="danger-btn-row">
-          <button class="danger-btn-cancel" onclick="backupModalStep='main'; renderBackupModal();">Назад</button>
+          <button class="danger-btn-cancel" onclick="backToArchiveMain()">Назад</button>
         </div>`;
     } else if (backupModalStep === 'editName') {
       cont.innerHTML = `
@@ -8652,7 +8673,9 @@
   }
 
   function startResetFlow() { backupModalStep = 'warn1'; renderBackupModal(); }
-  function cancelResetFlow() { backupModalStep = 'main'; renderBackupModal(); }
+  // v7.5.13: возврат со страницы Архива на главную — прежняя страница гаснет на месте 0,4 с (как Реестр), без рывка размера окна
+  function backToArchiveMain() { ClassicFx.pageFade(document.getElementById('backupOverlay')); backupModalStep = 'main'; renderBackupModal(); }
+  function cancelResetFlow() { backToArchiveMain(); }
   function resetFlowStep2() { backupModalStep = 'warn2'; renderBackupModal(); }
   function resetFlowStep3() { backupModalStep = 'warn3'; renderBackupModal(); }
 
@@ -8703,19 +8726,18 @@
     reader.readAsText(file);
   }
 
-  function cancelImportFlow() { pendingImport = null; backupModalStep = 'main'; renderBackupModal(); }
+  function cancelImportFlow() { pendingImport = null; backToArchiveMain(); }
 
   function startEditNameFlow() { backupModalStep = 'editName'; renderBackupModal(); }
   function showNotificationLog() { backupModalStep = 'notifications'; renderBackupModal(); }
-  function cancelEditName() { backupModalStep = 'main'; renderBackupModal(); }
+  function cancelEditName() { backToArchiveMain(); }
   function submitEditName() {
     const field = document.getElementById('editNameInput');
     data.playerName = sanitizePlayerName(field ? field.value : '');
     data.nameNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
     saveData();
     trySyncRegistry();   // v6.9.0
-    backupModalStep = 'main';
-    renderBackupModal();
+    backToArchiveMain();   // v7.5.13: угасание страницы на месте
     render();
   }
 

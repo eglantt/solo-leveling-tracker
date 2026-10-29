@@ -898,11 +898,11 @@ const w = boot(); const D = w.document; await tick();
     const g = XD.querySelector(`.status-overlay.cfx-ghost[data-gid="${id}"], .status-overlay.sfx-ghost[data-gid="${id}"]`);
     const r = g ? [cs(g).animationDuration, cs(g.firstElementChild).animationDuration, cs(g).backdropFilter || cs(g).getPropertyValue('backdrop-filter'), cs(g.firstElementChild).animationName] : null;
     await sleep(500); return r; };
-  const ghostCss = has('.status-overlay.cfx-ghost[data-gid="leaderboardOverlay"], .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] { animation-duration: .4s; -webkit-backdrop-filter: none; backdrop-filter: none; }')
-    && has('.status-overlay.cfx-ghost[data-gid="leaderboardOverlay"] > *, .status-overlay.sfx-ghost[data-gid="leaderboardOverlay"] > * { animation-name: cfxWinFade; animation-duration: .4s; }')
+  const ghostCss = has('.status-overlay.cfx-ghost.cfx-fade, .status-overlay.sfx-ghost.cfx-fade { animation-duration: .4s; -webkit-backdrop-filter: none; backdrop-filter: none; }')   /* v7.5.13: правило Реестра стало общим (класс cfx-fade) */
+    && has('.status-overlay.cfx-ghost.cfx-fade > *, .status-overlay.sfx-ghost.cfx-fade > * { animation-name: cfxWinFade; animation-duration: .4s; }')
     && has('@keyframes cfxWinFade { to { opacity: 0; } }') && has('.status-overlay.cfx-ghost > * { animation: cfxWinOut .3s ease-in both; }') && has('.status-overlay.sfx-ghost > * { animation: cfxWinOut .35s ease-in both; }') && has('@keyframes cfxWinOut { to { opacity: 0; transform: translateY(12px); } }')
     && has('.status-overlay.cfx-ghost { pointer-events: none; animation: cfxOvOut .3s ease-in both; }') && has('.status-overlay.sfx-ghost { pointer-events: none; animation: cfxOvOut .35s ease-in both; }')
-    && ((js) => /LB_OUT_MS = 400;/.test(js) && /g\.dataset\.gid === 'leaderboardOverlay' \? LB_OUT_MS/.test(js))([...XD.querySelectorAll('script')].map(x => x.textContent).join(''));
+    && ((js) => /LB_OUT_MS = 400;/.test(js) && /const fade = g\.dataset\.gid === 'leaderboardOverlay' \|\| g\.dataset\.gid === 'rulesOverlay';/.test(js) && /ms = fade \? LB_OUT_MS/.test(js))([...XD.querySelectorAll('script')].map(x => x.textContent).join(''));
   const lc = await probe('classic', 'leaderboardOverlay'), ls = await probe('system', 'leaderboardOverlay'), sc = await probe('classic', 'statusOverlay'), ss = await probe('system', 'statusOverlay');
   const q4 = v => /^0?\.4s$/.test(v);
   check('T120 (v7.5.4–7.5.5) Реестр: полная высота с открытия (90vh / 92vh в блоке «Системы»), точки (шаг 0,4 с, место зарезервировано), цвет ранга со свечением; копия при закрытии (обе темы) — угасание на месте 0,4 с (cfxWinFade, без сдвига) без размытия; у «Статуса» — прежние 0,3 / 0,35 с со сдвигом вниз',
@@ -922,6 +922,38 @@ const w = boot(); const D = w.document; await tick();
   E(x, "document.getElementById('leaderboardOverlay').style.display = 'none'"); await tick(); await sleep(450);
   check('T121 (v7.5.5) «Система»: после вывода списка, «Реестр пока пуст.» и «Реестр сейчас недоступен.» затухание у края перепроверяется (SysTheme.syncScroll по окну Реестра)',
     a === 'leaderboardOverlay' && b === 'leaderboardOverlay,leaderboardOverlay' && c === 'leaderboardOverlay,leaderboardOverlay,leaderboardOverlay|Реестр сейчас недоступен.' && fnOk, JSON.stringify({ a, b, c, fnOk })); }   /* jsdom не знает backdrop-filter — оно проверено текстом стилей и в Chromium */
+
+// ===== v7.5.13: Архив — Правила и возврат со страниц гаснут на месте 0,4 с, как Реестр (обе темы) =====
+{ const x = boot(); const XD = x.document; await tick();
+  const cs = el => x.getComputedStyle(el);
+  const res = {};
+  for (const th of ['classic', 'system']) {
+    E(x, `setTheme('${th}')`); closeAll(x); await tick();
+    // Правила из Архива
+    E(x, "openBackupModal()"); await tick(); E(x, "showRulesOverlay('archive')"); await tick(); E(x, "closeRulesOverlay()"); await tick();
+    const gr = XD.querySelector('.status-overlay.cfx-fade[data-gid="rulesOverlay"]');
+    res[th + 'Rules'] = gr ? [cs(gr.firstElementChild).animationName, cs(gr.firstElementChild).animationDuration, E(x, "document.getElementById('backupOverlay').style.display")] : null;
+    await sleep(500);
+    // страницы Архива → главная
+    const pages = { name: ["startEditNameFlow()", "cancelEditName()"], save: ["data.nameNextAvailableAt = 0; renderBackupModal(); startEditNameFlow()", "submitEditName()"], log: ["showNotificationLog()", "backToArchiveMain()"],
+      imp: ["backupModalStep = 'importCodeInput'; renderBackupModal()", "cancelImportFlow()"], del: ["backupModalStep = 'warn3'; renderBackupModal()", "cancelResetFlow()"] };
+    for (const [k, [op, cl]] of Object.entries(pages)) {
+      E(x, op); await tick(); const before = XD.querySelector('#backupContent').textContent.slice(0, 40);
+      E(x, cl);
+      const g = [...XD.querySelectorAll('.status-overlay.cfx-page')].pop();
+      res[th + '_' + k] = g ? [g.dataset.gid, g.classList.contains(th === 'system' ? 'sfx-ghost' : 'cfx-ghost'), cs(g.firstElementChild).animationName, cs(g.firstElementChild).animationDuration,
+        g.querySelector('[data-gid="backupContent"]').textContent.slice(0, 40) === before, E(x, "backupModalStep + '|' + document.getElementById('backupOverlay').style.display")] : null;
+      await sleep(500);
+    }
+    res[th + 'Left'] = XD.querySelectorAll('.cfx-ghost, .sfx-ghost').length;
+    E(x, "closeBackupModal()"); await tick(); await sleep(500);
+  }
+  const okRules = th => { const r = res[th + 'Rules']; return r && r[0] === 'cfxWinFade' && /^0?\.4s$/.test(r[1]) && r[2] === 'flex'; };
+  const okPage = (th, k) => { const r = res[th + '_' + k]; return r && r[0] === 'backupOverlay' && r[1] && r[2] === 'cfxWinFade' && /^0?\.4s$/.test(r[3]) && r[4] && r[5] === 'main|flex'; };
+  const css = [...XD.querySelectorAll('style')].map(s => s.textContent).join('');
+  const cssOk = css.includes('.status-overlay.cfx-ghost.cfx-page, .status-overlay.sfx-ghost.cfx-page { background: none !important; animation: none; }');
+  check('T122 (v7.5.13) Архив: Правила гаснут на месте 0,4 с (cfxWinFade), Архив остаётся открытым; возврат со страниц (имя: Отмена / Сохранить, уведомления: Назад, импорт и удаление: Отмена) — копия прежней страницы гаснет на месте 0,4 с без своего затемнения, Архив — на главной; обе темы',
+    ['classic', 'system'].every(th => okRules(th) && ['name', 'save', 'log', 'imp', 'del'].every(k => okPage(th, k)) && res[th + 'Left'] === 0) && cssOk, JSON.stringify({ res, cssOk })); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
