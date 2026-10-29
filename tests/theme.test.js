@@ -923,37 +923,50 @@ const w = boot(); const D = w.document; await tick();
   check('T121 (v7.5.5) «Система»: после вывода списка, «Реестр пока пуст.» и «Реестр сейчас недоступен.» затухание у края перепроверяется (SysTheme.syncScroll по окну Реестра)',
     a === 'leaderboardOverlay' && b === 'leaderboardOverlay,leaderboardOverlay' && c === 'leaderboardOverlay,leaderboardOverlay,leaderboardOverlay|Реестр сейчас недоступен.' && fnOk, JSON.stringify({ a, b, c, fnOk })); }   /* jsdom не знает backdrop-filter — оно проверено текстом стилей и в Chromium */
 
-// ===== v7.5.13: Архив — Правила и возврат со страниц гаснут на месте 0,4 с, как Реестр (обе темы) =====
+// ===== v7.5.13: Правила из Архива гаснут на месте 0,4 с; v7.5.14: страницы Архива — переход «Через линию» самим окном (обе темы) =====
 { const x = boot(); const XD = x.document; await tick();
   const cs = el => x.getComputedStyle(el);
   const res = {};
   for (const th of ['classic', 'system']) {
     E(x, `setTheme('${th}')`); closeAll(x); await tick();
-    // Правила из Архива
     E(x, "openBackupModal()"); await tick(); E(x, "showRulesOverlay('archive')"); await tick(); E(x, "closeRulesOverlay()"); await tick();
     const gr = XD.querySelector('.status-overlay.cfx-fade[data-gid="rulesOverlay"]');
     res[th + 'Rules'] = gr ? [cs(gr.firstElementChild).animationName, cs(gr.firstElementChild).animationDuration, E(x, "document.getElementById('backupOverlay').style.display")] : null;
     await sleep(500);
-    // страницы Архива → главная
-    const pages = { name: ["startEditNameFlow()", "cancelEditName()"], save: ["data.nameNextAvailableAt = 0; renderBackupModal(); startEditNameFlow()", "submitEditName()"], log: ["showNotificationLog()", "backToArchiveMain()"],
-      imp: ["backupModalStep = 'importCodeInput'; renderBackupModal()", "cancelImportFlow()"], del: ["backupModalStep = 'warn3'; renderBackupModal()", "cancelResetFlow()"] };
-    for (const [k, [op, cl]] of Object.entries(pages)) {
-      E(x, op); await tick(); const before = XD.querySelector('#backupContent').textContent.slice(0, 40);
-      E(x, cl);
-      const g = [...XD.querySelectorAll('.status-overlay.cfx-page')].pop();
-      res[th + '_' + k] = g ? [g.dataset.gid, g.classList.contains(th === 'system' ? 'sfx-ghost' : 'cfx-ghost'), cs(g.firstElementChild).animationName, cs(g.firstElementChild).animationDuration,
-        g.querySelector('[data-gid="backupContent"]').textContent.slice(0, 40) === before, E(x, "backupModalStep + '|' + document.getElementById('backupOverlay').style.display")] : null;
-      await sleep(500);
+    const [tOut, tIn] = th === 'system' ? [300, 450] : [200, 350];
+    const pages = { name: ["startEditNameFlow()", "cancelEditName()", 'editName'], save: ["startEditNameFlow()", "submitEditName()", 'editName'],
+      log: ["showNotificationLog()", "backToArchiveMain()", 'notifications'], imp: ["startImportCodeFlow()", "cancelImportFlow()", 'importCodeInput'],
+      del: ["startResetFlow()", "cancelResetFlow()", 'warn1'], fwd: ["resetFlowStep2()", "cancelResetFlow()", 'warn2'] };
+    for (const [k, [op, cl, page]] of Object.entries(pages)) {
+      if (k === 'fwd') { E(x, 'startResetFlow()'); await sleep(tOut + tIn + 80); }
+      if (k === 'save') { E(x, 'data.nameNextAvailableAt = 0; renderBackupModal()'); await tick(); }
+      const ov = XD.getElementById('backupOverlay'), w = () => ov.firstElementChild;
+      const st = () => [E(x, 'backupModalStep'), w().classList.contains('arc-out'), w().classList.contains('arc-in'), ov.classList.contains('arc-busy')].join(',');
+      const before = XD.getElementById('backupContent').innerHTML;
+      E(x, op); const a0 = st(), same0 = XD.getElementById('backupContent').innerHTML === before;   // уход: содержимое прежнее, нажатий нет
+      const nd = v => String(v).replace(/^0\./, '.');
+      const anim = w().classList.contains('arc-out') ? cs(w()).animationName + ' ' + nd(cs(w()).animationDuration) : '';
+      await sleep(tOut + 40); const a1 = st(), changed = XD.getElementById('backupContent').innerHTML !== before;   // появление: новая страница
+      const animIn = w().classList.contains('arc-in') ? cs(w()).animationName + ' ' + nd(cs(w()).animationDuration) : '';
+      await sleep(tIn + 60); const a2 = st();
+      E(x, cl); await sleep(tOut + tIn + 100); const back = st();
+      res[th + '_' + k] = [a0, same0, anim, a1, changed, animIn, a2, back];
     }
-    res[th + 'Left'] = XD.querySelectorAll('.cfx-ghost, .sfx-ghost').length;
-    E(x, "closeBackupModal()"); await tick(); await sleep(500);
+    // закрытие Архива посреди перехода — без следов
+    E(x, 'startEditNameFlow()'); await sleep(50); E(x, 'closeBackupModal()'); await sleep(tOut + tIn + 80);
+    res[th + 'Mid'] = [E(x, 'backupModalStep'), E(x, 'arcBusy'), XD.getElementById('backupOverlay').className, XD.getElementById('backupOverlay').firstElementChild.className.includes('arc')];
   }
   const okRules = th => { const r = res[th + 'Rules']; return r && r[0] === 'cfxWinFade' && /^0?\.4s$/.test(r[1]) && r[2] === 'flex'; };
-  const okPage = (th, k) => { const r = res[th + '_' + k]; return r && r[0] === 'backupOverlay' && r[1] && r[2] === 'cfxWinFade' && /^0?\.4s$/.test(r[3]) && r[4] && r[5] === 'main|flex'; };
+  const AN = { classic: ['arcOut .2s', 'arcIn .35s'], system: ['arcLineOut .3s', 'arcLineIn .45s'] };
+  const okPage = (th, k, page) => { const r = res[th + '_' + k]; if (!r) return false; const from = k === 'fwd' ? 'warn1' : 'main';
+    return r[0] === `${page},true,false,true` && r[1] && r[2] === AN[th][0] && r[3] === `${page},false,true,true` && r[4] && r[5] === AN[th][1] && r[6] === `${page},false,false,false` && r[7] === 'main,false,false,false'; };
+  const PG = { name: 'editName', save: 'editName', log: 'notifications', imp: 'importCodeInput', del: 'warn1', fwd: 'warn2' };
+  const js = [...XD.querySelectorAll('script')].map(s => s.textContent).join('');
+  const jsOk = /var ARC_T = \{ system: \[300, 450\], classic: \[200, 350\] \};/.test(js) && !/pageFade/.test(js);
   const css = [...XD.querySelectorAll('style')].map(s => s.textContent).join('');
-  const cssOk = css.includes('.status-overlay.cfx-ghost.cfx-page, .status-overlay.sfx-ghost.cfx-page { background: none !important; animation: none; }');
-  check('T122 (v7.5.13) Архив: Правила гаснут на месте 0,4 с (cfxWinFade), Архив остаётся открытым; возврат со страниц (имя: Отмена / Сохранить, уведомления: Назад, импорт и удаление: Отмена) — копия прежней страницы гаснет на месте 0,4 с без своего затемнения, Архив — на главной; обе темы',
-    ['classic', 'system'].every(th => okRules(th) && ['name', 'save', 'log', 'imp', 'del'].every(k => okPage(th, k)) && res[th + 'Left'] === 0) && cssOk, JSON.stringify({ res, cssOk })); }
+  const cssOk = css.includes('.status-overlay.arc-busy, .status-overlay.arc-busy * { pointer-events: none !important; }') && !css.includes('cfx-page');
+  check('T122 (v7.5.13–7.5.14) Архив: Правила гаснут на месте 0,4 с; смена страниц (открытие, «Отмена», «Назад», «Сохранить», шаг вперёд) — само окно: «Классика» arcOut 0,2 + arcIn 0,35 с, «Система» arcLineOut 0,3 + arcLineIn 0,45 с; на время перехода нажатий нет; содержимое меняется между уходом и появлением; закрытие посреди перехода — без следов; копии страниц (7.5.13) убраны',
+    ['classic', 'system'].every(th => okRules(th) && Object.entries(PG).every(([k, pg]) => okPage(th, k, pg)) && res[th + 'Mid'].join(',') === 'main,false,status-overlay,false') && jsOk && cssOk, JSON.stringify({ res, jsOk, cssOk })); }
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);

@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.13 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.14 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -765,10 +765,9 @@
     /* v7.5.4 (демо 113): Реестр игроков — уходящая копия 0,45 с и без размытия фона (поверх «Прогресса» двойное размытие на телефоне съедало угасание) */
     /* v7.5.5: Реестр (обе темы) — угасание на месте 0,4 с, без ухода вниз и без размытия фона у копии */
     @keyframes cfxWinFade { to { opacity: 0; } }
-    /* v7.5.13: то же угасание (класс cfx-fade) — у Правил из Архива и у страниц Архива при возврате на главную (cfx-page — без своего затемнения) */
+    /* v7.5.13: то же угасание (класс cfx-fade) — у Правил из Архива */
     .status-overlay.cfx-ghost.cfx-fade, .status-overlay.sfx-ghost.cfx-fade { animation-duration: .4s; -webkit-backdrop-filter: none; backdrop-filter: none; }
     .status-overlay.cfx-ghost.cfx-fade > *, .status-overlay.sfx-ghost.cfx-fade > * { animation-name: cfxWinFade; animation-duration: .4s; }
-    .status-overlay.cfx-ghost.cfx-page, .status-overlay.sfx-ghost.cfx-page { background: none !important; animation: none; }
     /* v7.5.4: Реестр — полная высота с открытия (без рывка при загрузке), «Загрузка» с точками, цвет ранга */
     :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .status-window { height: 90vh; }
     :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .status-body { display: flex; flex-direction: column; }
@@ -1211,6 +1210,15 @@
     .sys-target-now { margin: 6px 0 8px; }
     .sys-target-now .stn { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; }
     .sys-target-now .stn-note { opacity: .7; }
+    /* v7.5.14 (демо 115): переход между страницами Архива — само окно, без копий. «Классика»: уход вниз 12 px с угасанием 0,2 с,
+       проявление с подъёмом 0,35 с; «Система» — сжатие в линию 0,3 с и раскрытие из неё 0,45 с (правило в блоке темы). Нажатия на время перехода — нет. */
+    @keyframes arcOut { to { opacity: 0; transform: translateY(12px); } }
+    @keyframes arcIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes arcLineOut { to { transform: scaleY(.01); filter: brightness(2.4); } }
+    @keyframes arcLineIn { from { transform: scaleY(.01); filter: brightness(2.4); } to { transform: scaleY(1); filter: brightness(1); } }
+    .status-overlay.arc-busy, .status-overlay.arc-busy * { pointer-events: none !important; }
+    .status-overlay > .arc-out { animation-name: arcOut; animation-duration: .2s; animation-timing-function: cubic-bezier(.5,0,.75,0); animation-fill-mode: forwards; }
+    .status-overlay > .arc-in { animation-name: arcIn; animation-duration: .35s; animation-timing-function: cubic-bezier(.2,.8,.2,1); animation-fill-mode: both; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -1592,6 +1600,9 @@
     /* v7.4.6: у прокручиваемого «Статуса» запас снизу 16 px, как у остальных окон темы (.sf-win.mw-scroll): правило отступов «Статуса»
        (padding 14px 14px 0) обнуляло его, и нижняя рамка «Контура снаряжения» попадала в затухание 18 px и гасла */
     body.theme-sys :is(#statusOverlay, [data-gid="statusOverlay"]) .sf-win.mw-scroll .status-body { padding-bottom: 16px; }
+    /* v7.5.14: переход между страницами Архива — сжатие в линию 0,3 с и раскрытие из линии 0,45 с */
+    body.theme-sys .status-overlay > .sf-win.arc-out { animation-name: arcLineOut; animation-duration: .3s; animation-timing-function: cubic-bezier(.5,0,.75,0); animation-fill-mode: forwards; }
+    body.theme-sys .status-overlay > .sf-win.arc-in { animation-name: arcLineIn; animation-duration: .45s; animation-timing-function: cubic-bezier(.2,.8,.2,1); animation-fill-mode: both; }
   </style>
 </head>
 <body>
@@ -2086,7 +2097,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.13';
+  const APP_VERSION = '7.5.14';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -4654,22 +4665,6 @@
       ov.querySelectorAll('[data-cfx-sy]').forEach(el => el.removeAttribute('data-cfx-sy'));
       setTimeout(() => g.remove(), ms + 40);
     }
-    // v7.5.13: возврат со страницы Архива на главную — окно остаётся открытым, а копия прежней страницы гаснет поверх
-      // на месте 0,4 с (без своего затемнения: под ней тот же Архив). Вызывать до смены содержимого.
-    function pageFade(ov) {
-      if (!ov || !isOpen(ov) || themeFxOn()) return;
-      scrollPos.forEach((y, el) => { if (!el.isConnected) scrollPos.delete(el); else if (y > 0 && ov.contains(el)) el.dataset.cfxSy = y; });
-      const g = ov.cloneNode(true);
-      [g, ...g.querySelectorAll('[id]')].forEach(el => { if (el.id) { el.dataset.gid = el.id; el.removeAttribute('id'); } });
-      g.removeAttribute('onclick'); g.classList.remove('anim-paused', 'cfx-ov-in');
-      g.querySelectorAll('.cfx-win-in, .mw-in, .anim-paused').forEach(el => el.classList.remove('cfx-win-in', 'mw-in', 'anim-paused'));
-      g.classList.add(sys() ? 'sfx-ghost' : 'cfx-ghost', 'cfx-fade', 'cfx-page');
-      g.style.display = 'flex'; g.style.zIndex = parseInt(getComputedStyle(ov).zIndex, 10) || 1000;
-      document.body.appendChild(g);
-      g.querySelectorAll('[data-cfx-sy]').forEach(el => { el.scrollTop = +el.dataset.cfxSy; el.removeAttribute('data-cfx-sy'); });
-      ov.querySelectorAll('[data-cfx-sy]').forEach(el => el.removeAttribute('data-cfx-sy'));
-      setTimeout(() => g.remove(), LB_OUT_MS + 40);
-    }
     function check(ov) {
       const o = isOpen(ov), was = prev.get(ov) || false;
       if (o === was) return;
@@ -4684,7 +4679,7 @@
       const mo = new MutationObserver(recs => { if (typeof document === 'undefined' || !document) return; new Set(recs.map(r => r.target)).forEach(check); });
       ovs.forEach(ov => mo.observe(ov, { attributes: true, attributeFilter: ['style'] }));
     }
-    return { init, pageFade, IN_MS, OUT_MS, SYS_OUT_MS, LB_OUT_MS };
+    return { init, IN_MS, OUT_MS, SYS_OUT_MS, LB_OUT_MS };
   })();
 
   const SysFrame = (() => {
@@ -8487,8 +8482,38 @@
     return `Уровень ${data.level} · ${Math.floor(data.credits)} ◈ · ${data.totalDays} ${pluralDays(data.totalDays)} всего · серия дней ${data.consecutiveDays}`;
   }
 
+  // v7.5.14 (демо 115): смена страницы в открытом Архиве — переход «Через линию» самим окном (без копий):
+  // уход (класс arc-out), затем новое содержимое и появление (arc-in); длительности — ARC_T. Пока идёт переход, нажатий нет
+  // (arc-busy). Прокрутка главной страницы запоминается при уходе на страницу и возвращается при возврате (пока окно сжато).
+  var ARC_T = { system: [300, 450], classic: [200, 350] };   // var: Архив могут перерисовать и при загрузке
+  var arcStep = 'main', arcScroll = 0, arcTimers = [], arcBusy = false, arcPhase = '';
+  function arcStop() {
+    arcTimers.forEach(clearTimeout); arcTimers = []; arcBusy = false; arcPhase = '';
+    const ov = document.getElementById('backupOverlay'), w = ov && ov.firstElementChild;
+    if (ov) ov.classList.remove('arc-busy'); if (w) w.classList.remove('arc-out', 'arc-in');
+  }
+  function arcBody() { const ov = document.getElementById('backupOverlay'); return ov && ov.querySelector('.status-body'); }
+  function renderBackupModal() {
+    const ov = document.getElementById('backupOverlay'), from = arcStep, to = backupModalStep;
+    const open = ov && ov.style.display === 'flex';
+    if (arcBusy && arcPhase === 'out') return;   // новое содержимое придёт в момент смены (берётся текущая страница)
+    if (!open || from === to || arcBusy) { renderBackupModalNow(); arcStep = backupModalStep; return; }
+    const w = ov.firstElementChild, [tOut, tIn] = ARC_T[isSysTheme() ? 'system' : 'classic'];
+    if (from === 'main') { const b = arcBody(); arcScroll = b ? b.scrollTop : 0; }
+    arcBusy = true; arcPhase = 'out'; ov.classList.add('arc-busy');
+    if (w) { w.classList.remove('mw-in', 'cfx-win-in', 'arc-in'); void w.offsetWidth; w.classList.add('arc-out'); }   // mw-in снять: иначе раскрытие окна запустится заново после перехода
+    arcTimers.push(setTimeout(() => {
+      arcPhase = 'in'; renderBackupModalNow(); arcStep = backupModalStep;
+      const b = arcBody(); if (b) b.scrollTop = arcStep === 'main' ? arcScroll : 0;
+      if (typeof SysTheme !== 'undefined' && SysTheme && SysTheme.syncScroll) SysTheme.syncScroll(ov);
+      if (w) { w.classList.remove('arc-out'); void w.offsetWidth; w.classList.add('arc-in'); }
+      arcTimers.push(setTimeout(arcStop, tIn + 30));
+    }, tOut));
+  }
+
   function openBackupModal() {
-    backupModalStep = 'main';
+    arcStop();
+    backupModalStep = 'main'; arcStep = 'main'; arcScroll = 0;
     pendingImport = null;
     renderBackupModal();
     document.getElementById('backupOverlay').style.display = 'flex';
@@ -8496,8 +8521,9 @@
 
   function closeBackupModal() {
     themeFxStop();   // v7.1.11: сбой смены оформления не переживает закрытие Архива
+    arcStop();   // v7.5.14: переход между страницами обрывается без следов
     document.getElementById('backupOverlay').style.display = 'none';
-    backupModalStep = 'main';
+    backupModalStep = 'main'; arcStep = 'main';
     pendingImport = null;
   }
 
@@ -8521,7 +8547,7 @@
     renderBackupModal();
   }
 
-  function renderBackupModal() {
+  function renderBackupModalNow() {
     const cont = document.getElementById('backupContent');
     if (backupModalStep === 'main') {
       cont.innerHTML = `
@@ -8673,8 +8699,8 @@
   }
 
   function startResetFlow() { backupModalStep = 'warn1'; renderBackupModal(); }
-  // v7.5.13: возврат со страницы Архива на главную — прежняя страница гаснет на месте 0,4 с (как Реестр), без рывка размера окна
-  function backToArchiveMain() { ClassicFx.pageFade(document.getElementById('backupOverlay')); backupModalStep = 'main'; renderBackupModal(); }
+  // v7.5.13–7.5.14: возврат со страницы Архива на главную — переход «Через линию» (renderBackupModal), прокрутка главной — прежняя
+  function backToArchiveMain() { backupModalStep = 'main'; renderBackupModal(); }
   function cancelResetFlow() { backToArchiveMain(); }
   function resetFlowStep2() { backupModalStep = 'warn2'; renderBackupModal(); }
   function resetFlowStep3() { backupModalStep = 'warn3'; renderBackupModal(); }
@@ -8737,7 +8763,7 @@
     data.nameNextAvailableAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
     saveData();
     trySyncRegistry();   // v6.9.0
-    backToArchiveMain();   // v7.5.13: угасание страницы на месте
+    backToArchiveMain();   // v7.5.14: переход «Через линию», прокрутка главной — прежняя
     render();
   }
 
