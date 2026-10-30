@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.14 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.5.15 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2097,7 +2097,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.14';
+  const APP_VERSION = '7.5.15';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2306,6 +2306,7 @@
   if (!data.dailyNotices || typeof data.dailyNotices !== 'object') data.dailyNotices = {};
   data.dailyNotices.morning = !!data.dailyNotices.morning;
   data.dailyNotices.complete = !!data.dailyNotices.complete;
+  if (typeof data.dailyNotices.frz !== 'number') delete data.dailyNotices.frz;   // v7.5.15: день, когда показано сообщение Заморозки
   if (typeof data.notifiedLimitBreakUnlock !== 'boolean') data.notifiedLimitBreakUnlock = data.level >= 3;
   if (!data.history || typeof data.history !== 'object') data.history = {};
   if (typeof data.bestStreak !== 'number') data.bestStreak = 0;
@@ -4000,7 +4001,8 @@
     timerActive: 'Пелена покоя<br class="br-narrow"> рассеется через',
     timerTrace: 'До сброса без штрафа',
     chronicle: 'Пелена покоя',
-    dayLine: 'Действовал эффект «Пелена покоя»: задание не назначалось, штрафа нет.'
+    dayLine: 'Действовал эффект «Пелена покоя»: задание не назначалось, штрафа нет.',
+    startup: 'Действует эффект «Пелена покоя»: задание на день не назначено, наград и штрафа нет, серия дней не прерывается.'   // v7.5.15: стартовое уведомление цикла
   };
   const VEIL_STARS = 40, VEIL_OUT_MS = 4500, BEAD_DUST = 30, BEAD_SPARKS = 14;
   const rnd01 = (a, b) => a + Math.random() * (b - a);
@@ -5918,17 +5920,37 @@
     if (penalizedDays > 0) {
       { const st = data.penaltyRun, ml = lastMult, db = totalDebt; setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny, st, ml, db), 3000); }
     }
-    if (!data.dailyNotices.morning && data.activeScroll !== 'freeze' && data.activeScroll !== 'veil') {
-      data.dailyNotices.morning = true;
+    // v7.5.15: день Заморозки — своё стартовое сообщение раз в день (отметка dailyNotices.frz = начало дня). Флаг morning в Заморозку
+    // не трогается: сброс в её дни dailyNotices не обнуляет, а по morning окончание Заморозки выбирает «Заморозка завершилась.» + «Получено
+    // задание…» (началась с нового цикла) или «…Задание возобновлено.» (включена посреди задания).
+    const freezeDay = data.activeScroll === 'freeze';
+    if (freezeDay ? data.dailyNotices.frz !== data.lastReset : !data.dailyNotices.morning) {   // в цикл Пелены — своё сообщение (startupNoticeText)
+      if (freezeDay) data.dailyNotices.frz = data.lastReset; else data.dailyNotices.morning = true;
       saveData();
       if (penalizedDays > 0) {
         pendingStartupNoticeAfterPenalty = true;
       } else {
-        setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
-        if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирован резонанс Аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
+        setTimeout(() => showNotice(startupNoticeText(), 'info'), 3000);
+        if (data.curseActiveToday && data.activeScroll !== 'freeze' && data.activeScroll !== 'veil') setTimeout(() => showNotice('Зафиксирован резонанс Аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
       }
     }
     schedulePreciseResetCheck();
+  }
+
+  // v7.5.15: стартовое уведомление дня — обычное «Получено задание на день…»; в цикл Пелены покоя и в дни Заморозки задания нет —
+  // своё сообщение. Заморозка — «дни», не «циклы» (решение пользователя): N — замороженных дней с сегодняшним (последний — «1 день»).
+  function freezeDaysLeft() {
+    if (typeof data.freezeEndTimestamp !== 'number') return 0;
+    return Math.max(1, Math.round((data.freezeEndTimestamp - getNextCleanReset(Date.now())) / (24 * 60 * 60 * 1000)) + 1);
+  }
+  function freezeStartupText(n) {
+    return n > 0 ? `Действует эффект Свитка Заморозки: задание на день не назначено. До окончания\u00A0—\u00A0${n}\u00A0${pluralDays(n)}.`   /* неразрывные пробелы: «окончания — 4 дня» не разрывается — ни число от слова, ни тире в начале строки */
+      : 'Действует эффект Свитка Заморозки: задание на день не назначено.';
+  }
+  function startupNoticeText() {
+    if (data.activeScroll === 'veil') return VEIL_TEXTS.startup;
+    if (data.activeScroll === 'freeze') return freezeStartupText(freezeDaysLeft());
+    return STARTUP_NOTICE_TEXT;
   }
 
   // Set when the day's startup notice is waiting for the penalty banner to be
@@ -5939,8 +5961,8 @@
     document.getElementById('penaltyOverlay').style.display = 'none';
     if (pendingStartupNoticeAfterPenalty) {
       pendingStartupNoticeAfterPenalty = false;
-      setTimeout(() => showNotice(STARTUP_NOTICE_TEXT, 'info'), 3000);
-      if (data.curseActiveToday) setTimeout(() => showNotice('Зафиксирован резонанс Аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
+      setTimeout(() => showNotice(startupNoticeText(), 'info'), 3000);
+      if (data.curseActiveToday && data.activeScroll !== 'freeze' && data.activeScroll !== 'veil') setTimeout(() => showNotice('Зафиксирован резонанс Аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
     }
   }
 
@@ -6935,6 +6957,7 @@
                   data.activeScroll = 'freeze';
                   data.freezeEndTimestamp = getNextCleanReset(Date.now()) + 6 * 24 * 60 * 60 * 1000;
                   data.freezeAnimPlayed = false;
+                  data.dailyNotices.frz = data.lastReset;   // v7.5.15: в день включения стартового сообщения Заморозки нет
                   showNotice("Задание заморожено на 7 циклов.", 'info');
               }
               used = true;
@@ -8289,7 +8312,8 @@
 
     const cleanDailyNotices = {
       morning: !!(s.dailyNotices && s.dailyNotices.morning),
-      complete: !!(s.dailyNotices && s.dailyNotices.complete)
+      complete: !!(s.dailyNotices && s.dailyNotices.complete),
+      ...(s.dailyNotices && typeof s.dailyNotices.frz === 'number' ? { frz: s.dailyNotices.frz } : {})   // v7.5.15
     };
 
     const VALID_STATUSES = ['success', 'penalty', 'protected', 'frozen', 'veil'];

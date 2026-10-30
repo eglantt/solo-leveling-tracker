@@ -427,6 +427,46 @@ for (const [id, acc] of [['shard_limit', 'Осколок Предела'], ['sha
     check('V6 после Пелены действует Договор — руна действительно спит', E(w, "data.activeScroll==='contract' && data.insurance === true && getInsuranceHoldScroll() === 'contract'")); }
 }
 
+// ===== v7.5.15: стартовое уведомление в цикл Пелены покоя и в дни Заморозки =====
+{ const VT = 'Действует эффект «Пелена покоя»: задание на день не назначено, наград и штрафа нет, серия дней не прерывается.';
+  const ST = 'Получено задание на день. Невыполнение приведёт к !!штрафу!!.';
+  // Пелена после выполненного дня
+  { const w = fresh("data.pendingScroll = 'veil';"); complete(w); E(w, 'window.__N = []'); reset(w); await sleep(3200);
+    const n1 = E(w, 'window.__N.slice()'); E(w, 'window.__N = []; checkMissedDays()'); await sleep(3200); const n2 = E(w, 'window.__N.slice()');
+    check('ST1 цикл Пелены: стартовое уведомление дословно (без «Получено задание…»), повторное открытие — без повтора',
+      E(w, "data.activeScroll") === 'veil' && E(w, 'VEIL_TEXTS.startup') === VT && n1.includes(VT) && !n1.includes(ST) && !n2.includes(VT), JSON.stringify([n1, n2])); }
+  // Пелена после невыполненного дня — после окна штрафа
+  { const w = fresh("data.pendingScroll = 'veil';"); E(w, 'window.__N = []'); reset(w); await sleep(3200); const n1 = E(w, 'window.__N.slice()');
+    E(w, 'closePenaltyOverlay()'); await sleep(3200); const n2 = E(w, 'window.__N.slice()');
+    check('ST2 цикл Пелены после штрафа: уведомление — после закрытия окна штрафа', E(w, "data.activeScroll") === 'veil' && !n1.includes(VT) && n2.includes(VT), JSON.stringify([n1, n2])); }
+  // Заморозка: N дней с сегодняшним, склонение
+  { const w = fresh();
+    const r = J(w, `[5, 3, 1, 0, 6].map(k => { data.activeScroll = 'freeze'; data.freezeEndTimestamp = getNextCleanReset(Date.now()) + k * 86400000; return startupNoticeText(); })`);
+    const exp = ['6 дней', '4 дня', '2 дня', '1 день', '7 дней'].map(t => 'Действует эффект Свитка Заморозки: задание на день не назначено. До окончания\u00a0—\u00a0' + t.replace(' ', '\u00a0') + '.');
+    check('ST3 Заморозка: «До окончания — N дней» (с сегодняшним; последний день — «1 день»), склонение', r === JSON.stringify(exp), r); }
+  // Заморозка: при открытии в её день
+  { const w = fresh("data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 4 * 86400000; data.freezeStartTimestamp = Date.now();");
+    E(w, 'window.__N = []'); reset(w); await sleep(3200); const n = E(w, 'window.__N.slice()');
+    const t = n.find(x => x.startsWith('Действует эффект Свитка Заморозки: задание на день не назначено. До окончания\u00a0—\u00a0')) || '';
+    check('ST4 день Заморозки: стартовое уведомление с остатком дней, без «Получено задание…»', E(w, "data.activeScroll") === 'freeze' && /—\u00a0[1-7]\u00a0(день|дня|дней)\.$/.test(t) && !n.includes(ST), JSON.stringify(n)); }
+  // день включения Свитка Заморозки — без стартового сообщения
+  { const w = fresh(); const u = use(w, 'scroll_freeze'); E(w, 'checkMissedDays()'); await sleep(3200);   // и повторное открытие в тот же день
+    check('ST5 день включения Заморозки: стартового сообщения нет (и при повторном открытии)', E(w, "data.activeScroll") === 'freeze' && !N(w).includes('Действует эффект Свитка Заморозки'), u.notice + ' | ' + N(w)); }
+  // флаг morning в Заморозку не трогается; повтор в тот же день — нет; следующий день — снова; окончание — как раньше
+  { const w = fresh("data.pendingScroll = 'freeze';"); complete(w); E(w, 'window.__N = []'); reset(w); await sleep(3200);
+    const d1 = E(w, 'window.__N.slice()'), m1 = E(w, 'data.dailyNotices.morning');
+    E(w, 'window.__N = []; checkMissedDays()'); await sleep(3200); const again = E(w, 'window.__N.slice()');
+    // тестовый «сброс» часы не двигает: начало дня после него — то же; «вчера» — отметка на сутки раньше
+    E(w, 'window.__N = []; data.dailyNotices.frz -= 86400000'); reset(w); await sleep(3200); const d2 = E(w, 'window.__N.slice()');
+    E(w, 'window.__N = []; data.freezeEndTimestamp = Date.now() - 1000;'); reset(w); await sleep(3200); const end = E(w, 'window.__N.slice()');
+    const F = x => x.some(y => y.startsWith('Действует эффект Свитка Заморозки'));
+    check('ST7 Заморозка из очереди: сообщение в 1-й и 2-й её день, без повтора в тот же день; morning не трогается; окончание — «Заморозка завершилась.» и «Получено задание…»',
+      F(d1) && d1.some(y => /—\u00a07\u00a0дней\.$/.test(y)) && m1 === false && !F(again) && F(d2) && end.includes('Заморозка завершилась.') && end.includes(ST) && !F(end), JSON.stringify({ d1, m1, again, d2, end })); }
+  // обычный день — прежнее
+  { const w = fresh(); complete(w); E(w, 'window.__N = []'); reset(w); await sleep(3200); const n = E(w, 'window.__N.slice()');
+    check('ST6 обычный день: «Получено задание на день…» как раньше', n.includes(ST) && !n.some(x => x.startsWith('Действует эффект')), JSON.stringify(n)); }
+}
+
 
 console.log(results.join('\n'));
 console.log(`Итого: ${results.filter(r => r.startsWith('OK')).length} OK, ${results.filter(r => r.startsWith('FAIL')).length} FAIL`);
