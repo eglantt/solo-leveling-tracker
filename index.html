@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.5.15 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -955,6 +955,8 @@
       box-shadow: 0 0 40px rgba(0,140,255,0.4);
     }
     .item-preview-box img { width: 200px; height: 200px; object-fit: contain; }
+    .item-preview-box { position: relative; }   /* v7.6.2: опора для свечения шкатулки ранга */
+    .item-preview-box img#itemPreviewGlow { position: absolute !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; object-fit: contain !important; pointer-events: none; z-index: 1; }   /* сильнее правил рамки картинки окна в обеих темах */
     .item-preview-name { font-family: 'Orbitron', 'Exo 2', sans-serif; color: #40c0ff; font-size: 0.9rem; text-align: center; letter-spacing: 0.5px; }
     .item-preview-meta { color: #9fc4e6; font-size: 0.78rem; text-align: left; white-space: pre-line; line-height: 1.6; margin-top: 10px; }
     .item-info { flex: 1; min-width: 0; }
@@ -1206,6 +1208,11 @@
     .sys-pen-info .spn { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; }
     .sys-pen-info .spi-gap { margin-top: 6px; }
     .sys-pen-info .spi-extra { opacity: .85; }
+    /* v7.6.0: Длань — «Испытание ранга»: ранг своим цветом (без ранга — серый, как E), строка ТН — пять равных кнопок */
+    .sys-stat-row .ssv.sys-rank-v { color: var(--rk); white-space: nowrap; }
+    .sys-tn-row { display: flex; gap: 6px; margin-top: 10px; }
+    .sys-regime-pair .backup-action-btn:first-child { flex-grow: 1.6; }   /* «Заполнить 14 из 14» длиннее «Обнулить» */
+    .sys-tn-row .backup-action-btn { flex: 1 1 0; min-width: 0; padding: 7px 0; letter-spacing: 0; white-space: nowrap; }
     /* v7.5.9: Длань — «Цели задания: уровень N» под уровнем */
     .sys-target-now { margin: 6px 0 8px; }
     .sys-target-now .stn { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 700; }
@@ -1219,6 +1226,146 @@
     .status-overlay.arc-busy, .status-overlay.arc-busy * { pointer-events: none !important; }
     .status-overlay > .arc-out { animation-name: arcOut; animation-duration: .2s; animation-timing-function: cubic-bezier(.5,0,.75,0); animation-fill-mode: forwards; }
     .status-overlay > .arc-in { animation-name: arcIn; animation-duration: .35s; animation-timing-function: cubic-bezier(.2,.8,.2,1); animation-fill-mode: both; }
+    /* ===== v7.6.1: Испытание ранга (демо 116–118). Цвет испытания — золото. ===== */
+    body { --ac: #ffd34d; --acg: rgba(255,205,60,.5); --ac2: #fff0b8; }
+    .xt { display: inline-flex; font-family: 'Orbitron', sans-serif; font-weight: 700; line-height: 1; }
+    .xt .c { display: inline-block; text-align: center; }
+    .xt .c.d { width: .78em; } .xt .c.k { width: .34em; }
+    /* окна испытания — как «ЗАПРОС РЕШЕНИЯ»: Exo 2 Text, размер и цвет текста запроса, без жирного внутри строк, отступ до кнопок */
+    .ex-hexin { display: inline-block; width: 1.25em; height: 1.25em; vertical-align: -0.28em; margin-right: 8px; }
+    .ex-hexin svg, .sn-ic.ex-hex svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .ex-ov .ex-line { font-family: 'Exo 2 Text', sans-serif; font-size: 0.92rem; color: #a8d8ff; text-align: center; line-height: 1.45; margin: 0 0 4px; }
+    .ex-ov .ex-p { font-family: 'Exo 2 Text', sans-serif; font-size: 0.9rem; color: #cfe6fb; line-height: 1.5; margin: 0 0 10px; text-align: left; }
+    .ex-ov .ex-p.ex-c { text-align: center; }
+    .ex-ov .danger-warning-step > .danger-btn-row { margin-top: 18px; }
+    .ex-ov .danger-warning-step > .danger-btn-row.ex-col { margin-top: 16px; }
+    .ex-ov .ex-gap { height: 10px; }
+    .ex-ov .ex-rk { font-family: 'Orbitron','Exo 2',sans-serif; font-weight: 700; color: var(--rkc); text-shadow: 0 0 10px var(--rkc); letter-spacing: .5px; }
+    .ex-ov .ex-rw { font-family: 'Exo 2 Text', sans-serif; font-size: .92rem; color: #fff; margin: 2px 0; text-align: center; }
+    .ex-ov .ex-rw.xp { font-family: 'Orbitron', sans-serif; color: #40ffaa; }
+    .ex-ov .ex-h { font-family: 'Orbitron','Exo 2',sans-serif; letter-spacing: 1px; color: var(--ac); margin: 12px 0 8px; font-size: .9rem; }
+    .ex-ov .ex-pen { color: #ff5555; font-weight: 700; text-shadow: 0 0 6px rgba(255,40,40,.55); }
+    .ex-ov .danger-btn-row { flex-wrap: wrap; }
+    .ex-ov .danger-btn-row.ex-col { flex-direction: column; align-items: stretch; }
+    .ex-ov .danger-btn-row.ex-col button { width: 100%; margin: 0; }
+    .ex-foot { flex-shrink: 0; padding-top: 12px; }
+    .ex-foot .danger-btn-row { margin-top: 0; }
+    .ex-ov button.ex-red, #exRefuseBtn { background: rgba(120,10,24,.35) !important; border: 1px solid #ff4d5e !important; color: #ff7b88 !important; box-shadow: 0 0 10px rgba(255,40,60,.25) !important; }
+    .ex-ov .status-window { border-color: var(--ac) !important; box-shadow: 0 0 34px var(--acg) !important; }
+    .ex-ov .status-header { color: var(--ac) !important; text-shadow: 0 0 10px var(--acg) !important; }
+    .ex-ov .ex-line { color: var(--ac2); }
+    .ex-ov button.confirm-btn-continue:not(.ex-red) { border-color: var(--ac) !important; color: var(--ac) !important; background: rgba(90,55,0,.35) !important; box-shadow: 0 0 10px var(--acg) !important; }
+    .ex-ov .status-window::before, .ex-ov .status-window::after { border-color: var(--ac) !important; }
+    .ex-hexin, .sn-ic.ex-hex { color: var(--ac); filter: drop-shadow(0 0 4px var(--acg)); }
+    /* оценка результата */
+    #exEval { position: fixed; inset: 0; z-index: 1700; display: none; align-items: center; justify-content: center; background: rgba(2,6,15,.86); }
+    #exEval.on { display: flex; }
+    #exEval .exEvT { font-family: 'Orbitron','Exo 2',sans-serif; font-size: .95rem; letter-spacing: 1px; color: var(--ac); text-shadow: 0 0 10px var(--acg); text-align: center; padding: 0 24px; }
+    #exEval .dt { display: inline-block; width: 1.4em; text-align: left; }
+    /* надпись RANK CONFIRMED — надпись LEVEL UP в цвете ранга */
+    body.rkfx .lvx-t { color: #fff !important; text-shadow: 0 0 6px var(--rkc), 0 0 22px var(--rkc), 0 0 40px var(--rkc) !important; }
+    body.rkfx .lvx-box { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--rkc) 30%, transparent) 25%, color-mix(in srgb, var(--rkc) 30%, transparent) 75%, transparent) !important; }
+    body.rkfx .lvx-box::before, body.rkfx .lvx-box::after { background: linear-gradient(90deg, transparent, var(--rkc) 20%, var(--rkc) 80%, transparent) !important; box-shadow: 0 0 6px var(--rkc) !important; }
+    body.rkfx .lvx-hex polygon { stroke: var(--rkc) !important; }
+    body.rkfx .lvx-pillar { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--rkc) 55%, transparent), rgba(255,255,255,.67), color-mix(in srgb, var(--rkc) 55%, transparent), transparent) !important; }
+    /* значок на главной: 40 px, линия 2 px, справа 47, сверху 54; в последний час — красный, медленно мигает */
+    #exIcon { position: fixed; z-index: 900; right: 47px; top: 54px; width: 40px; height: 40px; opacity: 0; pointer-events: none; transition: opacity .6s ease; color: var(--ac); filter: drop-shadow(0 0 5px var(--acg)) drop-shadow(0 0 12px var(--acg)); cursor: pointer; }
+    #exIcon.on { opacity: 1; pointer-events: auto; }
+    #exIcon svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    #exIcon.late { color: #ff5a5a; }
+    #exIcon.late.on { filter: drop-shadow(0 0 5px rgba(255,60,60,.6)) drop-shadow(0 0 12px rgba(255,60,60,.45)); animation: exLate 1.6s ease-in-out infinite; }
+    @keyframes exLate { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+    /* экран испытания */
+    body.exm .quest-list > .quest-item, body.exm .quest-list > .freeze-ice-overlay, body.exm .quest-list > .freeze-tap-catcher, body.exm .quest-list > .veil-overlay { display: none !important; }
+    body.exm #effectsContainer, body.exm #limitBreakContainer, body.exm #resetTimerContainer { display: none !important; }
+    body:not(.exm) .ex-only { display: none !important; }
+    body.exm .sub-menu-grid button.ex-off { opacity: .32; pointer-events: none; filter: grayscale(.6); }
+    body.exm .quest-panel .title { color: var(--ac) !important; text-shadow: 0 0 10px var(--acg) !important; }
+    body.exm:not(.theme-sys) .quest-panel { border-color: var(--ac) !important; box-shadow: 0 0 22px var(--acg) !important; }
+    body.exm:not(.theme-sys) .quest-panel.hud-frame::before, body.exm:not(.theme-sys) .quest-panel.hud-frame::after { border-color: var(--ac) !important; }
+    #exStrip { margin-top: 10px; }
+    #exStrip .reset-label { color: var(--ac2); }
+    #exStrip .tbox, #exStrip .tbox .tc { color: var(--ac) !important; text-shadow: 0 0 8px var(--acg) !important; }
+    .ex-admp .effects-header { color: var(--ac) !important; }
+    body.exm:not(.theme-sys) .ex-admp { border-color: var(--acg); }
+    .ex-admr { display: flex; align-items: baseline; justify-content: center; gap: 12px; padding: 2px 0 4px; }
+    .ex-admr .sc-rank { font-size: 1.35rem; letter-spacing: 1px; }
+    .ex-admr .sep { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; color: var(--ac); text-shadow: 0 0 8px var(--acg); }
+    .ex-card .ex-res { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.45rem; color: var(--ac); text-shadow: 0 0 8px var(--acg); margin-top: 2px; letter-spacing: 1px; }
+    .ex-card { background: rgba(0,0,0,0.3); border: 1px solid var(--acg); border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; position: relative; overflow: hidden; min-height: 84px; }
+    .ex-card .qcheck { position: absolute; left: 16px; bottom: 19px; width: 22px; height: 22px; pointer-events: none; }
+    .ex-card .ex-b { margin-top: 8px; padding-left: 44px; text-align: right; }
+    .ex-card .ex-tot { font-size: .8rem; color: #9fc4e6; margin-top: 2px; }
+    .ex-card .ex-tot .xt { color: var(--ac); font-size: .85rem; vertical-align: -1px; margin-left: 4px; }
+    .ex-card .ex-vals { font-family: 'Orbitron', sans-serif; font-size: .8rem; color: #cfe6fb; margin-top: 4px; letter-spacing: .4px; }
+    .ex-card .ex-acts { display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end; }
+    button.ex-gold { border-color: var(--ac) !important; color: var(--ac) !important; background: rgba(90,55,0,.35) !important; box-shadow: 0 0 8px var(--acg) !important; }
+    button.ex-gold:disabled { box-shadow: none !important; }
+    .ex-card.ex-lock { opacity: .45; pointer-events: none; }
+    #exRefuse { padding: 0 20px 18px; margin-top: 15px; }
+    #exRefuseBtn { width: 100%; padding: 12px; font-family: 'Orbitron','Exo 2',sans-serif; text-transform: uppercase; letter-spacing: 1px; font-size: .8rem; }
+    #exRefuseBtn:disabled { opacity: .35; cursor: default; box-shadow: none !important; }
+    /* слой этапа */
+    #exLayer { position: fixed; inset: 0; z-index: 950; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 18px 16px; background: #02060f; text-align: center; overflow-y: auto; }
+    #exLayer.on { display: flex; }
+    #exLayer .nm { font-family: 'Orbitron','Exo 2',sans-serif; font-size: 1.05rem; letter-spacing: 1px; color: var(--ac); text-shadow: 0 0 10px var(--acg); }
+    #exLayer .tot { font-size: .8rem; color: #9fc4e6; }
+    #exLayer .tot .xt { color: var(--ac2); font-size: .9rem; margin-left: 4px; vertical-align: -1px; }
+    #exLayer .rd { font-family: 'Orbitron', sans-serif; font-size: .8rem; color: #9fc4e6; letter-spacing: 1px; min-height: 1em; }
+    #exLayer .ring { position: relative; width: 200px; height: 200px; flex-shrink: 0; }
+    #exLayer .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    #exLayer .ring .ct { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #exLayer .ring .xt { font-size: 2.5rem; }
+    #exLayer .ring .lb { font-family: 'Orbitron','Exo 2',sans-serif; font-size: .74rem; letter-spacing: 1px; margin-top: 6px; max-width: 150px; line-height: 1.3; }
+    #exLayer .vals { font-family: 'Orbitron', sans-serif; font-size: .85rem; color: #cfe6fb; min-height: 1em; }
+    #exLayer .inbox { width: min(330px, 100%); }
+    #exLayer .cntrow { display: flex; align-items: baseline; justify-content: center; gap: 10px; margin: 2px 0 6px; }
+    #exLayer .cntrow .k { font-size: .82rem; color: #9fc4e6; }
+    #exLayer .cntrow .cnt { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.5rem; color: #40ffaa; min-width: 70px; text-align: left; }
+    #exLayer .bt { display: flex; gap: 6px; justify-content: center; }
+    #exLayer .bt + .bt { margin-top: 6px; }
+    #exLayer .bt button { flex: 0 0 76px; min-width: 0; font-family: 'Orbitron', sans-serif; }
+    #exLayer button.ex-minus { border-color: rgba(255,120,120,.5); color: #ff9a9a; background: rgba(70,10,16,.4); }
+    #exLayer .acts { display: flex; gap: 6px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+    #exLayer .acts button { font-family: 'Orbitron','Exo 2',sans-serif; font-size: .72rem; letter-spacing: .5px; }
+    #exLayer button:disabled { opacity: .32; cursor: default; }
+    /* карманный режим */
+    #exPocket { position: fixed; inset: 0; z-index: 1900; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px; user-select: none; -webkit-user-select: none; touch-action: none; }
+    #exPocket.on { display: flex; }
+    #exPocket .ph { font-family: 'Orbitron','Exo 2',sans-serif; letter-spacing: 1px; font-size: .9rem; color: #8a96a6; max-width: 280px; line-height: 1.4; }
+    #exPocket .xt { font-size: 3.4rem; color: var(--ac); text-shadow: 0 0 14px var(--acg); }
+    #exPocket .hint { font-size: .85rem; color: #6f7c8c; max-width: 260px; line-height: 1.45; }
+    #exPocket .hold { position: relative; width: 86px; height: 86px; margin-top: 18px; }
+    #exPocket .hold svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    #exPocket .hold .lk { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #6f7c8c; }
+    .ex-flash { position: fixed; inset: 0; z-index: 2000; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,205,90,.16) 0 1px, transparent 1px 3px), #02040a; }
+    /* ускоритель таймера (Длань; сборка демо 118: три кнопки 24 px, полупрозрачная подложка, выбранная залита, в карманном режиме — 40%) */
+    #exAcc { position: fixed; z-index: 1950; right: 48px; top: 100px; display: none; gap: 4px; --h: 24px; }
+    #exAcc.on { display: flex; }
+    #exAcc button { all: unset; box-sizing: border-box; height: var(--h); min-width: calc(var(--h) * 1.5); padding: 0 6px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: calc(var(--h) * .42); letter-spacing: .3px; color: rgba(255,156,255,.8); cursor: pointer;
+      border: 1px solid rgba(255,102,255,.45); border-radius: 4px; background: rgba(26,4,26,.55); text-shadow: none; -webkit-tap-highlight-color: transparent; }
+    #exAcc button.on { background: rgba(255,102,255,.38); color: #fff; border-color: #ff66ff; }
+    #exAcc.dim { opacity: .4; }
+    /* Длань: «Испытание ранга» — продолжение */
+    .sys-acc-t { margin-top: 14px; }
+    .restore-link.ex-dis { opacity: .35; pointer-events: none; }
+    /* v7.6.3: шкала усталости во время испытания — поверх слоя этапа (950) и карманного режима (1900), под ускорителем и окнами не важно: место другое */
+    .fz.fz-ex { z-index: 1955; }
+    /* v7.6.3: слой этапа — у кнопок «−» при наведении свой красный вид (общее правило кнопок давало синюю заливку) */
+    #exLayer button.ex-minus:not(:disabled):hover { background: rgba(120,20,30,.55); border-color: rgba(255,150,150,.8); color: #ffb3b3; }
+    #exLayer button.ex-minus:not(:disabled):active { background: rgba(150,25,40,.65); border-color: #ffd0d0; color: #ffd0d0; }
+    #exLayer button.ex-minus:disabled:hover { background: rgba(70,10,16,.4); border-color: rgba(255,120,120,.5); color: #ff9a9a; }
+    .sys-ex-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .sys-ex-row .backup-action-btn { flex: 1 1 calc(50% - 6px); min-width: 0; padding-left: 6px; padding-right: 6px; }
+    /* Летопись: испытание ранга — отметка дня (не статус): жёлтая клетка при успехе, мини-шестигранник слева сверху */
+    .day-cell.exam-ok { border-color: #ffd34d; color: #ffd34d; text-shadow: 0 0 6px rgba(255,211,77,0.5); box-shadow: 0 0 8px rgba(255,211,77,0.35); }
+    .day-cell .cal-ex { position: absolute; top: -6px; left: -5px; width: 12px; height: 12px; pointer-events: none; }
+    .day-cell .cal-ex svg, .legend .cal-ex svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .day-cell .cal-ex.ok { filter: drop-shadow(0 0 3px var(--rkc)); }
+    .legend .cal-ex { position: relative; display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 6px; }
+    .legend .cal-swatch.ex-sw { position: relative; }
+    .legend .cal-swatch.ex-sw .cal-ex { position: absolute; top: -5px; left: -5px; margin: 0; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -1602,8 +1749,36 @@
     body.theme-sys :is(#statusOverlay, [data-gid="statusOverlay"]) .sf-win.mw-scroll .status-body { padding-bottom: 16px; }
     /* v7.5.14: переход между страницами Архива — сжатие в линию 0,3 с и раскрытие из линии 0,45 с */
     body.theme-sys .status-overlay > .sf-win.arc-out { animation-name: arcLineOut; animation-duration: .3s; animation-timing-function: cubic-bezier(.5,0,.75,0); animation-fill-mode: forwards; }
+    /* v7.6.0: Длань — «Испытание ранга» в теме «Система» */
+    body.theme-sys .sf-win.mwin .sys-stat-row .ssv.sys-rank-v { color: var(--rk); }
+    body.theme-sys .sf-win.mwin .sys-tn-row .backup-action-btn { padding: 7px 0; letter-spacing: 0; }
+    body.theme-sys .sf-win.mwin .sys-regime-pair .backup-action-btn:first-child { flex-grow: 1.6; }
     body.theme-sys .status-overlay > .sf-win.arc-in { animation-name: arcLineIn; animation-duration: .45s; animation-timing-function: cubic-bezier(.2,.8,.2,1); animation-fill-mode: both; }
-  </style>
+    /* v7.6.1: Испытание ранга в теме «Система» */
+    body.theme-sys .ex-hexin { display: none; }
+    body.theme-sys .mw-ic .sn-ic.ex-hex { border: 0; box-shadow: none; }
+    body.theme-sys .sf-win.mwin .ex-line { text-shadow: 0 0 6px rgba(255,220,140,.45); }
+    body.theme-sys .exgv { --sl: rgba(255,238,175,.92); --sl2: rgba(255,215,110,.38); --sg: 0 0 5px rgba(255,210,80,.45); --tx: #fff8e0; --tx2: #eedc9e; --acc: #ffd34d; --accg: rgba(255,205,60,.75); --hg1: #ffd34d; --hg2: #e0a800; }
+    body.theme-sys .exgv > svg.sf-frm, body.theme-sys .exgv > .sf-en, body.theme-sys .exgv > .sf-pat { filter: hue-rotate(13deg) saturate(.82) brightness(1.1); }
+    body.theme-sys .ex-ov .mw-tt { color: var(--ac) !important; text-shadow: 0 0 10px var(--acg) !important; }
+    body.theme-sys .ex-ov .status-window { box-shadow: none !important; }
+    body.theme-sys .mscr .ex-card { border-radius: 0; border: 1px solid var(--sl2); background: rgba(3,9,20,.35); }
+    body.theme-sys .mscr .ex-card .qcheck { width: 26px; height: 26px; bottom: 17px; }
+    body.theme-sys .mscr .ex-card .ex-res { font-size: 1.5rem; }
+    body.theme-sys #exRefuseBtn { border-radius: 0; }
+    /* кнопки «Начать этап» / «Открыть этап» — сборка демо 118: на 4 px ниже кнопок «+» дневного задания, шрифт 12,5 px, по тексту справа */
+    body.theme-sys .mscr .ex-card .ex-acts button { padding: 6px 10px !important; font-size: .78rem !important; letter-spacing: .5px !important; font-family: 'Orbitron', sans-serif !important; }
+    /* v7.6.3: кнопки испытания в «Системе» — наведение и нажатие в своём цвете (общее правило темы давало белую рамку и голубой текст) */
+    body.theme-sys .sf-win.mwin button.ex-gold:hover, body.theme-sys .ex-ov .sf-win.mwin button.confirm-btn-continue:not(.ex-red):hover { background: rgba(90,55,0,.35) !important; border-color: var(--ac) !important; color: var(--ac) !important; }
+    body.theme-sys .sf-win.mwin #exRefuseBtn:hover, body.theme-sys .ex-ov .sf-win.mwin button.ex-red:hover { background: rgba(120,10,24,.35) !important; border-color: #ff4d5e !important; color: #ff7b88 !important; }
+    @media (hover: hover) {
+      body.theme-sys .sf-win.mwin button.ex-gold:not(:disabled):hover, body.theme-sys .ex-ov .sf-win.mwin button.confirm-btn-continue:not(.ex-red):not(:disabled):hover { background: rgba(255,205,60,.16) !important; border-color: #fff0b8 !important; color: var(--ac) !important; box-shadow: 0 0 12px rgba(255,205,60,.65) !important; }
+      body.theme-sys .sf-win.mwin #exRefuseBtn:not(:disabled):hover, body.theme-sys .ex-ov .sf-win.mwin button.ex-red:not(:disabled):hover { background: rgba(255,60,80,.16) !important; border-color: #ffb3bb !important; color: #ff7b88 !important; box-shadow: 0 0 12px rgba(255,60,80,.6) !important; }
+    }
+    body.theme-sys .sf-win.mwin button.ex-gold:not(:disabled):active, body.theme-sys .ex-ov .sf-win.mwin button.confirm-btn-continue:not(.ex-red):not(:disabled):active { background: rgba(255,205,60,.26) !important; border-color: #fff8e0 !important; color: var(--ac) !important; box-shadow: 0 0 14px rgba(255,205,60,.75) !important; }
+    body.theme-sys .sf-win.mwin #exRefuseBtn:not(:disabled):active, body.theme-sys .ex-ov .sf-win.mwin button.ex-red:not(:disabled):active { background: rgba(255,60,80,.26) !important; border-color: #ffd6da !important; color: #ff9aa4 !important; box-shadow: 0 0 14px rgba(255,60,80,.7) !important; }
+      body.theme-sys #exRefuseBtn:disabled { opacity: .35 !important; cursor: default; box-shadow: none !important; }
+</style>
 </head>
 <body>
 <!-- v6.6.10: значок кредитов «печать Системы» (демо 49, С2). Образец один; места ссылаются на #credSeal. -->
@@ -1619,7 +1794,7 @@
           <div class="sc-emb"><div class="sc-hexw"><div class="sc-hex"><b id="stLevel" class="d1">1</b></div></div><div class="sc-emb-cap">Уровень</div></div>
           <div class="sc-info">
             <div class="sc-name" id="stName">Игрок</div>
-            <div class="sc-rank" id="stRank">E-Rank</div>
+            <div class="sc-rank" id="stRank">Без ранга</div>
             <div class="sc-title" id="stTitle">Титул: <span>Новичок</span></div>
           </div>
         </div>
@@ -1688,6 +1863,8 @@
       <span><span class="cal-swatch cal-today-swatch"><span class="cal-tc tl"></span><span class="cal-tc tr"></span><span class="cal-tc bl"></span><span class="cal-tc br2"></span></span>Сегодня</span>
       <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
       <span>⭐ Новый уровень</span>
+      <span><span class="cal-swatch ex-sw" style="border:2px solid #ffd34d; box-shadow:0 0 5px rgba(255,211,77,0.5);"><span class="cal-ex" id="legExOk"></span></span>Испытание ранга пройдено</span>   <!-- v7.6.1 -->
+      <span><span class="cal-swatch ex-sw" style="border:2px solid #2a2f3a;"><span class="cal-ex" id="legExFail"></span></span>Испытание ранга</span>
     </div>
     </div>
     <div id="calTooltip" class="cal-tooltip" style="display:none;">
@@ -1842,6 +2019,43 @@
           <button class="confirm-btn-continue" onclick="sysToolsFlashThenRun(this, quickExpAction)">+1000 EXP</button>
         </div>
       </div>
+      <div class="backup-section">   <!-- v7.6.0 -->
+        <div class="backup-section-title">Испытание ранга</div>
+        <div class="sys-stat-row"><span class="ssn">Ранг</span><span class="ssv sys-rank-v" id="sysRankV"></span><button class="backup-action-btn" id="sysRankM" aria-label="Ранг: ниже" onclick="sysToolsFlashThenRun(this, () => sysRankStep(-1))">−</button><button class="backup-action-btn" id="sysRankP" aria-label="Ранг: выше" onclick="sysToolsFlashThenRun(this, () => sysRankStep(1))">+</button></div>
+        <div class="backup-summary sys-pen-info" id="sysRankInfo" style="margin-top:6px;"></div>
+        <div class="sys-tn-row">
+          <button class="backup-action-btn" aria-label="ТН минус 10" onclick="sysToolsFlashThenRun(this, () => sysTnChange(-10))">−10</button>
+          <button class="backup-action-btn" aria-label="ТН минус 1" onclick="sysToolsFlashThenRun(this, () => sysTnChange(-1))">−1</button>
+          <button class="backup-action-btn" aria-label="ТН плюс 1" onclick="sysToolsFlashThenRun(this, () => sysTnChange(1))">+1</button>
+          <button class="backup-action-btn" aria-label="ТН плюс 10" onclick="sysToolsFlashThenRun(this, () => sysTnChange(10))">+10</button>
+          <button class="backup-action-btn" aria-label="ТН плюс 100" onclick="sysToolsFlashThenRun(this, () => sysTnChange(100))">+100</button>
+        </div>
+        <div class="sys-btn-pair sys-regime-pair">
+          <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, () => sysRegimeSet('full'))">Заполнить 14 из 14</button>
+          <button class="backup-action-btn" onclick="sysToolsFlashThenRun(this, () => sysRegimeSet('empty'))">Обнулить</button>
+        </div>
+        <button class="backup-action-btn" id="sysRankClear" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => sysSetRank(null))">Снять ранг</button>
+        <!-- v7.6.1: испытание — условия, задержка, выдержка, последнее испытание; действия; ускоритель -->
+        <div class="backup-summary sys-pen-info" id="sysExamInfo" style="margin-top:12px;"></div>
+        <div class="sys-ex-row">
+          <button class="backup-action-btn" id="sysExOffer" onclick="sysToolsFlashThenRun(this, sysExamOffer)">Выдать предложение сейчас</button>
+          <button class="backup-action-btn" id="sysExClear" onclick="sysToolsFlashThenRun(this, sysExamClearDelay)">Снять задержку и сужение</button>
+          <button class="backup-action-btn" id="sysExDl1" onclick="sysToolsFlashThenRun(this, () => sysExamDeadline('1h'))">До срока старта 1 час</button>
+          <button class="backup-action-btn" id="sysExDlNow" onclick="sysToolsFlashThenRun(this, () => sysExamDeadline('now'))">Истечь сроку сейчас</button>
+        </div>
+        <div class="sys-stat-row" style="margin-top:12px;"><span class="ssn">Завершить: ранг итога</span><span class="ssv sys-rank-v" id="sysExOkV"></span><button class="backup-action-btn" id="sysExOkM" aria-label="Ранг итога: ниже" onclick="sysToolsFlashThenRun(this, () => sysExamStepChange(-1))">−</button><button class="backup-action-btn" id="sysExOkP" aria-label="Ранг итога: выше" onclick="sysToolsFlashThenRun(this, () => sysExamStepChange(1))">+</button></div>
+        <div class="sys-ex-row">
+          <button class="backup-action-btn sys-ex-end" onclick="sysToolsFlashThenRun(this, () => sysExamEnd('ok'))">Пройдено</button>
+          <button class="backup-action-btn sys-ex-end" onclick="sysToolsFlashThenRun(this, () => sysExamEnd('low'))">Не пройдено</button>
+          <button class="backup-action-btn sys-ex-end" onclick="sysToolsFlashThenRun(this, () => sysExamEnd('time'))">Не выполнено</button>
+          <button class="backup-action-btn sys-ex-end" onclick="sysToolsFlashThenRun(this, () => sysExamEnd('refuse'))">Отказ</button>
+        </div>
+        <div class="sys-stat-row sys-acc-t"><span class="ssn">Ускоритель таймера</span></div>
+        <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:6px;">
+          <span id="sysAccLabel">Ускоритель: выключен.</span>
+          <div class="sound-checkbox-zone" onclick="examAccToggle()"><div class="sound-checkbox" id="sysAccCheckbox">✓</div></div>
+        </div>
+      </div>
       <div class="backup-section">
         <div class="backup-section-title">Кредиты</div>
         <div class="sys-current" id="sysCreditsNow"></div>
@@ -1966,6 +2180,25 @@
 </div>
 
 <!-- v7.4.0: шкала усталости — неподвижный слой поверх главного экрана (не прокручивается) -->
+<!-- v7.6.1: Испытание ранга — окна, оценка, значок, слой этапа, карманный режим, ускоритель -->
+<div class="status-overlay ex-ov" id="exOv1" style="z-index: 1500;"><div class="status-window hud-frame exgv"><div class="status-header"><span class="ex-hexin"></span>УВЕДОМЛЕНИЕ</div><div class="status-body"><div id="exC1"></div></div></div></div>
+<div class="status-overlay ex-ov" id="exOv2" style="z-index: 1500;"><div class="status-window hud-frame exgv"><div class="status-header">УСЛОВИЯ ИСПЫТАНИЯ</div><div class="status-body"><div id="exC2"></div></div><div class="ex-foot" id="exF2"></div></div></div>
+<div class="status-overlay ex-ov" id="exOv3" style="z-index: 1500;"><div class="status-window hud-frame exgv"><div class="status-header"><span class="ex-hexin"></span>УВЕДОМЛЕНИЕ</div><div class="status-body"><div id="exC3"></div></div></div></div>
+<div class="status-overlay ex-ov" id="exOv4" style="z-index: 1600;"><div class="status-window hud-frame exgv"><div class="status-header">ЗАПРОС РЕШЕНИЯ</div><div class="status-body"><div id="exC4"></div></div></div></div>
+<div class="status-overlay ex-ov" id="exOv5" style="z-index: 1600;" onclick="examRankClose()"><div class="status-window hud-frame exgv"><div class="status-header"><span class="ex-hexin"></span>УВЕДОМЛЕНИЕ</div><div class="status-body"><div id="exC5"></div></div></div></div>
+<div class="status-overlay ex-ov" id="exOv6" style="z-index: 1600;"><div class="status-window hud-frame exgv"><div class="status-header">ЗАПРОС РЕШЕНИЯ</div><div class="status-body"><div id="exC6"></div></div></div></div>
+<div class="status-overlay" id="exPenOverlay" style="z-index: 1650;">
+  <div class="status-window hud-frame" style="border-color:#ff4444; box-shadow: 0 0 40px rgba(255,68,68,0.4);">
+    <div class="status-header" style="color:#ff5555; text-shadow: 0 0 10px rgba(255,68,68,0.6);">ШТРАФ СИСТЕМЫ</div>
+    <div class="status-body"><div id="exPenContent"></div></div>
+    <button class="close-status" onclick="closeExamPenalty()">ЗАКРЫТЬ</button>
+  </div>
+</div>
+<div id="exEval"><div class="exEvT">Система оценивает результат<span class="dt"></span></div></div>
+<div id="exIcon" aria-label="Испытание ранга"></div>
+<div id="exLayer"></div>
+<div id="exPocket"></div>
+<div id="exAcc" aria-label="Ускоритель таймера"><button data-v="1">×1</button><button data-v="5">×5</button><button data-v="20">×20</button></div>
 <div id="fzBar" class="fz" aria-hidden="true"><div class="fz-l">Усталость</div><div class="fz-cap"><div class="fz-fill"></div><i class="fz-glow"></i></div></div>
 <div class="system-container">
   <div class="quest-panel hud-frame">
@@ -1978,7 +2211,7 @@
           <div class="sc-emb"><div class="sc-hexw"><div class="sc-hex"><b id="hdrLevel" class="d1">1</b><span class="sc-idq">?</span></div></div><div class="sc-emb-cap"><span class="cap-lv">Уровень</span><span class="cap-id">Идентификация…</span></div></div>
           <div class="sc-info">
             <div class="sc-name" id="hdrName">Игрок</div>
-            <div class="sc-rank" id="hdrRank">E-Rank</div>
+            <div class="sc-rank" id="hdrRank">Без ранга</div>
             <div class="sc-title" id="hdrTitle">Титул: <span>Новичок</span></div>
           </div>
         </div>
@@ -1988,6 +2221,7 @@
         <div class="sc-chips"><div class="sc-chip cr"><span class="k">Кредиты</span><span class="n" id="hdrCredits">0 <span class="cr-ic" role="img" aria-label="кредитов"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#credSeal"/></svg><span class="gl"></span></span></span></div><div class="sc-chip st"><span class="k">Серия дней</span><span class="n" id="hdrStreak">0</span></div></div>
       </div>
       <div class="tstrip" id="resetTimerContainer"><span class="boot-sync">Синхронизация…</span><span class="reset-label">Сброс задания через</span><span class="tbox" id="timer"></span><div class="dayline"><i id="dayLineFill"></i></div></div>
+      <div class="ex-only"><div class="tstrip" id="exStrip"><span class="reset-label">До конца испытания</span><span class="tbox" id="exTimer"></span></div></div>   <!-- v7.6.1 -->
     </div>
     <div class="effects-container" id="effectsContainer" style="display:none;">
       <div class="effects-header">АКТИВНЫЕ ЭФФЕКТЫ</div>
@@ -2097,7 +2331,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.5.15';
+  const APP_VERSION = '7.6.3';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2293,7 +2527,9 @@
         freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false, freezeNextAvailableAt: null,
         dailyTargetLevel: 1, expDebt: 0, penaltyStreak: 0, penaltyRun: 0, dailyExerciseLog: {},
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
-        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, theme: 'system'
+        soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, theme: 'system',
+        rank: null, tn: { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 }, tnToday: 0, tnAdj: 0, tnMul: 1, tnRegimeOverride: null, rankSysV: 1,   // v7.6.0
+        exam: null, examPost: null, examDelayUntil: null, examNarrow: false, examLastOffer: null, rankHoldDays: 0, examLast: null, examToday: null, examCredited: false, examAccel: false   // v7.6.1
       };
     }
   }
@@ -2475,7 +2711,7 @@
 
   const TITLES_DB = {
     "Новичок": { icon: "🔰", desc: "Статус начинающего Игрока. Без бонусов." },
-    "Пробужденный": { icon: "✨", desc: "Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 3%." },
+    "Пробужденный": { icon: "✨", desc: "Первый ранг подтверждён испытанием. Весь получаемый опыт увеличен на 3%." },   // v7.6.0: за ранг E, не за 10-й уровень
     "Целеустремлённый": { icon: "🔥", desc: "Ни один день не был потерян зря — семь дней подряд без единого срыва. Весь получаемый опыт увеличен на 5%." },
     "Преодолевший предел": { icon: "⚡", desc: "Предел преодолён пять раз. Награда в кредитах во время Преодоления предела увеличена на 5%." },
     "Бегущий": { icon: "👣", desc: "Сто тысяч шагов преодолено. Опыт за бег увеличен на 10%." },   // v7.5.12: было «Странник»
@@ -3001,7 +3237,8 @@
   // v7.1.8: маленькие копии иконок (128×128, icons/items-s) — для списков и панели эффектов; оригиналы — для окна
   // просмотра, печати, льда, крупной картинки и ячеек контура. Признаки эффектов (руна/печать) по-прежнему смотрят на исходный адрес.
   const ICON_S_DIR = 'icons/items-s/';
-  function iconS(id) { return ICON_S_DIR + id + '.png'; }
+  const ICON_ALIAS = id => /^box_rank_/.test(id) ? 'box_rank' : id;   // v7.6.1: одна иконка на девять шкатулок ранга
+  function iconS(id) { return ICON_S_DIR + ICON_ALIAS(id) + '.png'; }
   function smallIconSrc(path) { return String(path).replace('icons/items/', ICON_S_DIR); }
   // Страховка: если маленькой копии нет на сайте (не загружена, не докачалась) — картинка подменяется оригиналом.
   document.addEventListener('error', ev => {
@@ -3129,7 +3366,17 @@
     "box_crimson": { name: "Багровая Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Багровый ключ. Содержит 2–4 редких предмета, иногда — кредиты.", weight: 3, minItems: 2, maxItems: 4, level: 40, requiresKey: "key_crimson", creditChance: 0.12, creditAmount: 4000 },
     "box_purple": { name: "Пурпурная Шкатулка", icon: "🎁", desc: "Заперта. Для открытия нужен Пурпурный ключ. Содержит 2–5 особо редких предметов, иногда — кредиты.", weight: 2, minItems: 2, maxItems: 5, level: 55, requiresKey: "key_purple", creditChance: 0.08, creditAmount: 6000 },
     "box_shadow": { name: "Шкатулка Теней", icon: "🎁", desc: "Заперта. Для открытия нужен Ключ Теней. Содержит 3–5 предметов высшей ценности, иногда — кредиты.", weight: 1, minItems: 3, maxItems: 5, level: 75, requiresKey: "key_shadow", creditChance: 0.05, creditAmount: 10000 },
-    "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое непредсказуемо — ценная награда либо временное усложнение дневного задания.", level: 3 }
+    "box_anomaly": { name: "Шкатулка Аномалии", icon: "🎁", desc: "Содержимое непредсказуемо — ценная награда либо временное усложнение дневного задания.", level: 3 },
+    // v7.6.1: шкатулки ранга — награда за подтверждённый ранг (по одной на ранг); при повышении уровня не выпадают, в Магазине не продаются
+    "box_rank_e": { name: "Шкатулка ранга E", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "e" },
+    "box_rank_d": { name: "Шкатулка ранга D", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "d" },
+    "box_rank_c": { name: "Шкатулка ранга C", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "c" },
+    "box_rank_b": { name: "Шкатулка ранга B", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "b" },
+    "box_rank_a": { name: "Шкатулка ранга A", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "a" },
+    "box_rank_s": { name: "Шкатулка ранга S", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "s" },
+    "box_rank_national": { name: "Шкатулка ранга National Level", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "national" },
+    "box_rank_sss": { name: "Шкатулка ранга SSS", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "sss" },
+    "box_rank_monarch": { name: "Шкатулка ранга Shadow Monarch", icon: "🎁", desc: "Награда за ранг, подтверждённый испытанием. Содержит кредиты и ценные предметы. Расходуется при открытии.", rankBox: "monarch" }
   };
 
   // Simple weighted loot pools via repetition. Extensible: add tiers/pools here in future stages.
@@ -3153,8 +3400,20 @@
     "box_dark_quartz": ["key_scarlet", "key_crimson", "key_purple", "key_shadow"]
   };
 
+  // v7.6.1: состав шкатулок ранга — фиксированный (документ «Испытание ранга», раздел 7); уровень Магазина не влияет
+  const RANK_BOX = { e: 'box_rank_e', d: 'box_rank_d', c: 'box_rank_c', b: 'box_rank_b', a: 'box_rank_a', s: 'box_rank_s', national: 'box_rank_national', sss: 'box_rank_sss', monarch: 'box_rank_monarch' };
+  const RANK_BOX_LOOT = {
+    box_rank_e: { cr: 3000, items: { potion_restoration: 1, potion_growth: 1, shard_limit: 1, rune_protection: 1, scroll_freeze: 1 } },
+    box_rank_d: { cr: 5000, items: { rune_restoration_charged: 1, rune_growth_charged: 1, shard_limit: 2, rune_stability: 1, scroll_freeze: 1 } },
+    box_rank_c: { cr: 7000, items: { tablet_of_reassessment: 1, rune_protection_absolute: 1, shard_limit_double: 1, rune_redemption: 1, scroll_freeze: 1 } },
+    box_rank_b: { cr: 10000, items: { crystal_clarity: 1, rune_protection_absolute: 1, rune_limit_charged: 1, potion_restoration_full: 1, scroll_freeze: 1 } },
+    box_rank_a: { cr: 15000, items: { crystal_clarity: 1, rune_protection_absolute: 1, rune_limit_charged: 1, crystal_restoration: 1, rune_burden_release: 1, scroll_freeze: 1 } },
+    box_rank_s: { cr: 20000, items: { crystal_clarity: 2, rune_protection_absolute: 1, rune_limit_charged: 1, crystal_impulse: 1, rune_return: 1, scroll_freeze: 1 } },
+    box_rank_national: { cr: 30000, items: { crystal_clarity: 2, rune_protection_absolute: 2, rune_limit_charged: 2, crystal_impulse: 1, rune_correction: 1, scroll_freeze: 1 } },
+    box_rank_sss: { cr: 45000, items: { crystal_clarity: 3, rune_protection_absolute: 2, rune_limit_charged: 2, crystal_impulse: 2, rune_correction: 1, scroll_freeze: 1 } },
+    box_rank_monarch: { cr: 60000, items: { crystal_clarity: 3, rune_protection_absolute: 3, rune_limit_charged: 3, crystal_impulse: 2, rune_correction: 2, rune_burden_release: 1, scroll_freeze: 1 } } };
   function getAvailableBoxTiers() {
-    return Object.keys(BOX_CATALOG).filter(id => id !== 'box_anomaly' && data.level >= (BOX_CATALOG[id].level || 1));
+    return Object.keys(BOX_CATALOG).filter(id => id !== 'box_anomaly' && !BOX_CATALOG[id].rankBox && data.level >= (BOX_CATALOG[id].level || 1));
   }
 
   function rollBoxTier() {
@@ -3228,7 +3487,7 @@
     stats: { title: "Характеристики", content: "При каждом повышении уровня Система вознаграждает Игрока очками характеристик. Сила снижает тяжесть штрафа за невыполненное задание и увеличивает опыт за силовые упражнения. Ловкость повышает шанс на увеличенную награду в кредитах. Интеллект увеличивает получаемый опыт. Восприятие обостряет удачу Игрока — редкие находки встречаются чаще. Выносливость снижает повседневную нагрузку, увеличивает опыт при превышении задания, облегчает усталость и ускоряет восстановление." },
     chronicle: { title: "Летопись Дней", content: "Каждый прожитый день заносится в личную летопись Игрока. Система запоминает: выполнено ли задание, применён ли штраф, или защита отвела его действие." },
     shop: { title: "Магазин Системы", content: "Система позволяет обменивать заработанные кредиты на средства восстановления и защиты. Их сила и разнообразие растут вместе с Игроком — Система открывает более действенные средства по мере того, как убеждается в готовности Игрока их применять." },
-    boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри — расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое — ценная награда или временное увеличение нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания." },
+    boxes: { title: "Шкатулки", content: "Система позволяет находить особые шкатулки при повышении уровня. Внутри находятся расходники разной силы и ценности, иногда ключи от более редких шкатулок. Чем выше уровень Игрока, тем ценнее то, что можно найти внутри. Отдельные шкатулки нестабильны: их содержимое может оказаться ценной наградой или временным увеличением нагрузки заданий. Такие шкатулки можно найти при повышении уровня или при превышении задания. За каждый ранг, подтверждённый испытанием, Игрок получает шкатулку ранга. Чем выше подтверждённый ранг, тем ценнее её содержимое." },   // v7.6.1: шкатулки ранга, без тире
     titles: { title: "Титулы", content: "Достижения Игрока разблокируют титулы — каждый со своим условием и своей наградой. Одновременно может быть открыто сразу несколько, но действует только один — тот, что выбран активным в данный момент. Остальные разблокированные титулы ждут своего часа, не оказывая никакого эффекта, пока не выбраны. Сменить активный титул можно свободно, в любой момент, среди уже открытых." },
     anomaly_burden: { title: "Бремя Аномалии", content: "Один из двух возможных исходов при открытии Шкатулки Аномалии — резонанс, искажающий расчёты Системы, определяемый случайно в момент самого открытия. При неудачном исходе следующее дневное задание заметно усложняется, и это сразу бросается в глаза. Цена провала в такой день тоже иная — штраф ощутимо возрастает. Обычная защита от штрафа в такой день бессильна — предотвратить его способна лишь Абсолютная защита." },
     scrolls: { title: "Свитки", content: "Свитки — особый тип расходников, каждый из которых целиком меняет условия дневного задания, а не просто усиливает уже существующее. Действовать может только один свиток за раз, а активный эффект большинства из них нельзя отменить раньше срока — только дождаться его завершения, каким бы ни был исход дня." },
@@ -3253,7 +3512,7 @@
     title_celeustremlenny: { title: "Целеустремлённый", content: "Титул стойкой воли — семь дней без единого срыва, планка, которую держат немногие. Опыт в такие дни начисляется заметно щедрее обычного." },
     title_vechny_strannik: { title: "Бегущий", content: "Титул преодолённого пути — сто тысяч шагов: расстояние, которое редко пробегают случайно. Бег отныне вознаграждается щедрее." },
     title_preodolevshy_predel: { title: "Преодолевший предел", content: "Титул превзойдённой границы — пять раз предел был не просто достигнут, а пройден насквозь. Кредиты за такие дни начисляются щедрее обычного." },
-    title_probuzhdenny: { title: "Пробужденный", content: "Титул нового рубежа — десятый уровень оставлен позади, черта, за которой новичок перестаёт быть новичком. Опыт, получаемый отныне, чуть весомее прежнего." },
+    title_probuzhdenny: { title: "Пробужденный", content: "Титул нового рубежа: первый ранг подтверждён испытанием. Опыт, получаемый отныне, чуть весомее прежнего." },   // v7.6.0
     title_marathoner: { title: "Марафонец", content: "Титул закалённой выносливости — полмиллиона шагов остались позади, путь, что закаляет не хуже самой суровой тренировки. Награда за бег растёт вместе с преодолённым расстоянием." },
     title_horizon_conqueror: { title: "Покоритель горизонта", content: "Титул покорённой дали — миллион шагов, цифра, что для большинства остаётся абстракцией, не личным опытом. Здесь она преодолена. Награда за бег — самая высокая из возможных." },
     title_tireless: { title: "Неутомимый", content: "Титул неослабевающего усилия — две тысячи отжиманий, повторённых достаточно раз, чтобы перестать быть усилием и стать привычкой. Отжимания вознаграждаются щедрее." },
@@ -3262,17 +3521,19 @@
     title_unyielding: { title: "Непреклонный", content: "Титул укоренившейся дисциплины — тридцать дней без единого срыва, то, что перестало быть усилием воли и стало натурой. Кредиты за любое упражнение начисляются щедрее." },
     title_limit_conqueror: { title: "Покоритель предела", content: "Титул подчинённого предела — двадцать пять раз предел был пройден так же легко, как обычный день. Кредиты во время самого Преодоления предела начисляются особенно щедро." },
     title_gate_trader: { title: "Торговец Врат", content: "Титул торгового расчёта — полсотни сделок, достаточно, чтобы перестать теряться в ценах Магазина. Продажа расходников приносит больше обычного." },
-    rank_d: { title: "D-Ранг", content: "Первый этап эволюции. Игрок преодолел базовую слабость E-ранга — организм адаптировался к минимальным нагрузкам. С этого момента дневная нагрузка возрастает." },
-    rank_c: { title: "C-Ранг", content: "Достигнут устойчивый прогресс. Физическая выносливость и скорость восстановления Игрока после нагрузок значительно превышают показатели обычного человека." },
-    rank_b: { title: "B-Ранг", content: "Предел стандартной человеческой формы сломан. Выносливость и показатели силы Игрока выходят за рамки обычных физиологических ограничений. Открывается доступ к более высоким наградам." },
-    rank_a: { title: "A-Ранг", content: "Элита. До этого рубежа доходят немногие. Физические возможности Игрока вышли на пиковый уровень, а контроль над телом стал практически полным." },
-    rank_s: { title: "S-Ранг", content: "Рубеж высших показателей. Игрок входит в категорию сильнейших. На этом уровне физическая форма и дисциплина находятся на пределе человеческих возможностей." },
-    rank_national: { title: "National Level", content: "Статус Национального уровня. Масштаб сил и дисциплины Игрока вышел за пределы персонального развития и сопоставим с потенциалом целого государства." },
-    rank_sss: { title: "SSS-Ранг", content: "Предел человеческих возможностей оставлен позади. Физическая и духовная выносливость Игрока достигли абсолютного пика в рамках существующего мира." },
-    rank_monarch: { title: "Shadow Monarch", content: "Высшая точка развития. Класс полностью эволюционировал. Игрок прошёл предел человеческой природы, достигнув абсолютного контроля над своей силой и волей — статуса Shadow Monarch." }
+    rank_trial: { title: "Испытание ранга", content: "Ранг отражает не уровень, а подтверждённую силу Игрока. Когда регулярные тренировки подготовили тело к следующему рубежу, открывается доступ к Испытанию ранга. Испытание проверяет силу и выносливость, и по его итогу подтверждается ранг, которого Игрок действительно достиг, иногда сразу через несколько ступеней. Условия сообщаются перед каждым испытанием. Подтверждённый ранг приносит награду, провал влечёт штраф." },   // v7.6.1: с первым предложением
+    rank_e: { title: "E-Ранг", content: "Начальный ранг пробуждённого. Игрок доказал, что способен выдержать нагрузку, которую обычный человек избегает. Дисциплина дала первый измеримый результат: организм перешёл от случайных усилий к устойчивой работе. Это точка отсчёта, с которой начинается Путь эволюции." },   // v7.6.0: главы рангов — «подтверждено испытанием»
+    rank_d: { title: "D-Ранг", content: "Первый этап эволюции, подтверждённый испытанием. Игрок преодолел базовую слабость E-ранга: организм адаптировался к регулярным нагрузкам." },
+    rank_c: { title: "C-Ранг", content: "Устойчивый прогресс подтверждён испытанием. Физическая выносливость и скорость восстановления Игрока после нагрузок значительно превышают показатели обычного человека." },
+    rank_b: { title: "B-Ранг", content: "Испытание показало: предел стандартной человеческой формы сломан. Выносливость и показатели силы Игрока выходят за рамки обычных физиологических ограничений." },
+    rank_a: { title: "A-Ранг", content: "Элита. До этого рубежа доходят немногие, и испытание подтвердило, что Игрок среди них. Физические возможности вышли на пиковый уровень, а контроль над телом стал практически полным." },
+    rank_s: { title: "S-Ранг", content: "Рубеж высших показателей, подтверждённый испытанием. Игрок входит в категорию сильнейших: физическая форма и дисциплина находятся на пределе человеческих возможностей." },
+    rank_national: { title: "National Level", content: "Статус Национального уровня подтверждён испытанием. Масштаб сил и дисциплины Игрока вышел за пределы персонального развития и сопоставим с потенциалом целого государства." },
+    rank_sss: { title: "SSS-Ранг", content: "Испытание завершено, и предел человеческих возможностей оставлен позади. Физическая сила, выносливость и воля Игрока достигли абсолютного пика в рамках существующего мира." },
+    rank_monarch: { title: "Shadow Monarch", content: "Высшая точка развития, подтверждённая последним испытанием. Класс Игрока полностью эволюционировал: пройден предел человеческой природы, достигнут абсолютный контроль над своей силой и волей. Статус Shadow Monarch." }
   };
 
-  const RANK_CODEX_MAP = { d:'rank_d', c:'rank_c', b:'rank_b', a:'rank_a', s:'rank_s', national:'rank_national', sss:'rank_sss', monarch:'rank_monarch' };
+  const RANK_CODEX_MAP = { e:'rank_e', d:'rank_d', c:'rank_c', b:'rank_b', a:'rank_a', s:'rank_s', national:'rank_national', sss:'rank_sss', monarch:'rank_monarch' };
   const TITLE_CODEX_MAP = { "Целеустремлённый": "title_celeustremlenny", "Бегущий": "title_vechny_strannik", "Преодолевший предел": "title_preodolevshy_predel", "Пробужденный": "title_probuzhdenny", "Марафонец": "title_marathoner", "Покоритель горизонта": "title_horizon_conqueror", "Неутомимый": "title_tireless", "Несокрушимый": "title_unbreakable", "Сокрушитель": "title_breaker", "Непреклонный": "title_unyielding", "Покоритель предела": "title_limit_conqueror", "Торговец Врат": "title_gate_trader" };
 
   function pickRandomNoRepeat(pool, category) {
@@ -3594,6 +3855,15 @@
     "box_basalt": { rank: "E", type: "Награда", usage: "Расходуется при открытии" },
     "box_onyx": { rank: "E", type: "Награда", usage: "Расходуется при открытии" },
     "box_anomaly": { rank: "E", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_e": { rank: "E", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_d": { rank: "D", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_c": { rank: "C", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_b": { rank: "B", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_a": { rank: "A", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_s": { rank: "S", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_national": { rank: "NL", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_sss": { rank: "SSS", type: "Награда", usage: "Расходуется при открытии" },
+    "box_rank_monarch": { rank: "Monarch", type: "Награда", usage: "Расходуется при открытии" },   // v7.6.1: ранги NL, SSS, Monarch — только у шкатулок ранга
     "box_obsidian": { rank: "D", type: "Награда", usage: "Расходуется при открытии" },
     "box_dark_quartz": { rank: "C", type: "Награда", usage: "Расходуется при открытии" },
     "box_scarlet": { rank: "B", type: "Награда", usage: "Расходуется при открытии" },
@@ -3724,6 +3994,8 @@
       completedExercises = Array.isArray(entry.completedExercises) ? entry.completedExercises : [];
     }
     const lines = [formatDateRu(dateKey), statusLine];
+    { const exm = entry ? entry.exam : (isToday ? data.examToday : null);   // v7.6.1: испытание ранга — без чисел
+      if (exm) lines.push(exm.ok ? `Испытание ранга пройдено. Подтверждён ранг ${RANK_BOX_NAME[exm.rank]}.` : `Испытание ранга: ${EX_FAIL[exm.kind].log}.`); }
     if (typeof donePercent === 'number') lines.push(`Прогресс дня: ${donePercent}%`);
     if (donePercent < 100 && completedExercises.length > 0) lines.push(`Выполнено полностью: ${completedExercises.join(', ')}.`);
     if (expGained > 0) lines.push(`Получено опыта: +${expGained} EXP`);
@@ -3786,6 +4058,7 @@
 
   // v7.4.10: строка под заголовком окна «Новый ранг» — своя у каждого ранга (без «признаёт / фиксирует»)
   const RANK_POPUP_LINES = {
+    e: 'Базовая форма подтверждена. Открыт дальнейший Путь эволюции.',   // v7.6.0: для окна ранга (7.6.1)
     d: 'Первый этап эволюции. Базовая слабость преодолена.',
     c: 'Прогресс стал устойчивым.',
     b: 'Предел стандартной физической формы сломан.',
@@ -3805,6 +4078,136 @@
     if (level >= 20)  return { name: "C-Rank", class: "c" };
     if (level >= 10)  return { name: "D-Rank", class: "d" };
     return { name: "E-Rank", class: "e" };
+  }
+
+  // ===== v7.6.0: РАНГ ОТДЕЛЬНО ОТ УРОВНЯ, ТН И РЕЖИМ =====
+  // Ранг больше не следует за уровнем: его подтверждает Испытание ранга (7.6.1). Пока его нет — «Без ранга»
+  // (цвет как у E). ТН (тренировочная нагрузка) копится скрыто: 1 ТН = норма упражнения (TN_NORM), никогда не уменьшается.
+  // Режим: за последние 14 рабочих дней Летописи выполнено ≥ 10 — следующий цикл ТН идут ×1,25 (tnMul, до сброса).
+  const PLAYER_RANKS = ['e', 'd', 'c', 'b', 'a', 's', 'national', 'sss', 'monarch'];
+  const RANK_NAMES = { e: 'E-Rank', d: 'D-Rank', c: 'C-Rank', b: 'B-Rank', a: 'A-Rank', s: 'S-Rank', national: 'National Level', sss: 'SSS-Rank', monarch: 'Shadow Monarch' };
+  const RANK_NONE_NAME = 'Без ранга';
+  const TN_IDS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
+  const TN_NORM = { pushups: 100, squats: 120, pullups: 40, press: 100, steps: 10000 };
+  const TN_THRESH = { e: 25, d: 80, c: 250, b: 500, a: 800, s: 1200, national: 1600, sss: 2600, monarch: 3900 };
+  const RANK_MIN_LEVEL = { b: 20, a: 30, s: 40, national: 55, sss: 70, monarch: 90 };
+  const RANK_GROUP3 = ['national', 'sss', 'monarch'];   // только из предыдущего ранга, без прыжков
+  const TN_REGIME_MUL = 1.25, TN_REGIME_WINDOW = 14, TN_REGIME_NEED = 10;
+  const EX_HOLD_NEED = { national: 20, sss: 30, monarch: 45 };   // v7.6.1: выдержка в предыдущем ранге, рабочих дней
+  const RANK_SYS_V = 1;
+
+  function playerRank() {
+    return PLAYER_RANKS.includes(data.rank) ? { name: RANK_NAMES[data.rank], class: data.rank } : { name: RANK_NONE_NAME, class: 'e' };
+  }
+  function rankIndex(r) { return PLAYER_RANKS.indexOf(r); }   // -1 — без ранга
+  function tnTotal() {
+    let s = 0;
+    for (const id of TN_IDS) s += (data.tn && data.tn[id]) || 0;
+    return Math.max(0, s + (data.tnAdj || 0));
+  }
+  // Компенсация Выносливости: повторения в пределах цели × «цель без Выносливости / цель с Выносливостью».
+  // Расходники и свитки не компенсируются (руна облегчения — в числителе и знаменателе).
+  function tnStaFactor() {
+    const bonusSta = Math.max(0, data.stats.sta - 10);
+    const sta = data.activeScroll === 'renunciation' ? 0 : Math.min(0.20, bonusSta * 0.0005);
+    if (sta <= 0) return 1;
+    const rune = (data.targetDiscountToday && !isLoadRuneOnHold()) ? (data.targetDiscountRate || 0.25) : 0;
+    const withSta = 1 - Math.min(0.60, sta + rune), without = 1 - Math.min(0.60, rune);
+    return withSta > 0 ? without / withSta : 1;
+  }
+  // Засчитанное нажатие «+» (задание и раунды Предела). Длань сюда не ходит.
+  function tnAdd(id, val, current, target) {
+    if (!TN_NORM[id] || !(val > 0)) return;
+    const inT = Math.max(0, Math.min(val, target - current));
+    const amt = (inT * tnStaFactor() + (val - inT)) / TN_NORM[id] * (data.tnMul || 1);
+    if (!data.tn) data.tn = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
+    data.tn[id] = (data.tn[id] || 0) + amt;
+    data.tnToday = (data.tnToday || 0) + amt;
+  }
+  // Последние 14 рабочих дней Летописи до текущего цикла. Выполнен — success; рабочий — success / penalty / protected;
+  // Пелена и Заморозка в окно не входят.
+  function regimeCount() {
+    if (data.tnRegimeOverride === 'full') return { work: TN_REGIME_WINDOW, done: TN_REGIME_WINDOW };
+    if (data.tnRegimeOverride === 'empty') return { work: TN_REGIME_WINDOW, done: 0 };
+    const curKey = dateKeyFromTimestamp(data.lastReset);
+    const keys = Object.keys(data.history || {}).filter(k => k < curKey).sort().reverse();
+    let work = 0, done = 0;
+    for (const k of keys) {
+      const e = data.history[k], st = e && e.status;
+      if (st === 'success') { work++; done++; }
+      else if (st === 'penalty' || st === 'protected') work++;
+      else continue;
+      if (work >= TN_REGIME_WINDOW) break;
+    }
+    return { work, done };
+  }
+  function regimeMulNow() { return regimeCount().done >= TN_REGIME_NEED ? TN_REGIME_MUL : 1; }
+  // Допуск: ранги выше текущего, для которых ТН ≥ порога, уровень ≥ минимума; группа 3 — только из предыдущего ранга.
+  function rankCheck(r) {
+    const i = rankIndex(r), cur = rankIndex(data.rank);
+    const hold = [];
+    if (tnTotal() < TN_THRESH[r]) hold.push('tn');
+    if (RANK_MIN_LEVEL[r] && data.level < RANK_MIN_LEVEL[r]) hold.push('level');
+    if (RANK_GROUP3.includes(r) && cur !== i - 1) hold.push('prev');
+    else if (RANK_GROUP3.includes(r) && (data.rankHoldDays || 0) < EX_HOLD_NEED[r]) hold.push('hold');   // v7.6.1
+    return hold;
+  }
+  function rankAdmission() {
+    const cur = rankIndex(data.rank);
+    let top = null;
+    for (let i = cur + 1; i < PLAYER_RANKS.length; i++) if (!rankCheck(PLAYER_RANKS[i]).length) top = PLAYER_RANKS[i];
+    const next = PLAYER_RANKS[cur + 1] || null;
+    return { top, next, hold: next ? rankCheck(next) : [] };
+  }
+  // Титул «Пробужденный» — за ранг E. Тихо (Длань, перенос): без уведомлений.
+  function awakenedGrant() {
+    if (!data.titlesUnlocked.includes('Пробужденный')) data.titlesUnlocked.push('Пробужденный');
+    data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== 'Новичок');
+    if (data.activeTitle === 'Новичок' || titleRank('Пробужденный') < titleRank(data.activeTitle)) data.activeTitle = 'Пробужденный';
+    if (!data.codexUnlocked.includes('title_probuzhdenny')) data.codexUnlocked.push('title_probuzhdenny');
+  }
+  function awakenedRevoke() {
+    data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== 'Пробужденный');
+    data.codexUnlocked = data.codexUnlocked.filter(c => c !== 'title_probuzhdenny');
+    if (!data.titlesUnlocked.length) data.titlesUnlocked = ['Новичок'];
+    if (!data.titlesUnlocked.includes(data.activeTitle)) data.activeTitle = getBestAvailableTitle();
+  }
+  // Длань: поставить ранг (r) или снять (null) — без испытания, шкатулок и опыта, без уведомлений.
+  // Главы рангов до выбранного включительно открыты (новые — в конец), выше — убраны; с E — титул «Пробужденный».
+  function rankApply(r) {
+    data.rank = PLAYER_RANKS.includes(r) ? r : null;
+    const idx = rankIndex(data.rank);
+    PLAYER_RANKS.forEach((k, i) => {
+      const ch = RANK_CODEX_MAP[k];
+      if (i <= idx) { if (!data.codexUnlocked.includes(ch)) data.codexUnlocked.push(ch); }
+      else data.codexUnlocked = data.codexUnlocked.filter(c => c !== ch);
+    });
+    if (idx >= 0) awakenedGrant(); else awakenedRevoke();
+  }
+  function rankSysNormalize() {
+    if (!PLAYER_RANKS.includes(data.rank)) data.rank = null;
+    const tn = (data.tn && typeof data.tn === 'object') ? data.tn : {};
+    data.tn = {};
+    for (const id of TN_IDS) data.tn[id] = Number.isFinite(tn[id]) ? Math.max(0, tn[id]) : 0;
+    data.tnToday = Number.isFinite(data.tnToday) ? Math.max(0, data.tnToday) : 0;
+    data.tnAdj = Number.isFinite(data.tnAdj) ? data.tnAdj : 0;
+    if (data.tnMul !== 1 && data.tnMul !== TN_REGIME_MUL) data.tnMul = 1;
+    if (data.tnRegimeOverride !== 'full' && data.tnRegimeOverride !== 'empty') data.tnRegimeOverride = null;
+  }
+  // Разовый перенос на новую систему (и для старых бэкапов): ранг снят, ТН — из статистики за всё время без множителя,
+  // главы рангов и титул «Пробужденный» убраны.
+  function rankSysMigrate() {
+    if (data.rankSysV === RANK_SYS_V) return;
+    data.rank = null;
+    data.tn = {};
+    for (const id of TN_IDS) data.tn[id] = Math.max(0, Number(totalStats[id]) || 0) / TN_NORM[id];
+    data.tnToday = 0; data.tnAdj = 0; data.tnRegimeOverride = null;
+    const rankCh = Object.values(RANK_CODEX_MAP);
+    data.codexUnlocked = data.codexUnlocked.filter(c => !rankCh.includes(c));
+    awakenedRevoke();
+    data.tnMul = regimeMulNow();
+    data.rankSysV = RANK_SYS_V;
+    saveData();
   }
 
   // Linear EXP curve (was exponential ×1.15/level, which made high levels
@@ -3891,6 +4294,7 @@
   // Shared "are today's 5 quests all done" check, used by Limit Break gating,
   // the penalty logic, and the completion notice.
   function allQuestsDone() {
+    if (data.examCredited) return true;   // v7.6.1: день засчитан испытанием (до запуска Предела)
     const targets = { pushups:100, squats:120, pullups:40, press:100, steps:10000 };
     for (let id in targets) {
       if (data.activeScroll === 'transfer' && id === data.transferExerciseId) continue;
@@ -4086,9 +4490,9 @@
   }
 
   // v6.10.2: бусина — за каждый N-й выполненный день «подряд без штрафа» (скрытый счётчик beadStreak).
-  // E–B — каждый, A — 2-й, S и National — 3-й, SSS — 4-й, Shadow Monarch — 5-й (ранг на момент выполнения).
+  // v7.6.0: ранг больше не следует за уровнем — до 50-го уровня каждый выполненный день, с 50-го — каждый 2-й.
   function beadEvery(level) {
-    if (level >= 100) return 5; if (level >= 80) return 4; if (level >= 50) return 3; if (level >= 40) return 2; return 1;
+    return level >= 50 ? 2 : 1;
   }
   function plural(n, f) { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? f[0] : (a >= 2 && a <= 4 && (b < 10 || b >= 20) ? f[1] : f[2]); }
   // Меньше суток — в часах, иначе в днях и часах.
@@ -4254,7 +4658,7 @@
     const box = item.querySelector(':scope > .qcheck');
     if (!box) return;
     if (!box.firstChild) box.innerHTML = CHECK_SVG_QUEST;
-    box.style.display = data.isGoalMet ? 'none' : '';
+    box.style.display = data.isGoalMet && !data.examCredited ? 'none' : '';   // v7.6.1: засчитанный испытанием день — с галочками
     if (done && questCheckDrawId === id) { box.classList.remove('done'); void box.offsetWidth; box.classList.add('drawing'); questCheckDrawId = null; }
     if (!done) box.classList.remove('drawing');
     box.classList.toggle('done', done);
@@ -4391,7 +4795,7 @@
   function fzPlace(z) {
     const W = window.innerWidth || document.documentElement.clientWidth || 0, H = window.innerHeight || document.documentElement.clientHeight || 0;
     const w = z.offsetWidth, h = z.offsetHeight, m = 12 + 22 * 0.5;
-    const col = [...document.querySelectorAll('.system-container .quest-item')].find(el => el.offsetWidth > 0) || document.querySelector('.system-container');
+    const col = [...document.querySelectorAll('.system-container .quest-item, .system-container .ex-card')].find(el => el.offsetWidth > 0) || document.querySelector('.quest-panel');   // v7.6.3: на экране испытания — по карточкам этапов; запасной ориентир — окно приложения, не вся ширина экрана
     let L = 12, R = W - 12;
     if (col) { const r = col.getBoundingClientRect(); if (r.width > 0) { L = Math.max(0, r.left); R = Math.min(W, r.right); } }
     z.style.top = Math.round(m + Math.max(0, H - h - 2 * m) * 0.02) + 'px';
@@ -4404,8 +4808,10 @@
     if (z) {
       z.style.setProperty('--fill', (anim ? 0.8 : 1) + 's');
       fzPaint(z, v);
-      const show = on && data.fzPopup !== false && (v >= 70 || Date.now() < fzPopUntil) && !fzWinOpen();   // v7.4.1: выключена в Архиве — не всплывает
-      if (show && !z.classList.contains('on')) fzPlace(z);
+      const exStage = typeof examStageView === 'function' && examStageView();   // v7.6.3: слой этапа или карманный режим — шкала видна всё время, поверх них
+      const show = on && data.fzPopup !== false && (exStage || v >= 70 || Date.now() < fzPopUntil) && !fzWinOpen();   // v7.4.1: выключена в Архиве — не всплывает
+      z.classList.toggle('fz-ex', exStage);
+      if (show) fzPlace(z);   // v7.6.3: место пересчитывается при каждом показе и обновлении — шкала, которая держится видимой, не остаётся на старом месте
       z.classList.toggle('pulse', on && v >= 90);
       z.classList.toggle('on', show);
     }
@@ -4472,6 +4878,8 @@
   let notificationActive = false;
 
   function enqueueNotification(payload) {
+    if (typeof exFzMute !== 'undefined' && exFzMute) return;   // v7.6.1: уведомлений усталости во время испытания нет
+    if (typeof examHoldN === 'function' && typeof exHeldN !== 'undefined' && exHeldN && examHoldN()) { exHeldN.push(payload); return; }   // v7.6.1: копятся до итога
     // v7.4.4: во время надписей уведомления, которые раньше шли через 4,5 с (fxNotice), встают в конец; остальные — перед ними,
     // как и было раньше (сразу показанное шло раньше отложенного).
     if (fxS().late) { payload.fxLate = true; notificationQueue.push(payload); }
@@ -5386,11 +5794,11 @@
     const WIN_SEL = ':scope > .status-window, :scope > .item-preview-box, :scope > .stat-lore-box';
     const HDR_SEL = ':scope > .status-header, :scope > .item-preview-name, :scope > .stat-lore-header';
     // Значок «!» перед заголовком — только у запросов и уведомлений; правила — когда окно открыто как уведомление (первый вход).
-    const IC_ALWAYS = ['confirmOverlay', 'exerciseChoiceOverlay', 'nameOverlay', 'sysToolsAuthOverlay'];
+    const IC_ALWAYS = ['confirmOverlay', 'exerciseChoiceOverlay', 'nameOverlay', 'sysToolsAuthOverlay', 'exOv1', 'exOv3', 'exOv4', 'exOv5', 'exOv6'];   // v7.6.1: окна испытания
     const wins = [];
     let on = false, mainWin = null, mainTimer = 0;
     const anomaly = () => document.body.classList.contains('sys-anom');
-    const schemeOf = win => win === mainWin ? (anomaly() ? 'red' : 'blue') : (win.closest('#penaltyOverlay') ? 'red' : 'blue');
+    const schemeOf = win => win.classList.contains('exgv') ? 'orange' : win === mainWin ? (anomaly() ? 'red' : 'blue') : (win.closest('#penaltyOverlay, #exPenOverlay') ? 'red' : 'blue');   // v7.6.1: испытание — золото (оранжевая рамка с поворотом оттенка)
     function skin(win) {
       if (win.dataset.sk) return;
       win.dataset.sk = '1';
@@ -5407,7 +5815,7 @@
       content.appendChild(panel); win.appendChild(content);
       win.classList.add('sf-win', 'mwin');
       if (win === mainWin) win.classList.add('mscr');
-      if (win.closest('#penaltyOverlay')) win.classList.add('sn-red');
+      if (win.closest('#penaltyOverlay, #exPenOverlay')) win.classList.add('sn-red');
     }
     function unskin(win) {
       if (!win.dataset.sk) return;
@@ -5506,6 +5914,7 @@
     return { init, apply, syncAnomaly, syncScroll };
   })();
   function setTheme(theme) {
+    setTimeout(() => { try { examEdgePlace(); fzDraw(false); } catch (e) {} }, 60);   // v7.6.3: значок, ускоритель, шкала — по окну новой темы
     const t = theme === 'classic' ? 'classic' : 'system';
     if (data.theme === t) return;
     data.theme = t;
@@ -5589,7 +5998,7 @@
   }
   function switchThemeFx(theme) {
     const to = theme === 'classic' ? 'classic' : 'system';
-    if (themeFx || data.theme === to) return;
+    if (themeFx || data.theme === to || examStageOn()) return;   // v7.6.1: не во время этапа испытания
     const ov = document.getElementById('backupOverlay'), win = ov && ov.querySelector('.status-window');
     if (!win || ov.style.display !== 'flex') { setTheme(to); return; }
     const col = THEME_FX.col[to], dim = themeFxDim(ov);
@@ -5765,6 +6174,10 @@
   }
   function checkMissedDaysInner() {
     let now = Date.now();
+    const resetBefore = data.lastReset;
+    // v7.6.1: незавершённое испытание прошлого цикла — провал до сброса (отметка — на свой день Летописи); окно — раньше стартового уведомления
+    const exFailKind = examResolveExpired();
+    if (exFailKind) { exBootFail = exFailKind; examFail(exFailKind); }
     let nextReset = getNextCleanReset(data.lastReset);
     let penalizedDays = 0;
     let totalLoss = 0;
@@ -5833,6 +6246,7 @@
         }
       }
       if (data.pendingLevelUpToday) historyEntry.level = data.pendingLevelUpToday;
+      examAtReset(historyEntry);   // v7.6.1: отметка испытания, засчитанный день, выдержка, ускоритель
       data.history[dayKey] = historyEntry;
       data.pendingLevelUpToday = 0;
 
@@ -5865,6 +6279,9 @@
       data.opensYesterday = data.opensToday || 0;
       data.opensToday = 0;
       data.dailyTargetLevel = data.level;
+      data.tnToday = 0;   // v7.6.0
+      data.tnMul = regimeMulNow();   // v7.6.0: режим нового цикла — по Летописи до него, до следующего сброса
+      data.tnRegimeOverride = null;   // v7.6.0: подмена окна из Длани действует до сброса
       // Перенос не имеет ожидающего состояния (в отличие от Отречения) — он
       // либо действовал весь закончившийся день, либо не действовал вовсе.
       // Счётчик дней подряд обнуляется, если сегодня его не было; если был —
@@ -5918,7 +6335,8 @@
     }
     saveData(); render();
     if (penalizedDays > 0) {
-      { const st = data.penaltyRun, ml = lastMult, db = totalDebt; setTimeout(() => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny, st, ml, db), 3000); }
+      { const st = data.penaltyRun, ml = lastMult, db = totalDebt, show = () => showPenaltyBanner(totalLoss, lastPct, penalizedDays, lastCompletedCount, runeHalvedAny, st, ml, db);
+        if (exFailKind) exAfterFailClose = show; else setTimeout(show, 3000); }   // v7.6.1: после окна провала испытания
     }
     // v7.5.15: день Заморозки — своё стартовое сообщение раз в день (отметка dailyNotices.frz = начало дня). Флаг morning в Заморозку
     // не трогается: сброс в её дни dailyNotices не обнуляет, а по morning окончание Заморозки выбирает «Заморозка завершилась.» + «Получено
@@ -5934,6 +6352,7 @@
         if (data.curseActiveToday && data.activeScroll !== 'freeze' && data.activeScroll !== 'veil') setTimeout(() => showNotice('Зафиксирован резонанс Аномалии. Требования дневного задания и штраф за невыполнение повышены.', 'danger'), 3000);
       }
     }
+    if (data.lastReset !== resetBefore && exBooted) examWhenIdle(() => examOffer(false));   // v7.6.1: приложение открыто через сброс — новый цикл
     schedulePreciseResetCheck();
   }
 
@@ -6159,10 +6578,7 @@
   }
 
   function updateTitleStatus() {
-    if (data.level >= 10) {
-        unlockTitle("Пробужденный");
-        data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== "Новичок");
-    }
+    // v7.6.0: «Пробужденный» — за ранг E (испытание), не за 10-й уровень: выдаёт awakenedGrant()
     if (data.consecutiveDays >= 7) unlockTitle("Целеустремлённый");
     if (data.consecutiveDays >= 30) unlockTitle("Непреклонный");
     // limitBreaksCount = lifetime COMPLETED Преодоление предела rounds (not
@@ -6543,7 +6959,7 @@
     for (let id in KEY_CATALOG) CATALOG_ORDER[id] = idx++;
   })();
 
-  const RANK_ORDER = { E: 0, D: 1, C: 2, B: 3, A: 4, S: 5 };
+  const RANK_ORDER = { E: 0, D: 1, C: 2, B: 3, A: 4, S: 5, NL: 6, SSS: 7, Monarch: 8 };   // v7.6.1: после S — шкатулки ранга
   function sortByRank(ids) {
     return ids.slice().sort((a, b) => {
       const ra = ITEM_META[a] ? RANK_ORDER[ITEM_META[a].rank] : 99;
@@ -6562,6 +6978,7 @@
     crystal_clarity: '#ffffff',
     crystal_restoration: '#ffee44',
     crystal_impulse: '#44ddff',
+    box_rank_e: '#aaaaaa', box_rank_d: '#88ffcc', box_rank_c: '#40ffaa', box_rank_b: '#00ff88', box_rank_a: '#00ddff', box_rank_s: '#0088ff', box_rank_national: '#ffaa00', box_rank_sss: '#cc00ff', box_rank_monarch: '#aa00ff',   // v7.6.1: свечение цвета ранга
   };
   function glowAttrs(id) {
     if (!GLOW_ITEMS[id]) return ' class="item-icon-img"';
@@ -6734,8 +7151,29 @@
     return text;
   }
 
+  // v7.6.2: свечение шкатулки ранга в окне предмета. У картинки окна есть рамка и подложка — свечение на ней самой светило бы
+  // весь квадрат; поэтому поверх кладётся копия картинки без рамки (та же область содержимого) с пульсирующим свечением,
+  // как у шкатулки в Инвентаре (pulse-glow-special).
+  function previewRankGlow(iconId) {
+    const img = document.getElementById('itemPreviewImg');
+    let g = document.getElementById('itemPreviewGlow');
+    const col = /^box_rank_/.test(iconId) ? GLOW_ITEMS[iconId] : '';
+    if (!col) { if (g) g.style.display = 'none'; return; }
+    if (!g) { g = document.createElement('img'); g.id = 'itemPreviewGlow'; g.alt = ''; g.setAttribute('aria-hidden', 'true'); }
+    if (g.previousElementSibling !== img) img.after(g);
+    g.src = img.src; g.className = 'pulse-glow-special'; g.style.setProperty('--glow', col); g.style.display = 'block';
+    const place = () => {
+      const cs = getComputedStyle(img), px = v => parseFloat(v) || 0;
+      const l = px(cs.borderLeftWidth) + px(cs.paddingLeft), t = px(cs.borderTopWidth) + px(cs.paddingTop);
+      const w = img.offsetWidth - l - px(cs.borderRightWidth) - px(cs.paddingRight), h = img.offsetHeight - t - px(cs.borderBottomWidth) - px(cs.paddingBottom);
+      g.style.left = (img.offsetLeft + l) + 'px'; g.style.top = (img.offsetTop + t) + 'px'; g.style.width = Math.max(0, w) + 'px'; g.style.height = Math.max(0, h) + 'px';
+    };
+    place(); requestAnimationFrame(place); setTimeout(place, 120); img.onload = place;
+  }
   function showItemPreview(iconId, name) {
-    document.getElementById('itemPreviewImg').src = `icons/items/${iconId}.png`;
+    const pimg = document.getElementById('itemPreviewImg');
+    pimg.src = `icons/items/${ICON_ALIAS(iconId)}.png`;
+    previewRankGlow(iconId);   // v7.6.2: шкатулка ранга — светится сама шкатулка (цветом ранга), рамка окна — как у всех
     document.getElementById('itemPreviewName').textContent = name;
     document.getElementById('itemPreviewMeta').textContent = itemPreviewText(iconId);
     document.getElementById('itemPreviewOverlay').style.display = 'flex';
@@ -7213,6 +7651,7 @@
     if (id === 'box_anomaly') { openAnomalyBox(); return; }
     const box = BOX_CATALOG[id];
     if (!box || !(data.boxes[id] > 0)) return;
+    if (box.rankBox) { showConfirm(`Открыть «${box.name}»?`, () => performOpenRankBox(id)); return; }   // v7.6.1
     if (box.requiresKey && !(data.keys[box.requiresKey] > 0)) {
       const keyName = KEY_CATALOG[box.requiresKey] ? KEY_CATALOG[box.requiresKey].name : 'ключ';
       showNotice(`Нужен предмет: ${keyName}.`, 'warn', true);
@@ -7402,7 +7841,7 @@
   // Уведомление, которое раньше шло через 4,5 с: во время сцены — сразу в очередь (ждёт конца надписей), без сцены — как раньше.
   function fxNotice(fn, legacyMs) {
     const d = legacyMs === undefined ? fxConst().LEGACY : legacyMs;
-    if (!d) fn();
+    if (!d || fxDirectN) fn();   // v7.6.3: fxDirectN — уведомления итога испытания встают в очередь сразу (перед уведомлениями уровня)
     else if (fxSceneOn()) { const S = fxS(); S.late = true; try { fn(); } finally { S.late = false; } }
     else setTimeout(fn, d);
   }
@@ -7504,7 +7943,6 @@
   function checkLevelUp() {
     let leveled = false;
     const contoursBefore = openContourCount(data.level);
-    const rankBefore = getRank(data.level).name;
     const gainedBoxes = [];
     const gainedArtefacts = [];
     const gainedShopItems = [];
@@ -7533,21 +7971,13 @@
           gainedArtefacts.push(k);
         }
       }
-      const rankNow = getRank(data.level).class;
-      if (RANK_CODEX_MAP[rankNow] && !data.codexUnlocked.includes(RANK_CODEX_MAP[rankNow])) {
-        unlockCodexChapter(RANK_CODEX_MAP[rankNow]);
-      }
     }
+    // v7.6.0: ранг от уровня не меняется — ни главы ранга, ни окна «Новый ранг» при повышении уровня
     if (leveled) {
       data.pendingLevelUpToday = data.level;
       fxLevelUp();   // v7.4.4: LEVEL UP — после COMPLETE (одна надпись на несколько уровней), звук — вместе с надписью
       const levelReached = data.level;
       fxNotice(() => showNotice(`Достигнут ${levelReached}-й уровень.`, 'info'));
-      const rankAfter = getRank(data.level).name;
-      if (rankAfter !== rankBefore) {
-        const rankLine = RANK_POPUP_LINES[getRank(data.level).class] || '';   // v7.4.10
-        fxNotice(() => showSystemPopup(`Новый ранг: ${rankAfter}`, rankLine));
-      }
       if (data.level >= 3 && !data.notifiedLimitBreakUnlock) {
         data.notifiedLimitBreakUnlock = true;
         const unlockText = SYSTEM_NOTICES.limitBreakUnlock[Math.floor(Math.random() * SYSTEM_NOTICES.limitBreakUnlock.length)];
@@ -7736,14 +8166,14 @@
       if (isTransferred) return;
       const target = getDynamicTarget(parseInt(item.dataset.target), data.dailyTargetLevel, id);
       const current = data.completed[id] || 0;
-      updateQuestCheck(item, id, current >= target);   // v6.9.0
+      updateQuestCheck(item, id, current >= target || !!data.examCredited);   // v6.9.0; v7.6.1
       item.closest('.quest-list').classList.toggle('burden-active', !!data.curseActiveToday);
       item.querySelector('.counter').textContent = current;
       item.querySelector('.target').textContent = `/ ${target}`;
       const barFill = item.querySelector('.qbar-fill');
       if (barFill) barFill.style.width = (target > 0 ? Math.min(100, current / target * 100) : 0) + '%';
       item.querySelector('.reward').textContent = `+${getDynamicExp(parseInt(item.dataset.exp), data.level, id)} EXP`;
-      item.querySelectorAll('.add').forEach(b => b.disabled = (current >= target));
+      item.querySelectorAll('.add').forEach(b => b.disabled = (current >= target || !!data.examCredited));
     });
     document.getElementById('totalPushups').textContent = totalStats.pushups;
     document.getElementById('totalSquats').textContent = totalStats.squats;
@@ -7766,7 +8196,7 @@
       const val = parseInt(e.target.dataset.value);
       const target = getDynamicTarget(parseInt(item.dataset.target), data.dailyTargetLevel, id);
       let current = data.completed[id] || 0;
-      if (current >= target) return;
+      if (current >= target || data.examCredited) return;
       if (!paceAllows(id, val)) {             // v6.8.0: контроль темпа — нажатие не засчитано целиком
         playSound('denied'); showPaceNotice(); saveData(); renderPaceButtons();
         return;
@@ -7775,6 +8205,7 @@
       fxHold();   // v7.4.4: уведомления этого нажатия ждут его надписей
       fzAdd(id, val);   // v7.4.0: шкала усталости — только засчитанные внесения
       if (data.curseActiveToday) setTimeout(() => questGlitch(item, 360), 0);   // v6.9.0: сбой при засчитанном нажатии — после перерисовки (она переписывает число)
+      tnAdd(id, val, current, target);   // v7.6.0: ТН — до изменения счётчика (компенсация Выносливости в пределах цели)
       data.completed[id] = current + val;
       totalStats[id] += val;
       const progDayKey = dateKeyFromTimestamp(data.lastReset);
@@ -7934,7 +8365,7 @@
     const top = document.getElementById(prefix + 'Top');
     if (!top) return;
     const v = xpView();
-    const rank = getRank(v.level);
+    const rank = playerRank();   // v7.6.0: ранг отдельно от уровня
     top.className = 'sc-top rk-' + rank.class;
     const lv = document.getElementById(prefix + 'Level');
     lv.textContent = v.level;
@@ -8084,6 +8515,7 @@
   }
 
   function calRenderCalendar() {
+    { const a = document.getElementById('legExOk'), b = document.getElementById('legExFail'); if (a && !a.firstChild) { a.innerHTML = calExHex('#ffd34d'); b.innerHTML = calExHex(null); } }   // v7.6.1
     document.getElementById('calTooltip').style.display = 'none';
     const now = new Date();
     const isCurrentMonth = (calViewYear === now.getFullYear() && calViewMonth === now.getMonth());
@@ -8137,6 +8569,15 @@
         });
       }
 
+      const exMark = entry ? entry.exam : (dateKey === todayKey ? data.examToday : null);   // v7.6.1: испытание ранга — отметка дня
+      if (exMark) {
+        if (exMark.ok) cell.classList.add('exam-ok');
+        const ex = document.createElement('span');
+        ex.className = 'cal-ex' + (exMark.ok ? ' ok' : '');
+        if (exMark.ok) ex.style.setProperty('--rkc', RANK_COLORS[exMark.rank] || '#ffd34d');
+        ex.innerHTML = calExHex(exMark.ok ? (RANK_COLORS[exMark.rank] || '#ffd34d') : null);
+        cell.appendChild(ex);
+      }
       if (entry && entry.level) {
         const star = document.createElement('span');
         star.className = 'cal-star';
@@ -8158,6 +8599,10 @@
     document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount} · заморожено ${frozenCount}${veilCount ? ` · пелена покоя ${veilCount}` : ''}`;
   }
 
+  // v7.6.1: мини-шестигранник испытания: успех — залит цветом ранга, провал — тусклый контур
+  function calExHex(col) {
+    return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,1.5 L21.5,7 L21.5,17 L12,22.5 L2.5,17 L2.5,7 Z" fill="${col || 'none'}" stroke="${col || 'rgba(170,190,215,.45)'}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  }
   function calShowTooltip(cell, text) {
     const tooltip = document.getElementById('calTooltip');
     document.getElementById('calTooltipText').textContent = text;
@@ -8334,6 +8779,7 @@
         const el = sanitizeNumber(entry.expLost, 0, 0);
         if (el > 0) clean.expLost = Math.floor(el);
         if (entry.status === 'success' && (entry.fixedBy === 'redemption' || entry.fixedBy === 'correction')) clean.fixedBy = entry.fixedBy;
+        { const em = sanitizeExamMark(entry.exam); if (em) clean.exam = em; if (entry.examCredited === true && entry.status === 'success') clean.examCredited = true; }   // v7.6.1: отметка испытания ранга
         if (Array.isArray(entry.completedExercises)) {
           const validNames = Object.values(QUEST_DISPLAY_NAMES);
           const cleanExercises = entry.completedExercises.filter(n => typeof n === 'string' && validNames.includes(n)).slice(0, 5);
@@ -8476,7 +8922,28 @@
       dailyTargetLevel: Math.max(1, Math.floor(sanitizeNumber(s.dailyTargetLevel, sanitizeNumber(s.level, 1)))),
       expDebt: Math.max(0, Math.floor(sanitizeNumber(s.expDebt, 0))),
       penaltyStreak: Math.min(PENALTY_SEV_MAX, Math.max(0, Math.floor(sanitizeNumber(s.penaltyStreak, 0)))),   // v7.5.0; v7.5.10 — тяжесть, не выше ×5
-      penaltyRun: Math.max(0, Math.floor(sanitizeNumber(s.penaltyRun, Math.max(0, Math.floor(sanitizeNumber(s.penaltyStreak, 0))))))   // v7.5.10
+      penaltyRun: Math.max(0, Math.floor(sanitizeNumber(s.penaltyRun, Math.max(0, Math.floor(sanitizeNumber(s.penaltyStreak, 0)))))),   // v7.5.10
+      // v7.6.0: ранг и ТН. Без rankSysV (старый бэкап) — разовый перенос при загрузке.
+      rank: PLAYER_RANKS.includes(s.rank) ? s.rank : null,
+      tn: (() => { const o = (s.tn && typeof s.tn === 'object') ? s.tn : {}, r = {}; TN_IDS.forEach(id => { r[id] = Math.max(0, sanitizeNumber(o[id], 0)); }); return r; })(),
+      tnToday: Math.max(0, sanitizeNumber(s.tnToday, 0)),
+      tnAdj: sanitizeNumber(s.tnAdj, 0, -Infinity),
+      tnMul: s.tnMul === TN_REGIME_MUL ? TN_REGIME_MUL : 1,
+      tnRegimeOverride: (s.tnRegimeOverride === 'full' || s.tnRegimeOverride === 'empty') ? s.tnRegimeOverride : null,
+      rankSysV: s.rankSysV === RANK_SYS_V ? RANK_SYS_V : 0,
+      // v7.6.1: испытание ранга. Идущее испытание и галочка ускорителя в бэкап не переносятся.
+      rankHoldDays: Math.max(0, Math.floor(sanitizeNumber(s.rankHoldDays, 0))),
+      examDelayUntil: Number.isFinite(s.examDelayUntil) ? s.examDelayUntil : null,
+      examNarrow: !!s.examNarrow,
+      examLastOffer: Number.isFinite(s.examLastOffer) ? s.examLastOffer : null,
+      examToday: sanitizeExamMark(s.examToday),
+      examCredited: !!s.examCredited,
+      examLast: (s.examLast && typeof s.examLast === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(s.examLast.day) && ['ok', 'late', 'refuse', 'time', 'low'].includes(s.examLast.kind))
+        ? { day: s.examLast.day, kind: s.examLast.kind, adm: PLAYER_RANKS.includes(s.examLast.adm) ? s.examLast.adm : null, rank: PLAYER_RANKS.includes(s.examLast.rank) ? s.examLast.rank : null,
+            vals: Array.isArray(s.examLast.vals) && s.examLast.vals.length === 5 ? s.examLast.vals.map(v => Math.max(0, Math.floor(sanitizeNumber(v, 0)))) : null,
+            per: Array.isArray(s.examLast.per) && s.examLast.per.length === 5 ? s.examLast.per.map(v => Math.max(0, Math.min(9, Math.floor(sanitizeNumber(v, 0))))) : null,
+            avg: sanitizeNumber(s.examLast.avg, null), weak: sanitizeNumber(s.examLast.weak, null), admN: sanitizeNumber(s.examLast.admN, null), res: sanitizeNumber(s.examLast.res, null) } : null,
+      exam: null, examPost: null
     };
 
     const cleanTotal = {
@@ -8612,7 +9079,7 @@
           </div>` : ''}
           <div class="backup-summary theme-row">
             <span>Оформление</span>
-            <div class="theme-seg"><button class="${isSysTheme() ? 'on' : ''}" onclick="switchThemeFx('system')">Система</button><button class="${isSysTheme() ? '' : 'on'}" onclick="switchThemeFx('classic')">Классика</button></div>
+            <div class="theme-seg"><button class="${isSysTheme() ? 'on' : ''}" onclick="switchThemeFx('system')" ${examStageOn() ? 'disabled' : ''}>Система</button><button class="${isSysTheme() ? '' : 'on'}" onclick="switchThemeFx('classic')" ${examStageOn() ? 'disabled' : ''}>Классика</button></div>
           </div>
         </div>
         <div class="backup-section">
@@ -8624,12 +9091,12 @@
         <div class="backup-section">
           <div class="backup-section-title">Импорт</div>
           <input type="file" id="backupFileInput" accept=".slbackup,.json,application/json,application/octet-stream,text/plain" onchange="handleBackupFileSelected(event)">
-          <button class="backup-action-btn" onclick="document.getElementById('backupFileInput').click()">Выбрать файл</button>
-          <span class="restore-link" onclick="startImportCodeFlow()">Через код</span>
+          <button class="backup-action-btn" onclick="document.getElementById('backupFileInput').click()" ${examOn() ? 'disabled' : ''}>Выбрать файл</button>
+          <span class="restore-link${examOn() ? ' ex-dis' : ''}" onclick="startImportCodeFlow()">Через код</span>
         </div>
         <div class="backup-section danger-zone">
           <div class="backup-section-title danger">Опасная зона</div>
-          <button class="reset-all" onclick="startResetFlow()">Сбросить всё</button>
+          <button class="reset-all" onclick="startResetFlow()" ${examOn() ? 'disabled' : ''}>Сбросить всё</button>
         </div>`;
     } else if (backupModalStep === 'notifications') {
       const entries = data.notificationLog;
@@ -8722,7 +9189,7 @@
     }
   }
 
-  function startResetFlow() { backupModalStep = 'warn1'; renderBackupModal(); }
+  function startResetFlow() { if (examOn()) return; backupModalStep = 'warn1'; renderBackupModal(); }   // v7.6.1: во время испытания — нельзя
   // v7.5.13–7.5.14: возврат со страницы Архива на главную — переход «Через линию» (renderBackupModal), прокрутка главной — прежняя
   function backToArchiveMain() { backupModalStep = 'main'; renderBackupModal(); }
   function cancelResetFlow() { backToArchiveMain(); }
@@ -8758,7 +9225,7 @@
   function handleBackupFileSelected(event) {
     const file = event.target.files && event.target.files[0];
     event.target.value = '';
-    if (!file) return;
+    if (!file || examOn()) return;
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -8823,6 +9290,7 @@
   }
 
   function startImportCodeFlow() {
+    if (examOn()) return;   // v7.6.1
     backupModalStep = 'importCodeInput';
     renderBackupModal();
   }
@@ -8847,6 +9315,7 @@
     if (data.limitBreaksToday >= getDailyLimitBreakCap()) return;
     showConfirm('Активировать «Преодоление предела»? Награды в кредитах будут удвоены.', () => {
         data.limitBreaksToday++;
+        data.examCredited = false;   // v7.6.1: дальше — обычный раунд Предела
         data.isGoalMet = true; data.completed = {}; data.paceWindow = emptyPaceWindow(); 
         data.limitBreakRoundPending = true;
         // v6.6.8: без перезагрузки страницы — перерисовка на месте. Раньше здесь была
@@ -8969,10 +9438,12 @@
     // v6.10.5: цвета как в шапке — опыт мятный (долг красный), уровень в цвет ранга, кредиты золотые; цвет — только у значения
     const debt = data.expDebt > 0;
     e.innerHTML = `<span class="sv exp${debt ? ' debt' : ''}">${debt ? `Долг −${Math.floor(data.expDebt)} EXP` : `${Math.floor(data.exp)} / ${getExpToNext(data.level)} EXP`}</span>`;
-    document.getElementById('sysLevelNow').innerHTML = `<span class="sl">Уровень</span> <span class="sv lvl rk-${getRank(data.level).class}">${data.level}</span>`;
+    document.getElementById('sysLevelNow').innerHTML = `<span class="sl">Уровень</span> <span class="sv lvl rk-${playerRank().class}">${data.level}</span>`;
     document.getElementById('sysCreditsNow').innerHTML = `<span class="sv cr">${creditsHtml(Math.floor(data.credits) + ' ◈')}</span>`;
     updateSysStats();   // v7.0.3
     updateSysPenalty();   // v7.5.7
+    updateSysRank();   // v7.6.0
+    updateSysExam();   // v7.6.1
     // v7.5.9: по какому уровню считаются цели задания (меняются только со сменой цикла)
     const tg = document.getElementById('sysTargetNow');
     if (tg) { const tl = data.dailyTargetLevel || data.level; tg.innerHTML = `Цели задания: уровень <span class="stn">${tl}</span>` + (tl !== data.level ? ' <span class="stn-note">— обновятся при сбросе дня</span>' : ''); }
@@ -9098,6 +9569,57 @@
     data.penaltyStreak = 0; data.penaltyRun = 0;
     saveData(); render();
   }
+  // v7.6.0: Длань — «Испытание ранга». Ранг ставится без испытания, шкатулок и опыта; ТН — поправкой (tnAdj);
+  // режим — подменой окна Летописи до сброса дня (сразу меняет и множитель этого цикла).
+  const fmtTn = v => (Math.round(v * 10) / 10).toFixed(1).replace('.', ',');
+  const TN_EX_NAMES = { pushups: 'Отжимания', squats: 'Приседания', pullups: 'Подтягивания', press: 'Пресс', steps: 'Бег' };
+  function updateSysRank() {
+    const box = document.getElementById('sysRankInfo');
+    if (!box) return;
+    const r = playerRank(), idx = rankIndex(data.rank);
+    const v = document.getElementById('sysRankV');
+    v.textContent = r.name;
+    v.className = 'ssv sys-rank-v rk-' + r.class + (idx < 0 ? ' none' : '');
+    document.getElementById('sysRankM').disabled = idx < 0;
+    document.getElementById('sysRankP').disabled = idx >= PLAYER_RANKS.length - 1;
+    document.getElementById('sysRankClear').disabled = idx < 0;
+    const N = x => `<span class="spn">${x}</span>`;
+    const total = tnTotal();
+    const lines = [`ТН всего: ${N(fmtTn(total))}`];
+    TN_IDS.forEach(id => lines.push(`${TN_EX_NAMES[id]}: ${N(fmtTn(data.tn[id] || 0))}`));
+    if (data.tnAdj) lines.push(`Поправка Длани: ${N((data.tnAdj > 0 ? '+' : '−') + fmtTn(Math.abs(data.tnAdj)))}`);
+    lines.push(`ТН сегодня: ${N(fmtTn(data.tnToday || 0))}`);
+    const rg = regimeCount();
+    const extra = [`Рабочих дней выполнено: ${N(rg.done + ' из ' + TN_REGIME_WINDOW)} · множитель цикла ${N('×' + String(data.tnMul || 1).replace('.', ','))}`];
+    const ad = rankAdmission();
+    if (ad.next) {
+      extra.push(`До ${RANK_NAMES[ad.next].replace('-Rank', '')}: ${N(TN_THRESH[ad.next])} ТН, набрано ${N(fmtTn(total))}`);
+      extra.push(`Допуск: ${ad.top ? 'до ' + N(RANK_NAMES[ad.top]) : 'нет'}`);
+      if (ad.hold.length) {
+        const why = ad.hold.map(h => h === 'tn' ? 'ТН' : h === 'level' ? `уровень (нужен ${RANK_MIN_LEVEL[ad.next]}-й)` : h === 'hold' ? `выдержка (${data.rankHoldDays || 0} из ${EX_HOLD_NEED[ad.next]} рабочих дней)` : `предыдущий ранг (нужен ${RANK_NAMES[PLAYER_RANKS[rankIndex(ad.next) - 1]]})`);
+        extra.push(`${RANK_NAMES[ad.next]} держит: ${why.join(', ')}`);
+      }
+    } else extra.push('Высший ранг подтверждён.');
+    box.innerHTML = `<div>${lines.join('<br>')}</div><div class="spi-gap">${extra.join('<br>')}</div>`;
+  }
+  function sysSetRank(r) {
+    rankApply(r);
+    saveData(); render(); updateSysCurrent();
+  }
+  function sysRankStep(d) {
+    const i = rankIndex(data.rank) + d;
+    sysSetRank(i < 0 ? null : PLAYER_RANKS[Math.min(i, PLAYER_RANKS.length - 1)]);
+  }
+  function sysTnChange(d) {
+    const total = tnTotal();
+    data.tnAdj = (data.tnAdj || 0) + (total + d < 0 ? -total : d);
+    saveData(); updateSysCurrent();
+  }
+  function sysRegimeSet(mode) {
+    data.tnRegimeOverride = mode;
+    data.tnMul = regimeMulNow();
+    saveData(); updateSysCurrent();
+  }
   function updateSysPenalty() {
     const box = document.getElementById('sysPenInfo');
     if (!box) return;
@@ -9190,13 +9712,11 @@
   }
 
   function leaderboardCard(entry, isYou) {
-    const rank = getRank(entry.level);
     const borderStyle = isYou ? 'border: 1px solid #40c0ff;' : '';
     return `
       <div class="item-card" style="${borderStyle}">
         <div class="item-info">
           <div class="item-name">#${entry.rank}&nbsp;&nbsp;${escapeHtml(entry.name)}&nbsp;&nbsp;<span style="float:right;">${entry.level} ур.</span></div>
-          <div class="item-desc rank ${rank.class}">${rank.name}</div>
           <div class="item-desc">Лучшая серия дней: ${entry.bestStreak || 0}</div>
         </div>
       </div>`;
@@ -9292,8 +9812,767 @@
     return true;
   }
 
+  // ===== v7.6.1: ИСПЫТАНИЕ РАНГА (документ «Испытание ранга», демо 116–118) =====
+  // Состояние — data.exam (null | { st: 'offered' | 'accepted' | 'running', adm, cyc, dl, vt, vAt, sp, S, act }).
+  // Время испытания — свои часы: vt (секунды испытания) на момент vAt (мс) + прошедшее × sp (ускоритель Длани: 1 / 5 / 20).
+  // Итог: data.examPost — последовательность после итога (окно ранга / вопрос), чтобы пережить перезапуск.
+  const EX_IDS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
+  const EX_ST = { pushups: { nm: 'Отжимания', cap: 60 }, squats: { nm: 'Приседания', cap: 60 }, pullups: { nm: 'Подтягивания', cap: 45 },
+    press: { nm: 'Пресс', cap: 60 }, steps: { nm: 'Бег', cap: 4400, run: true } };
+  const EX_NORMS = { e: [30, 50, 12, 40, 2280], d: [45, 62, 16, 52, 2470], c: [60, 74, 18, 64, 2660], b: [75, 85, 22, 75, 2800], a: [88, 95, 28, 85, 2930],
+    s: [100, 103, 34, 94, 3020], national: [110, 110, 41, 102, 3100], sss: [120, 115, 48, 109, 3170], monarch: [128, 119, 55, 115, 3230] };
+  const EX_TOTAL = 3 * 3600, EX_DL_BEFORE = 5 * 3600000, EX_OFFER_GAP = 3, EX_DAY = 24 * 3600000;
+  const EX_FAIL = {
+    late: { pct: 1, days: 7, nm: 'Срок упущен', why: 'Испытание не начато в отведённый срок. Допуск аннулирован.', log: 'срок упущен' },
+    refuse: { pct: 0.7, days: 5, nm: 'Отказ', why: 'Испытание прекращено по решению Игрока. Порог ранга не подтверждён.', log: 'отказ' },
+    time: { pct: 0.7, days: 5, nm: 'Не выполнено', why: 'Испытание не завершено за отведённое время. Оценка не проводилась.', log: 'не выполнено' },
+    low: { pct: 0.25, days: 3, nm: 'Не пройдено', why: 'Результат ниже порога ближайшего ранга. Форма не подтверждена.', log: 'не пройдено' } };
+  const EX_XP_PCT = r => ['e', 'd', 'c'].includes(r) ? 0.3 : (['b', 'a', 's'].includes(r) ? 0.4 : 0.5);
+  const RANK_COLORS = { e: '#aaaaaa', d: '#88ffcc', c: '#40ffaa', b: '#00ff88', a: '#00ddff', s: '#0088ff', national: '#ffaa00', sss: '#cc00ff', monarch: '#aa00ff' };
+  const RANK_BOX_NAME = { e: 'E', d: 'D', c: 'C', b: 'B', a: 'A', s: 'S', national: 'National Level', sss: 'SSS', monarch: 'Shadow Monarch' };
+  const RANK_CH_NAME = { e: 'E-Ранг', d: 'D-Ранг', c: 'C-Ранг', b: 'B-Ранг', a: 'A-Ранг', s: 'S-Ранг', national: 'National Level', sss: 'SSS-Ранг', monarch: 'Shadow Monarch' };
+  const EX_HEX_SMALL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,1.5 L21.5,7 L21.5,17 L12,22.5 L2.5,17 L2.5,7 Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><rect x="11" y="6.5" width="2" height="8" rx="1" fill="currentColor"/><circle cx="12" cy="17.4" r="1.3" fill="currentColor"/></svg>';
+  const EX_ICON_SVG = rem => `<svg viewBox="0 0 100 100" aria-hidden="true">
+    <path d="M50,0 L96,26 L96,74 L50,100 L4,74 L4,26 Z" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    <path class="rg" d="M50,0 L96,26 L96,74 L50,100 L4,74 L4,26 Z" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="${(1 - rem).toFixed(4)}" stroke-linejoin="round"/>
+    <path d="M50,14 L84,33.5 L84,66.5 L50,86 L16,66.5 L16,33.5 Z" fill="rgba(10,6,0,.55)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+    <rect x="46" y="30" width="8" height="26" rx="4" fill="currentColor"/><circle cx="50" cy="66" r="5" fill="currentColor"/></svg>`;
+  const EX_PH = { prep: ['Подготовка', '#7fd8ff'], work: ['Работа', 'AC'], rest: ['Отдых. Внесите повторения', '#40ffaa'], fin: ['Внесите повторения', '#40ffaa'],
+    run: ['Бег', 'AC'], rin: ['Внесите количество шагов', '#40ffaa'], late: ['Внесите количество шагов', '#40ffaa'] };
+
+  // ---------- состояние и время ----------
+  function examOn() { return !!(data.exam && data.exam.st === 'running'); }
+  function examStageView() { const L = document.getElementById('exLayer'); return examOn() && (exPocketOn || !!(L && L.classList.contains('on'))); }   // v7.6.3
+  function examStageOn() { return examOn() && !!data.exam.act; }
+  function examNow() { const e = data.exam; if (!e || e.st !== 'running') return 0; return e.vt + Math.max(0, Date.now() - e.vAt) / 1000 * (e.sp || 1); }
+  function examSetSpeed(sp) { const e = data.exam; if (!e || e.st !== 'running') return; e.vt = examNow(); e.vAt = Date.now(); e.sp = sp; saveData(); }
+  function exStrengthAt(t) {
+    if (t < 10) return { ph: 'prep', r: 1, el: t, len: 10 };
+    let x = t - 10;
+    for (let r = 1; r <= 4; r++) { if (x < 40) return { ph: 'work', r, el: x, len: 40 }; x -= 40; if (x < 30) return { ph: r < 4 ? 'rest' : 'fin', r, el: x, len: 30 }; x -= 30; }
+    return { ph: 'end', r: 4, el: 0, len: 1 };
+  }
+  function exRunAt(t) {   // подготовка 10 с, бег 20 мин, ввод 5 мин по условиям и ещё 15 мин тихо
+    if (t < 10) return { ph: 'prep', el: t, len: 10 };
+    if (t < 1210) return { ph: 'run', el: t - 10, len: 1200 };
+    if (t < 1510) return { ph: 'rin', el: t - 1210, len: 300 };
+    if (t < 2410) return { ph: 'late', el: 300, len: 300 };
+    return { ph: 'end', el: 0, len: 1 };
+  }
+  function exStageT(id) { const s = data.exam.S[id]; return Math.max(0, examNow() - s.t0); }
+  function exPhase(id) { return EX_ST[id].run ? exRunAt(exStageT(id)) : exStrengthAt(exStageT(id)); }
+  function examDeadlineTs() { return getNextCleanReset(data.lastReset) - EX_DL_BEFORE; }
+  function exHm(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  function exCyclesSince(ts) { return Math.round((data.lastReset - ts) / EX_DAY); }
+
+  // ---------- допуск и условия ----------
+  function examAdmission() {
+    const cur = rankIndex(data.rank); let top = null;
+    for (let i = cur + 1; i < PLAYER_RANKS.length; i++) if (!rankCheck(PLAYER_RANKS[i]).length) top = PLAYER_RANKS[i];
+    if (top && data.examNarrow) top = PLAYER_RANKS[Math.min(rankIndex(top), cur + 1)];
+    return top;
+  }
+  function examConds() {
+    const top = examAdmission(), toNext = getExpToNext(data.level), barPct = data.expDebt > 0 ? 0 : Math.floor(data.exp / toNext * 100);
+    const now = Date.now();
+    return [
+      { k: 'adm', ok: !!top, t: top ? `Допуск: до ${RANK_NAMES[top]}` : 'Допуска нет' },
+      { k: 'bar', ok: data.expDebt <= 0 && data.exp >= toNext * 0.7, t: `Шкала опыта не меньше 70% (сейчас ${barPct}%)` },
+      { k: 'day', ok: !data.curseActiveToday && !data.pendingCurse && !data.activeScroll && !data.pendingScroll, t: 'День без Бремени, свитков, Пелены и Заморозки' },
+      { k: 'time', ok: examDeadlineTs() > now, t: `До сброса больше 5 часов (срок старта ${exHm(examDeadlineTs())})` },
+      { k: 'delay', ok: !(data.examDelayUntil && data.lastReset < data.examDelayUntil), t: 'Нет задержки после провала' },
+      { k: 'gap', ok: !data.examLastOffer || exCyclesSince(data.examLastOffer) >= EX_OFFER_GAP, t: 'С прошлого предложения не меньше 3 циклов' + (data.examLastOffer ? ` (прошло ${Math.max(0, exCyclesSince(data.examLastOffer))})` : '') },
+      { k: 'none', ok: !data.exam && !data.examPost, t: 'Испытание не идёт' }
+    ];
+  }
+  function examCanOffer() { return examConds().every(c => c.ok); }
+  function examOffer(force) {
+    if (data.exam || data.examPost) return false;
+    if (!force && (!data.rulesAcknowledged || !examCanOffer())) return false;
+    const top = examAdmission() || PLAYER_RANKS[Math.min(PLAYER_RANKS.length - 1, rankIndex(data.rank) + 1)];
+    if (!top || rankIndex(data.rank) >= PLAYER_RANKS.length - 1) return false;
+    data.exam = { st: 'offered', adm: top, cyc: data.lastReset, dl: force ? Math.max(examDeadlineTs(), Date.now() + 3600000) : examDeadlineTs() };   // Длань: срок не меньше часа
+    data.examLastOffer = data.lastReset;
+    saveData();
+    examShowWin(1);
+    return true;
+  }
+  // предложение — при первом открытии в цикле, после окна штрафа и стартового уведомления (через 3 с), когда ничего не открыто
+  function examIdle() {
+    if (!data.rulesAcknowledged) return false;
+    if ([...document.querySelectorAll('.status-overlay')].some(o => o.style.display === 'flex' || o.style.display === 'block')) return false;
+    if (typeof fxBusy === 'function' && fxBusy()) return false;   // v7.6.3: пока на экране LEVEL UP
+    return !notificationQueue.length && !notificationActive && !document.querySelector('.sys-notice, .system-popup') && !pendingStartupNoticeAfterPenalty;
+  }
+  function examWhenIdle(fn, pause) {
+    let quiet = 0;
+    const iv = setInterval(() => { if (!examIdle()) { quiet = 0; return; } quiet += 500; if (quiet >= (pause || 3000)) { clearInterval(iv); fn(); } }, 500);
+  }
+
+  // ---------- окна ----------
+  function exOv(n) { return document.getElementById('exOv' + n); }
+  function exBtn(t, f, cls) { return `<button class="confirm-btn-continue ${cls || ''}" onclick="${f}">${t}</button>`; }
+  function examFill(n) {
+    const e = data.exam, adm = e ? RANK_NAMES[e.adm].replace('-Rank', '').replace(' Level', ' Level') : '', dl = e ? exHm(e.dl) : '';
+    const admTxt = e ? `ранг ${RANK_BOX_NAME[e.adm]}` : '';
+    if (n === 1) document.getElementById('exC1').innerHTML = `<div class="danger-warning-step">
+      <div class="ex-line">Открыт доступ к Испытанию ранга.</div><div class="ex-line">Допуск: ${admTxt}.</div><div class="ex-line">Принять предложение можно до ${dl}.</div>
+      <div class="danger-btn-row">${exBtn('Условия', 'examGo(2)')}${exBtn('Отказаться', 'examDecline()', 'danger-btn-cancel')}</div></div>`;
+    if (n === 2) {
+      const P = ['Испытание включает пять этапов: отжимания, приседания, подтягивания, пресс и бег. Порядок этапов определяет Игрок.',
+        'Этап силового упражнения включает 4 раунда: 40 секунд работы и 30 секунд отдыха. Перед первым раундом даётся 10 секунд на подготовку. Количество выполненных повторений вносится после каждого раунда. Не внесённый раунд засчитывается как 0.',
+        'Бег длится 20 минут, перед стартом даётся 10 секунд на подготовку. На внесение показаний шагомера отводится 5 минут.',
+        'На всё испытание отводится 3 часа с момента начала.',
+        'Отсчёт этапа не останавливается при выходе из приложения. Каждый этап можно один раз начать заново, результат первой попытки при этом аннулируется.',
+        'Бонусы характеристик, артефакты и эффекты расходных предметов во время испытания не действуют.',
+        'Итог объявляется после завершения последнего этапа.',
+        'Отказ после принятия условий или после начала испытания, а также испытание, не завершённое за 3 часа, расцениваются как провал. Провал влечёт <span class="ex-pen">штраф</span>.'];
+      document.getElementById('exC2').innerHTML = `<div class="ex-line">Испытание ранга. Допуск: ${admTxt}.</div>
+        <div class="ex-p ex-c">Система проверит, соответствует ли сила Игрока его развитию.</div><div class="ex-h">УСЛОВИЯ:</div>
+        ${P.map(p => `<div class="ex-p">${p}</div>`).join('')}<div class="ex-p">Начать испытание можно до ${dl}. Не начатое к этому времени испытание расценивается как провал.</div>`;
+      document.getElementById('exF2').innerHTML = `<div class="danger-btn-row">${exBtn('Принять', 'examAccept()')}${exBtn('Отказаться', 'examDecline()', 'danger-btn-cancel')}</div>`;
+    }
+    if (n === 3) document.getElementById('exC3').innerHTML = `<div class="danger-warning-step">
+      <div class="ex-line">Условия приняты. Допуск: ${admTxt}.</div><div class="ex-line">Начать испытание можно до ${dl}. Не начатое к этому времени испытание расценивается как провал. Отказ расценивается как провал.</div>
+      <div class="danger-btn-row ex-pair">${exBtn('Начать', 'examStart()')}${exBtn('Подготовиться', 'examPrepare()')}</div>
+      <div class="danger-btn-row ex-col">${exBtn('Отказаться', 'examRefuseAsk(true)', 'ex-red')}</div></div>`;
+  }
+  function examShowWin(n) {
+    [1, 2, 3, 4, 5, 6].forEach(k => { if (k !== n) exOv(k).style.display = 'none'; });
+    if (n <= 3) examFill(n);
+    const ov = exOv(n); ov.style.display = 'flex';
+    ov.querySelectorAll('.ex-hexin').forEach(h => { h.innerHTML = EX_HEX_SMALL; });
+    const fix = () => { if (![1, 3, 5].includes(n)) return; const w = ov.querySelector('.status-window'); const ic = w && w.querySelector('.sn-ic'); if (ic) { ic.classList.add('ex-hex'); ic.innerHTML = EX_HEX_SMALL; } };   // «!» в шестиграннике — окна 1, 3 и окно ранга
+    setTimeout(fix, 0); setTimeout(fix, 80);
+    const b = ov.querySelector('.status-body'); if (b) b.scrollTop = 0;
+    examAccSync();
+  }
+  function examHideWin(n) { exOv(n).style.display = 'none'; examAccSync(); }
+  function examTrialChapter() { if (!data.codexUnlocked.includes('rank_trial')) unlockCodexChapter('rank_trial'); }   // глава — с первым предложением, после окна 1
+  function examGo(n) { examShowWin(n); if (n === 2) examTrialChapter(); }
+  function examDecline() { [1, 2].forEach(examHideWin); data.exam = null; saveData(); examTrialChapter(); }   // без штрафа; следующее предложение не раньше чем через 3 цикла
+  function examAccept() { if (!data.exam) return; data.exam.st = 'accepted'; saveData(); examShowWin(3); }
+  function examPrepare() { examHideWin(3); examIconShow(true); }
+  // v7.6.3: все этапы закрыты (идёт оценка) или итог уже подведён — отказ невозможен
+  function examRefuseLocked() { const e = data.exam; return !e || !!data.examPost || (e.st === 'running' && EX_IDS.every(x => e.S[x] && e.S[x].st === 'done')); }
+  function examRefuseSync() { const b = document.getElementById('exRefuseBtn'); if (b) b.disabled = examRefuseLocked(); }
+  function examRefuseAsk(pre) {
+    if (!pre && examRefuseLocked()) { examRefuseSync(); return; }
+    const loss = Math.round(getExpToNext(data.level) * EX_FAIL.refuse.pct);
+    document.getElementById('exC4').innerHTML = `<div class="danger-warning-step">
+      <div class="ex-line">Отказ расценивается как провал.</div><div class="ex-line">Штраф: -${loss} EXP.</div>
+      <div class="ex-line">Новое испытание будет доступно не ранее чем через ${EX_FAIL.refuse.days} ${pluralDays(EX_FAIL.refuse.days)}.</div>
+      <div class="danger-btn-row">${exBtn('Отказаться', 'examRefused()', 'ex-red')}${exBtn(pre ? 'Вернуться' : 'Продолжить испытание', `examRefuseBack(${pre})`)}</div></div>`;
+    examHideWin(3); examShowWin(4);
+  }
+  function examRefuseBack(pre) { examHideWin(4); if (pre) examShowWin(3); }
+  function examRefused() { examHideWin(4); if (examRefuseLocked()) { examRefuseSync(); return; } examIconShow(false); examFail('refuse'); }
+
+  // ---------- значок ----------
+  function examIconDraw() {
+    const el = document.getElementById('exIcon'), e = data.exam;
+    if (!el || !e || e.st !== 'accepted') return;
+    const total = Math.max(1, e.dl - e.cyc), left = e.dl - Date.now(), rem = Math.max(0, Math.min(1, left / total));
+    if (!el.firstChild) el.innerHTML = EX_ICON_SVG(rem); else { const rg = el.querySelector('.rg'); if (rg) rg.setAttribute('stroke-dashoffset', (1 - rem).toFixed(4)); }
+    el.classList.toggle('late', left <= 3600000);
+  }
+  // v7.6.3: значок и ускоритель — от правого края окна приложения (на телефоне оно отстоит от края экрана на 4 px в «Системе»
+  // и на 10 px в «Классике» — там положение прежнее: 47 и 48 px от края экрана); на компьютере окно по центру — значки идут вместе с ним
+  function examEdgePlace() {
+    const qp = document.querySelector('.quest-panel'), ic = document.getElementById('exIcon'), ac = document.getElementById('exAcc');
+    if (!qp || !ic || !ac) return;
+    const r = qp.getBoundingClientRect(), W = window.innerWidth || document.documentElement.clientWidth || 0;
+    if (!r.width || !W) return;
+    const d = Math.max(0, Math.round(W - r.right - (isSysTheme() ? 4 : 10)));
+    ic.style.right = (47 + d) + 'px'; ac.style.right = (48 + d) + 'px';
+  }
+  window.addEventListener('resize', () => { try { examEdgePlace(); } catch (e) {} });
+  function examIconShow(on) { const el = document.getElementById('exIcon'); if (!el) return; examEdgePlace(); examIconDraw(); requestAnimationFrame(() => el.classList.toggle('on', on)); }
+  function examIconTap() { const el = document.getElementById('exIcon'); if (!el.classList.contains('on')) return; el.classList.remove('on'); setTimeout(() => examShowWin(3), 250); }
+
+  // ---------- переход (сбой, как при смене темы) ----------
+  function examGlitch(swap) {
+    const win = document.querySelector('.quest-panel'), colr = '255,205,90';
+    let f = null; try { f = themeFxAdd(win, true, colr); } catch (e) {}
+    const t0 = Date.now(), step = () => {
+      const t = (Date.now() - t0) / 450;
+      if (t < 1) { try { themeFxFrame(f, Math.max(0.15, t), null); } catch (e) {} setTimeout(step, 55); return; }
+      try { themeFxClear(f); } catch (e) {}
+      const fl = document.createElement('div'); fl.className = 'ex-flash'; document.body.appendChild(fl);
+      setTimeout(() => { swap(); setTimeout(() => { fl.remove(); let g = null; try { g = themeFxAdd(win, false, colr); } catch (e) {}
+        const t1 = Date.now(), fall = () => { const u = (Date.now() - t1) / 450; if (u < 1) { try { themeFxFrame(g, Math.max(0.15, 1 - u), null); } catch (e) {} setTimeout(fall, 55); } else { try { themeFxClear(g); } catch (e) {} } }; fall(); }, 300); }, 30);
+    };
+    step();
+  }
+
+  // ---------- экран испытания ----------
+  function examStart() {
+    const e = data.exam; if (!e || e.st !== 'accepted') return;
+    if (Date.now() >= e.dl) { examHideWin(3); examFail('late'); return; }
+    examHideWin(3); examIconShow(false);
+    e.st = 'running'; e.vt = 0; e.vAt = Date.now(); e.sp = 1; e.act = null; e.S = {};
+    EX_IDS.forEach(id => { e.S[id] = { st: 'idle', t0: 0, vals: [null, null, null, null], steps: 0, re: 1, auto: false }; });
+    saveData();
+    examGlitch(() => examEnterUI());
+  }
+  function examEnterUI() {
+    document.body.classList.add('exm');
+    const qp = document.querySelector('.quest-panel'); qp.classList.add('exgv');
+    const title = qp.querySelector('.title'); if (title) { if (!title.dataset.old) title.dataset.old = title.textContent; title.textContent = 'ИСПЫТАНИЕ РАНГА'; }
+    const g = document.querySelectorAll('.sub-menu-grid button'); [3, 4].forEach(i => g[i] && g[i].classList.add('ex-off'));   // Магазин и Инвентарь; Архив работает (решение пользователя)
+    EX_IDS.forEach(examCard); examAdmFill(); examReframe(); examTickUI(); examAccSync();
+  }
+  function examExitUI() {
+    document.body.classList.remove('exm');
+    examLayer(false); examPocket(false);
+    const qp = document.querySelector('.quest-panel'); qp.classList.remove('exgv');
+    const title = qp.querySelector('.title'); if (title && title.dataset.old) title.textContent = title.dataset.old;
+    document.querySelectorAll('.sub-menu-grid button.ex-off').forEach(b => b.classList.remove('ex-off'));
+    examReframe(); examAccSync(); render(); fzDraw(false);
+  }
+  function examReframe() { const qp = document.querySelector('.quest-panel'); if (qp) delete qp.dataset.sz; try { SysTheme.apply(); } catch (e) {} }
+  function examAdmFill() { const a = document.getElementById('exAdm'), e = data.exam; if (!a || !e) return;
+    const cur = rankIndex(data.rank), next = PLAYER_RANKS[cur + 1], top = e.adm;
+    const tag = r => `<span class="rk-${r}"><span class="sc-rank">${RANK_NAMES[r]}</span></span>`;
+    a.innerHTML = top !== next ? `${tag(next)}<span class="sep">|</span>${tag(top)}` : tag(top); }
+  function exVals(s) { return `Раунды: ${s.vals.map(v => v == null ? '–' : v).join(' · ')}`; }
+  function examCard(id) {
+    const e = data.exam; if (!e || e.st !== 'running') return;
+    const s = e.S[id], d = EX_ST[id], el = document.getElementById('exk_' + id); if (!el) return;
+    const b = el.querySelector('.ex-b'), chk = el.querySelector('.qcheck');
+    chk.classList.toggle('done', s.st === 'done');
+    el.classList.toggle('ex-lock', !!e.act && e.act !== id && s.st !== 'done');
+    if (s.st === 'idle') { b.innerHTML = `<div class="ex-acts"><button class="ex-gold" onclick="examBegin('${id}')">Начать этап</button></div>`; return; }
+    if (s.st === 'done') {
+      b.innerHTML = d.run ? `<div class="ex-vals">Шаги за бег</div><div class="ex-res">${s.steps}</div>`
+        : `<div class="ex-vals">${exVals(s)}</div><div class="ex-res">${s.vals.reduce((a, v) => a + (v || 0), 0)}</div>`;
+      return;
+    }
+    b.innerHTML = `<div class="ex-tot">Этап идёт<span class="xt"></span></div>${d.run ? '' : '<div class="ex-vals"></div>'}<div class="ex-acts"><button class="ex-gold" onclick="examLayer(true)">Открыть этап</button></div>`;
+  }
+  function examBegin(id) {
+    const e = data.exam; if (!e || e.st !== 'running' || e.act) return;
+    const s = e.S[id]; if (s.st !== 'idle') return;
+    Object.assign(s, { st: 'run', t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false });
+    e.act = id; exLastT[id] = 0; saveData();
+    EX_IDS.forEach(examCard); examLayer(true); examWake(true);
+  }
+  function examRestart() {
+    const e = data.exam, id = e && e.act; if (!id) return; const s = e.S[id]; if (s.re < 1) return;
+    s.re = 0; Object.assign(s, { t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false }); exLastT[id] = 0;
+    examPocket(false); saveData(); examTickUI();
+  }
+  function examCanIn(id) { const p = exPhase(id).ph; return EX_ST[id].run ? (p === 'rin' || p === 'late') : (p === 'rest' || p === 'fin'); }
+  function examCanFinish(id) { const s = data.exam.S[id], p = exPhase(id).ph; return EX_ST[id].run ? ((p === 'rin' || p === 'late') && s.steps > 0) : p === 'fin'; }
+  function examAdd(v) {
+    const e = data.exam, id = e && e.act; if (!id || !examCanIn(id)) return;
+    const s = e.S[id], d = EX_ST[id];
+    playSound('tap');
+    if (d.run) s.steps = Math.max(0, Math.min(d.cap, s.steps + v));
+    else {
+      const i = exPhase(id).r - 1, before = s.vals[i] || 0;
+      s.vals[i] = Math.max(0, Math.min(d.cap, before + v));
+      const added = s.vals[i] - before;
+      if (added > 0) { exFzMute = true; try { fzAdd(id, added); } catch (err) {} exFzMute = false; }   // шкала усталости — да, её уведомления — нет
+    }
+    saveData(); examTickUI();
+  }
+  function examFinish(auto) {
+    const e = data.exam, id = e && e.act; if (!id) return;
+    const s = e.S[id], d = EX_ST[id];
+    if (!auto && !examCanFinish(id)) return;
+    if (!d.run) s.vals = s.vals.map(v => v == null ? 0 : v);
+    s.st = 'done'; e.act = null;
+    // повторения испытания — в ТН (с множителем режима), в «Прогресс» и в дневной журнал упражнений; в задание дня не идут
+    const reps = d.run ? s.steps : s.vals.reduce((a, v) => a + (v || 0), 0);
+    if (reps > 0) {
+      tnAdd(id, reps, 0, 0);
+      totalStats[id] += reps;
+      const k = dateKeyFromTimestamp(data.lastReset);
+      if (!data.dailyExerciseLog[k]) data.dailyExerciseLog[k] = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
+      data.dailyExerciseLog[k][id] = (data.dailyExerciseLog[k][id] || 0) + reps;
+    }
+    saveData(); examLayer(false); examPocket(false); examWake(false); exSnd('end');
+    EX_IDS.forEach(examCard); examRefuseSync();
+    if (EX_IDS.every(x => e.S[x].st === 'done')) setTimeout(() => examEvaluate(), 600);
+  }
+
+  // ---------- слой этапа ----------
+  function examLayer(on) {
+    const L = document.getElementById('exLayer'), e = data.exam, id = e && e.act;
+    if (!on || !id) { L.classList.remove('on'); examAccSync(); fzDraw(false); return; }
+    const d = EX_ST[id], pl = d.run ? [10, 100, 500] : [1, 5, 10];
+    L.innerHTML = `<div class="nm">${d.nm.toUpperCase()}</div><div class="tot">Время этапа<span class="xt" id="exLTot"></span></div><div class="rd"></div>
+      <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/><circle class="pr" cx="50" cy="50" r="45" fill="none" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/></svg>
+      <div class="ct"><span class="xt" id="exLT"></span><div class="lb"></div></div></div>
+      <div class="vals"></div>
+      <div class="inbox"><div class="cntrow"><span class="k"></span><span class="cnt"></span></div>
+      <div class="bt">${pl.map(v => `<button class="add" data-in onclick="examAdd(${v})">+${v}</button>`).join('')}</div>
+      <div class="bt">${pl.map(v => `<button class="add ex-minus" data-in onclick="examAdd(-${v})">−${v}</button>`).join('')}</div>
+      <div class="acts"><button id="exReBtn" onclick="examRestart()">Начать этап заново</button>${d.run ? '<button id="exPkBtn" onclick="examPocket(true)">Карманный режим</button>' : ''}<button class="ex-gold" id="exFinBtn" onclick="examFinish()">Завершить этап</button></div></div>`;
+    L.classList.add('on'); examTickUI(); examAccSync(); fzDraw(false);
+  }
+  // ---------- карманный режим ----------
+  var exPocketOn = false;
+  function examPocket(on) {
+    const P = document.getElementById('exPocket'); exPocketOn = on; P.classList.toggle('on', on);
+    if (!on) { P.innerHTML = ''; examAccSync(); fzDraw(false); return; }
+    P.innerHTML = `<div class="ph"></div><span class="xt" id="exPT"></span><div class="hint">Карманный режим. Касания не действуют. Удерживайте кнопку 2 с, чтобы разблокировать.</div>
+      <div class="hold"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#1c2633" stroke-width="5"/><circle class="hp" cx="50" cy="50" r="44" fill="none" stroke="var(--ac)" stroke-width="5" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/></svg><div class="lk">🔒</div></div>`;
+    const h = P.querySelector('.hold'), hp = P.querySelector('.hp'); let t0 = 0, raf = 0;
+    const stop = () => { cancelAnimationFrame(raf); t0 = 0; hp.style.strokeDashoffset = 1; };
+    const loop = () => { const k = (performance.now() - t0) / 2000; if (k >= 1) { stop(); examPocket(false); return; } hp.style.strokeDashoffset = 1 - k; raf = requestAnimationFrame(loop); };
+    h.addEventListener('pointerdown', ev => { ev.preventDefault(); t0 = performance.now(); loop(); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => h.addEventListener(ev, stop));
+    examTickUI(); examAccSync(); fzDraw(false);
+  }
+  // ---------- экран не гаснет во время этапа ----------
+  var exWakeLock = null;
+  function examWake(on) {
+    try {
+      if (on && !exWakeLock && navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { exWakeLock = l; }).catch(() => {});
+      if (!on && exWakeLock) { exWakeLock.release().catch(() => {}); exWakeLock = null; }
+    } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && data.exam && data.exam.act) { exWakeLock = null; examWake(true); } });
+
+  // ---------- звуки этапа (набор 1 «Короткие»; звучат всегда, даже при выключенном звуке) ----------
+  var exAC = null;
+  function exAudio() { if (!exAC) { try { exAC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (exAC && exAC.state === 'suspended') try { exAC.resume(); } catch (e) {} return exAC; }
+  function exTone(f, at, dur) {
+    const c = exAudio(); if (!c || !c.createOscillator) return;
+    try { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + at; o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.22, t + 0.01); g.gain.setValueAtTime(0.22, t + dur - 0.03); g.gain.linearRampToValueAtTime(0, t + dur);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02); } catch (e) {}
+  }
+  function exSnd(ev) {
+    if (ev === 'tick') exTone(660, 0, 0.07);
+    else if (ev === 'go') [880, 880].forEach((f, i) => exTone(f, i * 0.18, 0.13));
+    else if (ev === 'stop') exTone(440, 0, 0.45);
+    else if (ev === 'end' || ev === 'run20') [660, 880, 1100].forEach((f, i) => exTone(f, i * 0.14, 0.13));
+    else if (ev === 'remind') { exTone(660, 0, 0.08); exTone(660, 0.16, 0.08); }
+  }
+  // звук подтверждения ранга — вариант 8 демо 117a: подъём 0,32 с, удар колокола, мерцание, эхо
+  function exRankSound() {
+    const c = exAudio(); if (!c || !c.createOscillator) return 0;
+    try {
+      const t = c.currentTime + 0.03, m = c.createGain(); m.gain.value = 0.9; m.connect(c.destination);
+      const d = c.createDelay(1), fb = c.createGain(), lp = c.createBiquadFilter(), wet = c.createGain();
+      d.delayTime.value = 0.23; fb.gain.value = 0.42; lp.type = 'lowpass'; lp.frequency.value = 2600; wet.gain.value = 0.55;
+      m.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(c.destination);
+      const osc = (type, f, at, a, dec, gv) => { const o = c.createOscillator(), e = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, at); e.gain.setValueAtTime(0, at); e.gain.linearRampToValueAtTime(gv, at + a); e.gain.exponentialRampToValueAtTime(0.0008, at + a + dec); o.connect(e); e.connect(m); o.start(at); o.stop(at + a + dec + 0.05); };
+      { const o = c.createOscillator(), e = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(1300, t + 0.32); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(0.12, t + 0.28); e.gain.linearRampToValueAtTime(0, t + 0.34); o.connect(e); e.connect(m); o.start(t); o.stop(t + 0.36);
+        const n = c.createBufferSource(), b = c.createBuffer(1, Math.floor(c.sampleRate * 0.34), c.sampleRate), dd = b.getChannelData(0); for (let i = 0; i < dd.length; i++) dd[i] = (Math.random() * 2 - 1) * (i / dd.length);
+        n.buffer = b; const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000; const ng = c.createGain(); ng.gain.value = 0.05; n.connect(hp); hp.connect(ng); ng.connect(m); n.start(t); }
+      const tb = t + 0.32;
+      [659, 988, 1319].forEach(f => osc('triangle', f, tb, 0.01, 1.6, 0.16));
+      [2637, 3136, 3951, 4699].forEach((f, i) => { const o = c.createOscillator(), e = c.createGain(), l = c.createOscillator(), lg = c.createGain(); o.type = 'sine'; o.frequency.value = f; l.frequency.value = 5 + i; lg.gain.value = f * 0.006; l.connect(lg); lg.connect(o.frequency);
+        const s = tb + 0.05 + i * 0.09; e.gain.setValueAtTime(0, s); e.gain.linearRampToValueAtTime(0.035, s + 0.08); e.gain.exponentialRampToValueAtTime(0.0008, s + 2); o.connect(e); e.connect(m); o.start(s); l.start(s); o.stop(s + 2.05); l.stop(s + 2.05); });
+    } catch (e) {}
+    return 320;
+  }
+
+  // ---------- время: смена фаз, звуки, автозавершение ----------
+  const exLastT = {};
+  var exFzMute = false;
+  function examTick() {
+    const e = data.exam;
+    examRefuseSync();
+    if (e && e.st === 'accepted') {
+      if (Date.now() >= e.dl) { examIconShow(false); [1, 2, 3, 4].forEach(examHideWin); examFail('late'); return; }
+      examIconDraw(); return;
+    }
+    if (!examOn()) return;
+    examAccSync();   // слой ускорителя прячется под любым открытым окном
+    const id = e.act;
+    if (id) {
+      const s = e.S[id], d = EX_ST[id], t = exStageT(id), prev = exLastT[id] != null ? exLastT[id] : t;
+      exLastT[id] = t;
+      if (d.run) {
+        const p0 = exRunAt(prev), p = exRunAt(t);
+        if (p.ph !== p0.ph) {
+          if (p.ph === 'run') { exSnd('go'); if (!s.auto) { s.auto = true; saveData(); examPocket(true); } }
+          if (p.ph === 'rin') exSnd('run20');
+        }
+        if (p.ph === 'end') { examFinish(true); return; }
+        if (p.ph === 'prep' && Math.floor(10 - t) !== Math.floor(10 - prev) && 10 - t < 3) exSnd('tick');
+        if ((p.ph === 'rin' || p.ph === 'late') && Math.floor((t - 1210) / 60) !== Math.floor((prev - 1210) / 60) && t > 1215) exSnd('remind');
+      } else {
+        const p0 = exStrengthAt(prev), p = exStrengthAt(t);
+        if (p.ph !== p0.ph || p.r !== p0.r) {
+          if ((p0.ph === 'rest' || p0.ph === 'fin') && s.vals[p0.r - 1] == null) { s.vals[p0.r - 1] = 0; saveData(); }
+          if (p.ph === 'work') exSnd('go'); else if (p.ph === 'rest' || p.ph === 'fin') exSnd('stop');
+        }
+        if (p.ph === 'end') { examFinish(true); return; }
+        if ((p.ph === 'prep' || p.ph === 'rest') && Math.floor(p.len - p.el) !== Math.floor(p.len - (p.el - (t - prev))) && p.len - p.el < 3) exSnd('tick');
+      }
+    }
+    if (examNow() >= EX_TOTAL && !EX_IDS.every(x => e.S[x].st === 'done')) { examFail('time'); return; }
+    examTickUI();
+  }
+  function exSetT(el, text) {
+    if (!el) return;
+    if (el.children.length !== text.length) { el.innerHTML = text.split('').map(ch => `<span class="c ${ch === ':' ? 'k' : 'd'}">${ch}</span>`).join(''); return; }
+    for (let i = 0; i < text.length; i++) if (el.children[i].textContent !== text[i]) el.children[i].textContent = text[i];
+  }
+  function exTimerCells(box, text) {   // ячейки постоянной ширины, как у таймера сброса (v6.6.0)
+    if (box.children.length !== text.length) { box.innerHTML = text.split('').map(ch => `<span class="tc ${ch === ':' ? 'col' : 'dg'}">${ch}</span>`).join(''); return; }
+    for (let i = 0; i < text.length; i++) if (box.children[i].textContent !== text[i]) box.children[i].textContent = text[i];
+  }
+  const exMmss = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+  const exHms = s => { s = Math.max(0, Math.ceil(s)); return String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+  function examTickUI() {
+    if (!examOn()) return;
+    const e = data.exam;
+    const et = document.getElementById('exTimer'); if (et) { const txt = exHms(EX_TOTAL - examNow()); if (et.dataset.v !== txt) { exTimerCells(et, txt); et.dataset.v = txt; } }
+    const id = e.act; if (!id) return;
+    const s = e.S[id], d = EX_ST[id], p = exPhase(id); if (p.ph === 'end') return;
+    const [lb, c0] = EX_PH[p.ph], c = c0 === 'AC' ? 'var(--ac)' : c0, pr = Math.min(1, p.el / p.len);
+    const t = exStageT(id), tot = exMmss(d.run ? Math.min(t, 1510) : Math.min(t, 290)), cur = exMmss(p.el), canIn = examCanIn(id);
+    const rd = d.run ? (p.ph === 'prep' ? 'Положите телефон в карман' : p.ph === 'run' ? 'Бег, 20 минут' : 'Окно ввода, 5 минут') : `Раунд ${p.r} / 4`;
+    const el = document.getElementById('exk_' + id);
+    if (el) { exSetT(el.querySelector('.ex-tot .xt'), tot); const v = el.querySelector('.ex-vals'); if (v) v.textContent = exVals(s); }
+    const L = document.getElementById('exLayer');
+    if (L.classList.contains('on')) {
+      exSetT(document.getElementById('exLTot'), tot); exSetT(document.getElementById('exLT'), cur);
+      const ring = L.querySelector('.pr'); ring.style.stroke = c; ring.style.strokeDashoffset = (1 - pr).toFixed(4);
+      document.getElementById('exLT').style.color = c;
+      const l = L.querySelector('.lb'); l.textContent = lb; l.style.color = c;
+      L.querySelector('.rd').textContent = rd;
+      L.querySelector('.vals').textContent = d.run ? '' : exVals(s);
+      L.querySelector('.cntrow .k').textContent = d.run ? 'Шаги за бег:' : `Повторения, раунд ${p.r}:`;
+      L.querySelector('.cntrow .cnt').textContent = d.run ? s.steps : (s.vals[p.r - 1] || 0);
+      L.querySelectorAll('[data-in]').forEach(b => { b.disabled = !canIn; });
+      const re = document.getElementById('exReBtn'); if (re) re.disabled = s.re < 1;
+      const fb = document.getElementById('exFinBtn'); if (fb) fb.disabled = !examCanFinish(id);
+      const pk = document.getElementById('exPkBtn'); if (pk) pk.disabled = !(p.ph === 'prep' || p.ph === 'run');
+    }
+    if (exPocketOn) {
+      const P = document.getElementById('exPocket'), done = d.run && (p.ph === 'rin' || p.ph === 'late');
+      P.querySelector('.ph').textContent = done ? 'Бег завершён. Разблокируйте и внесите шаги' : lb.toUpperCase();
+      P.querySelector('.ph').style.color = c; exSetT(document.getElementById('exPT'), done ? '20:00' : cur);
+    }
+  }
+
+  // ---------- ускоритель таймера (Длань; сборка демо 118) ----------
+  function examAccSync() {
+    const a = document.getElementById('exAcc'); if (!a) return;
+    if (examOn()) examEdgePlace();
+    const winOpen = [...document.querySelectorAll('.status-overlay')].some(o => o.style.display === 'flex' || o.style.display === 'block');
+    const show = examOn() && !!data.examAccel && !winOpen;
+    a.classList.toggle('on', show);
+    a.classList.toggle('dim', show && exPocketOn);
+    const sp = examOn() ? (data.exam.sp || 1) : 1;
+    a.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.v === sp));
+  }
+  function examAccSet(v) { examSetSpeed(v); examAccSync(); }
+  function examAccToggle() {
+    data.examAccel = !data.examAccel;
+    if (!data.examAccel && examOn() && data.exam.sp !== 1) examSetSpeed(1);
+    playSound('tap'); saveData(); updateSysCurrent(); examAccSync();
+  }
+
+  // ---------- оценка ----------
+  function examScore() {
+    const e = data.exam, cur = rankIndex(data.rank);
+    const vals = EX_IDS.map(id => EX_ST[id].run ? e.S[id].steps : e.S[id].vals.reduce((a, v) => a + (v || 0), 0));
+    const per = vals.map((v, i) => { let r = 0; PLAYER_RANKS.forEach((k, j) => { if (v >= EX_NORMS[k][i]) r = j + 1; }); return r; });
+    const avg = Math.floor(per.reduce((a, b) => a + b, 0) / per.length), weak = Math.min(...per) + 1, admN = rankIndex(e.adm) + 1;
+    const res = Math.min(avg, weak, admN);
+    return { vals, per, avg, weak, adm: admN, res, ok: res >= cur + 2 };   // номер ранга: E = 1; успех — хотя бы ближайший ранг
+  }
+  function examEvaluate() {
+    const E = document.getElementById('exEval'), dt = E.querySelector('.dt'); E.classList.add('on');
+    let i = 0; const iv = setInterval(() => { dt.textContent = '.'.repeat(i++ % 4); }, 350);
+    const sc = examScore();
+    setTimeout(() => { clearInterval(iv); E.classList.remove('on'); if (sc.ok) examSuccess(sc); else examFail('low', sc); }, 2000);
+  }
+  function examRecordLast(kind, sc) {
+    const e = data.exam;
+    data.examLast = { day: dateKeyFromTimestamp(data.lastReset), kind, adm: e ? e.adm : null,
+      vals: sc ? sc.vals : null, per: sc ? sc.per : null, avg: sc ? sc.avg : null, weak: sc ? sc.weak : null, admN: sc ? sc.adm : null, res: sc ? sc.res : null, rank: kind === 'ok' ? data.rank : null };
+  }
+  function examSuccess(sc) {
+    const cur = rankIndex(data.rank), ranks = PLAYER_RANKS.slice(cur + 1, sc.res);
+    const k = ranks[ranks.length - 1];
+    data.rank = k; data.rankHoldDays = 0; data.examNarrow = false; data.examDelayUntil = null;
+    ranks.forEach(r => { data.boxes[RANK_BOX[r]] = (data.boxes[RANK_BOX[r]] || 0) + 1; });
+    const toNext = getExpToNext(data.level);
+    let xp = Math.round(toNext * EX_XP_PCT(k));
+    xp = Math.max(0, Math.min(xp, (data.expDebt || 0) + toNext - data.exp + getExpToNext(data.level + 1) - 1));   // не больше одного повышения уровня
+    gainExp(xp);
+    examRecordLast('ok', sc);
+    data.examToday = { ok: true, rank: k };
+    logNotification(`Испытание ранга пройдено. Подтверждён ранг ${RANK_BOX_NAME[k]}.`);
+    data.examPost = { kind: 'ok', ranks, xp, step: 'win' };
+    data.exam = null;
+    saveData(); examAccSync();
+    examRankFx(k);
+  }
+  function examRankFx(k) {
+    document.body.style.setProperty('--rkc', RANK_COLORS[k]); document.body.classList.add('rkfx');
+    const dl = exRankSound();
+    setTimeout(() => {
+      try { levelUpFx(); } catch (e) {}
+      const t = document.querySelector('.lvx-t');
+      if (t) { t.textContent = 'RANK CONFIRMED'; t.style.fontSize = ''; const maxW = (window.innerWidth || 360) * 0.84; if (t.scrollWidth > maxW) t.style.fontSize = (parseFloat(getComputedStyle(t).fontSize) * maxW / t.scrollWidth).toFixed(1) + 'px'; }
+    }, dl);
+    setTimeout(() => { document.body.classList.remove('rkfx'); examPostRun(); }, dl + 3300);
+  }
+  // продолжение после итога: окно ранга → Кодекс и титул → LEVEL UP → вопрос → сбой → главная
+  function examPostRun() {
+    const p = data.examPost; if (!p) return;
+    if (p.kind === 'ok' && p.step === 'win') {
+      const k = p.ranks[p.ranks.length - 1], ov = document.getElementById('exOv5');
+      ov.style.setProperty('--rkc', RANK_COLORS[k]);
+      document.getElementById('exC5').innerHTML = `<div class="danger-warning-step">
+        <div class="ex-line">Ранг подтверждён: <span class="ex-rk">${RANK_NAMES[k]}</span></div><div class="ex-line">${RANK_POPUP_LINES[k] || ''}</div><div class="ex-gap"></div>
+        <div class="ex-line">Награда:</div>${p.ranks.map(q => `<div class="ex-rw">Шкатулка ранга ${RANK_BOX_NAME[q]}</div>`).join('')}<div class="ex-rw xp">+${p.xp} EXP</div></div>`;
+      examShowWin(5);
+      return;
+    }
+    if (p.step === 'ask' || p.step === 'notes') { examAsk(); return; }
+    examFinishAll();
+  }
+  // v7.6.3: окно ранга закрыто → 2 с (как пауза между уведомлениями очереди) → LEVEL UP (если уровень вырос) → через 1,2 с уведомления
+  // по одному: Кодекс за каждый ранг, титул «Пробужденный», «Достигнут N-й уровень.» и предметы за уровень → вопрос о дневном задании.
+  // Сначала LEVEL UP: уведомления, поставленные в очередь во время надписи, ждут её конца («Достигнут…» — fxNotice, после глав Кодекса).
+  const EX_LV_DELAY = 2000;
+  function examRankClose() {
+    const p = data.examPost; examHideWin(5); if (!p || p.step !== 'win') return;
+    p.step = 'notes'; saveData();
+    setTimeout(() => {
+      exAllowN = true;
+      checkLevelUp();   // LEVEL UP сразу (если уровень вырос); его уведомления — после надписи
+      fxDirectN = true;   // v7.6.3: главы и титул — в очередь сразу и раньше уведомлений уровня: Кодекс → титул → «Достигнут N-й уровень.»
+      try {
+        p.ranks.forEach(r => unlockCodexChapter(RANK_CODEX_MAP[r]));
+        if (p.ranks.includes('e')) { unlockTitle('Пробужденный'); data.titlesUnlocked = data.titlesUnlocked.filter(t => t !== 'Новичок'); if (data.activeTitle === 'Новичок') data.activeTitle = 'Пробужденный'; }
+      } finally { fxDirectN = false; }
+      saveData(); render();
+      examWhenIdle(() => { p.step = 'ask'; saveData(); examAsk(); }, 1200);
+    }, EX_LV_DELAY);
+  }
+  function examAsk() {
+    const p = data.examPost; if (!p) return;
+    if (data.isGoalMet || allQuestsDone()) { examFinishAll(); return; }   // задание уже выполнено — вопроса нет
+    const lim = data.level >= 3 ? ', Преодоление предела станет доступно' : '';
+    document.getElementById('exC6').innerHTML = `<div class="danger-warning-step">
+      <div class="ex-line">${p.kind === 'ok' ? 'Испытание ранга пройдено.' : 'Испытание ранга завершено.'} Нагрузка испытания может быть засчитана вместо дневного задания: штрафа и награды за задание не будет, серия дней сохранится${lim}.</div>
+      <div class="danger-btn-row">${exBtn('Засчитать испытание', 'examAnswer(true)')}${exBtn('Продолжить задание', 'examAnswer(false)')}</div></div>`;
+    examShowWin(6);
+  }
+  function examAnswer(credit) {
+    examHideWin(6);
+    if (credit) examCredit();
+    examFinishAll();
+  }
+  // «Засчитать испытание»: день закрыт как выполненный, без награды за задание, без COMPLETE и уведомлений дня; бусины нет, цепочка не рвётся
+  function examCredit() {
+    data.isGoalMet = true; data.examCredited = true;
+    if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute') {   // как при выполненном дне: руна защиты отработала
+      const holdScroll = getInsuranceHoldScroll();
+      if (holdScroll) data.insuranceHoldScroll = holdScroll; else { data.insurance = false; data.insuranceSourceId = null; }
+    }
+    saveData();
+  }
+  function examFinishAll() {
+    data.examPost = null; exAllowN = false; saveData();
+    if (document.body.classList.contains('exm')) examGlitch(() => { examExitUI(); examReleaseN(); });
+    else { render(); examReleaseN(); }
+  }
+
+  // ---------- провал ----------
+  function examFail(kind, sc) {
+    const F = EX_FAIL[kind], e = data.exam;
+    const loss = Math.round(getExpToNext(data.level) * F.pct);
+    const shortfall = Math.max(0, loss - data.exp);
+    data.exp = Math.max(0, data.exp - loss);
+    if (shortfall > 0) data.expDebt = (data.expDebt || 0) + shortfall;
+    data.examDelayUntil = data.lastReset + F.days * EX_DAY; data.examNarrow = true;
+    examRecordLast(kind, sc);
+    data.examToday = { ok: false, kind };
+    if (e && e.act) examWake(false);
+    data.exam = null;
+    data.examPost = { kind, step: kind === 'low' ? 'ask' : 'end' };
+    logNotification(`Испытание ранга провалено: ${F.log}. Потеряно опыта: -${loss}.` + (shortfall > 0 ? ` Из них в долг: -${shortfall} EXP.` : ''));
+    saveData(); render();
+    examLayer(false); examPocket(false); examIconShow(false);
+    examShowFail(kind, loss, shortfall);
+  }
+  function examShowFail(kind, loss, debt) {
+    const F = EX_FAIL[kind];
+    document.getElementById('exPenContent').innerHTML = `<div class="danger-warning-step"><div class="danger-icon">⚠</div>
+      <div class="danger-text">Испытание ранга провалено.\n${F.why}</div><ul class="danger-list"><li>Итог: ${F.nm}</li><li>Потеряно опыта: -${loss} EXP</li>
+      ${debt > 0 ? `<li>Из них в долг: -${debt} EXP</li>` : ''}<li>Новое испытание будет доступно не ранее чем через ${F.days} ${pluralDays(F.days)}.</li></ul></div>`;
+    document.getElementById('exPenOverlay').style.display = 'flex';
+    try { playSound('penalty'); } catch (e) {}
+    examAccSync();
+  }
+  var exAfterFailClose = null;
+  function closeExamPenalty() {
+    document.getElementById('exPenOverlay').style.display = 'none';
+    examAccSync();
+    const p = data.examPost;
+    if (p && p.step === 'ask') setTimeout(examAsk, 400);
+    else if (p) examFinishAll();
+    if (exAfterFailClose) { const f = exAfterFailClose; exAfterFailClose = null; setTimeout(f, 600); }
+  }
+
+  // ---------- уведомления во время испытания копятся и выходят после итога ----------
+  var exAllowN = false;
+  var fxDirectN = false;
+  var exHeldN = [];
+  function examHoldN() { return !exAllowN && !!(examOn() || data.examPost); }
+  function examReleaseN() { const l = exHeldN.splice(0); l.forEach(pl => enqueueNotification(pl)); }
+
+  // ---------- сброс дня ----------
+  // до сброса: итог испытания дня прикрепляется к записи Летописи (как отметка уровня); незавершённое — провал
+  function examResolveExpired() {
+    const e = data.exam; if (!e) return null;
+    const now = Date.now();
+    if (e.st === 'offered' && now >= e.dl) { data.exam = null; saveData(); return null; }   // не принятое по сроку — тихо исчезает
+    if (e.st === 'accepted' && now >= e.dl) return 'late';
+    if (e.st === 'running' && (examNow() >= EX_TOTAL || now >= getNextCleanReset(e.cyc))) return 'time';
+    return null;
+  }
+  function examAtReset(historyEntry) {   // из цикла сброса: отметка дня, выдержка, ускоритель
+    if (data.examToday) { historyEntry.exam = data.examToday; data.examToday = null; }
+    if (data.examCredited) { historyEntry.donePercent = 100; historyEntry.examCredited = true; data.examCredited = false; }
+    const st = historyEntry.status;
+    if (data.rank && (st === 'success' || st === 'penalty' || st === 'protected')) data.rankHoldDays = (data.rankHoldDays || 0) + 1;
+    data.examAccel = false;   // галочка ускорителя — до сброса дня
+  }
+
+  // ---------- запуск приложения ----------
+  var exBootFail = null, exBooted = false;   // провал, найденный при запуске (срок упущен / не выполнено) — окно раньше стартового уведомления
+  function examBuild() {   // элементы экрана испытания на главной: допуск, отказ, пять карточек (видны только с классом exm)
+    if (document.getElementById('exAdm')) return;
+    document.getElementById('effectsContainer').insertAdjacentHTML('afterend', '<div class="effects-container ex-only ex-admp"><div class="effects-header">Допуск</div><div class="ex-admr" id="exAdm"></div></div>');
+    document.getElementById('limitBreakContainer').insertAdjacentHTML('afterend', '<div class="ex-only" id="exRefuse"><button id="exRefuseBtn" onclick="examRefuseAsk(false)">Отказаться от испытания</button></div>');
+    const ql = document.querySelector('.quest-list');
+    EX_IDS.forEach(id => ql.insertAdjacentHTML('beforeend', `<div class="ex-card ex-only" id="exk_${id}"><div class="quest-name">${EX_ST[id].nm}</div><div class="qcheck" aria-hidden="true">${CHECK_SVG_QUEST}</div><div class="ex-b"></div></div>`));
+  }
+  function examBoot(failKind) {
+    document.getElementById('exIcon').addEventListener('click', examIconTap);
+    document.querySelectorAll('#exAcc button').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); examAccSet(+b.dataset.v); }));
+    setInterval(examTick, 100);
+    exBooted = true;
+    if (failKind) return;   // окно провала — из checkMissedDays, раньше стартового уведомления
+    const e = data.exam;
+    if (data.examPost) { if (document.body.classList.contains('exm') === false && data.examPost.kind) setTimeout(() => examWhenIdle(examPostRun, 600), 0); return; }
+    if (e && e.st === 'running') { setTimeout(() => examGlitch(() => examEnterUI()), 400); return; }
+    if (e && e.st === 'accepted') { examIconShow(true); return; }
+    if (e && e.st === 'offered') { examWhenIdle(() => examShowWin(1)); return; }
+    examWhenIdle(() => examOffer(false));
+  }
+
+  // ---------- Длань ----------
+  function sysExamOffer() { if (data.exam || data.examPost) return; data.examLastOffer = null; examOffer(true); updateSysCurrent(); }
+  function sysExamClearDelay() { data.examDelayUntil = null; data.examNarrow = false; saveData(); updateSysCurrent(); }
+  function sysExamDeadline(mode) {
+    const e = data.exam; if (!e || e.st === 'running') return;
+    e.dl = mode === 'now' ? Date.now() - 1000 : Date.now() + 3600000;
+    if (e.cyc > e.dl - 60000) e.cyc = e.dl - 6 * 3600000;
+    saveData(); examIconDraw(); updateSysCurrent();
+  }
+  function sysExamEnd(kind) {
+    const e = data.exam; if (!e || e.st !== 'running') return;
+    document.getElementById('sysToolsOverlay').style.display = 'none';
+    examLayer(false); examPocket(false);
+    if (kind === 'ok') {
+      const cur = rankIndex(data.rank), target = Math.max(cur + 2, Math.min(rankIndex(e.adm) + 1, cur + 1 + (sysExamStep || 1)));
+      EX_IDS.forEach(id => { const s = e.S[id]; { s.st = 'done'; if (EX_ST[id].run) s.steps = EX_NORMS[PLAYER_RANKS[target - 1]][4]; else { const n = EX_NORMS[PLAYER_RANKS[target - 1]][EX_IDS.indexOf(id)]; s.vals = [n - 3 * Math.floor(n / 4), Math.floor(n / 4), Math.floor(n / 4), Math.floor(n / 4)]; } } });
+      e.act = null; EX_IDS.forEach(examCard); setTimeout(examEvaluate, 300);
+    } else if (kind === 'low') {
+      EX_IDS.forEach(id => { const s = e.S[id]; s.st = 'done'; if (EX_ST[id].run) s.steps = 0; else s.vals = [0, 0, 0, 0]; });
+      e.act = null; EX_IDS.forEach(examCard); setTimeout(examEvaluate, 300);
+    } else examFail(kind);
+  }
+  var sysExamStep = 1;
+  function sysExamStepChange(d) { const e = data.exam; const cur = rankIndex(data.rank); const max = e ? rankIndex(e.adm) - cur : 1; sysExamStep = Math.max(1, Math.min(Math.max(1, max), sysExamStep + d)); updateSysCurrent(); }
+  function updateSysExam() {
+    const box = document.getElementById('sysExamInfo'); if (!box) return;
+    const N = x => `<span class="spn">${x}</span>`, e = data.exam, cur = rankIndex(data.rank);
+    const conds = examConds().map(c => `${c.ok ? '✓' : '✗'} ${c.t}`);
+    const lines = ['Условия предложения сегодня:'].concat(conds);
+    const extra = [];
+    extra.push(data.examDelayUntil && data.lastReset < data.examDelayUntil ? `Задержка: не раньше ${formatDateRu(dateKeyFromTimestamp(data.examDelayUntil))}` : 'Задержка: нет');
+    extra.push(`Сужение допуска: ${data.examNarrow ? 'да' : 'нет'}`);
+    const nx = PLAYER_RANKS[cur + 1];
+    if (nx && RANK_GROUP3.includes(nx)) extra.push(`Выдержка в ранге: ${N(data.rankHoldDays || 0)} из ${EX_HOLD_NEED[nx]} рабочих дней`);
+    else extra.push(`Выдержка в ранге: ${N(data.rankHoldDays || 0)} рабочих дней`);
+    extra.push(`Испытание: ${!e ? 'нет' : e.st === 'offered' ? 'предложено' : e.st === 'accepted' ? `условия приняты, срок старта ${exHm(e.dl)}` : `идёт, ${exHms(examNow())} из 03:00:00`}${e ? `, допуск до ${RANK_NAMES[e.adm]}` : ''}`);
+    const L = data.examLast;
+    if (L) {
+      const kindTxt = L.kind === 'ok' ? `пройдено, ${RANK_NAMES[L.rank] || ''}` : EX_FAIL[L.kind] ? EX_FAIL[L.kind].nm.toLowerCase() : L.kind;
+      extra.push(`Последнее испытание: ${formatDateRu(L.day)}, ${kindTxt}`);
+      if (L.vals) {
+        extra.push('Внесено: ' + L.vals.join(' · '));
+        extra.push('Оценка по упражнениям: ' + L.per.map(x => x ? RANK_BOX_NAME[PLAYER_RANKS[x - 1]] : '0').join(' · '));
+        extra.push(`Среднее: ${L.avg} · «слабейшее + 1»: ${L.weak} · допуск: ${L.admN} · итог: ${L.res ? RANK_BOX_NAME[PLAYER_RANKS[L.res - 1]] : 'нет'}`);
+      }
+    } else extra.push('Последнее испытание: нет');
+    box.innerHTML = `<div>${lines.join('<br>')}</div><div class="spi-gap">${extra.join('<br>')}</div>`;
+    const running = examOn(), acc = e && e.st === 'accepted';
+    document.getElementById('sysExOffer').disabled = !!e || !!data.examPost || cur >= PLAYER_RANKS.length - 1;
+    document.getElementById('sysExClear').disabled = !(data.examDelayUntil || data.examNarrow);
+    document.getElementById('sysExDl1').disabled = !acc && !(e && e.st === 'offered');
+    document.getElementById('sysExDlNow').disabled = !acc;
+    document.querySelectorAll('.sys-ex-end').forEach(b => { b.disabled = !running; });
+    const maxStep = e ? Math.max(1, rankIndex(e.adm) - cur) : 1; sysExamStep = Math.min(sysExamStep, maxStep);
+    document.getElementById('sysExOkV').textContent = e ? RANK_NAMES[PLAYER_RANKS[Math.min(PLAYER_RANKS.length - 1, cur + sysExamStep)]] : 'нет';
+    document.getElementById('sysExOkM').disabled = !running || sysExamStep <= 1;
+    document.getElementById('sysExOkP').disabled = !running || sysExamStep >= maxStep;
+    document.getElementById('sysAccLabel').textContent = data.examAccel ? 'Ускоритель: включён до сброса дня.' : 'Ускоритель: выключен.';
+    document.getElementById('sysAccCheckbox').classList.toggle('on', !!data.examAccel);
+  }
+
+  // ---------- шкатулки ранга ----------
+  function performOpenRankBox(id) {
+    flashThenRun(`[data-box-id="${id}"]`, () => {
+      playSound('boxOpen');
+      const L = RANK_BOX_LOOT[id];
+      data.boxes[id]--; if (data.boxes[id] <= 0) delete data.boxes[id];
+      const names = [];
+      Object.keys(L.items).forEach(it => { const n = L.items[it]; data.consumables[it] = (data.consumables[it] || 0) + n; const info = getConsumableInfo(it); if (info) names.push(n > 1 ? `${info.name} ×${n}` : info.name); });
+      data.credits += L.cr; names.push(`Кредиты ${L.cr} ◈`);
+      saveData(); render(); openInv();
+      showNotice(`Получен предмет: ${names.join(', ')}`, 'info');
+    });
+  }
+
+  // ---------- нормализация и бэкап ----------
+  function examNormalize() {
+    const okRank = r => PLAYER_RANKS.includes(r);
+    const e = data.exam;
+    if (e && !(['offered', 'accepted', 'running'].includes(e.st) && okRank(e.adm) && Number.isFinite(e.dl) && Number.isFinite(e.cyc))) data.exam = null;
+    else if (e && e.st === 'running') {
+      if (!Number.isFinite(e.vt) || !Number.isFinite(e.vAt)) data.exam = null;
+      else { e.sp = [1, 5, 20].includes(e.sp) ? e.sp : 1; if (!e.S || !EX_IDS.every(id => e.S[id])) data.exam = null; else if (e.act && !EX_IDS.includes(e.act)) e.act = null; }
+    }
+    if (!data.exam) data.exam = null;
+    if (data.examPost && !(data.examPost.kind && ['ok', 'late', 'refuse', 'time', 'low'].includes(data.examPost.kind))) data.examPost = null;
+    if (data.examPost && data.examPost.kind === 'ok' && !(Array.isArray(data.examPost.ranks) && data.examPost.ranks.every(okRank))) data.examPost = null;
+    data.examDelayUntil = Number.isFinite(data.examDelayUntil) ? data.examDelayUntil : null;
+    data.examNarrow = !!data.examNarrow;
+    data.examLastOffer = Number.isFinite(data.examLastOffer) ? data.examLastOffer : null;
+    data.rankHoldDays = Number.isFinite(data.rankHoldDays) ? Math.max(0, Math.floor(data.rankHoldDays)) : 0;
+    data.examLast = (data.examLast && typeof data.examLast === 'object') ? data.examLast : null;
+    data.examToday = (data.examToday && typeof data.examToday === 'object') ? data.examToday : null;
+    data.examCredited = !!data.examCredited;
+    data.examAccel = !!data.examAccel;
+  }
+  function sanitizeExamMark(m) {
+    if (!m || typeof m !== 'object') return null;
+    if (m.ok === true && PLAYER_RANKS.includes(m.rank)) return { ok: true, rank: m.rank };
+    if (m.ok === false && ['late', 'refuse', 'time', 'low'].includes(m.kind)) return { ok: false, kind: m.kind };
+    return null;
+  }
+
   function finishInit() {
     checkMissedDays();
+    examBuild(); examBoot(exBootFail);   // v7.6.1
     data.opensToday = (data.opensToday || 0) + 1;
     data.totalOpens = (data.totalOpens || 0) + 1;
     trySyncRegistry();   // v6.9.0: только если игрок «живой» (выполненный день и своё имя)
@@ -9303,6 +10582,7 @@
     updateTimer();
   }
 
+  rankSysNormalize(); rankSysMigrate(); examNormalize();   // v7.6.0; v7.6.1 — испытание ранга: ранг и ТН — после объявления всех констант (TDZ), до первой отрисовки
   SysTheme.init();   // v7.0.0: тема применяется до первой отрисовки
   AnimPause.init();  // v7.1.3: пауза анимаций под открытым окном
   ClassicFx.init();  // v7.2.8: проявление и уход окон в «Классике»

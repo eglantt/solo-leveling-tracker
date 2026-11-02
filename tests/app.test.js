@@ -446,7 +446,7 @@ async function renunciationTests() {
     const exp = r => E(w, `(() => { data.activeScroll = ${r ? "'renunciation'" : 'null'}; if (!data.titlesUnlocked.includes('Целеустремлённый')) data.titlesUnlocked.push('Целеустремлённый'); data.activeTitle = 'Целеустремлённый'; return getDynamicExp(1000, 1, 'pushups'); })()`);
     check('RN9 ранее отключаемое (Интеллект, титул, Прозрения, Непрерывности) по-прежнему отключено', exp(true) === 1000 && exp(false) > 1000, `${exp(true)} / ${exp(false)}`); }
   // панель
-  { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', 'seal_growth', 'amulet_will', 'seal_limit']; data.activeScroll = 'renunciation'`);
+  { const w = await mk(`data.equippedArtifacts = ['crystal_shadow', 'seal_growth', 'amulet_will', 'seal_limit']; data.activeScroll = 'renunciation'; data.titlesUnlocked = ['Пробужденный']; data.activeTitle = 'Пробужденный'`);   // v7.6.0: титул — за ранг E, не за уровень
     const eff = () => JSON.parse(E(w, 'JSON.stringify(window.__activeEffectsCache.map(e => ({ n: e.name, t: e.text, s: !!e.isSuppressed, a: !!e.isArtifact, ti: !!e.isTitle })))'));
     const list = eff(), arts = list.filter(e => e.a), title = list.find(e => e.ti);
     check('RN10 подавлены ровно Кристалл Теней и Амулет Воли; Печать Развития и Печать Предела — обычные',
@@ -472,7 +472,7 @@ async function effectsPanelTests() {
   const D = w.document, $ = id => D.getElementById(id), cs = el => w.getComputedStyle(el);
   E(w, `data.level = 80; data.inventory = Object.keys(ARTEFACTS); data.activeScroll = null; data.curseActiveToday = false; data.pendingCurse = false;
         data.insurance = true; data.insuranceSourceId = 'rune_protection'; data.expBoostToday = 0.55; data.expBoostSourceId = 'crystal_clarity';
-        if (!data.titlesUnlocked.includes('Целеустремлённый')) data.titlesUnlocked.push('Целеустремлённый'); data.activeTitle = 'Целеустремлённый';
+        if (!data.titlesUnlocked.includes('Целеустремлённый')) data.titlesUnlocked.push('Целеустремлённый'); data.activeTitle = 'Целеустремлённый'; data.consecutiveDays = 7;   // v7.6.0: без серии титул снимается, а «Пробужденный» за уровень больше не выдаётся
         data.equippedArtifacts = ['crystal_shadow', 'amulet_will', 'crystal_insight', null]; render();`);
   const names = () => JSON.parse(E(w, 'JSON.stringify(window.__activeEffectsCache.map(e => e.name))'));
   const n1 = names(), iT = n1.findIndex(n => n.startsWith('Титул: '));
@@ -998,7 +998,7 @@ async function completeTests() {
   const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('K4 старой надписи, её анимации и неиспользуемой вспышки нет', !/\.complete-popup|@keyframes completeText|\.completion-effect|@keyframes flash\b/.test(css) && !D.querySelector('.complete-popup'));
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
-  check('K5 в коде нет отложенных на 4,5 с уведомлений и прямых показов доплат свитков', !/, 4500\)/.test(raw) && (raw.match(/fxNotice\(\(\) =>/g) || []).length === 18);
+  check('K5 в коде нет отложенных на 4,5 с уведомлений и прямых показов доплат свитков', !/, 4500\)/.test(raw) && (raw.match(/fxNotice\(\(\) =>/g) || []).length === 17);   // v7.6.0: окна «Новый ранг» при повышении уровня больше нет
   await sleep(1900);
   check('K6 надпись ещё на экране в 1,9 с', !!D.querySelector('.quest-item[data-id="pushups"] .cpx'));
   await sleep(250);
@@ -1038,7 +1038,7 @@ async function sceneTests() {
   check('SC3 звук уровня — один раз, вместе с надписью', snd.length === 1 && lv && near(snd[0].t, lv.t, 30), JSON.stringify(snd));
   check('SC4 первое уведомление — через 1,2 с после LEVEL UP (≈6,7 с)', n1 && near(n1.t, 6700, 300), n1 && `${n1.t} ${n1.b}`);
   const q1 = JSON.parse(E(w, 'JSON.stringify(notificationQueue.map(q => q.body))'));
-  check('SC4b порядок прежний: глава ранга, «Достигнут…», затем предметы, напоминание о сохранении, процент дня', (() => { const ix = re => q1.findIndex(x => re.test(x)); return ix(/Кодекс: C-Ранг/) >= 0 && ix(/Кодекс: C-Ранг/) < ix(/^Достигнут \d+-й уровень/) && ix(/^Достигнут \d+-й уровень/) < ix(/^Получен предмет/); })() && /сохранить прогресс/.test(q1[q1.length - 2]) && /выполнено на/.test(q1[q1.length - 1]), JSON.stringify(q1));
+  check('SC4b порядок прежний: «Достигнут…», затем предметы, напоминание о сохранении, процент дня; главы ранга нет (v7.6.0)', (() => { const ix = re => q1.findIndex(x => re.test(x)); return ix(/Кодекс: .*Ранг/) < 0 && ((n1 && /^Достигнут \d+-й уровень/.test(n1.b)) || (ix(/^Достигнут \d+-й уровень/) >= 0 && ix(/^Достигнут \d+-й уровень/) < ix(/^Получен предмет/))) && ix(/^Получен предмет/) >= 0; })()   /* v7.6.0: без главы ранга «Достигнут…» — первое, уже на экране */ && /сохранить прогресс/.test(q1[q1.length - 2]) && /выполнено на/.test(q1[q1.length - 1]), JSON.stringify(q1));
   check('SC4a данные сохранены сразу', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).level === lv0 + 1);
 
   // 2) упражнение без нового уровня
@@ -1265,11 +1265,12 @@ async function headerTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
   const D = w.document, $ = id => D.getElementById(id);
   // --- ранги, цвет, число в эмблеме ---
-  const RANKS = [[5,'e','E-Rank','d1'],[15,'d','D-Rank','d2'],[26,'c','C-Rank','d2'],[35,'b','B-Rank','d2'],[45,'a','A-Rank','d2'],
-                 [55,'s','S-Rank','d2'],[67,'national','National Level','d2'],[88,'sss','SSS-Rank','d2'],[100,'monarch','Shadow Monarch','d3'],[123,'monarch','Shadow Monarch','d3']];
+  // v7.6.0: ранг отдельно от уровня — без ранга «Без ранга» цвета E при любом уровне; ранг — из data.rank
+  const RANKS = [[5,null,'e','Без ранга','d1'],[67,null,'e','Без ранга','d2'],[123,null,'e','Без ранга','d3'],[5,'e','e','E-Rank','d1'],[15,'d','d','D-Rank','d2'],[26,'c','c','C-Rank','d2'],[35,'b','b','B-Rank','d2'],[45,'a','a','A-Rank','d2'],
+                 [55,'s','s','S-Rank','d2'],[67,'national','national','National Level','d2'],[88,'sss','sss','SSS-Rank','d2'],[100,'monarch','monarch','Shadow Monarch','d3'],[3,'monarch','monarch','Shadow Monarch','d1']];
   const bad = [];
-  for (const [lv, cls, name, dcls] of RANKS) {
-    E(w, `data.level=${lv}; render()`);
+  for (const [lv, rk, cls, name, dcls] of RANKS) {
+    E(w, `data.level=${lv}; data.rank=${JSON.stringify(rk)}; render()`);
     if ($('hdrTop').className !== 'sc-top rk-' + cls || $('hdrRank').textContent !== name || $('hdrLevel').textContent !== String(lv) || $('hdrLevel').className !== dcls) bad.push(lv + ':' + $('hdrTop').className + '/' + $('hdrRank').textContent + '/' + $('hdrLevel').className);
   }
   check('H1 эмблема: уровень, класс цифр, цвет и название ранга для всех рангов', bad.length === 0, bad.join(', '));
@@ -1522,19 +1523,18 @@ async function textRevisionTests() {
   check('TX3 Несокрушимый и Торговец Врат — новые тексты',
     E(w, 'TITLES_DB["Несокрушимый"].desc').startsWith('Пять тысяч отжиманий — тело закалено, воля не дрогнула. ')
     && E(w, 'TITLES_DB["Торговец Врат"].desc').startsWith('Пятьдесят проданных предметов — излишки обращены в выгоду. '));
-  const EXP = { d: 'Первый этап эволюции. Базовая слабость преодолена.', c: 'Прогресс стал устойчивым.', b: 'Предел стандартной физической формы сломан.',
+  const EXP = { e: 'Базовая форма подтверждена. Открыт дальнейший Путь эволюции.', d: 'Первый этап эволюции. Базовая слабость преодолена.', c: 'Прогресс стал устойчивым.', b: 'Предел стандартной физической формы сломан.',
     a: 'Рубеж, до которого доходят немногие. Физические возможности вышли на пиковый уровень.', s: 'Игрок входит в категорию сильнейших.',
     national: 'Масштаб сил сопоставим с потенциалом целого государства.', sss: 'Предел человеческих возможностей оставлен позади.', monarch: 'Высшая точка развития.' };
-  check('TX4 у каждого из восьми рангов своя строка окна', E(w, 'typeof RANK_POPUP_LINES === "undefined" ? "" : JSON.stringify(RANK_POPUP_LINES)') === JSON.stringify(EXP));
+  check('TX4 у каждого из девяти рангов своя строка окна (v7.6.0: и у E)', E(w, 'typeof RANK_POPUP_LINES === "undefined" ? "" : JSON.stringify(RANK_POPUP_LINES)') === JSON.stringify(EXP));
   E(w, 'window.__P = []; showSystemPopup = (t, m) => window.__P.push([t, m]); fxNotice = fn => fn(); fxLevelUp = () => {}');
   const up = (from) => { E(w, `window.__P = []; data.level = ${from}; data.exp = getExpToNext(${from}); checkLevelUp()`); return JSON.parse(E(w, 'JSON.stringify(window.__P)')).filter(p => /^Новый ранг/.test(p[0])); };
   const r10 = up(9), r30 = up(29), r40 = up(39), r100 = up(99), r15 = up(14);
-  check('TX5 окно ранга: 10-й → D со своей строкой, 30-й → B, 40-й → A, 100-й → Shadow Monarch; без смены ранга окна нет',
-    r10.length === 1 && r10[0][0] === 'Новый ранг: D-Rank' && r10[0][1] === EXP.d && r30[0][1] === EXP.b && r40[0][1] === EXP.a
-    && r100[0][0] === 'Новый ранг: Shadow Monarch' && r100[0][1] === EXP.monarch && r15.length === 0, JSON.stringify([r10, r30, r40, r100, r15]));
+  check('TX5 v7.6.0: повышение уровня окна «Новый ранг» не показывает и ранг не меняет (10-й, 30-й, 40-й, 100-й)',
+    [r10, r30, r40, r100, r15].every(r => r.length === 0) && E(w, 'data.rank') === null && !E(w, 'data.codexUnlocked.some(c => /^rank_/.test(c))'), JSON.stringify([r10, r30, r40, r100, r15, E(w, 'data.rank')]));
   E(w, 'window.__P = []; data.level = 5; data.exp = 0; for (let l = 5; l < 32; l++) data.exp += getExpToNext(l); checkLevelUp()');
   const multi = JSON.parse(E(w, 'JSON.stringify(window.__P)')).filter(p => /^Новый ранг/.test(p[0]));
-  check('TX6 несколько рангов за раз — одно окно, последний ранг (B) и его строка', multi.length === 1 && multi[0][0] === 'Новый ранг: B-Rank' && multi[0][1] === EXP.b, JSON.stringify(multi));
+  check('TX6 v7.6.0: несколько уровней за раз — окна ранга нет', multi.length === 0 && E(w, 'data.rank') === null, JSON.stringify(multi));
 }
 
 
@@ -1640,7 +1640,7 @@ async function v7512Tests() {
   // Пробужденный
   const aw = E(w, `(() => { data.activeScroll = null; data.stats.int = 10; data.expBoostToday = 0; data.equippedArtifacts = [null,null,null,null]; data.isGoalMet = false;
     data.activeTitle = 'Новичок'; const a = getDynamicExp(1000, 1, 'press'); data.activeTitle = 'Пробужденный'; const b = getDynamicExp(1000, 1, 'press'); return [a, b, TITLES_DB['Пробужденный'].desc]; })()`);
-  check('TT1 «Пробужденный»: +3% к опыту (1000 → 1030), описание «…увеличен на 3%.»', aw[0] === 1000 && aw[1] === 1030 && aw[2] === 'Игрок осознал свою силу, достигнув 10 уровня. Весь получаемый опыт увеличен на 3%.', JSON.stringify(aw));
+  check('TT1 «Пробужденный»: +3% к опыту (1000 → 1030), описание «…увеличен на 3%.»', aw[0] === 1000 && aw[1] === 1030 && aw[2] === 'Первый ранг подтверждён испытанием. Весь получаемый опыт увеличен на 3%.', JSON.stringify(aw));
   // Бегущий: перенос
   const old = SEED;
   SEED = JSON.stringify(Object.assign(JSON.parse(old), { activeTitle: 'Странник', titlesUnlocked: ['Новичок', 'Странник'] })); const m1 = E(boot(), 'JSON.stringify([data.activeTitle, data.titlesUnlocked])');
@@ -1806,9 +1806,9 @@ async function v759Tests() {
   check('FX1 напоминания: «Задание не выполнено. Время идёт.» и «Срок задания почти истёк.» вместо «Система фиксирует: …»; «Задание выполнено…» — без изменений',
     r1.includes('Задание не выполнено. Время идёт.') && r2.includes('Срок задания почти истёк.') && !r1.concat(r2).some(t => /фиксир/i.test(t))
     && c.includes('Задание выполнено. Система фиксирует прогресс.') && c.includes('Система фиксирует выполнение задания.'), rem);
-  check('FX2 окно штрафа — «Дневное задание не выполнено.»; глава «C-Ранг» — «Достигнут устойчивый прогресс. …»',
+  check('FX2 окно штрафа — «Дневное задание не выполнено.»; глава «C-Ранг» (v7.6.0) — «Устойчивый прогресс подтверждён испытанием. …»',
     src.includes('<div class="danger-text">Дневное задание не выполнено.</div>') && !src.includes('Система зафиксировала невыполнение задания.')
-    && E(w, 'CODEX_CHAPTERS.rank_c.content').startsWith('Достигнут устойчивый прогресс. Физическая выносливость'), E(w, 'CODEX_CHAPTERS.rank_c.content'));
+    && E(w, 'CODEX_CHAPTERS.rank_c.content').startsWith('Устойчивый прогресс подтверждён испытанием. Физическая выносливость'), E(w, 'CODEX_CHAPTERS.rank_c.content'));
   check('FX3 оставлены без изменений: темп, высокая нагрузка, перегрузка, Бремя Аномалии (2 места при запуске + отказ Шкатулки)',
     E(w, 'PACE_NOTICE').startsWith('Зафиксирован недопустимый темп.') && E(w, 'FZ_T70').startsWith('Зафиксирована высокая нагрузка.') && E(w, 'FZ_TBIG').startsWith('Зафиксирована перегрузка:')
     && (src.match(/Зафиксирован резонанс Аномалии\./g) || []).length === 2 && src.includes('Зафиксирован активный эффект резонанса Аномалии.'));
@@ -1977,7 +1977,8 @@ async function registryTests() {
   const top = [104, 86, 63, 52, 45, 33, 24, 15, 5].map((lv, i) => ({ rank: i + 1, name: 'И' + i, level: lv, bestStreak: 3 }));
   E(w, `window.__lbRes({ json: () => Promise.resolve(${JSON.stringify({ ok: true, top, you: null })}) })`); await new Promise(r => setTimeout(r, 30));
   const ranks = [...D.querySelectorAll('#leaderboardContent .item-desc.rank')].map(e => [...e.classList].filter(c => c !== 'item-desc' && c !== 'rank').join(''));
-  check('LB2 список встал на место «Загрузки»; у строки ранга — пометка ранга (все девять)', !D.querySelector('#leaderboardContent .lb-load') && ranks.join(',') === 'monarch,sss,national,s,a,b,c,d,e', ranks.join(','));
+  const lvls = [...D.querySelectorAll('#leaderboardContent .item-name')].map(e => (e.textContent.match(/(\d+) ур\./) || [])[1]).join(',');
+  check('LB2 список встал на место «Загрузки»; v7.6.0: строки ранга нет, только уровень', !D.querySelector('#leaderboardContent .lb-load') && ranks.length === 0 && lvls === '104,86,63,52,45,33,24,15,5', ranks.join(',') + ' / ' + lvls);
   E(w, `fetch = () => Promise.resolve({ json: () => Promise.resolve({}) }); openLeaderboard()`); await new Promise(r => setTimeout(r, 30));
   const m1 = D.querySelector('#leaderboardContent .lb-msg');
   E(w, `fetch = () => Promise.resolve({ json: () => Promise.resolve({ ok: true, top: [], you: null }) }); openLeaderboard()`); await new Promise(r => setTimeout(r, 30));

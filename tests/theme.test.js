@@ -288,7 +288,7 @@ const w = boot(); const D = w.document; await tick();
 { closeAll(w); await tick(); E(w, 'sysToolsAuthorized = true; openSysTools()'); await tick();
   const win = D.querySelector('#sysToolsOverlay > .status-window');
   check('T46 Длань в теме «Система»: раздел «Характеристики» внутри окна Системы, шаг — строка той же сетки, кнопки «1» / «10» над «−» / «+», выбрана «1»; стили строк и выбранной кнопки есть в обеих темах',
-    win.classList.contains('mwin') && !!win.querySelector('.sf-panel.mw #sysStatStep.sys-stat-row') && [...win.querySelectorAll('.sf-panel.mw .sys-stat-row')].filter(r => !r.closest('.backup-section').textContent.includes('Штрафы')).length === 7   /* v7.5.10: строки раздела «Штрафы» (с v7.5.7) не считаются */
+    win.classList.contains('mwin') && !!win.querySelector('.sf-panel.mw #sysStatStep.sys-stat-row') && [...win.querySelectorAll('.sf-panel.mw .sys-stat-row')].filter(r => !r.closest('.backup-section').textContent.includes('Штрафы') && !r.closest('.backup-section').textContent.includes('Испытание ранга')).length === 7   /* v7.5.10: строки раздела «Штрафы» (с v7.5.7) не считаются */
     && [...win.querySelectorAll('#sysStatStep .sys-step-btn.backup-action-btn')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|') === '1*|10'
     && /\n    \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'))
     && /body\.theme-sys \.sf-win\.mwin \.sys-stat-row \.sys-step-btn\.on \{/.test([...D.querySelectorAll('style')].map(x => normGid(x.textContent)).join('\n'))
@@ -416,7 +416,7 @@ const w = boot(); const D = w.document; await tick();
   const ids = J(w, `[...Object.keys(SHOP_CATALOG), ...Object.keys(UNIQUE_CATALOG), ...Object.keys(BOX_CATALOG), ...Object.keys(KEY_CATALOG), ...Object.keys(ARTEFACTS), ...Object.values(TITLE_ICON_IDS)]`);
   const src = [...D.querySelectorAll('script')].map(x => normGid(x.textContent)).join('\n');
   const effStatic = [...src.matchAll(/icon: 'icons\/items\/([\w-]+)\.png'/g)].map(m => m[1]);
-  const need = [...new Set([...JSON.parse(ids), ...effStatic])], miss = need.filter(id => !small.has(id + '.png'));
+  const need = [...new Set([...JSON.parse(ids), ...effStatic].map(id => /^box_rank_/.test(id) ? 'box_rank' : id))]   /* v7.6.1: одна иконка на девять шкатулок ранга (ICON_ALIAS) */, miss = need.filter(id => !small.has(id + '.png'));
   const big = fs.readdirSync(path.join(root, 'icons', 'items')).filter(f => f.endsWith('.png') && f !== 'ice_layer_freeze.png');
   check('T66 маленькая копия есть у каждого предмета, титула и значка эффекта (и у каждого оригинала, кроме льда)', miss.length === 0 && big.every(f => small.has(f)), miss.join(','));
   closeAll(w); await tick(); E(w, 'openShop()'); await tick();

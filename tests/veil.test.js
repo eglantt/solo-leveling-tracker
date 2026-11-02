@@ -67,41 +67,41 @@ const lastDay = w => { const k = Object.keys(E(w, 'data.history')).sort().pop();
 // --- получение: порог по рангу, «подряд без штрафа» ---
 { const w = fresh();
   const need = J(w, `(() => { const r = []; for (const lv of [1, 39, 40, 49, 50, 79, 80, 99, 100, 140]) { data.level = lv; data.beadStreak = 0; data.consumables.bone_bead = 0; data.activeScroll = null; let n = 1; while (!grantBoneBead()) n++; r.push(n); } return r; })()`);
-  check('C1 порог по рангу: E–B каждый, A 2-й, S/National 3-й, SSS 4-й, Monarch 5-й', need === '[1,1,2,2,3,3,4,4,5,5]', need); }
+  check('C1 порог (v7.6.0): до 49-го уровня каждый день, с 50-го — каждый 2-й', need === '[1,1,1,1,2,2,2,2,2,2]', need); }
 { const w = fresh("data.level = 1; data.codexUnlocked = data.codexUnlocked.filter(c => c !== 'bone_bead'); data.consumables.bone_bead = 0; data.beadStreak = 0; render();");
   complete(w); await sleep(4700);
   check('C2 E–B: бусина за выполненный день, уведомление, глава Кодекса', E(w, 'data.consumables.bone_bead') === 1 && N(w).includes('Получен предмет: Костяная бусина') && E(w, "data.codexUnlocked.includes('bone_bead')") && E(w, 'data.beadStreak') === 0, N(w)); }
-{ const w = fresh('data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;');
+{ const w = fresh('data.level = 55; data.consumables.bone_bead = 0; data.beadStreak = 0;');
   complete(w); const a1 = E(w, 'data.consumables.bone_bead'), s1 = E(w, 'data.beadStreak'); reset(w);
   complete(w); const a2 = E(w, 'data.consumables.bone_bead');
-  check('C3 A-ранг: за первый день нет, за второй подряд — есть', a1 === 0 && s1 === 1 && a2 === 1 && E(w, 'data.beadStreak') === 0, `${a1}/${s1}/${a2}`); }
-{ const w = fresh('data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;');
+  check('C3 50-й уровень и выше (v7.6.0): за первый день нет, за второй подряд — есть', a1 === 0 && s1 === 1 && a2 === 1 && E(w, 'data.beadStreak') === 0, `${a1}/${s1}/${a2}`); }
+{ const w = fresh('data.level = 55; data.consumables.bone_bead = 0; data.beadStreak = 0;');
   complete(w); reset(w); reset(w);
   check('C4 штраф обнуляет счётчик', lastDay(w) === 'penalty' && E(w, 'data.beadStreak') === 0); }
-{ const w = fresh("data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;");
+{ const w = fresh("data.level = 55; data.consumables.bone_bead = 0; data.beadStreak = 0;");
   complete(w); reset(w); E(w, "data.insurance = true; data.insuranceSourceId = 'rune_protection_charged'"); reset(w);
   check('C5 срыв, прикрытый руной, тоже обнуляет', lastDay(w) === 'protected' && E(w, 'data.beadStreak') === 0); }
-{ const w = fresh("data.level = 45; data.consumables.bone_bead = 1; data.beadStreak = 0;");
+{ const w = fresh("data.level = 55; data.consumables.bone_bead = 1; data.beadStreak = 0;");
   complete(w); useB(w); reset(w); const s0 = E(w, 'data.beadStreak');
   reset(w); const sAfterVeil = E(w, 'data.beadStreak');
   complete(w);
   check('C6 Пелена (не снята) счётчик не трогает: путь к бусине продолжается', s0 === 1 && sAfterVeil === 1 && lastDay(w) === 'veil' && E(w, 'data.consumables.bone_bead') === 1 && E(w, 'data.beadStreak') === 0, `${s0}/${sAfterVeil}`); }
-{ const w = fresh("data.level = 45; data.consumables.bone_bead = 1; data.beadStreak = 0;");
+{ const w = fresh("data.level = 55; data.consumables.bone_bead = 1; data.beadStreak = 0;");
   complete(w); useB(w); reset(w); await sleep(3200); E(w, 'liftVeil()'); await sleep(4800);
   const before = E(w, 'data.consumables.bone_bead'); complete(w); await sleep(4700);
   check('C7 снятая и выполненная Пелена: шага нет, бусины нет', E(w, 'data.beadStreak') === 1 && E(w, 'data.consumables.bone_bead') === before, `${E(w, 'data.beadStreak')}`);
   const exp = E(w, 'data.exp'); reset(w);
   check('C7a … и день — успех, серия +1', lastDay(w) === 'success'); }
-{ const w = fresh("data.level = 45; data.consumables.bone_bead = 1; data.beadStreak = 0;");
+{ const w = fresh("data.level = 55; data.consumables.bone_bead = 1; data.beadStreak = 0;");
   complete(w); useB(w); reset(w); await sleep(3200); E(w, 'liftVeil()'); await sleep(4800); reset(w);
   check('C8 снятая и не выполненная Пелена: без штрафа и без сброса счётчика', lastDay(w) === 'veil' && E(w, 'data.beadStreak') === 1); }
-{ const w = fresh("data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;");
+{ const w = fresh("data.level = 55; data.consumables.bone_bead = 0; data.beadStreak = 0;");
   complete(w); reset(w);
   E(w, "data.activeScroll = 'freeze'; data.freezeEndTimestamp = Date.now() + 3 * 86400000; data.freezeStartTimestamp = Date.now();"); reset(w); reset(w);
   check('C9 Заморозка счётчик не трогает', E(w, 'data.beadStreak') === 1); }
 { const w = fresh("data.level = 1; data.consumables.bone_bead = 3; data.beadStreak = 0;"); complete(w); await sleep(4700);
   check('C10 запас полный: бусины нет, счётчик всё равно заново, без уведомления', E(w, 'data.consumables.bone_bead') === 3 && E(w, 'data.beadStreak') === 0 && !N(w).includes('Костяная бусина')); }
-{ const w = fresh("data.level = 45; data.consumables.bone_bead = 0; data.beadStreak = 0;");
+{ const w = fresh("data.level = 55; data.consumables.bone_bead = 0; data.beadStreak = 0;");
   complete(w); reset(w); reset(w); const s0 = E(w, 'data.beadStreak');
   E(w, "data.consumables.rune_correction = 1"); use(w, 'rune_correction');
   check('C11 исправление дня руной счётчик не возвращает', s0 === 0 && E(w, 'data.beadStreak') === 0 && lastDay(w) === 'success'); }

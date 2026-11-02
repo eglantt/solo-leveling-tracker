@@ -46,16 +46,16 @@ const freshB = s => { const w = fresh(s); w.TextEncoder = TextEncoder; w.TextDec
 // ===== v6.10.3: счётчик бусины при полном запасе =====
 { const w = fresh('data.level = 45; data.consumables.bone_bead = 3; data.beadStreak = 1;'); complete(w); await sleep(4700);
   check('F1 запас 3: выполненный день счётчик не двигает и держит на нуле, бусины нет', E(w, 'data.beadStreak') === 0 && E(w, 'data.consumables.bone_bead') === 3 && !N(w).includes('Костяная бусина')); }
-{ const w = fresh('data.level = 45; data.consumables.bone_bead = 3; data.beadStreak = 0;');
+{ const w = fresh('data.level = 55; data.consumables.bone_bead = 3; data.beadStreak = 0;');   // v7.6.0: каждый 2-й день — с 50-го уровня
   complete(w); reset(w); E(w, 'data.consumables.bone_bead = 2');
   complete(w); const a = E(w, 'data.consumables.bone_bead'), s1 = E(w, 'data.beadStreak'); reset(w);
   complete(w);
-  check('F2 A-ранг: после траты снова полный порог (2 дня)', a === 2 && s1 === 1 && E(w, 'data.consumables.bone_bead') === 3, `${a}/${s1}/${E(w, 'data.consumables.bone_bead')}`); }
+  check('F2 50-й уровень и выше: после траты снова полный порог (2 дня)', a === 2 && s1 === 1 && E(w, 'data.consumables.bone_bead') === 3, `${a}/${s1}/${E(w, 'data.consumables.bone_bead')}`); }
 { const w = fresh();
   const r = J(w, `(() => { data.level = 100; data.consumables.bone_bead = 3; data.beadStreak = 0; data.activeScroll = null;
     const full = [1, 2, 3].map(() => grantBoneBead() || data.beadStreak);
     data.consumables.bone_bead = 2; let n = 1; while (!grantBoneBead()) n++; return { full, n }; })()`);
-  check('F3 Монарх: при полном запасе счётчик стоит, после траты — 5 дней', r === JSON.stringify({ full: [0, 0, 0], n: 5 }), r); }
+  check('F3 100-й уровень: при полном запасе счётчик стоит, после траты — 2 дня (v7.6.0)', r === JSON.stringify({ full: [0, 0, 0], n: 2 }), r); }
 { const w = fresh('data.level = 45; data.consumables.bone_bead = 1; data.beadStreak = 1;');
   E(w, "devAddItem('bone_bead'); devAddItem('bone_bead')"); await sleep(900); E(w, "flashThenRun && 0"); E(w, 'data.consumables.bone_bead = 3'); complete(w);
   check('F4 запас стал 3 через Длань при набранном счётчике — на ближайшем выполненном дне счётчик обнуляется', E(w, 'data.beadStreak') === 0 && E(w, 'data.consumables.bone_bead') === 3); }
@@ -124,9 +124,9 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   E(w, 'data.expDebt = 450; updateSysCurrent()');
   check('Y9 строка опыта при долге — как в шапке', D.getElementById('sysExpNow').textContent === 'Долг −450 EXP');
   E(w, 'data.expDebt = 0');
-  const btns = [...D.querySelectorAll('.sys-btn-pair')].map(r => [...r.querySelectorAll('button')].map(b => b.textContent.trim()).join(' | '));
+  const btns = [...D.querySelectorAll('.sys-btn-pair:not(.sys-regime-pair)')].map(r => [...r.querySelectorAll('button')].map(b => b.textContent.trim()).join(' | '));
   check('Y10 пары кнопок в одну строку: «Отнять EXP | Добавить EXP», «Отнять ◈ | Добавить ◈» (значок кредитов)',
-    btns[0] === 'Отнять EXP | Добавить EXP' && btns[1] === 'Отнять | Добавить' && D.querySelectorAll('.sys-btn-pair')[1].querySelectorAll('.cr-ic').length === 2
+    btns[0] === 'Отнять EXP | Добавить EXP' && btns[1] === 'Отнять | Добавить' && D.querySelectorAll('.sys-btn-pair:not(.sys-regime-pair)')[1].querySelectorAll('.cr-ic').length === 2
     && w.getComputedStyle(D.querySelector('.sys-btn-pair')).display === 'flex' && /\.sys-btn-pair \.backup-action-btn \{ flex: 1 1 0; min-width: 0; white-space: nowrap;/.test([...D.querySelectorAll('style')].map(x => x.textContent).join('')), btns.join(' // '));
   E(w, `sysToolsAuthorized = true; document.getElementById('sysLevelInput').value = '12'; window.__btn = document.createElement('button'); sysToolsFlashThenRun(window.__btn, setLevelAction)`);
   await sleep(500);
@@ -142,12 +142,13 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   check('Z3 долг — красный', ['#ff5555', 'rgb(255,85,85)'].includes(rgb(D.querySelector('#sysExpNow .sv'))) && D.querySelector('#sysExpNow .sv').textContent === 'Долг −450 EXP');
   E(w, 'data.expDebt = 0');
   const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
-  const want = { 9: 'e', 10: 'd', 19: 'd', 20: 'c', 29: 'c', 30: 'b', 39: 'b', 40: 'a', 49: 'a', 50: 's', 59: 's', 60: 'national', 79: 'national', 80: 'sss', 99: 'sss', 100: 'monarch' };
-  const bad = Object.entries(want).filter(([lv, rk]) => { E(w, `data.level = ${lv}; updateSysCurrent()`); const v = D.querySelector('#sysLevelNow .sv.lvl'); return !v || !v.classList.contains('rk-' + rk) || v.textContent !== String(lv); }).map(x => x[0]);
-  check('Z4 уровень — в цвет ранга на всех границах, цвет только у числа', bad.length === 0 && D.querySelector('#sysLevelNow .sl').textContent === 'Уровень' && /\.sys-current \.sv\.lvl \{ color: var\(--rk\); \}/.test(css) && /\.sys-current \.sl \{[^}]*color: #88ddff;/.test(css), bad.join(','));
-  E(w, `sysToolsAuthorized = true; data.level = 49; document.getElementById('sysLevelInput').value = '50'; sysToolsFlashThenRun(document.createElement('button'), setLevelAction)`);
+  // v7.6.0: цвет — по рангу Игрока (data.rank), не по уровню; без ранга — как E
+  const want = { 9: [null, 'e'], 10: ['d', 'd'], 20: ['c', 'c'], 30: ['b', 'b'], 40: ['a', 'a'], 50: ['s', 's'], 60: ['national', 'national'], 80: ['sss', 'sss'], 99: ['monarch', 'monarch'], 100: [null, 'e'] };
+  const bad = Object.entries(want).filter(([lv, [r, rk]]) => { E(w, `data.level = ${lv}; data.rank = ${JSON.stringify(r)}; updateSysCurrent()`); const v = D.querySelector('#sysLevelNow .sv.lvl'); return !v || !v.classList.contains('rk-' + rk) || v.textContent !== String(lv); }).map(x => x[0]);
+  check('Z4 уровень — в цвет ранга Игрока (v7.6.0: ранг отдельно от уровня), цвет только у числа', bad.length === 0 && D.querySelector('#sysLevelNow .sl').textContent === 'Уровень' && /\.sys-current \.sv\.lvl \{ color: var\(--rk\); \}/.test(css) && /\.sys-current \.sl \{[^}]*color: #88ddff;/.test(css), bad.join(','));
+  E(w, `sysToolsAuthorized = true; data.level = 49; data.rank = 'b'; document.getElementById('sysLevelInput').value = '50'; sysToolsFlashThenRun(document.createElement('button'), setLevelAction)`);
   await sleep(500);
-  check('Z5 после «Установить уровень» число перекрашено в новый ранг', D.querySelector('#sysLevelNow .sv.lvl').classList.contains('rk-s') && D.querySelector('#sysLevelNow .sv.lvl').textContent === '50'); }
+  check('Z5 после «Установить уровень» число обновлено, цвет — прежнего ранга (v7.6.0: уровень ранг не меняет)', D.querySelector('#sysLevelNow .sv.lvl').classList.contains('rk-b') && D.querySelector('#sysLevelNow .sv.lvl').textContent === '50'); }
 
 // ===== v6.10.7: Архив — «Настройки» после «Уведомлений», перед «Экспортом» =====
 { const w = freshB('data.soundEnabled = true; data.notificationsEnabled = true;'); const D = w.document;
@@ -238,7 +239,7 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
 { const w = fresh('data.stats = { str: 12, agi: 10, sta: 18, int: 10, per: 15 }; data.statPoints = 5;'); const D = w.document;
   E(w, 'sysToolsAuthorized = true; openSysTools()');
   const secs = [...D.querySelectorAll('#sysToolsOverlay .backup-section-title')].map(t => t.textContent);
-  const rows = [...D.querySelectorAll('#sysToolsOverlay .sys-stat-row:not(.sys-stat-step)')].filter(r => !r.closest('.backup-section').textContent.includes('Штрафы'))   /* v7.5.7: в разделе «Штрафы» — своя строка цепи */.map(r => r.querySelector('.ssn').textContent + '=' + r.querySelector('.ssv').textContent);
+  const rows = [...D.querySelectorAll('#sysToolsOverlay .sys-stat-row:not(.sys-stat-step)')].filter(r => !r.closest('.backup-section').textContent.includes('Штрафы') && !r.closest('.backup-section').textContent.includes('Испытание ранга'))   /* v7.5.7: в разделе «Штрафы» — своя строка цепи; v7.6.0: в «Испытании ранга» — строка ранга */.map(r => r.querySelector('.ssn').textContent + '=' + r.querySelector('.ssv').textContent);
   check('S1 раздел «Характеристики» — сразу после «Кредитов»; шаг 1 / 10; шесть строк: свободные очки и пять характеристик с текущими значениями',
     secs.indexOf('Характеристики') === secs.indexOf('Кредиты') + 1 && [...D.querySelectorAll('#sysStatStep button')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join('|') === '1*|10'
     && rows.join(' ') === 'Свободные очки=5 Сила=12 Ловкость=10 Выносливость=18 Интеллект=10 Восприятие=15', rows.join(' '));
