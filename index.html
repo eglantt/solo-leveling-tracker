@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.7 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.8 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1365,9 +1365,7 @@
     .day-cell .cal-ex { position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; pointer-events: none; }   /* v7.6.5: внутри квадратика, в углу у рамки */
     .day-cell .cal-ex svg, .legend .cal-ex svg { width: 100%; height: 100%; display: block; overflow: visible; }
     .day-cell .cal-ex.ok { filter: drop-shadow(0 0 3px var(--rkc)); }
-    .legend .cal-ex { position: relative; display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 6px; }
-    .legend .cal-swatch.ex-sw { position: relative; }
-    .legend .cal-swatch.ex-sw .cal-ex { position: absolute; top: -5px; left: -5px; margin: 0; }
+    .legend .cal-ex { position: relative; display: inline-block; width: 12px; height: 12px; vertical-align: middle; margin-right: 3px; }   /* v7.6.8: отдельный значок, без квадратика */
     /* ===== v7.6.7: таймер этапа испытания — комета (сборка демо 119) ===== */
     #exLayer .acts { row-gap: 12px; }   /* «Завершить этап» в беге не прилипает к ряду выше */
     #exLayer { --hxc: 64,192,255; }
@@ -1935,8 +1933,8 @@
       <span><span class="cal-swatch cal-today-swatch"><span class="cal-tc tl"></span><span class="cal-tc tr"></span><span class="cal-tc bl"></span><span class="cal-tc br2"></span></span>Сегодня</span>
       <span><span class="cal-swatch" style="border:2px solid #2a2f3a;"></span>Нет данных</span>
       <span>⭐ Новый уровень</span>
-      <span><span class="cal-swatch ex-sw" style="border:2px solid #ffd34d; box-shadow:0 0 5px rgba(255,211,77,0.5);"><span class="cal-ex" id="legExOk"></span></span>Испытание ранга пройдено</span>   <!-- v7.6.1 -->
-      <span><span class="cal-swatch ex-sw" style="border:2px solid #2a2f3a;"><span class="cal-ex" id="legExFail"></span></span>Испытание ранга</span>
+      <span><span class="cal-swatch" id="legExOk" style="border:2px solid #ffd34d; box-shadow:0 0 5px rgba(255,211,77,0.5);"></span>Испытание ранга пройдено</span>   <!-- v7.6.1; v7.6.8: только золотой квадратик -->
+      <span><span class="cal-ex" id="legExFail"></span>Испытание ранга</span>   <!-- v7.6.8: только шестигранник -->
     </div>
     </div>
     <div id="calTooltip" class="cal-tooltip" style="display:none;">
@@ -2403,7 +2401,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.7';
+  const APP_VERSION = '7.6.8';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -8590,7 +8588,7 @@
   }
 
   function calRenderCalendar() {
-    { const a = document.getElementById('legExOk'), b = document.getElementById('legExFail'); if (a && !a.firstChild) { a.innerHTML = calExHex('#ffd34d'); b.innerHTML = calExHex(null); } }   // v7.6.1
+    { const b = document.getElementById('legExFail'); if (b && !b.firstChild) b.innerHTML = calExHex(null); }   // v7.6.1; v7.6.8: у «пройдено» шестигранника нет
     document.getElementById('calTooltip').style.display = 'none';
     const now = new Date();
     const isCurrentMonth = (calViewYear === now.getFullYear() && calViewMonth === now.getMonth());

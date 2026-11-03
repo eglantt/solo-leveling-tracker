@@ -227,6 +227,10 @@ async function legendTests() {
   const items = [...D.querySelectorAll('#legendBody > span')].map(sp => ({ text: sp.textContent.trim(), border: (sp.querySelector('.cal-swatch') || {}).getAttribute ? sp.querySelector('.cal-swatch').getAttribute('style') || '' : '' }));
   const missing = statuses.filter(st => { const c = dayColor(st); return !c || !items.some(i => i.border.includes('2px solid ' + c)); });
   check('LG1 для каждого статуса дня в календаре есть пункт легенды того же цвета', missing.length === 0, 'нет: ' + missing.join(', ') + ' | статусы: ' + statuses.join(','));
+  { E(w, 'calRenderCalendar()'); const ok = D.getElementById('legExOk'), fl = D.getElementById('legExFail');
+    check('LG5 v7.6.8: «Испытание ранга пройдено» — только золотой квадратик (без шестигранника), «Испытание ранга» — только серый шестигранник (без квадратика)',
+      !!ok && ok.classList.contains('cal-swatch') && !ok.querySelector('svg') && /#ffd34d/.test(ok.getAttribute('style'))
+      && !!fl && fl.classList.contains('cal-ex') && !!fl.querySelector('svg path') && !fl.closest('.cal-swatch') && !fl.parentElement.querySelector('.cal-swatch')); }
   const names = items.map(i => i.text);
   check('LG2 «Заморожено» — сразу после «Защищено»', names.indexOf('Заморожено') === names.indexOf('Защищено') + 1, names.join(' | '));
   const fr = items.find(i => i.text === 'Заморожено');
