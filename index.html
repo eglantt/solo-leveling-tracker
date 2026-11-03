@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2331,7 +2331,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.3';
+  const APP_VERSION = '7.6.4';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -9821,7 +9821,12 @@
     press: { nm: 'Пресс', cap: 60 }, steps: { nm: 'Бег', cap: 4400, run: true } };
   const EX_NORMS = { e: [30, 50, 12, 40, 2280], d: [45, 62, 16, 52, 2470], c: [60, 74, 18, 64, 2660], b: [75, 85, 22, 75, 2800], a: [88, 95, 28, 85, 2930],
     s: [100, 103, 34, 94, 3020], national: [110, 110, 41, 102, 3100], sss: [120, 115, 48, 109, 3170], monarch: [128, 119, 55, 115, 3230] };
-  const EX_TOTAL = 3 * 3600, EX_DL_BEFORE = 5 * 3600000, EX_OFFER_GAP = 3, EX_DAY = 24 * 3600000;
+  const EX_TOTAL = 5 * 3600, EX_DL_BEFORE = 6 * 3600000, EX_OFFER_GAP = 3, EX_DAY = 24 * 3600000;   // v7.6.4: 5 часов на испытание, начать — не позже чем за 6 часов до сброса
+  // v7.6.4: отдых между раундами силового этапа — по высшему рангу допуска (E–C 4 мин, B–S 4,5 мин, National–Monarch 5 мин); после последнего раунда — 90 с на ввод.
+  // Числа запоминаются в испытании при старте (rest / fin / tot); испытание, начатое до 7.6.4 (без них), доигрывается по прежним: 30 с, 30 с, 3 часа.
+  const EX_REST = r => ['e', 'd', 'c'].includes(r) ? 240 : (['b', 'a', 's'].includes(r) ? 270 : 300);
+  const EX_FIN = 90, EX_OLD = { rest: 30, fin: 30, tot: 3 * 3600 };
+  const EX_REST_TXT = { 240: '4 минуты', 270: '4 минуты 30 секунд', 300: '5 минут' };
   const EX_FAIL = {
     late: { pct: 1, days: 7, nm: 'Срок упущен', why: 'Испытание не начато в отведённый срок. Допуск аннулирован.', log: 'срок упущен' },
     refuse: { pct: 0.7, days: 5, nm: 'Отказ', why: 'Испытание прекращено по решению Игрока. Порог ранга не подтверждён.', log: 'отказ' },
@@ -9846,10 +9851,16 @@
   function examStageOn() { return examOn() && !!data.exam.act; }
   function examNow() { const e = data.exam; if (!e || e.st !== 'running') return 0; return e.vt + Math.max(0, Date.now() - e.vAt) / 1000 * (e.sp || 1); }
   function examSetSpeed(sp) { const e = data.exam; if (!e || e.st !== 'running') return; e.vt = examNow(); e.vAt = Date.now(); e.sp = sp; saveData(); }
+  function exRun3(e) { e = e || data.exam; return e && e.st === 'running' && !Number.isFinite(e.rest); }   // испытание, начатое до 7.6.4
+  function exRest(e) { e = e || data.exam; if (!e) return EX_REST('e'); return Number.isFinite(e.rest) ? e.rest : (exRun3(e) ? EX_OLD.rest : EX_REST(e.adm)); }
+  function exFin(e) { e = e || data.exam; return e && Number.isFinite(e.fin) ? e.fin : (exRun3(e) ? EX_OLD.fin : EX_FIN); }
+  function exTot(e) { e = e || data.exam; return e && Number.isFinite(e.tot) ? e.tot : (exRun3(e) ? EX_OLD.tot : EX_TOTAL); }
+  function exStrengthLen() { return 10 + 4 * 40 + 3 * exRest() + exFin(); }
   function exStrengthAt(t) {
     if (t < 10) return { ph: 'prep', r: 1, el: t, len: 10 };
     let x = t - 10;
-    for (let r = 1; r <= 4; r++) { if (x < 40) return { ph: 'work', r, el: x, len: 40 }; x -= 40; if (x < 30) return { ph: r < 4 ? 'rest' : 'fin', r, el: x, len: 30 }; x -= 30; }
+    const rest = exRest(), fin = exFin();
+    for (let r = 1; r <= 4; r++) { if (x < 40) return { ph: 'work', r, el: x, len: 40 }; x -= 40; const L = r < 4 ? rest : fin; if (x < L) return { ph: r < 4 ? 'rest' : 'fin', r, el: x, len: L }; x -= L; }
     return { ph: 'end', r: 4, el: 0, len: 1 };
   }
   function exRunAt(t) {   // подготовка 10 с, бег 20 мин, ввод 5 мин по условиям и ещё 15 мин тихо
@@ -9879,7 +9890,7 @@
       { k: 'adm', ok: !!top, t: top ? `Допуск: до ${RANK_NAMES[top]}` : 'Допуска нет' },
       { k: 'bar', ok: data.expDebt <= 0 && data.exp >= toNext * 0.7, t: `Шкала опыта не меньше 70% (сейчас ${barPct}%)` },
       { k: 'day', ok: !data.curseActiveToday && !data.pendingCurse && !data.activeScroll && !data.pendingScroll, t: 'День без Бремени, свитков, Пелены и Заморозки' },
-      { k: 'time', ok: examDeadlineTs() > now, t: `До сброса больше 5 часов (срок старта ${exHm(examDeadlineTs())})` },
+      { k: 'time', ok: examDeadlineTs() > now, t: `До сброса больше 6 часов (срок старта ${exHm(examDeadlineTs())})` },
       { k: 'delay', ok: !(data.examDelayUntil && data.lastReset < data.examDelayUntil), t: 'Нет задержки после провала' },
       { k: 'gap', ok: !data.examLastOffer || exCyclesSince(data.examLastOffer) >= EX_OFFER_GAP, t: 'С прошлого предложения не меньше 3 циклов' + (data.examLastOffer ? ` (прошло ${Math.max(0, exCyclesSince(data.examLastOffer))})` : '') },
       { k: 'none', ok: !data.exam && !data.examPost, t: 'Испытание не идёт' }
@@ -9920,13 +9931,13 @@
       <div class="danger-btn-row">${exBtn('Условия', 'examGo(2)')}${exBtn('Отказаться', 'examDecline()', 'danger-btn-cancel')}</div></div>`;
     if (n === 2) {
       const P = ['Испытание включает пять этапов: отжимания, приседания, подтягивания, пресс и бег. Порядок этапов определяет Игрок.',
-        'Этап силового упражнения включает 4 раунда: 40 секунд работы и 30 секунд отдыха. Перед первым раундом даётся 10 секунд на подготовку. Количество выполненных повторений вносится после каждого раунда. Не внесённый раунд засчитывается как 0.',
+        `Этап силового упражнения включает 4 раунда: 40 секунд работы и ${EX_REST_TXT[EX_REST(e ? e.adm : 'e')]} отдыха. Перед первым раундом даётся 10 секунд на подготовку. Количество выполненных повторений вносится во время отдыха после каждого раунда, после последнего раунда на это отводится 90 секунд. Не внесённый раунд засчитывается как 0.`,
         'Бег длится 20 минут, перед стартом даётся 10 секунд на подготовку. На внесение показаний шагомера отводится 5 минут.',
-        'На всё испытание отводится 3 часа с момента начала.',
+        'На всё испытание отводится 5 часов с момента начала.',
         'Отсчёт этапа не останавливается при выходе из приложения. Каждый этап можно один раз начать заново, результат первой попытки при этом аннулируется.',
         'Бонусы характеристик, артефакты и эффекты расходных предметов во время испытания не действуют.',
         'Итог объявляется после завершения последнего этапа.',
-        'Отказ после принятия условий или после начала испытания, а также испытание, не завершённое за 3 часа, расцениваются как провал. Провал влечёт <span class="ex-pen">штраф</span>.'];
+        'Отказ после принятия условий или после начала испытания, а также испытание, не завершённое за 5 часов, расцениваются как провал. Провал влечёт <span class="ex-pen">штраф</span>.'];
       document.getElementById('exC2').innerHTML = `<div class="ex-line">Испытание ранга. Допуск: ${admTxt}.</div>
         <div class="ex-p ex-c">Система проверит, соответствует ли сила Игрока его развитию.</div><div class="ex-h">УСЛОВИЯ:</div>
         ${P.map(p => `<div class="ex-p">${p}</div>`).join('')}<div class="ex-p">Начать испытание можно до ${dl}. Не начатое к этому времени испытание расценивается как провал.</div>`;
@@ -10011,6 +10022,7 @@
     if (Date.now() >= e.dl) { examHideWin(3); examFail('late'); return; }
     examHideWin(3); examIconShow(false);
     e.st = 'running'; e.vt = 0; e.vAt = Date.now(); e.sp = 1; e.act = null; e.S = {};
+    e.rest = EX_REST(e.adm); e.fin = EX_FIN; e.tot = EX_TOTAL;   // v7.6.4: отдых по высшему рангу допуска, запоминается на всё испытание
     EX_IDS.forEach(id => { e.S[id] = { st: 'idle', t0: 0, vals: [null, null, null, null], steps: 0, re: 1, auto: false }; });
     saveData();
     examGlitch(() => examEnterUI());
@@ -10207,7 +10219,7 @@
         if ((p.ph === 'prep' || p.ph === 'rest') && Math.floor(p.len - p.el) !== Math.floor(p.len - (p.el - (t - prev))) && p.len - p.el < 3) exSnd('tick');
       }
     }
-    if (examNow() >= EX_TOTAL && !EX_IDS.every(x => e.S[x].st === 'done')) { examFail('time'); return; }
+    if (examNow() >= exTot() && !EX_IDS.every(x => e.S[x].st === 'done')) { examFail('time'); return; }
     examTickUI();
   }
   function exSetT(el, text) {
@@ -10224,11 +10236,11 @@
   function examTickUI() {
     if (!examOn()) return;
     const e = data.exam;
-    const et = document.getElementById('exTimer'); if (et) { const txt = exHms(EX_TOTAL - examNow()); if (et.dataset.v !== txt) { exTimerCells(et, txt); et.dataset.v = txt; } }
+    const et = document.getElementById('exTimer'); if (et) { const txt = exHms(exTot() - examNow()); if (et.dataset.v !== txt) { exTimerCells(et, txt); et.dataset.v = txt; } }
     const id = e.act; if (!id) return;
     const s = e.S[id], d = EX_ST[id], p = exPhase(id); if (p.ph === 'end') return;
     const [lb, c0] = EX_PH[p.ph], c = c0 === 'AC' ? 'var(--ac)' : c0, pr = Math.min(1, p.el / p.len);
-    const t = exStageT(id), tot = exMmss(d.run ? Math.min(t, 1510) : Math.min(t, 290)), cur = exMmss(p.el), canIn = examCanIn(id);
+    const t = exStageT(id), tot = exMmss(d.run ? Math.min(t, 1510) : Math.min(t, exStrengthLen())), cur = exMmss(p.el), canIn = examCanIn(id);
     const rd = d.run ? (p.ph === 'prep' ? 'Положите телефон в карман' : p.ph === 'run' ? 'Бег, 20 минут' : 'Окно ввода, 5 минут') : `Раунд ${p.r} / 4`;
     const el = document.getElementById('exk_' + id);
     if (el) { exSetT(el.querySelector('.ex-tot .xt'), tot); const v = el.querySelector('.ex-vals'); if (v) v.textContent = exVals(s); }
@@ -10433,7 +10445,7 @@
     const now = Date.now();
     if (e.st === 'offered' && now >= e.dl) { data.exam = null; saveData(); return null; }   // не принятое по сроку — тихо исчезает
     if (e.st === 'accepted' && now >= e.dl) return 'late';
-    if (e.st === 'running' && (examNow() >= EX_TOTAL || now >= getNextCleanReset(e.cyc))) return 'time';
+    if (e.st === 'running' && (examNow() >= exTot(e) || now >= getNextCleanReset(e.cyc))) return 'time';
     return null;
   }
   function examAtReset(historyEntry) {   // из цикла сброса: отметка дня, выдержка, ускоритель
@@ -10549,7 +10561,10 @@
     if (e && !(['offered', 'accepted', 'running'].includes(e.st) && okRank(e.adm) && Number.isFinite(e.dl) && Number.isFinite(e.cyc))) data.exam = null;
     else if (e && e.st === 'running') {
       if (!Number.isFinite(e.vt) || !Number.isFinite(e.vAt)) data.exam = null;
-      else { e.sp = [1, 5, 20].includes(e.sp) ? e.sp : 1; if (!e.S || !EX_IDS.every(id => e.S[id])) data.exam = null; else if (e.act && !EX_IDS.includes(e.act)) e.act = null; }
+      else { e.sp = [1, 5, 20].includes(e.sp) ? e.sp : 1;
+        if (e.rest != null && ![240, 270, 300].includes(e.rest)) e.rest = EX_REST(e.adm);   // v7.6.4: без поля — испытание до 7.6.4 (прежние числа)
+        if (e.rest != null) { e.fin = EX_FIN; e.tot = EX_TOTAL; } else { delete e.fin; delete e.tot; }
+        if (!e.S || !EX_IDS.every(id => e.S[id])) data.exam = null; else if (e.act && !EX_IDS.includes(e.act)) e.act = null; }
     }
     if (!data.exam) data.exam = null;
     if (data.examPost && !(data.examPost.kind && ['ok', 'late', 'refuse', 'time', 'low'].includes(data.examPost.kind))) data.examPost = null;

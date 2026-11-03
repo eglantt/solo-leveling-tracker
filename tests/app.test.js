@@ -987,6 +987,7 @@ async function completeTests() {
   const D = w.document;
   E(w, `data.completed = { pushups: getDynamicTarget(100, data.dailyTargetLevel, 'pushups') - 1 }; render()`);
   D.querySelector('.quest-item[data-id="pushups"] .add').click();
+  const kT0 = Date.now();   // v7.6.4: отсчёт K6 — от нажатия (проверки K1–K5 сами занимают время, и «1,9 с» уходило за 2 с)
   const p = D.querySelector('.quest-item[data-id="pushups"] .cpx');
   check('K1 надпись появляется при закрытии упражнения: COMPLETE и строка наград со значком', !!p && p.querySelector('.cpx-t').textContent === 'COMPLETE'
     && /^\+\d+ EXP \+\d+/.test(p.querySelector('.cpx-r').textContent.trim()) && !!p.querySelector('.cpx-r .cr-ic') && !/◈/.test(p.textContent), p && p.textContent);
@@ -999,8 +1000,8 @@ async function completeTests() {
   check('K4 старой надписи, её анимации и неиспользуемой вспышки нет', !/\.complete-popup|@keyframes completeText|\.completion-effect|@keyframes flash\b/.test(css) && !D.querySelector('.complete-popup'));
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
   check('K5 в коде нет отложенных на 4,5 с уведомлений и прямых показов доплат свитков', !/, 4500\)/.test(raw) && (raw.match(/fxNotice\(\(\) =>/g) || []).length === 17);   // v7.6.0: окна «Новый ранг» при повышении уровня больше нет
-  await sleep(1900);
-  check('K6 надпись ещё на экране в 1,9 с', !!D.querySelector('.quest-item[data-id="pushups"] .cpx'));
+  await sleep(Math.max(0, 1900 - (Date.now() - kT0)));
+  check('K6 надпись ещё на экране в 1,9 с', Date.now() - kT0 < 1990 && !!D.querySelector('.quest-item[data-id="pushups"] .cpx'), Date.now() - kT0);
   await sleep(250);
   check('K6a через 2 с все слои удалены', !D.querySelector('.cpx, .cpx-flash, .cpx-spark'));
 }

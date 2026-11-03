@@ -39,7 +39,7 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   const SEED = E(w0, `JSON.stringify(Object.assign({}, data, { rulesAcknowledged: true, playerName: 'T', level: 12, exp: 0, dailyTargetLevel: 12, lastReset: getLastResetThreshold(Date.now()), tnAdj: 30 }))`);
   w0.close();
   const mk = async (extra) => { const w = boot(SEED); await sleep(300); E(w, CLR + HIDE + (extra || '')); return w; };
-  // базовое состояние для условий: шкала 80%, до сброса больше 5 часов
+  // базовое состояние для условий: шкала 80%, до сброса больше 6 часов
   const ready = `data.tnAdj = 30; data.exp = Math.ceil(getExpToNext(data.level) * 0.8); data.expDebt = 0; data.exam = null; data.examPost = null; data.examLastOffer = null; data.examDelayUntil = null; data.examNarrow = false;
     data.curseActiveToday = false; data.pendingCurse = false; data.activeScroll = null; data.pendingScroll = null; examDeadlineTs = () => Date.now() + 6 * 3600000;`;
 
@@ -51,7 +51,7 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
     scroll: "data.activeScroll = 'contract'", pscroll: "data.pendingScroll = 'veil'", delay: 'data.examDelayUntil = data.lastReset + 86400000',
     gap: 'data.examLastOffer = data.lastReset - 2 * 86400000', time: 'examDeadlineTs = () => Date.now() - 1', tn: 'data.tnAdj = 0' };
   const bad = Object.entries(fails).filter(([k, c]) => { E(w, ready + c); return E(w, 'examCanOffer()') !== false; }).map(x => x[0]);
-  check('X2 каждое условие закрывает предложение: шкала < 70%, долг, Бремя (и ждущее), свиток (и ждущий), задержка, < 3 циклов, < 5 часов до сброса, ТН', bad.length === 0, bad.join(','));
+  check('X2 каждое условие закрывает предложение: шкала < 70%, долг, Бремя (и ждущее), свиток (и ждущий), задержка, < 3 циклов, < 6 часов до сброса, ТН', bad.length === 0, bad.join(','));
   E(w, ready + 'data.examLastOffer = data.lastReset - 3 * 86400000');
   check('X3 через 3 цикла после прошлого предложения — можно', E(w, 'examCanOffer()') === true);
   E(w, ready + 'data.tnAdj = 300; data.tn = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 }; data.rank = null');
@@ -70,7 +70,7 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   E(w, 'examGo(2)');
   const c2 = E(w, 'exC2.textContent');
   check('X7 окно 2: условия дословно, «штраф» красным жирным', /Испытание включает пять этапов: отжимания, приседания, подтягивания, пресс и бег\. Порядок этапов определяет Игрок\./.test(c2)
-    && /На всё испытание отводится 3 часа с момента начала\./.test(c2) && !!w.document.querySelector('#exC2 .ex-pen') && J(w, 'data.codexUnlocked').includes('rank_trial'), c2.slice(0, 80));
+    && /На всё испытание отводится 5 часов с момента начала\./.test(c2) && /40 секунд работы и 4 минуты отдыха\./.test(c2) && /после последнего раунда на это отводится 90 секунд\./.test(c2) && /не завершённое за 5 часов/.test(c2) && !!w.document.querySelector('#exC2 .ex-pen') && J(w, 'data.codexUnlocked').includes('rank_trial'), c2.slice(0, 80));
   E(w, 'examDecline()');
   check('X8 отказ от предложения — без штрафа, следующее не раньше чем через 3 цикла', E(w, 'data.exam') === null && E(w, 'data.examLastOffer') === E(w, 'data.lastReset') && E(w, 'examCanOffer()') === false && E(w, 'data.exp') === E(w, 'Math.ceil(getExpToNext(data.level) * 0.8)'));
   E(w, ready + 'examOffer(false); examGo(2); examAccept()');
@@ -99,11 +99,25 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   check('X16 после итога — выходят', E(w, 'exHeldN.length') === 0 && E(w, 'data.examPost') === null);
   w.close();
 
+  // ---- v7.6.4: отдых по высшему рангу допуска, срок, старое испытание ----
+  w = await mk('');
+  check('X8a v7.6.4: отдых по группе высшего ранга допуска — E–C 240, B–S 270, National–Monarch 300', JSON.stringify(J(w, "PLAYER_RANKS.map(r => EX_REST(r))")) === '[240,240,240,270,270,270,300,300,300]');
+  check('X8b v7.6.4: начать — не позже чем за 6 часов до сброса; на испытание — 5 часов', E(w, 'getNextCleanReset(data.lastReset) - examDeadlineTs()') === 6 * 3600000 && E(w, 'EX_TOTAL') === 18000
+    && /^До сброса больше 6 часов/.test(J(w, 'examConds()').find(c => c.k === 'time').t));
+  const condTxt = adm => { E(w, `data.exam = { st: 'offered', adm: '${adm}', cyc: data.lastReset, dl: Date.now() + 7200000 }; examFill(2)`); return E(w, 'exC2.textContent'); };
+  check('X8c v7.6.4: «Условия» — отдых по высшему рангу допуска (прыжок D | B — 4 минуты 30 секунд)', /40 секунд работы и 4 минуты отдыха\./.test(condTxt('c')) && /40 секунд работы и 4 минуты 30 секунд отдыха\./.test(condTxt('b'))
+    && /40 секунд работы и 5 минут отдыха\./.test(condTxt('monarch')));
+  E(w, "data.exam = { st: 'running', adm: 'b', cyc: data.lastReset, dl: Date.now() + 7200000, vt: 0, vAt: Date.now(), sp: 1, act: null, S: {} }; EX_IDS.forEach(id => { data.exam.S[id] = { st: 'idle', t0: 0, vals: [null, null, null, null], steps: 0, re: 1, auto: false }; }); examNormalize()");
+  check('X8d v7.6.4: испытание, начатое до 7.6.4 (без отдыха в сохранении), доигрывается по прежним числам: 30 с, 30 с, 3 часа', E(w, 'exRest()') === 30 && E(w, 'exFin()') === 30 && E(w, 'exTot()') === 10800 && E(w, 'exStrengthLen()') === 290 && E(w, "data.exam.rest === undefined"));
+  E(w, "data.exam.rest = 270; examNormalize()");
+  check('X8e v7.6.4: начатое в 7.6.4 — 270 / 90 / 5 часов, этап силового упражнения 980 с', E(w, 'exRest()') === 270 && E(w, 'exFin()') === 90 && E(w, 'exTot()') === 18000 && E(w, 'exStrengthLen()') === 10 + 160 + 810 + 90);
+  E(w, 'data.exam = null'); w.close();
+
   // ---- экран испытания и этапы ----
   w = await mk(ready + 'examOffer(false); examGo(2); examAccept(); examStart();');
   await sleep(1300);
   check('X17 «Начать» → экран испытания: заголовок, «До конца испытания», допуск, пять карточек; Магазин и Инвентарь погашены, Архив — нет',
-    E(w, "document.body.classList.contains('exm')") && E(w, "document.querySelector('.quest-panel .title').textContent") === 'ИСПЫТАНИЕ РАНГА' && /^0[23]:\d\d:\d\d$/.test(E(w, 'exTimer.textContent'))
+    E(w, "document.body.classList.contains('exm')") && E(w, "document.querySelector('.quest-panel .title').textContent") === 'ИСПЫТАНИЕ РАНГА' && /^0[45]:\d\d:\d\d$/.test(E(w, 'exTimer.textContent'))
     && E(w, "document.querySelectorAll('.ex-card').length") === 5 && E(w, "[...document.querySelectorAll('.sub-menu-grid button.ex-off')].map(b => b.textContent.trim()).join(',')") === 'МАГАЗИН,ИНВЕНТАРЬ', E(w, 'exTimer.textContent'));
   check('X18 Архив во время испытания: импорт и «Сбросить всё» заблокированы, тема — только во время этапа', (() => { E(w, 'openBackupModal()'); const imp = E(w, "[...document.querySelectorAll('#backupContent button')].find(b => b.textContent === 'Выбрать файл').disabled"),
     rst = E(w, "document.querySelector('#backupContent .reset-all').disabled"), th = E(w, "document.querySelector('#backupContent .theme-seg button').disabled"); E(w, 'closeBackupModal()'); return imp && rst && !th; })());
@@ -116,12 +130,16 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   E(w, 'data.exam.S.pushups.t0 -= 55'); await sleep(250);
   E(w, "exFzAddCalls = 0; const oF = fzAdd; fzAdd = function () { exFzAddCalls++; return oF.apply(this, arguments); }; examAdd(10); examAdd(5); examAdd(-1)");
   check('X20 отдых раунда 1: ввод +1 +5 +10 / −1 −5 −10; шкала усталости — да', J(w, 'data.exam.S.pushups.vals')[0] === 14 && E(w, 'exFzAddCalls') === 2 && /Отдых/.test(E(w, "exLayer.querySelector('.lb').textContent")));
-  E(w, 'data.exam.S.pushups.t0 -= 35'); await sleep(250);
+  E(w, 'data.exam.S.pushups.t0 -= 220'); await sleep(250);
+  check('X20a v7.6.4: отдых 4 мин (допуск E) — ввод открыт до конца отдыха (275 с этапа)', E(w, 'data.exam.rest') === 240 && E(w, 'data.exam.fin') === 90 && E(w, 'data.exam.tot') === 18000 && E(w, "exPhase('pushups').ph") === 'rest' && E(w, "exPhase('pushups').len") === 240 && E(w, 'examAdd(1); data.exam.S.pushups.vals[0]') === 15);
+  E(w, 'examAdd(-1); data.exam.S.pushups.t0 -= 20'); await sleep(250);
   check('X21 не внесённый раунд — 0; во время работы ввод заблокирован', J(w, 'data.exam.S.pushups.vals')[0] === 14 && E(w, "exLayer.querySelector('[data-in]').disabled") === true && E(w, 'examAdd(5); data.exam.S.pushups.vals[1]') === null);
-  E(w, 'data.exam.S.pushups.t0 -= 35'); await sleep(250);
+  E(w, 'data.exam.S.pushups.t0 -= 40'); await sleep(250);
   check('X22 отдых раунда 2 — раунд 2 засчитан нулём, если пропущен ввод; «Завершить» — только в окне после 4-го раунда', J(w, 'data.exam.S.pushups.vals')[1] === null && E(w, "exFinBtn.disabled") === true);
   const tn0 = E(w, 'data.tn.pushups'), st0 = E(w, 'totalStats.pushups');
-  E(w, 'data.exam.S.pushups.t0 -= 200'); await sleep(300);
+  E(w, 'data.exam.S.pushups.t0 -= 590'); await sleep(300);
+  check('X22a v7.6.4: после 4-го раунда — 90 с на ввод', E(w, "exPhase('pushups').ph") === 'fin' && E(w, "exPhase('pushups').len") === 90 && E(w, "exPhase('pushups').el") > 30);
+  E(w, 'data.exam.S.pushups.t0 -= 100'); await sleep(300);
   check('X23 окно ввода истекло — этап закрыт сам; раунды без ввода — 0; повторения в ТН и «Прогресс»', E(w, 'data.exam.S.pushups.st') === 'done' && J(w, 'data.exam.S.pushups.vals').join(',') === '14,0,0,0'
     && Math.abs(E(w, 'data.tn.pushups') - tn0 - 0.14 * E(w, 'data.tnMul')) < 1e-9 && E(w, 'totalStats.pushups') === st0 + 14 && /Раунды: 14 · 0 · 0 · 0/.test(E(w, 'exk_pushups.textContent')));
   // бег, карманный режим, ускоритель
@@ -204,7 +222,9 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   check('X44 после окна провала — сбой и главная', E(w, "document.body.classList.contains('exm')") === false && E(w, 'data.examToday.kind') === 'refuse');
   E(w, ready + 'examOffer(false); examGo(2); examAccept(); examStart();'); await sleep(1300);
   E(w, CLR + 'data.exam.vt = 3 * 3600 + 1'); await sleep(300);
-  check('X45 3 часа истекли — «Не выполнено» (70%, 5 дней)', /Итог: Не выполнено/.test(E(w, 'exPenContent.textContent')) && /Испытание не завершено за отведённое время\. Оценка не проводилась\./.test(E(w, 'exPenContent.textContent')));
+  check('X44a v7.6.4: после 3 часов испытание идёт (на всё — 5 часов)', E(w, "data.exam && data.exam.st") === 'running' && /^01:59:\d\d$/.test(E(w, 'exTimer.textContent')), E(w, 'exTimer.textContent'));
+  E(w, CLR + 'data.exam.vt = 5 * 3600 + 1'); await sleep(300);
+  check('X45 5 часов истекли — «Не выполнено» (70%, 5 дней)', /Итог: Не выполнено/.test(E(w, 'exPenContent.textContent')) && /Испытание не завершено за отведённое время\. Оценка не проводилась\./.test(E(w, 'exPenContent.textContent')));
   E(w, 'closeExamPenalty()'); await sleep(1300);
   E(w, ready + 'examOffer(false); examGo(2); examAccept(); examStart();'); await sleep(1300);
   E(w, CLR + 'data.isGoalMet = false; data.completed = {}; sysExamEnd("low")'); await sleep(2500);
@@ -222,9 +242,9 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   let sv = w.localStorage.getItem('sl_daily_v5_5_0'); w.close();
   w = boot(sv); await sleep(2500); E(w, CLR);
   check('X49 перезапуск во время этапа — экран испытания, карточка «Этап идёт» с «Открыть этап»', E(w, "document.body.classList.contains('exm')") && /Этап идёт/.test(E(w, 'exk_squats.textContent')) && /Открыть этап/.test(E(w, 'exk_squats.textContent')) && !E(w, "exLayer.classList.contains('on')"));
-  E(w, 'data.exam.vt = 4 * 3600; saveData()'); sv = w.localStorage.getItem('sl_daily_v5_5_0'); w.close();
+  E(w, 'data.exam.vt = 5 * 3600 + 60; saveData()'); sv = w.localStorage.getItem('sl_daily_v5_5_0'); w.close();
   w = boot(sv); await sleep(1500);
-  check('X50 приложение открыто после 3 часов — красное окно «Не выполнено»', E(w, 'exPenOverlay.style.display') === 'flex' && /Не выполнено/.test(E(w, 'exPenContent.textContent')) && E(w, 'data.exam') === null);
+  check('X50 приложение открыто после 5 часов — красное окно «Не выполнено»', E(w, 'exPenOverlay.style.display') === 'flex' && /Не выполнено/.test(E(w, 'exPenContent.textContent')) && E(w, 'data.exam') === null);
   w.close();
 
   // ---- бэкап ----
