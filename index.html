@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.6 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.7 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1315,7 +1315,7 @@
     #exLayer .tot .xt { color: var(--ac2); font-size: .9rem; margin-left: 4px; vertical-align: -1px; }
     #exLayer .rd { font-family: 'Orbitron', sans-serif; font-size: .8rem; color: #9fc4e6; letter-spacing: 1px; min-height: 1em; }
     #exLayer .ring { position: relative; width: 200px; height: 200px; flex-shrink: 0; }
-    #exLayer .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    #exLayer .ring > svg.x-main { width: 100%; height: 100%; transform: rotate(-90deg); }
     #exLayer .ring .ct { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     #exLayer .ring .xt { font-size: 2.5rem; }
     #exLayer .ring .lb { font-family: 'Orbitron','Exo 2',sans-serif; font-size: .74rem; letter-spacing: 1px; margin-top: 6px; max-width: 150px; line-height: 1.3; }
@@ -1368,6 +1368,69 @@
     .legend .cal-ex { position: relative; display: inline-block; width: 12px; height: 12px; vertical-align: -1px; margin-right: 6px; }
     .legend .cal-swatch.ex-sw { position: relative; }
     .legend .cal-swatch.ex-sw .cal-ex { position: absolute; top: -5px; left: -5px; margin: 0; }
+    /* ===== v7.6.7: таймер этапа испытания — комета (сборка демо 119) ===== */
+    #exLayer .acts { row-gap: 12px; }   /* «Завершить этап» в беге не прилипает к ряду выше */
+    #exLayer { --hxc: 64,192,255; }
+    #exLayer > * { position: relative; z-index: 1; }
+    #exLayer .ring { --R: 90px; --w: 1.5px; --L: 200deg; --f1: .62; --f2: .9; --s: 9px; --sb: 1.6; --fk: 3.2; --cf: .6s; --hr: 122px; --hxo: .12; margin: calc(var(--hr) - 100px + 4px) 0; }
+    #exLayer .ring > svg.x-main { position: relative; z-index: 2; }
+    #exLayer .ring > svg.x-main .trk { stroke-width: 1.2; stroke: rgba(255,255,255,.05); }
+    #exLayer .ring > svg.x-main .pr { stroke-width: 1.6; opacity: .18; transition: stroke .6s; }
+    #exLayer .ring > .ct { z-index: 4; }
+    #exLayer .ring .xt { text-shadow: 0 0 12px currentColor; transition: color var(--cf); }
+    #exLayer .x-bg { position: absolute; inset: -46px; border-radius: 50%; z-index: 0; pointer-events: none; background: radial-gradient(closest-side, rgba(var(--rgb), .16), rgba(var(--rgb), 0) 100%); transition: background .6s; }
+    #exLayer .ring.ph-rest .x-bg, #exLayer .ring.ph-fin .x-bg { animation: xBreath 4.2s ease-in-out infinite; }
+    #exLayer .x-rot { position: absolute; inset: 0; z-index: 3; pointer-events: none; will-change: transform; }
+    #exLayer .x-com, #exLayer .x-glo { position: absolute; inset: 0; border-radius: 50%; opacity: 0; transition: opacity var(--cf); }
+    #exLayer .x-com.on, #exLayer .x-glo.on { opacity: 1; }
+    #exLayer .x-com { background: conic-gradient(from calc(-1 * var(--L)), rgba(var(--crgb), 0) 0deg, rgba(var(--crgb), var(--f1)) calc(var(--L) * .5), rgba(var(--crgb), var(--f2)) calc(var(--L) * .82), rgba(var(--crgb), 1) var(--L), rgba(var(--crgb), 0) var(--L));
+      -webkit-mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) / 2 - .7px), #000 calc(var(--R) - var(--w) / 2), #000 calc(var(--R) + var(--w) / 2), transparent calc(var(--R) + var(--w) / 2 + .7px));
+              mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) / 2 - .7px), #000 calc(var(--R) - var(--w) / 2), #000 calc(var(--R) + var(--w) / 2), transparent calc(var(--R) + var(--w) / 2 + .7px)); }
+    #exLayer .x-glo { background: conic-gradient(from calc(-1 * var(--L)), rgba(var(--crgb), 0) 0deg, rgba(var(--crgb), calc(var(--f1) * .5)) calc(var(--L) * .5), rgba(var(--crgb), .55) var(--L), rgba(var(--crgb), 0) var(--L));
+      -webkit-mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) * 3 - 6px), rgba(0,0,0,.55) var(--R), transparent calc(var(--R) + var(--w) * 3 + 6px));
+              mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) * 3 - 6px), rgba(0,0,0,.55) var(--R), transparent calc(var(--R) + var(--w) * 3 + 6px)); }
+    #exLayer .x-sp { position: absolute; left: 50%; top: calc(50% - var(--R)); width: 0; height: 0; }
+    #exLayer .x-sp i, #exLayer .x-sp b { position: absolute; left: 0; top: 0; border-radius: 50%; transform: translate(-50%, -50%); }
+    #exLayer .x-sp i { width: var(--s); height: var(--s); background: radial-gradient(circle, #fff 0 32%, rgba(var(--srgb), 1) 52%, rgba(var(--srgb), 0) 74%); transition: background var(--cf); }
+    #exLayer .x-sp b { width: calc(var(--s) * 4.2); height: calc(var(--s) * 4.2); background: radial-gradient(circle, rgba(var(--srgb), calc(.42 * var(--sb))) 0, rgba(var(--srgb), 0) 68%); transition: background var(--cf); }
+    #exLayer .x-sp.fl i { animation: xSpFl .55s ease-out; }
+    #exLayer .x-sp.fl b { animation: xSpFlB .7s ease-out; }
+    #exLayer .x-flash { position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; z-index: 1; opacity: 0; box-shadow: 0 0 22px 4px rgba(var(--rgb), .55), inset 0 0 18px 2px rgba(var(--rgb), .35); }
+    #exLayer .ring.flx .x-flash { animation: xRingFl .7s ease-out; }
+    #exLayer .x-ov { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; overflow: visible; }
+    #exLayer .x-tk line { stroke: rgba(255,255,255,.22); stroke-width: .5; }
+    #exLayer .x-tk line.m { stroke: rgba(255,255,255,.4); stroke-width: .8; }
+    #exLayer .ring.run .x-rd { display: none; }
+    #exLayer .x-rd path { fill: none; stroke-width: 1.4; stroke: rgba(255,255,255,.12); stroke-linecap: round; transition: stroke .5s, opacity .5s; }
+    #exLayer .x-rd path.dn { stroke: rgba(var(--rgb), .75); }
+    #exLayer .x-rd path.cu { stroke: rgba(var(--rgb), 1); animation: xCur 1.6s ease-in-out infinite; }
+    #exLayer .ring svg.x-hex { position: absolute; left: 50%; top: 50%; width: calc(var(--hr) * 1.7321); height: calc(var(--hr) * 2); transform: translate(-50%, -50%); z-index: 1; pointer-events: none; overflow: visible; }
+    #exLayer .x-hex path { fill: none; stroke: rgb(var(--hxc)); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: var(--hxo); }
+    #exLayer .x-hex path.in { opacity: calc(var(--hxo) * .45); }
+    #exLayer .ring.pz .ct .xt { animation: xPz .38s ease-out; }
+    #exLayer .ring.pz .x-rot { animation: xPzR .38s ease-out; }
+    #exLayer .ring .lb.gl { animation: xGl .42s steps(1); }
+    /* кнопка «Начать раунд N»: место под кнопкой пустое, пока она недоступна; появление — эффектом темы */
+    #exLayer .ex-gorow { display: flex; justify-content: center; margin-top: 12px; }
+    #exLayer button.ex-go { position: relative; overflow: hidden; width: 240px; font-family: 'Orbitron','Exo 2',sans-serif; font-size: .72rem; letter-spacing: .5px;
+      border: 1px solid rgba(64,255,170,.6) !important; color: #40ffaa !important; background: rgba(0,50,30,.35) !important; box-shadow: 0 0 8px rgba(64,255,170,.25) !important; transition: opacity .3s, box-shadow .3s; }
+    #exLayer button.ex-go:not(:disabled):hover { background: rgba(0,90,55,.45) !important; box-shadow: 0 0 12px rgba(64,255,170,.5) !important; }
+    #exLayer button.ex-go:not(:disabled):active { background: rgba(0,120,70,.55) !important; border-color: #b9ffe0 !important; }
+    #exLayer button.ex-go:disabled { opacity: 0; pointer-events: none; box-shadow: none !important; }
+    #exLayer button.ex-go.in { animation: xRiseIn .4s ease-out; }
+    /* карманный режим — дыхание цифр */
+    #exPocket .xt { animation: xPk 5s ease-in-out infinite; }
+    @keyframes xBreath { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+    @keyframes xSpFl { 0% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); } 25% { transform: translate(-50%, -50%) scale(var(--fk)); filter: brightness(2.2); } 100% { transform: translate(-50%, -50%) scale(1); filter: brightness(1); } }
+    @keyframes xSpFlB { 0% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 30% { transform: translate(-50%, -50%) scale(calc(var(--fk) * 1.4)); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+    @keyframes xRingFl { 0% { opacity: 0; } 18% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes xCur { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+    @keyframes xPz { 0% { transform: scale(1); } 30% { transform: scale(1.09); text-shadow: 0 0 18px currentColor; } 100% { transform: scale(1); } }
+    @keyframes xPzR { 0% { filter: brightness(1); } 30% { filter: brightness(1.8); } 100% { filter: brightness(1); } }
+    @keyframes xGl { 0% { transform: translateX(-3px); clip-path: inset(0 0 55% 0); opacity: .7; } 20% { transform: translateX(3px); clip-path: inset(45% 0 0 0); } 40% { transform: translateX(-2px); clip-path: inset(20% 0 30% 0); opacity: .85; } 60% { transform: translateX(1px); clip-path: none; } 80% { transform: none; opacity: 1; } 100% { transform: none; clip-path: none; } }
+    @keyframes xLineIn { 0% { transform: scaleY(.04); filter: brightness(2.4); opacity: 1; } 55% { transform: scaleY(1.04); } 100% { transform: none; filter: none; } }
+    @keyframes xRiseIn { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: none; opacity: 1; } }
+    @keyframes xPk { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -1780,6 +1843,13 @@
     body.theme-sys .sf-win.mwin button.ex-gold:not(:disabled):active, body.theme-sys .ex-ov .sf-win.mwin button.confirm-btn-continue:not(.ex-red):not(:disabled):active { background: rgba(255,205,60,.26) !important; border-color: #fff8e0 !important; color: var(--ac) !important; box-shadow: 0 0 14px rgba(255,205,60,.75) !important; }
     body.theme-sys .sf-win.mwin #exRefuseBtn:not(:disabled):active, body.theme-sys .ex-ov .sf-win.mwin button.ex-red:not(:disabled):active { background: rgba(255,60,80,.26) !important; border-color: #ffd6da !important; color: #ff9aa4 !important; box-shadow: 0 0 14px rgba(255,60,80,.7) !important; }
       body.theme-sys #exRefuseBtn:disabled { opacity: .35 !important; cursor: default; box-shadow: none !important; }
+    /* v7.6.7: слой этапа испытания в «Системе» — табличка названия, прямые углы кнопок, золотой шестигранник, сетка, появление «Начать раунд» линией */
+    body.theme-sys #exLayer { --hxc: 255,211,77; }
+    body.theme-sys #exLayer::before { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: .07; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='48.5' viewBox='0 0 28 48.5'%3E%3Cpath d='M14 0 L28 8.08 L28 24.25 L14 32.33 L0 24.25 L0 8.08 Z M14 32.33 L14 48.5' fill='none' stroke='%237fd8ff' stroke-width='.7'/%3E%3C/svg%3E"); background-size: 28px 48.5px; }
+    body.theme-sys #exLayer .nm { padding: 5px 16px; border: 1px solid rgba(255,211,77,.7); box-shadow: 0 0 10px rgba(255,205,60,.35), inset 0 0 10px rgba(255,205,60,.12); background: rgba(40,28,0,.35); }
+    body.theme-sys #exLayer button { border-radius: 0; }
+    body.theme-sys #exLayer button.ex-go.in { animation: xLineIn .4s ease-out; }
 </style>
 </head>
 <body>
@@ -2333,7 +2403,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.6';
+  const APP_VERSION = '7.6.7';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -9848,7 +9918,8 @@
     <path d="M50,14 L84,33.5 L84,66.5 L50,86 L16,66.5 L16,33.5 Z" fill="rgba(10,6,0,.55)" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
     <rect x="46" y="30" width="8" height="26" rx="4" fill="currentColor"/><circle cx="50" cy="66" r="5" fill="currentColor"/></svg>`;
   const EX_PH = { prep: ['Подготовка', '#7fd8ff'], work: ['Работа', 'AC'], rest: ['Отдых. Внесите повторения', '#40ffaa'], fin: ['Внесите повторения', '#40ffaa'],
-    run: ['Бег', 'AC'], rin: ['Внесите количество шагов', '#40ffaa'], late: ['Внесите количество шагов', '#40ffaa'] };
+    run: ['Бег', 'AC'], rin: ['Внесите количество шагов', '#40ffaa'], late: ['Внесите количество шагов', '#40ffaa'],
+    go: ['Подготовка', '#7fd8ff'] };   // v7.6.7: последние 10 с отдыха, сокращённого кнопкой «Начать раунд»
 
   // ---------- состояние и время ----------
   function examOn() { return !!(data.exam && data.exam.st === 'running'); }
@@ -9860,12 +9931,19 @@
   function exRest(e) { e = e || data.exam; if (!e) return EX_REST('e'); return Number.isFinite(e.rest) ? e.rest : (exRun3(e) ? EX_OLD.rest : EX_REST(e.adm)); }
   function exFin(e) { e = e || data.exam; return e && Number.isFinite(e.fin) ? e.fin : (exRun3(e) ? EX_OLD.fin : EX_FIN); }
   function exTot(e) { e = e || data.exam; return e && Number.isFinite(e.tot) ? e.tot : (exRun3(e) ? EX_OLD.tot : EX_TOTAL); }
-  function exStrengthLen() { return 10 + 4 * 40 + 3 * exRest() + exFin(); }
-  function exStrengthAt(t) {
+  // v7.6.7: cut — на сколько секунд сокращён отдых после раунда 1–3 кнопкой «Начать раунд» (S[id].cut); без него — полный отдых
+  const exCutOf = id => { const c = data.exam && data.exam.S[id] && data.exam.S[id].cut; return Array.isArray(c) ? c : null; };
+  function exStrengthLen(cut) { return 10 + 4 * 40 + 3 * exRest() + exFin() - (cut ? cut.reduce((a, v) => a + (v || 0), 0) : 0); }
+  function exStrengthAt(t, cut) {
     if (t < 10) return { ph: 'prep', r: 1, el: t, len: 10 };
     let x = t - 10;
     const rest = exRest(), fin = exFin();
-    for (let r = 1; r <= 4; r++) { if (x < 40) return { ph: 'work', r, el: x, len: 40 }; x -= 40; const L = r < 4 ? rest : fin; if (x < L) return { ph: r < 4 ? 'rest' : 'fin', r, el: x, len: L }; x -= L; }
+    for (let r = 1; r <= 4; r++) {
+      if (x < 40) return { ph: 'work', r, el: x, len: 40 }; x -= 40;
+      const c = r < 4 && cut ? (cut[r - 1] || 0) : 0, L = r < 4 ? rest - c : fin;
+      if (x < L) { if (c > 0 && x >= L - 10) return { ph: 'rest', r, el: x - (L - 10), len: 10, go: true }; return { ph: r < 4 ? 'rest' : 'fin', r, el: x, len: L }; }   // последние 10 с сокращённого отдыха — «Подготовка»
+      x -= L;
+    }
     return { ph: 'end', r: 4, el: 0, len: 1 };
   }
   function exRunAt(t) {   // подготовка 10 с, бег 20 мин, ввод 5 мин по условиям и ещё 15 мин тихо
@@ -9876,7 +9954,7 @@
     return { ph: 'end', el: 0, len: 1 };
   }
   function exStageT(id) { const s = data.exam.S[id]; return Math.max(0, examNow() - s.t0); }
-  function exPhase(id) { return EX_ST[id].run ? exRunAt(exStageT(id)) : exStrengthAt(exStageT(id)); }
+  function exPhase(id) { return EX_ST[id].run ? exRunAt(exStageT(id)) : exStrengthAt(exStageT(id), exCutOf(id)); }
   function examDeadlineTs() { return getNextCleanReset(data.lastReset) - EX_DL_BEFORE; }
   function exHm(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
   function exCyclesSince(ts) { return Math.round((data.lastReset - ts) / EX_DAY); }
@@ -10098,17 +10176,31 @@
   function examBegin(id) {
     const e = data.exam; if (!e || e.st !== 'running' || e.act) return;
     const s = e.S[id]; if (s.st !== 'idle') return;
-    Object.assign(s, { st: 'run', t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false });
+    Object.assign(s, { st: 'run', t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut;   // v7.6.7: cut — только у силовых этапов
     e.act = id; exLastT[id] = 0; saveData();
     EX_IDS.forEach(examCard); examLayer(true); examWake(true);
   }
   function examRestart() {
     const e = data.exam, id = e && e.act; if (!id) return; const s = e.S[id]; if (s.re < 1) return;
-    s.re = 0; Object.assign(s, { t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false }); exLastT[id] = 0;
+    s.re = 0; Object.assign(s, { t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut; exLastT[id] = 0;
     examPocket(false); saveData(); examTickUI();
   }
   function examCanIn(id) { const p = exPhase(id).ph; return EX_ST[id].run ? (p === 'rin' || p === 'late') : (p === 'rest' || p === 'fin'); }
   function examCanFinish(id) { const s = data.exam.S[id], p = exPhase(id).ph; return EX_ST[id].run ? ((p === 'rin' || p === 'late') && s.steps > 0) : p === 'fin'; }
+  // v7.6.7: «Начать раунд N» — во время отдыха после раунда 1–3, не раньше 30 с отдыха и когда повторения раунда уже внесены;
+  // отдых сокращается так, чтобы осталось 10 с «Подготовки», затем раунд N. Состояние проверяется в момент нажатия.
+  function examGoState() {
+    const e = data.exam, id = e && e.act; if (!examOn() || !id || EX_ST[id].run) return null;
+    const s = e.S[id], p = exPhase(id), rest = p.ph === 'rest' && !p.go;
+    return { id, s, p, rest, can: rest && p.el >= 30 && s.vals[p.r - 1] != null, next: Math.min(4, p.r + 1) };
+  }
+  function examGoRound() {
+    const g = examGoState(); if (!g || !g.can) return;
+    const s = g.s; if (!Array.isArray(s.cut)) s.cut = [0, 0, 0, 0];
+    s.cut[g.p.r - 1] = (s.cut[g.p.r - 1] || 0) + Math.max(0, g.p.len - (g.p.el + 10));
+    exLastT[g.id] = exStageT(g.id);   // смена фазы на «Подготовку» — без звука «стоп» и без отметки пропуска
+    saveData(); exTone(990, 0, 0.09); examTickUI();
+  }
   function examAdd(v) {
     const e = data.exam, id = e && e.act; if (!id || !examCanIn(id)) return;
     const s = e.S[id], d = EX_ST[id];
@@ -10148,14 +10240,55 @@
     if (!on || !id) { L.classList.remove('on'); examAccSync(); fzDraw(false); return; }
     const d = EX_ST[id], pl = d.run ? [10, 100, 500] : [1, 5, 10];
     L.innerHTML = `<div class="nm">${d.nm.toUpperCase()}</div><div class="tot">Время этапа<span class="xt" id="exLTot"></span></div><div class="rd"></div>
-      <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/><circle class="pr" cx="50" cy="50" r="45" fill="none" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/></svg>
-      <div class="ct"><span class="xt" id="exLT"></span><div class="lb"></div></div></div>
+      <div class="ring${d.run ? ' run' : ''}">${EX_RING_BACK}<svg class="x-main" viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"/><circle class="pr" cx="50" cy="50" r="45" fill="none" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/></svg>
+      ${EX_RING_OV}<div class="ct"><span class="xt" id="exLT"></span><div class="lb"></div></div>${EX_RING_ROT}</div>
       <div class="vals"></div>
       <div class="inbox"><div class="cntrow"><span class="k"></span><span class="cnt"></span></div>
       <div class="bt">${pl.map(v => `<button class="add" data-in onclick="examAdd(${v})">+${v}</button>`).join('')}</div>
       <div class="bt">${pl.map(v => `<button class="add ex-minus" data-in onclick="examAdd(-${v})">−${v}</button>`).join('')}</div>
+      ${d.run ? '' : '<div class="ex-gorow"><button class="ex-go" id="exGoBtn" onclick="examGoRound()" disabled>Начать раунд</button></div>'}
       <div class="acts"><button id="exReBtn" onclick="examRestart()">Начать этап заново</button>${d.run ? '<button id="exPkBtn" onclick="examPocket(true)">Карманный режим</button>' : ''}<button class="ex-gold" id="exFinBtn" onclick="examFinish()">Завершить этап</button></div></div>`;
-    L.classList.add('on'); examTickUI(); examAccSync(); fzDraw(false);
+    L.classList.add('on'); exRing.key = ''; exRing.go = null; examTickUI(); examAccSync(); fzDraw(false); exRingFrame(true);
+  }
+  // ---------- v7.6.7: кольцо этапа — комета с искрой (сборка демо 119) ----------
+  const EX_RGB = { prep: '127,216,255', go: '127,216,255', work: '255,211,77', run: '255,211,77', rest: '64,255,170', fin: '64,255,170', rin: '64,255,170', late: '64,255,170' };
+  const EX_RING_BACK = '<div class="x-bg"></div><svg class="x-hex" viewBox="-43.3 0 86.6 100" preserveAspectRatio="none"><path d="M0,0.6 L42.7,25.3 L42.7,74.7 L0,99.4 L-42.7,74.7 L-42.7,25.3 Z"/><path class="in" d="M0,3.6 L40.1,26.8 L40.1,73.2 L0,96.4 L-40.1,73.2 L-40.1,26.8 Z"/></svg><div class="x-flash"></div>';
+  const EX_RING_OV = (() => {   // деления (60, каждое пятое крупнее) и кольцо раундов (4 дуги) — в SVG без поворота
+    const pt = (a, r) => [(50 + r * Math.sin(a * Math.PI / 180)).toFixed(2), (50 - r * Math.cos(a * Math.PI / 180)).toFixed(2)];
+    let tk = '<g class="x-tk">'; for (let i = 0; i < 60; i++) { const m = i % 5 === 0, [x1, y1] = pt(i * 6, m ? 40.2 : 41.2), [x2, y2] = pt(i * 6, 42.6); tk += `<line${m ? ' class="m"' : ''} x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`; }
+    let rd = '<g class="x-rd">'; for (let i = 0; i < 4; i++) { const [x0, y0] = pt(i * 90 + 4, 49), [x1, y1] = pt(i * 90 + 86, 49); rd += `<path d="M${x0},${y0} A49,49 0 0 1 ${x1},${y1}"/>`; }
+    return `<svg class="x-ov" viewBox="0 0 100 100">${tk}</g>${rd}</g></svg>`;
+  })();
+  const EX_RING_ROT = '<div class="x-rot"><div class="x-glo a"></div><div class="x-glo b"></div><div class="x-com a"></div><div class="x-com b"></div><div class="x-sp"><b></b><i></i></div></div>';
+  const exRing = { key: '', sec: -1, raf: 0, cur: 'a', go: null };
+  const exReplay = (el, c) => { el.classList.remove(c); void el.offsetWidth; el.classList.add(c); };   // перезапуск разовой анимации
+  function exRingFrame(first) {   // каждый кадр — только поворот слоя кометы; при смене фазы — цвет, вспышки, сбой надписи
+    if (typeof requestAnimationFrame !== 'function') return;
+    cancelAnimationFrame(exRing.raf); exRing.raf = 0;
+    const L = document.getElementById('exLayer'), e = data.exam, id = e && e.act;
+    if (!L || !L.classList.contains('on') || !id || !examOn()) return;
+    const ring = L.querySelector('.ring'), rot = ring && ring.querySelector('.x-rot'); if (!rot) return;
+    const p = exPhase(id); if (p.ph === 'end') return;
+    const pk = p.go ? 'go' : p.ph, rgb = EX_RGB[pk] || EX_RGB.work, key = pk + (p.r || 0);
+    rot.style.transform = `rotate(${(360 * Math.min(1, Math.max(0, p.el / p.len))).toFixed(2)}deg)`;
+    if (key !== exRing.key) {
+      const was = exRing.key; exRing.key = key;
+      ring.style.setProperty('--rgb', rgb); ring.style.setProperty('--srgb', rgb);
+      ['prep', 'work', 'rest', 'fin', 'run', 'rin', 'late', 'go'].forEach(k => ring.classList.toggle('ph-' + k, k === pk || (k === 'rest' && pk === 'go')));
+      const all = ring.querySelectorAll('.x-com, .x-glo');
+      if (first || !was) all.forEach(el => { el.style.setProperty('--crgb', rgb); el.classList.toggle('on', el.classList.contains(exRing.cur)); });
+      else {   // плавная смена цвета: новый цвет — во втором слое, слои меняются прозрачностью
+        const nx = exRing.cur === 'a' ? 'b' : 'a';
+        ring.querySelectorAll('.x-com.' + nx + ', .x-glo.' + nx).forEach(el => el.style.setProperty('--crgb', rgb));
+        all.forEach(el => el.classList.toggle('on', el.classList.contains(nx))); exRing.cur = nx;
+        exReplay(ring.querySelector('.x-sp'), 'fl'); exReplay(ring, 'flx'); exReplay(ring.querySelector('.lb'), 'gl');
+      }
+      ring.querySelectorAll('.x-rd path').forEach((sg, i) => { const r = i + 1; sg.classList.toggle('dn', p.ph !== 'prep' && (r < p.r || (r === p.r && p.ph !== 'work'))); sg.classList.toggle('cu', r === p.r && p.ph === 'work'); });
+    }
+    const left = p.len - p.el, sec = Math.ceil(left);   // пульс последних 3 секунд перед работой и бегом
+    if ((p.ph === 'prep' || p.ph === 'rest') && left <= 3 && sec !== exRing.sec) { exRing.sec = sec; exReplay(ring, 'pz'); }
+    if (left > 3) exRing.sec = -1;
+    exRing.raf = requestAnimationFrame(() => exRingFrame(false));
   }
   // ---------- карманный режим ----------
   var exPocketOn = false;
@@ -10247,7 +10380,7 @@
         if (p.ph === 'prep' && Math.floor(10 - t) !== Math.floor(10 - prev) && 10 - t < 3) exSnd('tick');
         if ((p.ph === 'rin' || p.ph === 'late') && Math.floor((t - 1210) / 60) !== Math.floor((prev - 1210) / 60) && t > 1215) exSnd('remind');
       } else {
-        const p0 = exStrengthAt(prev), p = exStrengthAt(t);
+        const cut = exCutOf(id), p0 = exStrengthAt(prev, cut), p = exStrengthAt(t, cut);
         if (p.ph !== p0.ph || p.r !== p0.r) {
           if ((p0.ph === 'rest' || p0.ph === 'fin') && s.vals[p0.r - 1] == null) { s.vals[p0.r - 1] = 0; saveData(); }
           if (p.ph === 'work') exSnd('go'); else if (p.ph === 'rest' || p.ph === 'fin') exSnd('stop');
@@ -10276,8 +10409,8 @@
     const et = document.getElementById('exTimer'); if (et) { const txt = exHms(exTot() - examNow()); if (et.dataset.v !== txt) { exTimerCells(et, txt); et.dataset.v = txt; } }
     const id = e.act; if (!id) return;
     const s = e.S[id], d = EX_ST[id], p = exPhase(id); if (p.ph === 'end') return;
-    const [lb, c0] = EX_PH[p.ph], c = c0 === 'AC' ? 'var(--ac)' : c0, pr = Math.min(1, p.el / p.len);
-    const t = exStageT(id), tot = exMmss(d.run ? Math.min(t, 1510) : Math.min(t, exStrengthLen())), cur = exMmss(p.el), canIn = examCanIn(id);
+    const [lb, c0] = EX_PH[p.go ? 'go' : p.ph], c = c0 === 'AC' ? 'var(--ac)' : c0, pr = Math.min(1, p.el / p.len);
+    const t = exStageT(id), tot = exMmss(d.run ? Math.min(t, 1510) : Math.min(t, exStrengthLen(exCutOf(id)))), cur = exMmss(p.el), canIn = examCanIn(id);
     const rd = d.run ? (p.ph === 'prep' ? 'Положите телефон в карман' : p.ph === 'run' ? 'Бег, 20 минут' : 'Окно ввода, 5 минут') : `Раунд ${p.r} / 4`;
     const el = document.getElementById('exk_' + id);
     if (el) { exSetT(el.querySelector('.ex-tot .xt'), tot); const v = el.querySelector('.ex-vals'); if (v) v.textContent = exVals(s); }
@@ -10295,6 +10428,15 @@
       const re = document.getElementById('exReBtn'); if (re) re.disabled = s.re < 1;
       const fb = document.getElementById('exFinBtn'); if (fb) fb.disabled = !examCanFinish(id);
       const pk = document.getElementById('exPkBtn'); if (pk) pk.disabled = !(p.ph === 'prep' || p.ph === 'run');
+      const gb = document.getElementById('exGoBtn');
+      if (gb) {   // v7.6.7: «Начать раунд N»
+        const g = examGoState(), t = `Начать раунд ${g ? g.next : p.r + 1}`, can = !!(g && g.can);
+        if (gb.textContent !== t) gb.textContent = t;
+        if (can && gb.disabled) exReplay(gb, 'in');
+        if (!can) gb.classList.remove('in');
+        gb.disabled = !can;
+      }
+      if (!exRing.raf) exRingFrame(false);
     }
     if (exPocketOn) {
       const P = document.getElementById('exPocket'), done = d.run && (p.ph === 'rin' || p.ph === 'late');
@@ -10603,7 +10745,10 @@
       else { e.sp = [1, 5, 20].includes(e.sp) ? e.sp : 1;
         if (e.rest != null && ![240, 270, 300].includes(e.rest)) e.rest = EX_REST(e.adm);   // v7.6.4: без поля — испытание до 7.6.4 (прежние числа)
         if (e.rest != null) { e.fin = EX_FIN; e.tot = EX_TOTAL; } else { delete e.fin; delete e.tot; }
-        if (!e.S || !EX_IDS.every(id => e.S[id])) data.exam = null; else if (e.act && !EX_IDS.includes(e.act)) e.act = null; }
+        if (!e.S || !EX_IDS.every(id => e.S[id])) data.exam = null; else { if (e.act && !EX_IDS.includes(e.act)) e.act = null;
+          EX_IDS.forEach(id => { const s = e.S[id], c = s.cut;   // v7.6.7: сокращение отдыха кнопкой «Начать раунд» (нет поля — отдых полный)
+            if (EX_ST[id].run) { delete s.cut; return; }
+            s.cut = Array.isArray(c) && c.length === 4 ? c.map((v, i) => i < 3 && Number.isFinite(v) ? Math.max(0, Math.min(exRest(e) - 10, v)) : 0) : [0, 0, 0, 0]; }); } }
     }
     if (data.exam && data.exam.st === 'offered') data.exam.min = !!data.exam.min; else if (data.exam) delete data.exam.min;   // v7.6.6: «свёрнуто» — только у предложения
     if (!data.exam) data.exam = null;

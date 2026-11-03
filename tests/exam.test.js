@@ -287,6 +287,45 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   check('X48 «Продолжить задание» — обычный день', E(w, 'data.isGoalMet') === false && E(w, 'data.examCredited') === false);
   w.close();
 
+  // ---- v7.6.7: «Начать раунд N», кольцо-комета, отступ в беге ----
+  w = await mk(ready + "examOffer(false); examGo(2); examAccept(); examStart();"); await sleep(1300); E(w, CLR);
+  E(w, "examBegin('squats'); data.exam.S.squats.t0 -= 55"); await sleep(250);
+  check('X54 v7.6.7: слой этапа — комета, искра, деления, кольцо раундов, шестигранник; поле cut у силового этапа',
+    E(w, "!!exLayer.querySelector('.ring .x-rot .x-sp') && exLayer.querySelectorAll('.x-tk line').length === 60 && exLayer.querySelectorAll('.x-rd path').length === 4 && !!exLayer.querySelector('svg.x-hex') && !!exLayer.querySelector('svg.x-main .trk')")
+    && J(w, 'data.exam.S.squats.cut').join() === '0,0,0,0' && !E(w, "exLayer.querySelector('.ring').classList.contains('run')"));
+  check('X55 отдых, 5 с, повторения не внесены — «Начать раунд 2» скрыта и заблокирована', E(w, 'exGoBtn.disabled') === true && E(w, 'exGoBtn.textContent') === 'Начать раунд 2' && E(w, "exPhase('squats').ph") === 'rest');
+  E(w, 'data.exam.S.squats.t0 -= 30'); await sleep(250);
+  E(w, 'examGoRound()');
+  check('X56 35 с отдыха, повторения не внесены — заблокирована, нажатие ничего не меняет', E(w, 'exGoBtn.disabled') === true && J(w, 'data.exam.S.squats.cut')[0] === 0);
+  E(w, 'data.exam.S.squats.t0 += 10; examAdd(10)'); await sleep(250);
+  check('X57 повторения внесены, но меньше 30 с отдыха — заблокирована', E(w, 'exGoBtn.disabled') === true && E(w, "examGoState().can") === false);
+  E(w, 'data.exam.S.squats.t0 -= 12'); await sleep(250);
+  check('X58 30 с отдыха и повторения внесены — доступна', E(w, 'exGoBtn.disabled') === false && E(w, 'examGoState().can') === true);
+  const len0 = E(w, 'exStrengthLen(data.exam.S.squats.cut)');
+  E(w, 'examGoRound()'); await sleep(250);
+  { const p = J(w, "exPhase('squats')"), cut = J(w, 'data.exam.S.squats.cut');
+    check('X59 нажатие — отдых сокращён, 10 с «Подготовки» голубым, этап короче на сокращение', p.ph === 'rest' && p.go === true && p.len === 10 && p.el < 1.5 && cut[0] > 190 && cut[0] < 200
+      && E(w, "exLayer.querySelector('.ring .lb').textContent") === 'Подготовка' && E(w, 'exGoBtn.disabled') === true && E(w, 'exStrengthLen(data.exam.S.squats.cut)') === len0 - cut[0], JSON.stringify({ p, cut })); }
+  check('X60 во время «Подготовки» повторения раунда 1 ещё можно поправить', E(w, 'examAdd(1); data.exam.S.squats.vals[0]') === 11);
+  E(w, 'data.exam.S.squats.t0 -= 10'); await sleep(300);
+  { const p = J(w, "exPhase('squats')");
+    check('X61 через 10 с — раунд 2, работа; повторения раунда 1 сохранены', p.ph === 'work' && p.r === 2 && J(w, 'data.exam.S.squats.vals')[0] === 11 && E(w, "exLayer.querySelector('.ring .lb').textContent") === 'Работа', JSON.stringify(p)); }
+  E(w, 'data.exam.S.squats.t0 -= 60; examAdd(5); saveData()'); await sleep(250);
+  { const cut = J(w, 'data.exam.S.squats.cut'), ph = J(w, "exPhase('squats')");
+    let sv = w.localStorage.getItem('sl_daily_v5_5_0'); w.close(); w = boot(sv); await sleep(2500); E(w, CLR);
+    const p2 = J(w, "exPhase('squats')");
+    check('X62 перезапуск — сокращение сохранено, этап продолжается с того же места (отдых раунда 2)', J(w, 'data.exam.S.squats.cut').join() === cut.join() && p2.ph === 'rest' && p2.r === 2 && Math.abs(p2.el - ph.el) < 4, JSON.stringify({ ph, p2 })); }
+  E(w, "examLayer(true); data.exam.S.squats.cut = [5000, -3, 'x', 7]; examNormalize()");
+  check('X63 проверка при загрузке — сокращение в пределах отдыха минус 10 с, у 4-го раунда 0', J(w, 'data.exam.S.squats.cut').join() === '230,0,0,0');
+  E(w, "data.exam.S.squats.cut = [190, 0, 0, 0]; examRestart()");
+  check('X64 «Начать этап заново» — сокращения сброшены', J(w, 'data.exam.S.squats.cut').join() === '0,0,0,0' && E(w, "exPhase('squats').ph") === 'prep');
+  E(w, "delete data.exam.S.squats.cut; examNormalize()");
+  check('X65 этап без поля cut (до 7.6.7) — отдых полный', J(w, 'data.exam.S.squats.cut').join() === '0,0,0,0' && E(w, 'exStrengthLen(data.exam.S.squats.cut)') === E(w, 'exStrengthLen()'));
+  E(w, "data.exam.S.squats.st = 'done'; data.exam.act = null; examLayer(false); examBegin('steps')"); await sleep(250);
+  check('X66 бег — без кнопки «Начать раунд» и без кольца раундов; между рядами кнопок отступ 12 px',
+    E(w, "!document.getElementById('exGoBtn') && exLayer.querySelector('.ring').classList.contains('run')") && E(w, "getComputedStyle(exLayer.querySelector('.acts')).rowGap") === '12px' && E(w, "data.exam.S.steps.cut === undefined"), E(w, "[!!document.getElementById('exGoBtn'), exLayer.querySelector('.ring').className, getComputedStyle(exLayer.querySelector('.acts')).rowGap, typeof data.exam.S.steps.cut].join()"));
+  w.close();
+
   // ---- перезапуск: этап идёт → экран испытания с «Открыть этап»; закрытое приложение после 3 часов → «Не выполнено» ----
   w = await mk(ready + "examOffer(false); examGo(2); examAccept(); examStart();"); await sleep(1300);
   E(w, "examBegin('squats'); data.exam.S.squats.t0 -= 30; saveData()");
