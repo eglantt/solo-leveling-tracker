@@ -210,6 +210,17 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   check('X41 шкатулки ранга: при повышении уровня не выпадают; ранги NL / SSS / Monarch; одна иконка', !J(w, 'getAvailableBoxTiers()').some(id => /^box_rank/.test(id))
     && E(w, "ITEM_META.box_rank_national.rank + ITEM_META.box_rank_sss.rank + ITEM_META.box_rank_monarch.rank") === 'NLSSSMonarch' && E(w, "iconS('box_rank_sss')") === 'icons/items-s/box_rank.png'
     && /^Ранг: Monarch/.test(E(w, "itemPreviewText('box_rank_monarch')")));
+  { const ga = id => E(w, `glowAttrs('${id}')`);
+    const css = [...w.document.querySelectorAll('style')].map(x => x.textContent).join('\n');
+    check('X41a v7.6.5: шкатулки ранга светятся ровно (без пульсации), Shadow Monarch — шире; Шкатулка Аномалии пульсирует, как раньше',
+      /class="item-icon-img rank-glow"/.test(ga('box_rank_sss')) && !/pulse-glow-special/.test(ga('box_rank_sss')) && /rank-glow rank-glow-m/.test(ga('box_rank_monarch')) && /pulse-glow-special/.test(ga('box_anomaly'))
+      && /\.rank-glow \{ filter: drop-shadow\(0 0 6px var\(--glow\)\) drop-shadow\(0 0 12px var\(--glow\)\)/.test(css) && /\.rank-glow\.rank-glow-m \{ filter: drop-shadow\(0 0 10px var\(--glow\)\) drop-shadow\(0 0 22px var\(--glow\)\)/.test(css));
+    E(w, HIDE + "showItemPreview('box_rank_monarch', 'Шкатулка ранга Shadow Monarch')");
+    check('X41b v7.6.5: окно предмета — копия-свечение без пульсации; её правило действует и на уходящей копии окна (data-gid)',
+      E(w, "itemPreviewGlow.className") === 'rank-glow rank-glow-m' && /\.item-preview-box img:is\(#itemPreviewGlow, \[data-gid="itemPreviewGlow"\]\) \{ position: absolute !important/.test(css));
+    E(w, HIDE);
+    check('X41c v7.6.5: значок испытания в Летописи — только контур, внутри квадратика (2 px от рамки, 9 px)', /fill="none" stroke="#40ffaa"/.test(E(w, "calExHex('#40ffaa')")) && /fill="none" stroke="rgba\(170,190,215,\.45\)"/.test(E(w, 'calExHex(null)'))
+      && /\.day-cell \.cal-ex \{ position: absolute; top: 2px; left: 2px; width: 9px; height: 9px;/.test(css)); }
   w.close();
 
   // ---- провалы ----

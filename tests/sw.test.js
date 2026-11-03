@@ -1,6 +1,7 @@
 const vm = require('vm'); const fs = require('fs');
 const path = require('path');
 const code = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'sw.js'), 'utf-8');
+const ASSETS_CACHE = 'solo-leveling-assets-' + code.match(/ASSETS_VERSION = '([^']+)'/)[1];   // v7.6.5: имя кэша картинок — по текущему ASSETS_VERSION (в 7.6.5 стал v2)
 const APP_NAME = 'solo-leveling-app-' + code.match(/CACHE_VERSION = '([^']+)'/)[1];
 const BASE = 'https://eglantt.github.io/solo-leveling-tracker/';
 const results = []; const check = (n, c, i) => results.push((c ? 'OK  ' : 'FAIL') + ' ' + n + (i ? '  → ' + i : ''));
@@ -58,14 +59,14 @@ function makeEnv(opts) {
   // S1: установка при недоступной предметной иконке и медленных ассетах
   let env = makeEnv({ missing: ['./icons/items/rune_freedom.png'], delay: u => u.includes('/items/') ? 2000 : 0 });
   env.store.set('solo-leveling-app-old', new Map([[BASE + 'index.html', new Response('old')]]));
-  env.store.set('solo-leveling-assets-v1', new Map([[BASE + 'fonts/orbitron-latin-500-normal.woff2', new Response('font')]]));
+  env.store.set(ASSETS_CACHE, new Map([[BASE + 'fonts/orbitron-latin-500-normal.woff2', new Response('font')]]));
   let t0 = Date.now(); let ev = env.fire('install'); await ev.all();
   const app = env.store.get(APP_NAME);
   check('S1 install прошёл быстро, без предметных иконок', env.skipped && Date.now() - t0 < 500 && app.size === 10, `${Date.now() - t0}мс, файлов ${app.size}`);
   check('S1 каркас качался мимо HTTP-кэша', env.log.every(l => l.cacheMode === 'reload'), env.log.map(l => l.cacheMode).join(','));
   // S2: активация
   t0 = Date.now(); ev = env.fire('activate'); await ev.all();
-  check('S2 activate удалил старый кэш, оставил кэш картинок, быстро', !env.store.has('solo-leveling-app-old') && env.store.has('solo-leveling-assets-v1') && env.claimed && Date.now() - t0 < 200, [...env.store.keys()].join(', '));
+  check('S2 activate удалил старый кэш, оставил кэш картинок, быстро', !env.store.has('solo-leveling-app-old') && env.store.has(ASSETS_CACHE) && env.claimed && Date.now() - t0 < 200, [...env.store.keys()].join(', '));
   // S3: навигация онлайн — свежая страница, no-cache, кладётся в кэш
   env.log.length = 0; env.opts.version = 'fresh';
   ev = env.nav('./index.html'); let res = await ev.responded;
@@ -73,7 +74,7 @@ function makeEnv(opts) {
   check('S3 запрос страницы с cache:no-cache', env.log[0].cacheMode === 'no-cache', env.log[0].cacheMode);
   // фоновая докачка: идёт, ошибка одной иконки не мешает, кэшированный шрифт не качается
   await Promise.all(ev.waits);
-  const assets = env.store.get('solo-leveling-assets-v1');
+  const assets = env.store.get(ASSETS_CACHE);
   const ASSET_COUNT = (code.match(/const ASSET_FILES = \[([\s\S]*?)\];/)[1].match(/'\.\//g) || []).length;
   check(`S3 фоновая докачка: ${ASSET_COUNT - 1} из ${ASSET_COUNT} (одна 404), шрифт не перекачивался`, assets.size === ASSET_COUNT - 1 && !env.log.some(l => l.url.endsWith('orbitron-latin-500-normal.woff2')), `в кэше ${assets.size}`);
   check('S3 страница легла в кэш', (await (await env.store.get(APP_NAME).get(BASE + 'index.html')).clone().text()) === 'body:./index.html:fresh');
