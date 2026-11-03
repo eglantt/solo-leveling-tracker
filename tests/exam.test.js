@@ -70,7 +70,7 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   E(w, 'examGo(2)');
   const c2 = E(w, 'exC2.textContent');
   check('X7 окно 2: условия дословно, «штраф» красным жирным', /Испытание включает пять этапов: отжимания, приседания, подтягивания, пресс и бег\. Порядок этапов определяет Игрок\./.test(c2)
-    && /На всё испытание отводится 5 часов с момента начала\./.test(c2) && /40 секунд работы и 4 минуты отдыха\./.test(c2) && /после последнего раунда на это отводится 90 секунд\./.test(c2) && /не завершённое за 5 часов/.test(c2) && !!w.document.querySelector('#exC2 .ex-pen') && J(w, 'data.codexUnlocked').includes('rank_trial'), c2.slice(0, 80));
+    && /На всё испытание отводится 5 часов с момента начала\./.test(c2) && /40 секунд работы и 4 минуты отдыха\./.test(c2) && /после последнего раунда на это отводится 90 секунд\./.test(c2) && /не завершённое за 5 часов/.test(c2) && !!w.document.querySelector('#exC2 .ex-pen'), c2.slice(0, 80));
   E(w, 'examDecline()');
   check('X8 отказ от предложения — без штрафа, следующее не раньше чем через 3 цикла', E(w, 'data.exam') === null && E(w, 'data.examLastOffer') === E(w, 'data.lastReset') && E(w, 'examCanOffer()') === false && E(w, 'data.exp') === E(w, 'Math.ceil(getExpToNext(data.level) * 0.8)'));
   E(w, ready + 'examOffer(false); examGo(2); examAccept()');
@@ -98,6 +98,46 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   E(w, 'closeExamPenalty()'); await sleep(300);
   check('X16 после итога — выходят', E(w, 'exHeldN.length') === 0 && E(w, 'data.examPost') === null);
   w.close();
+
+  // ---- v7.6.6: сворачивание предложения в значок, срок предложения, глава после закрытия окон ----
+  w = await mk(ready);
+  const click = sel => E(w, `document.querySelector('${sel}').dispatchEvent(new MouseEvent('click', { bubbles: true }))`);
+  E(w, 'examOffer(false)'); click('#exC1 .ex-line');
+  check('X8f v7.6.6: касание по окну предложения (не по кнопкам) — окно свёрнуто, значок, глава не открыта', E(w, 'exOv1.style.display') === 'none' && E(w, 'data.exam.st') === 'offered' && E(w, 'data.exam.min') === true
+    && (await sleep(60), E(w, "exIcon.classList.contains('on')")) && !J(w, 'data.codexUnlocked').includes('rank_trial'));
+  E(w, 'examIconTap()'); await sleep(320);
+  check('X8g значок свёрнутого предложения — снова окно предложения', E(w, 'exOv1.style.display') === 'flex' && E(w, 'data.exam.min') === false && E(w, "exIcon.classList.contains('on')") === false);
+  click('#exOv1');
+  check('X8h касание мимо окна (по затемнению) — тоже свёрнуто', E(w, 'exOv1.style.display') === 'none' && E(w, 'data.exam.min') === true);
+  await sleep(60); E(w, 'examIconTap()'); await sleep(320);
+  click('#exC1 button');
+  check('X8i касание по кнопке «Условия» не сворачивает — открыты «Условия»', E(w, 'exOv2.style.display') === 'flex' && E(w, 'data.exam.min') === false, JSON.stringify(J(w, "[exOv1.style.display, exOv2.style.display, data.exam && data.exam.min, document.querySelector('#exC1 button') && document.querySelector('#exC1 button').textContent]")));
+  click('#exC2 .ex-p'); click('#exOv2');
+  check('X8j «Условия» касанием не сворачиваются; глава до закрытия окон не открыта', E(w, 'exOv2.style.display') === 'flex' && !J(w, 'data.codexUnlocked').includes('rank_trial'));
+  E(w, 'examAccept()'); await sleep(400);
+  check('X8k после «Принять» (открыто окно «Начать / Подготовиться») глава ещё ждёт', E(w, 'exOv3.style.display') === 'flex' && !J(w, 'data.codexUnlocked').includes('rank_trial'));
+  click('#exC3 .ex-line');
+  check('X8l касание по окну «Начать / Подготовиться» — как «Подготовиться»: значок', E(w, 'exOv3.style.display') === 'none' && E(w, 'data.exam.st') === 'accepted' && (await sleep(60), E(w, "exIcon.classList.contains('on')")));
+  await sleep(450);
+  check('X8m окна закрыты — глава «Испытание ранга» открыта', J(w, 'data.codexUnlocked').includes('rank_trial'));
+  await sleep(4700);
+  check('X8m2 уведомление о главе вышло после закрытия окон', J(w, '[currentNotificationBody].concat(notificationQueue.map(q => q.body), data.notificationLog.map(l => l.text))').some(b => /Записано в Кодекс: Испытание ранга/.test(b || '')), JSON.stringify(J(w, 'data.notificationLog.map(l => l.text)')));
+  w.close();
+  w = await mk(ready + 'examOffer(false); examCollapse(1);');
+  let sv0 = w.localStorage.getItem('sl_daily_v5_5_0'); w.close();
+  w = boot(sv0); await sleep(1500);
+  check('X8n перезапуск: свёрнутое предложение — значок, без окна', E(w, "exIcon.classList.contains('on')") && E(w, 'exOv1.style.display') !== 'flex' && E(w, 'data.exam.min') === true);
+  E(w, CLR + 'data.notificationLog = []; data.exam.dl = Date.now() - 1'); await sleep(300);
+  check('X8o срок свёрнутого предложения истёк при открытом приложении — значка нет, штрафа нет, запись в журнале', E(w, 'data.exam') === null && !E(w, "exIcon.classList.contains('on')")
+    && E(w, 'data.notificationLog[0].text') === 'Срок предложения испытания ранга истёк.' && E(w, 'data.examDelayUntil') === null);
+  E(w, CLR + HIDE + ready + 'data.notificationLog = []; examOffer(false); examGo(2); data.exam.dl = Date.now() - 1; examAccept()');
+  check('X8p «Принять» после срока — не принято, окна закрыты, запись в журнале, без штрафа «Срок упущен»', E(w, 'data.exam') === null && E(w, 'exOv2.style.display') === 'none'
+    && E(w, 'data.notificationLog[0].text') === 'Срок предложения испытания ранга истёк.' && E(w, 'exPenOverlay.style.display') !== 'flex');
+  E(w, CLR + HIDE + ready + 'data.notificationLog = []; examOffer(false); data.exam.dl = Date.now() - 1; examResolveExpired()');
+  check('X8q при запуске в тот же день — запись о сроке предложения', E(w, 'data.exam') === null && E(w, 'data.notificationLog[0].text') === 'Срок предложения испытания ранга истёк.');
+  E(w, "data.exam = { st: 'running', adm: 'e', cyc: data.lastReset, dl: Date.now() + 7200000, vt: 0, vAt: Date.now(), sp: 1, act: null, S: {}, rest: 240, fin: 90, tot: 18000 }; EX_IDS.forEach(id => { data.exam.S[id] = { st: 'idle', t0: 0, vals: [null, null, null, null], steps: 0, re: 1, auto: false }; }); sysToolsAuthorized = true; openSysTools(); updateSysCurrent()");
+  check('X8r Длань: «Испытание: идёт, … из 05:00:00»', /идёт, \d\d:\d\d:\d\d из 05:00:00/.test(w.document.body.textContent), (w.document.body.textContent.match(/Испытание: [^\n]{0,40}/) || [''])[0]);
+  E(w, 'data.exam = null'); w.close();
 
   // ---- v7.6.4: отдых по высшему рангу допуска, срок, старое испытание ----
   w = await mk('');
