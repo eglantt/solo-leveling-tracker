@@ -231,6 +231,24 @@ async function legendTests() {
     check('LG5 v7.6.8: «Испытание ранга пройдено» — только золотой квадратик (без шестигранника), «Испытание ранга» — только серый шестигранник (без квадратика)',
       !!ok && ok.classList.contains('cal-swatch') && !ok.querySelector('svg') && /#ffd34d/.test(ok.getAttribute('style'))
       && !!fl && fl.classList.contains('cal-ex') && !!fl.querySelector('svg path') && !fl.closest('.cal-swatch') && !fl.parentElement.querySelector('.cal-swatch')); }
+  { E(w, 'openChronicle()'); const lb = D.getElementById('legendBody'), cap = D.getElementById('legendToggle'), hx = D.getElementById('legExFail');
+    check('LG6 v7.6.9: «Обозначения» видны сразу и не сворачиваются — подпись без треугольника и без нажатия',
+      w.getComputedStyle(lb).display === 'flex' && cap.textContent.trim() === 'Обозначения' && !cap.getAttribute('onclick') && !D.getElementById('legendArrow') && E(w, 'typeof toggleCalLegend') === 'undefined' && w.getComputedStyle(cap).cursor === 'default' && w.getComputedStyle(cap).paddingTop === '4px' && w.getComputedStyle(lb).marginTop === '4px' && w.getComputedStyle(lb).marginBottom === '15px');
+    const kf = (css.match(/@keyframes calExBreath \{([\s\S]*?)\} \}/) || [])[1] || '';
+    const order = [...kf.matchAll(/color: (#[0-9a-f]{6})/g)].map(m => m[1]);
+    const want = JSON.parse(E(w, "JSON.stringify(['e','d','c','b','a','s','national','sss','monarch'].map(k => RANK_COLORS[k]))"));
+    const grey = (kf.match(/color: rgba\(170,190,215,\.45\)/g) || []).length;
+    const pct = [...kf.matchAll(/([\d.]+)%/g)].map(m => +m[1]);
+    check('LG7 v7.6.9: значок «Испытание ранга» дышит 27 с: серый → E → серый → D … → Shadow Monarch, на ранг 1 / 0,5 / 1 / 0,5 с, со свечением цвета ранга',
+      JSON.stringify(order) === JSON.stringify(want) && grey === 10 && pct.length === 37 && Math.abs(pct[1] - 100 / 27) < 0.01 && Math.abs(pct[2] - 150 / 27) < 0.01 && Math.abs(pct[3] - 250 / 27) < 0.01 && Math.abs(pct[4] - 300 / 27) < 0.01
+      && /5\.556%, 9\.259% \{ color: #aaaaaa; filter: drop-shadow\(0 0 3px #aaaaaa\); \}/.test(kf)
+      && hx.classList.contains('ex-breath') && w.getComputedStyle(hx).animationName === 'calExBreath' && w.getComputedStyle(hx).animationDuration === '27s' && w.getComputedStyle(hx).animationIterationCount === 'infinite'
+      && hx.querySelector('path').getAttribute('stroke') === 'currentColor', JSON.stringify({ order, grey, n: pct.length }));
+    let restarted = false; const oR = hx.classList.remove.bind(hx.classList); hx.classList.remove = (...c) => { if (c.includes('ex-breath')) restarted = true; return oR(...c); };
+    E(w, "document.getElementById('chronicleOverlay').style.display = 'none'; openChronicle()");
+    const kept = (() => { let r = false; hx.classList.remove = (...c) => { if (c.includes('ex-breath')) r = true; return oR(...c); }; E(w, 'calShiftMonth(-1); calGoToday()'); return !r; })();
+    check('LG8 v7.6.9: при каждом открытии Летописи «дыхание» начинается заново (с серого и ранга E), листание месяцев его не сбрасывает', restarted && kept && hx.classList.contains('ex-breath'));
+    hx.classList.remove = oR; E(w, "document.getElementById('chronicleOverlay').style.display = 'none'"); }
   const names = items.map(i => i.text);
   check('LG2 «Заморожено» — сразу после «Защищено»', names.indexOf('Заморожено') === names.indexOf('Защищено') + 1, names.join(' | '));
   const fr = items.find(i => i.text === 'Заморожено');
