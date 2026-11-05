@@ -248,6 +248,8 @@ async function registry7610Tests() {
   c = await open({ ok: true, top: [{ rank: 1, name: 'Old', level: 7, bestStreak: 2 }], you: null }, "data.playerName = 'Эглант'");
   check('LB17 ответ прежнего скрипта (без rk) — «Без ранга», окно работает', c.querySelector('.sc-rank').textContent === 'Без ранга');
   const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  { const bad = css.split('\n').filter(l => /\{/.test(l) && /#(leaderboardContent|legendBody)\b/.test(l.split('{')[0]) && !/\[data-gid="(leaderboardContent|legendBody)"\]/.test(l));
+    check('LB19 v7.6.11: правила Реестра и легенды Летописи узнают и копию закрываемого окна (:is(#имя, [data-gid="имя"])) — подсказка и ранг при закрытии не прыгают', bad.length === 0, bad.join(' | ')); }
   check('LB18 «Система»: оболочка окна Реестра — по высоте содержимого (рамка не короче содержимого)', /body\.theme-sys :is\(#leaderboardOverlay, \[data-gid="leaderboardOverlay"\]\) \.sf-win\.mwin \{ height: auto; \}/.test(css));
   w.close();
 }
