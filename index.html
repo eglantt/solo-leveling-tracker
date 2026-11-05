@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.9 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.10 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1366,6 +1366,11 @@
     .day-cell .cal-ex svg, .legend .cal-ex svg { width: 100%; height: 100%; display: block; overflow: visible; }
     .day-cell .cal-ex.ok { filter: drop-shadow(0 0 3px var(--rkc)); }
     .legend .cal-ex { position: relative; display: inline-block; width: 12px; height: 12px; vertical-align: middle; margin-right: 3px; }   /* v7.6.8: отдельный значок, без квадратика */
+    /* ===== v7.6.10: Летопись — всегда 6 рядов; Реестр — ранг в карточке, подсказка ===== */
+    .day-cell.cal-pad { visibility: hidden; pointer-events: none; }
+    #leaderboardContent .lb-rk { margin-top: 3px; line-height: 1.3; }
+    #leaderboardContent .lb-rk .sc-rank { font-size: .78rem; }
+    #leaderboardContent .lb-hint { margin: 14px 4px 4px; text-align: center; font-size: .8rem; line-height: 1.45; opacity: .75; }
     /* ===== v7.6.9: Летопись — «Обозначения» не сворачиваются; значок «Испытание ранга» дышит цветами рангов (E … Shadow Monarch) =====
        на ранг 3 с: серый 1 с → нарастание 0,5 с → цвет ранга 1 с → угасание 0,5 с; круг 27 с, цвета — RANK_COLORS */
     .legend-toggle.legend-cap { cursor: default; padding: 4px; }   /* подпись не нажимается — отступы 10 → 4 px (решение пользователя) */
@@ -1855,7 +1860,8 @@
     body.theme-sys #exLayer .nm { padding: 5px 16px; border: 1px solid rgba(255,211,77,.7); box-shadow: 0 0 10px rgba(255,205,60,.35), inset 0 0 10px rgba(255,205,60,.12); background: rgba(40,28,0,.35); }
     body.theme-sys #exLayer button { border-radius: 0; }
     body.theme-sys #exLayer button.ex-go.in { animation: xLineIn .4s ease-out; }
-    body.theme-sys #legendBody.legend { margin-bottom: 12px; }   /* v7.6.9: под легендой вдвое больше (было 12 px до «Закрыть») */
+    body.theme-sys #legendBody.legend { margin-bottom: 12px; }
+    body.theme-sys :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .sf-win.mwin { height: auto; }   /* v7.6.10: высота «Классики» (90vh) не действует на оболочку — рамка по содержимому (92vh), «Закрыть» внутри рамки */   /* v7.6.9: под легендой вдвое больше (было 12 px до «Закрыть») */
 </style>
 </head>
 <body>
@@ -2409,7 +2415,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.9';
+  const APP_VERSION = '7.6.10';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -8677,6 +8683,11 @@
 
       grid.appendChild(cell);
     }
+    for (let i = leadingBlank + daysInMonth; i < 42; i++) {   // v7.6.10: всегда 6 рядов — высота окна при листании месяцев не меняется
+      const pad = document.createElement('div');
+      pad.className = 'day-cell cal-pad'; pad.setAttribute('aria-hidden', 'true');
+      grid.appendChild(pad);
+    }
 
     document.getElementById('calStreakLine').textContent = `Рекорд серии: ${data.bestStreak} ${pluralDays(data.bestStreak)}`;
     document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount} · заморожено ${frozenCount}${veilCount ? ` · пелена покоя ${veilCount}` : ''}`;
@@ -9773,7 +9784,7 @@
       .then(res => res.json())
       .then(res => {
         if (!res || !res.ok) throw new Error('bad response');
-        renderLeaderboard(res.top || [], res.you || null);
+        renderLeaderboard(res.top || [], res.you || null);   // v7.6.10: в карточках — ранг (rk), своя карточка подсвечена всегда
       })
       .catch(() => {
         content.innerHTML = `<div class="lb-msg">Реестр сейчас недоступен.</div>`;
@@ -9788,27 +9799,33 @@
 
   function leaderboardCard(entry, isYou) {
     const borderStyle = isYou ? 'border: 1px solid #40c0ff;' : '';
+    const rk = PLAYER_RANKS.includes(entry.rk) ? entry.rk : null;   // v7.6.10: ранг — как в «Статусе»: своим цветом со свечением, без ранга — серым
     return `
-      <div class="item-card" style="${borderStyle}">
+      <div class="item-card${isYou ? ' lb-you' : ''}" style="${borderStyle}">
         <div class="item-info">
           <div class="item-name">#${entry.rank}&nbsp;&nbsp;${escapeHtml(entry.name)}&nbsp;&nbsp;<span style="float:right;">${entry.level} ур.</span></div>
+          <div class="lb-rk rk-${rk || 'e'}"><span class="sc-rank">${rk ? RANK_NAMES[rk] : RANK_NONE_NAME}</span></div>
           <div class="item-desc">Лучшая серия дней: ${entry.bestStreak || 0}</div>
         </div>
       </div>`;
   }
+  const LB_HINT_CHECK = 'Данные появятся в Реестре после проверки.';
+  const LB_HINT_RULE = 'В Реестре отображаются Игроки со своим именем и регулярным выполнением дневного задания.';
 
   function renderLeaderboard(top, you) {
     const content = document.getElementById('leaderboardContent');
+    // v7.6.10: себя нет в списке — подсказка: приложение не отправляет данные (нет своего имени или выполненного дня) или данные на проверке
+    const hint = you ? '' : `<div class="lb-hint">${registryEligible() ? LB_HINT_CHECK : LB_HINT_RULE}</div>`;
     if (!top.length) {
-      content.innerHTML = `<div class="lb-msg">Реестр пока пуст.</div>`;
+      content.innerHTML = `<div class="lb-msg">Реестр пока пуст.</div>` + hint;
       lbSyncScroll();
       return;
     }
-    let html = top.map(entry => leaderboardCard(entry, false)).join('');
+    let html = top.map(entry => leaderboardCard(entry, !!you && entry.rank === you.rank)).join('');
     if (you && you.rank > 10) {
       html += `<div style="height:10px;"></div>` + leaderboardCard(you, true);
     }
-    content.innerHTML = html;
+    content.innerHTML = html + hint;
     lbSyncScroll();
   }
 
@@ -9819,6 +9836,7 @@
         id: data.playerId,
         name: data.playerName || 'Игрок',
         level: data.level,
+        rk: PLAYER_RANKS.includes(data.rank) ? data.rank : null,   // v7.6.10: подтверждённый ранг (без ранга — null)
         totals: totalStats,
         opensYesterday: data.opensYesterday || 0,
         totalOpens: data.totalOpens || 0,

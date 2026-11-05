@@ -216,6 +216,42 @@ async function effectSelectTests() {
   check('SE6 запас строки снизу (12px) вмещает чёрточку (−7px и 2px)', cs(row).paddingBottom === '12px');
 }
 
+// ===== v7.6.10: Летопись в 6 рядов; Реестр — ранг, подсветка своей карточки, подсказки =====
+async function registry7610Tests() {
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const D = w.document;
+  const rows = [[2026, 1], [2026, 10], [2026, 7], [2027, 1]].map(([y, m]) => { E(w, `calViewYear = ${y}; calViewMonth = ${m}; calRenderCalendar()`);
+    const g = D.getElementById('calDayGrid'); return [g.children.length, g.querySelectorAll('.cal-pad').length, [...g.querySelectorAll('.cal-pad')].every(c => w.getComputedStyle(c).visibility === 'hidden')]; });
+  check('CAL6 v7.6.10: календарь всегда 6 рядов (42 ячейки; февраль 2027 — 4 ряда дней, февраль 2026 — 5, ноябрь и август 2026 — 6) — лишние ячейки невидимы', rows.every(r => r[0] === 42 && r[2]) && rows[0][1] === 8 && rows[1][1] === 6 && rows[3][1] === 14, JSON.stringify(rows));
+  // отправка — с рангом
+  let sent = null; w.fetch = (url, opt) => { if (opt && opt.method === 'POST') sent = JSON.parse(opt.body); return Promise.resolve({ json: () => Promise.resolve({ ok: true }) }); };
+  E(w, "data.rank = 'b'; syncToLeaderboard()");
+  const sentB = sent && sent.rk; E(w, "data.rank = null; syncToLeaderboard()");
+  check('LB11 v7.6.10: в Реестр отправляется ранг (b; без ранга — null)', sentB === 'b' && sent.rk === null, JSON.stringify(sent));
+  // окно Реестра с ответом скрипта
+  const open = async (res, setup) => { E(w, setup || ''); w.fetch = () => Promise.resolve({ json: () => Promise.resolve(res) }); E(w, 'openLeaderboard()'); await new Promise(r => setTimeout(r, 60)); return D.getElementById('leaderboardContent'); };
+  const top = [{ rank: 1, name: 'A', level: 60, rk: 'monarch', bestStreak: 9 }, { rank: 2, name: 'Я', level: 20, rk: null, bestStreak: 6 }, { rank: 3, name: 'C', level: 10, rk: 'd', bestStreak: 3 }];
+  let c = await open({ ok: true, top, you: top[1] });
+  const cards = [...c.querySelectorAll('.item-card')];
+  check('LB12 карточка — три строки: «#N Имя … N ур.», ранг (как в «Статусе»: своим цветом, без ранга — «Без ранга» серым), «Лучшая серия дней: N»',
+    cards.length === 3 && /^#1\s+A\s+60 ур\.$/.test(cards[0].querySelector('.item-name').textContent.replace(/ /g, ' ').trim().replace(/\s+/g, ' ')) && cards[0].querySelector('.lb-rk').classList.contains('rk-monarch') && cards[0].querySelector('.lb-rk .sc-rank').textContent === 'Shadow Monarch'
+    && cards[1].querySelector('.lb-rk').classList.contains('rk-e') && cards[1].querySelector('.lb-rk .sc-rank').textContent === 'Без ранга' && cards[2].querySelector('.sc-rank').textContent === 'D-Rank'
+    && cards[0].querySelector('.item-desc').textContent === 'Лучшая серия дней: 9' && cards[0].children[0].children.length === 3);
+  check('LB13 своя карточка в десятке подсвечена (голубая рамка), чужие — нет; подсказки нет', cards[1].classList.contains('lb-you') && /#40c0ff/.test(cards[1].getAttribute('style')) && !cards[0].classList.contains('lb-you') && !c.querySelector('.lb-hint'));
+  c = await open({ ok: true, top, you: { rank: 14, name: 'Я', level: 5, rk: 'e', bestStreak: 1 } });
+  check('LB14 своё место ниже десятки — отдельной подсвеченной карточкой', c.querySelectorAll('.item-card').length === 4 && c.querySelectorAll('.lb-you').length === 1 && /#14/.test(c.querySelector('.lb-you .item-name').textContent));
+  c = await open({ ok: true, top, you: null, me: 'check' }, "data.playerName = 'Эглант'; data.history = { '2026-10-01': { status: 'success' } }");
+  check('LB15 себя нет в списке, данные отправляются — «Данные появятся в Реестре после проверки.»', c.querySelector('.lb-hint') && c.querySelector('.lb-hint').textContent === 'Данные появятся в Реестре после проверки.' && !c.querySelector('.lb-you'));
+  c = await open({ ok: true, top: [], you: null }, "data.playerName = 'Игрок'");
+  check('LB16 приложение данные не отправляет (имя «Игрок» или нет выполненного дня) — правило Реестра; пустой Реестр — «Реестр пока пуст.» и подсказка',
+    /Реестр пока пуст\./.test(c.textContent) && c.querySelector('.lb-hint').textContent === 'В Реестре отображаются Игроки со своим именем и регулярным выполнением дневного задания.');
+  c = await open({ ok: true, top: [{ rank: 1, name: 'Old', level: 7, bestStreak: 2 }], you: null }, "data.playerName = 'Эглант'");
+  check('LB17 ответ прежнего скрипта (без rk) — «Без ранга», окно работает', c.querySelector('.sc-rank').textContent === 'Без ранга');
+  const css = [...D.querySelectorAll('style')].map(x => x.textContent).join('\n');
+  check('LB18 «Система»: оболочка окна Реестра — по высоте содержимого (рамка не короче содержимого)', /body\.theme-sys :is\(#leaderboardOverlay, \[data-gid="leaderboardOverlay"\]\) \.sf-win\.mwin \{ height: auto; \}/.test(css));
+  w.close();
+}
+
 // ===== v6.9.1: легенда Летописи — для каждого цвета дня есть пункт =====
 async function legendTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -2001,7 +2037,7 @@ async function registryTests() {
   E(w, `window.__lbRes({ json: () => Promise.resolve(${JSON.stringify({ ok: true, top, you: null })}) })`); await new Promise(r => setTimeout(r, 30));
   const ranks = [...D.querySelectorAll('#leaderboardContent .item-desc.rank')].map(e => [...e.classList].filter(c => c !== 'item-desc' && c !== 'rank').join(''));
   const lvls = [...D.querySelectorAll('#leaderboardContent .item-name')].map(e => (e.textContent.match(/(\d+) ур\./) || [])[1]).join(',');
-  check('LB2 список встал на место «Загрузки»; v7.6.0: строки ранга нет, только уровень', !D.querySelector('#leaderboardContent .lb-load') && ranks.length === 0 && lvls === '104,86,63,52,45,33,24,15,5', ranks.join(',') + ' / ' + lvls);
+  check('LB2 список встал на место «Загрузки»; v7.6.0: строки «ранга по уровню» нет (с v7.6.10 ранг — из ответа скрипта, строка .lb-rk)', !D.querySelector('#leaderboardContent .lb-load') && ranks.length === 0 && lvls === '104,86,63,52,45,33,24,15,5', ranks.join(',') + ' / ' + lvls);
   E(w, `fetch = () => Promise.resolve({ json: () => Promise.resolve({}) }); openLeaderboard()`); await new Promise(r => setTimeout(r, 30));
   const m1 = D.querySelector('#leaderboardContent .lb-msg');
   E(w, `fetch = () => Promise.resolve({ json: () => Promise.resolve({ ok: true, top: [], you: null }) }); openLeaderboard()`); await new Promise(r => setTimeout(r, 30));
@@ -2042,6 +2078,7 @@ async function registryTests() {
   await glitchTests();
   await v690Tests();
   await legendTests();
+  await registry7610Tests();
   await effectSelectTests();
   await textRevisionTests();
   await penaltyV750Tests();
