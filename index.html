@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.11 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.12 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2415,7 +2415,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.11';
+  const APP_VERSION = '7.6.12';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2908,6 +2908,8 @@
     });
     return out;
   }
+  // v7.6.12: пересмотр снаряжения по текущему уровню — артефакты из закрывшихся ячеек контура уходят в Инвентарь (любое понижение уровня — через неё)
+  function contourRecheck() { data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level); }
   // Действует ли артефакт: только если размещён в контуре снаряжения.
   function isArtifactEquipped(id) { return Array.isArray(data.equippedArtifacts) && data.equippedArtifacts.includes(id); }
 
@@ -9603,6 +9605,7 @@
     } else if (target < data.level) {
       data.level = target;
       data.exp = 0;
+      contourRecheck();   // v7.6.12: ячейки ниже уровня закрываются сразу, артефакты из них — в Инвентарь (раньше — только после перезапуска)
     }
     // v7.5.9: цели задания не меняются — только со сменой цикла (было «сразу под новый уровень», v5.9.14)
     xpSnap(); saveData(); render();

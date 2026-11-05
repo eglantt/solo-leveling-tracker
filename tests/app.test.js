@@ -216,6 +216,28 @@ async function effectSelectTests() {
   check('SE6 запас строки снизу (12px) вмещает чёрточку (−7px и 2px)', cs(row).paddingBottom === '12px');
 }
 
+// ===== v7.6.12: понижение уровня в Длани — артефакты из закрывшихся ячеек контура уходят в Инвентарь =====
+async function contourDropTests() {
+  const J = (w, c) => JSON.parse(E(w, `JSON.stringify(${c})`));
+  const w = boot(); await new Promise(r => setTimeout(r, 250));
+  const setLv = n => E(w, `(() => { let i = document.getElementById('sysLevelInput'); if (!i) { i = document.createElement('input'); i.id = 'sysLevelInput'; document.body.appendChild(i); } i.value = ${n}; setLevelAction(); })()`);
+  E(w, "data.level = 37; data.exp = 0; Object.keys(ARTEFACTS).forEach(k => { if (!data.inventory.includes(k)) data.inventory.push(k); }); data.equippedArtifacts = ['seal_growth', 'amulet_will', null, null]; saveData(); render()");
+  check('CT1 v7.6.12: 37-й уровень — открыты 2 ячейки, в обеих артефакты действуют', E(w, 'openContourCount(data.level)') === 2 && E(w, "isArtifactEquipped('seal_growth') && isArtifactEquipped('amulet_will')"));
+  setLv(25);
+  check('CT2 37 → 25: ячейка с 30-го закрылась, её артефакт в Инвентаре и не действует; первая — на месте', JSON.stringify(J(w, 'data.equippedArtifacts')) === JSON.stringify(['seal_growth', null, null, null]) && !E(w, "isArtifactEquipped('amulet_will')") && E(w, "data.inventory.includes('amulet_will')"), JSON.stringify(J(w, 'data.equippedArtifacts')));
+  setLv(5);
+  check('CT3 25 → 5: все ячейки закрыты, артефакты в Инвентаре, эффектов нет (без перезапуска)', J(w, 'data.equippedArtifacts').every(x => x === null) && !E(w, "isArtifactEquipped('seal_growth')") && E(w, "data.inventory.includes('seal_growth')"));
+  setLv(15);
+  check('CT4 5 → 15: первая ячейка открылась пустой (снарядить заново — самому)', E(w, 'openContourCount(data.level)') === 1 && J(w, 'data.equippedArtifacts').every(x => x === null));
+  const inv0 = J(w, 'data.inventory').filter(k => k in J(w, 'ARTEFACTS')).sort().join();
+  setLv(37);
+  const inv = J(w, 'data.inventory'), arts = Object.keys(J(w, 'ARTEFACTS'));
+  check('CT5 повторный набор до 37 — каждый артефакт в Инвентаре в одном экземпляре, новых не выдано', arts.every(k => inv.filter(x => x === k).length <= 1) && inv.filter(k => arts.includes(k)).sort().join() === inv0);
+  E(w, 'data.level = 8; saveData()'); E(w, 'data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level)');
+  check('CT6 общая функция contourRecheck есть, понижение в Длани вызывает её', E(w, 'typeof contourRecheck') === 'function' && /contourRecheck\(\)/.test(E(w, 'setLevelAction.toString()')));
+  w.close();
+}
+
 // ===== v7.6.10: Летопись в 6 рядов; Реестр — ранг, подсветка своей карточки, подсказки =====
 async function registry7610Tests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
@@ -2081,6 +2103,7 @@ async function registryTests() {
   await v690Tests();
   await legendTests();
   await registry7610Tests();
+  await contourDropTests();
   await effectSelectTests();
   await textRevisionTests();
   await penaltyV750Tests();
