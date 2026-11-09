@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.13 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.14 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1371,6 +1371,8 @@
     .ex-card .ex-tm span { font-family: 'Orbitron', sans-serif; color: #cfe6fb; letter-spacing: .5px; }
     .ex-card .ex-tm.ex-cut span { color: #40ffaa; }
     .ex-rw .ex-pace { color: #40ffaa; font-size: .9em; }
+    /* ===== v7.6.14: Длань — галочка недоступна ===== */
+    .sound-checkbox-zone.dis { cursor: default; opacity: .4; }
     /* ===== v7.6.10: Летопись — всегда 6 рядов; Реестр — ранг в карточке, подсказка ===== */
     .day-cell.cal-pad { visibility: hidden; pointer-events: none; }
     :is(#leaderboardContent, [data-gid="leaderboardContent"]) .lb-rk { margin-top: 3px; line-height: 1.3; }
@@ -2144,6 +2146,12 @@
           <span id="sysAccLabel">Ускоритель: выключен.</span>
           <div class="sound-checkbox-zone" onclick="examAccToggle()"><div class="sound-checkbox" id="sysAccCheckbox">✓</div></div>
         </div>
+        <!-- v7.6.14: разовая выдача предложения через 15 с после закрытия Длани -->
+        <div class="sys-stat-row sys-acc-t"><span class="ssn">Все условия выполнены</span></div>
+        <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:6px;">
+          <span id="sysCondLabel">Предложение испытания придёт через 15 с после закрытия Длани.</span>
+          <div class="sound-checkbox-zone" id="sysCondZone" onclick="sysExamCondToggle()"><div class="sound-checkbox" id="sysCondCheckbox">✓</div></div>
+        </div>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Кредиты</div>
@@ -2420,7 +2428,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.13';
+  const APP_VERSION = '7.6.14';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -9501,6 +9509,7 @@
 
   function closeSysTools() {
     document.getElementById('sysToolsOverlay').style.display = 'none';
+    sysExamCondArm();   // v7.6.14
     renderBackupModal();
   }
 
@@ -10758,6 +10767,50 @@
     document.getElementById('sysExOkP').disabled = !running || sysExamStep >= maxStep;
     document.getElementById('sysAccLabel').textContent = data.examAccel ? 'Ускоритель: включён до сброса дня.' : 'Ускоритель: выключен.';
     document.getElementById('sysAccCheckbox').classList.toggle('on', !!data.examAccel);
+    // v7.6.14: «Все условия выполнены» — недоступна, если предложение сейчас невозможно; стала невозможной — снимается
+    const why = sysExamCondWhy();
+    if (why && sysExamCond) sysExamCondOff();
+    document.getElementById('sysCondLabel').textContent = why || SYS_COND_HINT;
+    document.getElementById('sysCondZone').classList.toggle('dis', !!why);
+    document.getElementById('sysCondCheckbox').classList.toggle('on', sysExamCond);
+  }
+
+  // ---------- v7.6.14: Длань — «Все условия выполнены» ----------
+  // Разовая галочка, только в памяти (не сохраняется): через 15 с после закрытия Длани, когда ничего не открыто, —
+  // предложение испытания обычным путём (как «Выдать предложение сейчас»: допуск — по условиям или следующий ранг, срок — не меньше часа).
+  const SYS_COND_MS = 15000, SYS_COND_MIN = 3600000;
+  const SYS_COND_HINT = 'Предложение испытания придёт через 15 с после закрытия Длани.';
+  let sysExamCond = false, sysExamCondT = null, sysExamCondGen = 0;
+  function sysExamCondWhy() {
+    if (data.exam) return 'Недоступно: испытание уже предложено или идёт.';
+    if (data.examPost) return 'Недоступно: итог испытания не завершён.';
+    if (rankIndex(data.rank) >= PLAYER_RANKS.length - 1) return 'Недоступно: подтверждён высший ранг.';
+    if (getNextCleanReset(data.lastReset) - Date.now() < SYS_COND_MIN) return 'Недоступно: до сброса меньше часа.';
+    return '';
+  }
+  function sysExamCondOff() {
+    sysExamCond = false; sysExamCondGen++;
+    if (sysExamCondT) { clearTimeout(sysExamCondT); sysExamCondT = null; }
+  }
+  function sysExamCondToggle() {
+    if (sysExamCondWhy()) return;
+    if (sysExamCond) sysExamCondOff(); else sysExamCond = true;
+    playSound('tap'); updateSysCurrent();
+  }
+  function sysExamCondArm() {
+    if (!sysExamCond) return;
+    const g = ++sysExamCondGen;
+    if (sysExamCondT) clearTimeout(sysExamCondT);
+    sysExamCondT = setTimeout(() => {
+      sysExamCondT = null;
+      examWhenIdle(() => {
+        if (!sysExamCond || g !== sysExamCondGen) return;   // сняли или Длань открыли и закрыли снова
+        const ok = !sysExamCondWhy();
+        sysExamCondOff();
+        if (ok) { data.examLastOffer = null; examOffer(true); }
+        updateSysCurrent();
+      }, 500);
+    }, SYS_COND_MS);
   }
 
   // ---------- шкатулки ранга ----------

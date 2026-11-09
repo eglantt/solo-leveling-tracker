@@ -370,6 +370,71 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
       && /засчитывается как 0\.Сокращённый отдых между раундами увеличивает опыт за пройденное испытание\./.test(t) && !/приложени/i.test(t), t); }
   w.close();
 
+  // ---- v7.6.14: Длань — «Все условия выполнены» ----
+  {
+    const ST = `if (!window.__st0) { window.__st0 = setTimeout; window.setTimeout = (f, ms, ...a) => __st0(f, ms === 15000 ? 300 : ms, ...a); }`;   // 15 с → 0,3 с
+    const st = w => J(w, "({ on: sysExamCond, cb: sysCondCheckbox.classList.contains('on'), dis: sysCondZone.classList.contains('dis'), t: sysCondLabel.textContent })");
+    w = await mk(ready + 'updateSysCurrent()');
+    let a = st(w);
+    check('X78 галочка «Все условия выполнены» в Длани рядом с ускорителем: доступна, снята, подсказка', !a.on && !a.cb && !a.dis && a.t === 'Предложение испытания придёт через 15 с после закрытия Длани.'
+      && /Все условия выполнены/.test(E(w, "sysCondZone.closest('.backup-section').textContent")) && /Ускоритель таймера/.test(E(w, "sysCondZone.closest('.backup-section').textContent")), JSON.stringify(a));
+    const dis = {};
+    for (const [k, c, txt] of [['exam', 'examOffer(true)', 'Недоступно: испытание уже предложено или идёт.'], ['post', "data.examPost = { kind: 'low', step: 1 }", 'Недоступно: итог испытания не завершён.'],
+      ['top', "data.rank = PLAYER_RANKS[PLAYER_RANKS.length - 1]", 'Недоступно: подтверждён высший ранг.'], ['late', 'getNextCleanReset = () => Date.now() + 59 * 60000', 'Недоступно: до сброса меньше часа.']]) {
+      const x = await mk(ready + c + '; ' + HIDE + ' updateSysCurrent(); sysExamCondToggle()');
+      const b = st(x); dis[k] = b; x.close();
+      if (!(b.dis && !b.on && !b.cb && b.t === txt)) dis.bad = k;
+    }
+    check('X79 недоступна (серая, не ставится, причина вместо подсказки): предложено / идёт, итог не завершён, высший ранг, до сброса меньше часа', !dis.bad, JSON.stringify(dis));
+    E(w, 'sysExamCondToggle()'); a = st(w);
+    const on1 = a.on && a.cb && !a.dis;
+    E(w, 'getNextCleanReset = () => Date.now() + 30 * 60000; updateSysCurrent()'); a = st(w);
+    check('X80 поставлена, затем стала недоступной — снимается сама', on1 && !a.on && !a.cb && a.dis, JSON.stringify(a));
+    w.close();
+
+    // настоящие 15 с
+    w = await mk(ready + "examDeadlineTs = () => Date.now() + 10 * 60000; updateSysCurrent(); sysExamCondToggle(); closeSysTools(); " + HIDE);
+    const adm = E(w, 'examAdmission() || PLAYER_RANKS[Math.min(PLAYER_RANKS.length - 1, rankIndex(data.rank) + 1)]');
+    const keep = "JSON.stringify({ l: data.level, x: data.exp, r: data.rank, d: data.examDelayUntil, n: data.examNarrow, tn: data.tn, ta: data.tnAdj, h: data.rankHoldDays, acc: data.examAccel })";
+    const before = E(w, keep);
+    await sleep(14000);
+    const early = E(w, 'data.exam === null');
+    await sleep(2600);
+    const ex = J(w, 'data.exam');
+    check('X81 через 15 с после закрытия Длани — предложение (окно 1); раньше — нет', early && ex && ex.st === 'offered' && E(w, 'exOv1.style.display') === 'flex', JSON.stringify(ex));
+    check('X82 допуск — по условиям или следующий ранг; срок — не меньше часа', ex && ex.adm === adm && ex.dl >= Date.now() + 59 * 60000, JSON.stringify({ ex, adm }));
+    a = st(w);
+    check('X83 разовая: после выдачи галочка снята и недоступна (испытание предложено)', !a.on && !a.cb && a.dis && a.t === 'Недоступно: испытание уже предложено или идёт.', JSON.stringify(a));
+    check('X84 данные Игрока не меняются; галочка не сохраняется', E(w, keep) === before && !/sysExamCond/.test(w.localStorage.getItem('sl_daily_v5_5_0')), E(w, keep) + ' / ' + before);
+    w.close();
+
+    // ждёт открытых окон
+    w = await mk(ready + ST + " updateSysCurrent(); sysExamCondToggle(); closeSysTools(); " + HIDE + " statusOverlay.style.display = 'flex';");
+    await sleep(1800);
+    const held = E(w, 'data.exam === null');
+    E(w, HIDE); await sleep(1500);
+    check('X85 пока открыто окно — ждёт; окно закрыто — предложение', held && E(w, "data.exam && data.exam.st") === 'offered');
+    w.close();
+
+    // снята до срабатывания — отмена
+    w = await mk(ready + ST + " updateSysCurrent(); sysExamCondToggle(); closeSysTools(); " + HIDE + " sysExamCondToggle();");
+    await sleep(1800);
+    check('X86 снята до срабатывания — предложения нет', E(w, 'data.exam === null') && !E(w, 'sysExamCond'));
+    w.close();
+
+    // к моменту срабатывания до сброса меньше часа — предложения нет, галочка снята
+    w = await mk(ready + ST + " updateSysCurrent(); sysExamCondToggle(); closeSysTools(); " + HIDE + " getNextCleanReset = () => Date.now() + 40 * 60000;");
+    await sleep(1800);
+    check('X87 в момент срабатывания до сброса меньше часа — предложения нет, галочка снята', E(w, 'data.exam === null') && !E(w, 'sysExamCond'));
+    w.close();
+
+    // Длань открыли и закрыли снова — отсчёт заново
+    w = await mk(ready + ST + " updateSysCurrent(); sysExamCondToggle(); closeSysTools(); " + HIDE + " closeSysTools(); " + HIDE);
+    await sleep(1800);
+    check('X88 повторное закрытие Длани — одно предложение (окно 1)', E(w, "data.exam && data.exam.st") === 'offered' && !E(w, 'sysExamCond'));
+    w.close();
+  }
+
   // ---- перезапуск: этап идёт → экран испытания с «Открыть этап»; закрытое приложение после 3 часов → «Не выполнено» ----
   w = await mk(ready + "examOffer(false); examGo(2); examAccept(); examStart();"); await sleep(1300);
   E(w, "examBegin('squats'); data.exam.S.squats.t0 -= 30; saveData()");
