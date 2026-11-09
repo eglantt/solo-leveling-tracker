@@ -279,7 +279,7 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   E(w, 'closeExamPenalty()'); await sleep(1300);
   E(w, ready + 'examOffer(false); examGo(2); examAccept(); examStart();'); await sleep(1300);
   E(w, CLR + 'data.isGoalMet = false; data.completed = {}; sysExamEnd("low")'); await sleep(2500);
-  check('X46 «Не пройдено»: 25%, 3 дня; после окна — вопрос «Испытание ранга завершено…»', /Итог: Не пройдено/.test(E(w, 'exPenContent.textContent')) && /Результат ниже порога ближайшего ранга\. Форма не подтверждена\./.test(E(w, 'exPenContent.textContent'))
+  check('X46 «Не пройдено»: 25%, 3 дня; после окна — вопрос «Испытание ранга завершено…»', /Итог: Не пройдено/.test(E(w, 'exPenContent.textContent')) && /Порог следующего ранга не достигнут\. Форма не подтверждена: \S/.test(E(w, 'exPenContent.textContent'))
     && E(w, 'data.examDelayUntil') === E(w, 'data.lastReset') + 3 * 86400000);
   E(w, 'closeExamPenalty()'); await sleep(600);
   check('X47 вопрос после «Не пройдено»', E(w, 'exOv6.style.display') === 'flex' && /^Испытание ранга завершено\./.test(E(w, 'exC6 .textContent'.replace(' ', '')).trim()));
@@ -324,6 +324,50 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   E(w, "data.exam.S.squats.st = 'done'; data.exam.act = null; examLayer(false); examBegin('steps')"); await sleep(250);
   check('X66 бег — без кнопки «Начать раунд» и без кольца раундов; между рядами кнопок отступ 12 px',
     E(w, "!document.getElementById('exGoBtn') && exLayer.querySelector('.ring').classList.contains('run')") && E(w, "getComputedStyle(exLayer.querySelector('.acts')).rowGap") === '12px' && E(w, "data.exam.S.steps.cut === undefined"), E(w, "[!!document.getElementById('exGoBtn'), exLayer.querySelector('.ring').className, getComputedStyle(exLayer.querySelector('.acts')).rowGap, typeof data.exam.S.steps.cut].join()"));
+  w.close();
+
+  // ---- v7.6.13: время этапа, бонус за темп, провал с упражнениями, тексты ----
+  w = await mk(ready + "examOffer(false); examGo(2); examAccept(); examStart();"); await sleep(1300); E(w, CLR);
+  E(w, "examBegin('pushups'); data.exam.S.pushups.t0 -= 30; examAdd(20)"); await sleep(200);
+  E(w, "data.exam.S.pushups.t0 -= 300; examFinish(true)"); await sleep(200);
+  { const t = E(w, 'data.exam.S.pushups.tUsed'), html = E(w, "document.querySelector('#exk_pushups .ex-b').innerHTML");
+    check('X67 v7.6.13: время этапа записано при закрытии (часы испытания), в карточке «Время этапа» над повторениями; без сокращения — без строки отдыха',
+      t >= 329 && t <= 333 && /Время этапа: <span>05:3\d<\/span>/.test(html) && html.indexOf('ex-tm') < html.indexOf('ex-vals') && !/Отдых сокращён/.test(html), t + ' ' + html); }
+  E(w, "examBegin('squats'); data.exam.S.squats.cut = [190, 200, 0, 0]; data.exam.S.squats.t0 -= 20000; examFinish(true)"); await sleep(200);
+  { const t = E(w, 'data.exam.S.squats.tUsed'), html = E(w, "document.querySelector('#exk_squats .ex-b').innerHTML");
+    check('X68 закрытие по сроку — не больше полного срока этапа (с учётом сокращений); строка «Отдых сокращён на 06:30»', t === E(w, 'exStrengthLen([190, 200, 0, 0])') && /Отдых сокращён на <span>06:30<\/span>/.test(html), t + ' ' + html); }
+  E(w, "examBegin('steps'); data.exam.S.steps.t0 -= 1500; data.exam.S.steps.steps = 2500; examFinish(false)"); await sleep(200);
+  { const html = E(w, "document.querySelector('#exk_steps .ex-b').innerHTML");
+    check('X69 бег — только «Время этапа», без строки отдыха', /Время этапа: <span>25:\d\d<\/span>/.test(html) && !/Отдых/.test(html), html); }
+  E(w, "examBegin('pullups'); data.exam.S.pullups.cut = [100, 0, 0, 0]; examRestart()");
+  check('X70 «Начать этап заново» сбрасывает время и сокращения', E(w, "data.exam.S.pullups.tUsed === undefined && data.exam.S.pullups.cut.join() === '0,0,0,0'"));
+  E(w, "data.exam.S.squats.cut = [0, 0, 0, 0]; data.exam.S.pullups.cut = [0, 0, 0, 0]; data.exam.S.press.cut = [0, 0, 0, 0]");
+  const pace = c => { E(w, `data.exam.S.squats.cut = [${c}, 0, 0, 0]`); return E(w, 'examPaceBonus()'); };
+  check('X71 бонус за темп: 0 мин → 0%, 59 с → 0%, 6 мин 25 с → 12%, 23 мин → 15% (потолок); бег не считается',
+    pace(0) === 0 && pace(59) === 0 && pace(385) === 12 && pace(1380) === 15 && (E(w, 'data.exam.S.steps.cut = [9999]; examPaceBonus()') === 15));
+  E(w, "data.exam.S.squats.cut = [385, 0, 0, 0]; data.level = 25; data.exp = 0; data.expDebt = 0; data.rank = null; window.__xp0 = Math.round(getExpToNext(25) * EX_XP_PCT('b'))");
+  E(w, "examSuccess({ vals: [], per: [4,4,4,4,4], avg: 4, weak: 5, adm: 4, res: 4, ok: true })");
+  check('X72 успех: опыт × (1 + 12%), в итоге pace = 12; окно — «+N EXP (бонус за темп: +12%)»',
+    E(w, 'data.examPost.pace') === 12 && E(w, 'data.examPost.xp') === E(w, 'Math.round(window.__xp0 * 1.12)'), JSON.stringify(J(w, 'data.examPost')));
+  E(w, "examPostRun()"); await sleep(100);
+  check('X73 окно «Ранг подтверждён»: строка опыта с бонусом', /\+\d+ EXP <span class="ex-pace">\(бонус за темп: \+12%\)<\/span>/.test(E(w, "document.getElementById('exC5').innerHTML")), E(w, "document.getElementById('exC5').innerHTML"));
+  E(w, "data.examPost = { kind: 'ok', ranks: ['b'], xp: 1500, pace: 0, step: 'win' }; examPostRun()");
+  check('X74 без сокращения — строка опыта как раньше', /\+1500 EXP<\/div>/.test(E(w, "document.getElementById('exC5').innerHTML")) && !/бонус за темп/.test(E(w, "document.getElementById('exC5').innerHTML")));
+  E(w, "data.examPost = { kind: 'ok', ranks: ['b'], xp: 1, pace: 99, step: 'win' }; examNormalize()");
+  check('X75 проверка при загрузке: процент бонуса — 0…15', E(w, 'data.examPost.pace') === 15);
+  w.close();
+  w = await mk(ready + "examOffer(false); examGo(2); examAccept(); examStart();"); await sleep(1300); E(w, CLR);
+  E(w, "data.rank = 'd'; data.notificationLog = []; examFail('low', { vals: [], per: [3, 2, 2, 3, 1], avg: 2, weak: 2, adm: 3, res: 2, ok: false })"); await sleep(100);
+  { const html = E(w, "document.getElementById('exPenContent').innerHTML"), log = E(w, 'data.notificationLog[0].text');
+    check('X76 «Не пройдено»: упражнения ниже норматива следующего ранга (ранг D → норматив C) — жирным, в порядке этапов; в журнале без выделения',
+      /Порог следующего ранга не достигнут\. Форма не подтверждена: <b>приседания<\/b>, <b>подтягивания<\/b>, <b>бег<\/b>\./.test(html)
+      && String(log) === 'Испытание ранга провалено: не пройдено. Порог следующего ранга не достигнут. Форма не подтверждена: приседания, подтягивания, бег. Потеряно опыта: -' + E(w, "Math.round(getExpToNext(data.level) * 0.25)") + '.', (html + ' || ' + log).replace(/\n/g, ' ')); }
+  w.close();
+  w = await mk(ready + "examOffer(false); examGo(2);"); await sleep(600);
+  { const t = E(w, "document.getElementById('exC2').textContent");
+    check('X77 «Условия»: «…даже если Игрок покидает Систему. Каждый этап можно начать заново один раз…», абзац о бонусе после раундов; слова «приложение» нет',
+      /Отсчёт этапа не останавливается, даже если Игрок покидает Систему\. Каждый этап можно начать заново один раз, результат первой попытки при этом аннулируется\./.test(t)
+      && /засчитывается как 0\.Сокращённый отдых между раундами увеличивает опыт за пройденное испытание\./.test(t) && !/приложени/i.test(t), t); }
   w.close();
 
   // ---- перезапуск: этап идёт → экран испытания с «Открыть этап»; закрытое приложение после 3 часов → «Не выполнено» ----

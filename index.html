@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.12 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.13 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1366,6 +1366,11 @@
     .day-cell .cal-ex svg, .legend .cal-ex svg { width: 100%; height: 100%; display: block; overflow: visible; }
     .day-cell .cal-ex.ok { filter: drop-shadow(0 0 3px var(--rkc)); }
     .legend .cal-ex { position: relative; display: inline-block; width: 12px; height: 12px; vertical-align: middle; margin-right: 3px; }   /* v7.6.8: отдельный значок, без квадратика */
+    /* ===== v7.6.13: время этапа в карточке, бонус за темп ===== */
+    .ex-card .ex-tm { font-family: 'Exo 2 Text', 'Exo 2', sans-serif; letter-spacing: 0; font-size: .8rem; color: #8fb2d2; margin-top: 2px; }
+    .ex-card .ex-tm span { font-family: 'Orbitron', sans-serif; color: #cfe6fb; letter-spacing: .5px; }
+    .ex-card .ex-tm.ex-cut span { color: #40ffaa; }
+    .ex-rw .ex-pace { color: #40ffaa; font-size: .9em; }
     /* ===== v7.6.10: Летопись — всегда 6 рядов; Реестр — ранг в карточке, подсказка ===== */
     .day-cell.cal-pad { visibility: hidden; pointer-events: none; }
     :is(#leaderboardContent, [data-gid="leaderboardContent"]) .lb-rk { margin-top: 3px; line-height: 1.3; }
@@ -2415,7 +2420,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.12';
+  const APP_VERSION = '7.6.13';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -8736,7 +8741,6 @@
   // и коды) принимаются до 5.11.2026 включительно, затем — отказ (после этой даты код приёма можно убрать).
   const BACKUP_FMT = 'slb1';
   const BACKUP_SALT = 'SL-System::bone-bead::veil-of-rest::6.10.3';
-  const LEGACY_BACKUP_UNTIL = new Date(2026, 10, 6, 0, 0, 0).getTime();   // 06.11.2026 00:00 по часам устройства
   function backupSig(str) {   // cyrb53 — быстрый 53-битный хеш; дважды с разным зерном → 106 бит в hex
     const h = seed => { let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
       for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
@@ -8760,8 +8764,7 @@
       if (typeof obj.payload !== 'string' || typeof obj.sig !== 'string' || obj.sig !== backupSigOf(obj.payload)) return null;
       try { return JSON.parse(obj.payload); } catch (e) { return null; }
     }
-    if (Date.now() >= LEGACY_BACKUP_UNTIL) return null;   // старый бэкап без подписи — только до 5.11.2026
-    return obj;
+    return null;   // v7.6.13: старый бэкап без подписи не принимается (приём закончился 5.11.2026)
   }
 
   function base64ToString(base64Code) {
@@ -9178,7 +9181,7 @@
         </div>
         <div class="backup-section">
           <div class="backup-section-title">Импорт</div>
-          <input type="file" id="backupFileInput" accept=".slbackup,.json,application/json,application/octet-stream,text/plain" onchange="handleBackupFileSelected(event)">
+          <input type="file" id="backupFileInput" accept=".slbackup,application/octet-stream,text/plain" onchange="handleBackupFileSelected(event)">
           <button class="backup-action-btn" onclick="document.getElementById('backupFileInput').click()" ${examOn() ? 'disabled' : ''}>Выбрать файл</button>
           <span class="restore-link${examOn() ? ' ex-dis' : ''}" onclick="startImportCodeFlow()">Через код</span>
         </div>
@@ -9240,7 +9243,7 @@
       cont.innerHTML = `
         <div class="danger-warning-step">
           <div class="danger-icon">⚠</div>
-          <div class="danger-text">Вы собираетесь удалить весь прогресс в этом приложении. Это действие необратимо.</div>
+          <div class="danger-text">Вы собираетесь удалить весь прогресс Игрока. Это действие необратимо.</div>
           <div class="danger-btn-row">
             <button class="danger-btn-cancel" onclick="cancelResetFlow()">Отмена</button>
             <button class="danger-btn-continue" onclick="resetFlowStep2()">Продолжить</button>
@@ -9317,14 +9320,14 @@
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const imported = parseBackupText(reader.result);   // v6.10.3: .slbackup (подпись) или старый .json
+        const imported = parseBackupText(reader.result);   // v6.10.3: .slbackup (подпись); v7.6.13: старый .json не принимается
         const clean = imported && sanitizeImportedData(imported);
         if (!clean) throw new Error("Invalid Format");
         pendingImport = clean;
         backupModalStep = 'importConfirm';
         renderBackupModal();
       } catch (e) {
-        showNotice("Ошибка: файл повреждён или это не бэкап этого приложения.", 'danger');
+        showNotice("Ошибка: файл повреждён или не является бэкапом Системы.", 'danger');
       }
     };
     reader.onerror = () => showNotice("Не удалось прочитать файл.", 'danger');
@@ -9388,7 +9391,7 @@
     const code = field ? field.value.trim() : '';
     if (!code) return;
     try {
-        const imported = parseBackupText(code);   // v6.10.3: подписанный код или старый (до 5.11.2026)
+        const imported = parseBackupText(code);   // v6.10.3: подписанный код
         const clean = imported && sanitizeImportedData(imported);
         if (!clean) throw new Error("Invalid Format");
         pendingImport = clean;
@@ -9921,13 +9924,14 @@
   // v7.6.4: отдых между раундами силового этапа — по высшему рангу допуска (E–C 4 мин, B–S 4,5 мин, National–Monarch 5 мин); после последнего раунда — 90 с на ввод.
   // Числа запоминаются в испытании при старте (rest / fin / tot); испытание, начатое до 7.6.4 (без них), доигрывается по прежним: 30 с, 30 с, 3 часа.
   const EX_REST = r => ['e', 'd', 'c'].includes(r) ? 240 : (['b', 'a', 's'].includes(r) ? 270 : 300);
+  const EX_PACE_STEP = 2, EX_PACE_MAX = 15;   // v7.6.13: бонус опыта за темп
   const EX_FIN = 90, EX_OLD = { rest: 30, fin: 30, tot: 3 * 3600 };
   const EX_REST_TXT = { 240: '4 минуты', 270: '4 минуты 30 секунд', 300: '5 минут' };
   const EX_FAIL = {
     late: { pct: 1, days: 7, nm: 'Срок упущен', why: 'Испытание не начато в отведённый срок. Допуск аннулирован.', log: 'срок упущен' },
     refuse: { pct: 0.7, days: 5, nm: 'Отказ', why: 'Испытание прекращено по решению Игрока. Порог ранга не подтверждён.', log: 'отказ' },
     time: { pct: 0.7, days: 5, nm: 'Не выполнено', why: 'Испытание не завершено за отведённое время. Оценка не проводилась.', log: 'не выполнено' },
-    low: { pct: 0.25, days: 3, nm: 'Не пройдено', why: 'Результат ниже порога ближайшего ранга. Форма не подтверждена.', log: 'не пройдено' } };
+    low: { pct: 0.25, days: 3, nm: 'Не пройдено', why: 'Порог следующего ранга не достигнут. Форма не подтверждена.', log: 'не пройдено' } };
   const EX_XP_PCT = r => ['e', 'd', 'c'].includes(r) ? 0.3 : (['b', 'a', 's'].includes(r) ? 0.4 : 0.5);
   const RANK_COLORS = { e: '#aaaaaa', d: '#88ffcc', c: '#40ffaa', b: '#00ff88', a: '#00ddff', s: '#0088ff', national: '#ffaa00', sss: '#cc00ff', monarch: '#aa00ff' };
   const RANK_BOX_NAME = { e: 'E', d: 'D', c: 'C', b: 'B', a: 'A', s: 'S', national: 'National Level', sss: 'SSS', monarch: 'Shadow Monarch' };
@@ -10036,9 +10040,10 @@
     if (n === 2) {
       const P = ['Испытание включает пять этапов: отжимания, приседания, подтягивания, пресс и бег. Порядок этапов определяет Игрок.',
         `Этап силового упражнения включает 4 раунда: 40 секунд работы и ${EX_REST_TXT[EX_REST(e ? e.adm : 'e')]} отдыха. Перед первым раундом даётся 10 секунд на подготовку. Количество выполненных повторений вносится во время отдыха после каждого раунда, после последнего раунда на это отводится 90 секунд. Не внесённый раунд засчитывается как 0.`,
+        'Сокращённый отдых между раундами увеличивает опыт за пройденное испытание.',   // v7.6.13
         'Бег длится 20 минут, перед стартом даётся 10 секунд на подготовку. На внесение показаний шагомера отводится 5 минут.',
         'На всё испытание отводится 5 часов с момента начала.',
-        'Отсчёт этапа не останавливается при выходе из приложения. Каждый этап можно один раз начать заново, результат первой попытки при этом аннулируется.',
+        'Отсчёт этапа не останавливается, даже если Игрок покидает Систему. Каждый этап можно начать заново один раз, результат первой попытки при этом аннулируется.',
         'Бонусы характеристик, артефакты и эффекты расходных предметов во время испытания не действуют.',
         'Итог объявляется после завершения последнего этапа.',
         'Отказ после принятия условий или после начала испытания, а также испытание, не завершённое за 5 часов, расцениваются как провал. Провал влечёт <span class="ex-pen">штраф</span>.'];
@@ -10179,6 +10184,7 @@
     const cur = rankIndex(data.rank), next = PLAYER_RANKS[cur + 1], top = e.adm;
     const tag = r => `<span class="rk-${r}"><span class="sc-rank">${RANK_NAMES[r]}</span></span>`;
     a.innerHTML = top !== next ? `${tag(next)}<span class="sep">|</span>${tag(top)}` : tag(top); }
+  const exMs = sec => { sec = Math.max(0, Math.round(sec)); return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); };
   function exVals(s) { return `Раунды: ${s.vals.map(v => v == null ? '–' : v).join(' · ')}`; }
   function examCard(id) {
     const e = data.exam; if (!e || e.st !== 'running') return;
@@ -10188,8 +10194,10 @@
     el.classList.toggle('ex-lock', !!e.act && e.act !== id && s.st !== 'done');
     if (s.st === 'idle') { b.innerHTML = `<div class="ex-acts"><button class="ex-gold" onclick="examBegin('${id}')">Начать этап</button></div>`; return; }
     if (s.st === 'done') {
-      b.innerHTML = d.run ? `<div class="ex-vals">Шаги за бег</div><div class="ex-res">${s.steps}</div>`
-        : `<div class="ex-vals">${exVals(s)}</div><div class="ex-res">${s.vals.reduce((a, v) => a + (v || 0), 0)}</div>`;
+      const cutS = d.run ? 0 : (Array.isArray(s.cut) ? s.cut.reduce((a, v) => a + (v || 0), 0) : 0);   // v7.6.13: время этапа и сокращение отдыха — над повторениями
+      const tm = Number.isFinite(s.tUsed) ? `<div class="ex-tm">Время этапа: <span>${exMs(s.tUsed)}</span></div>${cutS > 0 ? `<div class="ex-tm ex-cut">Отдых сокращён на <span>${exMs(cutS)}</span></div>` : ''}` : '';
+      b.innerHTML = tm + (d.run ? `<div class="ex-vals">Шаги за бег</div><div class="ex-res">${s.steps}</div>`
+        : `<div class="ex-vals">${exVals(s)}</div><div class="ex-res">${s.vals.reduce((a, v) => a + (v || 0), 0)}</div>`);
       return;
     }
     b.innerHTML = `<div class="ex-tot">Этап идёт<span class="xt"></span></div>${d.run ? '' : '<div class="ex-vals"></div>'}<div class="ex-acts"><button class="ex-gold" onclick="examLayer(true)">Открыть этап</button></div>`;
@@ -10197,13 +10205,13 @@
   function examBegin(id) {
     const e = data.exam; if (!e || e.st !== 'running' || e.act) return;
     const s = e.S[id]; if (s.st !== 'idle') return;
-    Object.assign(s, { st: 'run', t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut;   // v7.6.7: cut — только у силовых этапов
+    Object.assign(s, { st: 'run', t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut; delete s.tUsed;   // v7.6.7: cut — только у силовых этапов
     e.act = id; exLastT[id] = 0; saveData();
     EX_IDS.forEach(examCard); examLayer(true); examWake(true);
   }
   function examRestart() {
     const e = data.exam, id = e && e.act; if (!id) return; const s = e.S[id]; if (s.re < 1) return;
-    s.re = 0; Object.assign(s, { t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut; exLastT[id] = 0;
+    s.re = 0; Object.assign(s, { t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut; delete s.tUsed; exLastT[id] = 0;
     examPocket(false); saveData(); examTickUI();
   }
   function examCanIn(id) { const p = exPhase(id).ph; return EX_ST[id].run ? (p === 'rin' || p === 'late') : (p === 'rest' || p === 'fin'); }
@@ -10240,6 +10248,7 @@
     const s = e.S[id], d = EX_ST[id];
     if (!auto && !examCanFinish(id)) return;
     if (!d.run) s.vals = s.vals.map(v => v == null ? 0 : v);
+    s.tUsed = Math.round(Math.min(exStageT(id), d.run ? 2410 : exStrengthLen(exCutOf(id))));   // v7.6.13: время этапа (часы испытания), не больше полного срока
     s.st = 'done'; e.act = null;
     // повторения испытания — в ТН (с множителем режима), в «Прогресс» и в дневной журнал упражнений; в задание дня не идут
     const reps = d.run ? s.steps : s.vals.reduce((a, v) => a + (v || 0), 0);
@@ -10510,16 +10519,22 @@
     data.rank = k; data.rankHoldDays = 0; data.examNarrow = false; data.examDelayUntil = null;
     ranks.forEach(r => { data.boxes[RANK_BOX[r]] = (data.boxes[RANK_BOX[r]] || 0) + 1; });
     const toNext = getExpToNext(data.level);
-    let xp = Math.round(toNext * EX_XP_PCT(k));
+    const pace = examPaceBonus();   // v7.6.13: бонус за темп — +2% за каждую полную минуту сокращённого отдыха, до +15%
+    let xp = Math.round(toNext * EX_XP_PCT(k) * (1 + pace / 100));
     xp = Math.max(0, Math.min(xp, (data.expDebt || 0) + toNext - data.exp + getExpToNext(data.level + 1) - 1));   // не больше одного повышения уровня
     gainExp(xp);
     examRecordLast('ok', sc);
     data.examToday = { ok: true, rank: k };
     logNotification(`Испытание ранга пройдено. Подтверждён ранг ${RANK_BOX_NAME[k]}.`);
-    data.examPost = { kind: 'ok', ranks, xp, step: 'win' };
+    data.examPost = { kind: 'ok', ranks, xp, pace, step: 'win' };
     data.exam = null;
     saveData(); examAccSync();
     examRankFx(k);
+  }
+  function examPaceBonus() {
+    const e = data.exam; if (!e || !e.S) return 0;
+    const saved = EX_IDS.filter(id => !EX_ST[id].run).reduce((a, id) => a + (Array.isArray(e.S[id].cut) ? e.S[id].cut.reduce((x, v) => x + (v || 0), 0) : 0), 0);
+    return Math.min(EX_PACE_MAX, Math.floor(saved / 60) * EX_PACE_STEP);
   }
   function examRankFx(k) {
     document.body.style.setProperty('--rkc', RANK_COLORS[k]); document.body.classList.add('rkfx');
@@ -10539,7 +10554,7 @@
       ov.style.setProperty('--rkc', RANK_COLORS[k]);
       document.getElementById('exC5').innerHTML = `<div class="danger-warning-step">
         <div class="ex-line">Ранг подтверждён: <span class="ex-rk">${RANK_NAMES[k]}</span></div><div class="ex-line">${RANK_POPUP_LINES[k] || ''}</div><div class="ex-gap"></div>
-        <div class="ex-line">Награда:</div>${p.ranks.map(q => `<div class="ex-rw">Шкатулка ранга ${RANK_BOX_NAME[q]}</div>`).join('')}<div class="ex-rw xp">+${p.xp} EXP</div></div>`;
+        <div class="ex-line">Награда:</div>${p.ranks.map(q => `<div class="ex-rw">Шкатулка ранга ${RANK_BOX_NAME[q]}</div>`).join('')}<div class="ex-rw xp">+${p.xp} EXP${p.pace > 0 ? ` <span class="ex-pace">(бонус за темп: +${p.pace}%)</span>` : ''}</div></div>`;
       examShowWin(5);
       return;
     }
@@ -10607,15 +10622,18 @@
     if (e && e.act) examWake(false);
     data.exam = null;
     data.examPost = { kind, step: kind === 'low' ? 'ask' : 'end' };
-    logNotification(`Испытание ранга провалено: ${F.log}. Потеряно опыта: -${loss}.` + (shortfall > 0 ? ` Из них в долг: -${shortfall} EXP.` : ''));
+    // v7.6.13: «Не пройдено» — упражнения ниже норматива следующего ранга (в порядке этапов)
+    const weak = kind === 'low' && sc ? EX_IDS.filter((id, i) => sc.per[i] < rankIndex(data.rank) + 2).map(id => EX_ST[id].nm.toLowerCase()) : [];
+    const why = weak.length ? 'Порог следующего ранга не достигнут. Форма не подтверждена: ' : '';
+    logNotification(`Испытание ранга провалено: ${F.log}.` + (weak.length ? ` ${why}${weak.join(', ')}.` : '') + ` Потеряно опыта: -${loss}.` + (shortfall > 0 ? ` Из них в долг: -${shortfall} EXP.` : ''));
     saveData(); render();
     examLayer(false); examPocket(false); examIconShow(false);
-    examShowFail(kind, loss, shortfall);
+    examShowFail(kind, loss, shortfall, weak.length ? why + weak.map(n => `<b>${n}</b>`).join(', ') + '.' : null);
   }
-  function examShowFail(kind, loss, debt) {
+  function examShowFail(kind, loss, debt, whyHtml) {
     const F = EX_FAIL[kind];
     document.getElementById('exPenContent').innerHTML = `<div class="danger-warning-step"><div class="danger-icon">⚠</div>
-      <div class="danger-text">Испытание ранга провалено.\n${F.why}</div><ul class="danger-list"><li>Итог: ${F.nm}</li><li>Потеряно опыта: -${loss} EXP</li>
+      <div class="danger-text">Испытание ранга провалено.\n${whyHtml || F.why}</div><ul class="danger-list"><li>Итог: ${F.nm}</li><li>Потеряно опыта: -${loss} EXP</li>
       ${debt > 0 ? `<li>Из них в долг: -${debt} EXP</li>` : ''}<li>Новое испытание будет доступно не ранее чем через ${F.days} ${pluralDays(F.days)}.</li></ul></div>`;
     document.getElementById('exPenOverlay').style.display = 'flex';
     try { playSound('penalty'); } catch (e) {}
@@ -10768,6 +10786,7 @@
         if (e.rest != null) { e.fin = EX_FIN; e.tot = EX_TOTAL; } else { delete e.fin; delete e.tot; }
         if (!e.S || !EX_IDS.every(id => e.S[id])) data.exam = null; else { if (e.act && !EX_IDS.includes(e.act)) e.act = null;
           EX_IDS.forEach(id => { const s = e.S[id], c = s.cut;   // v7.6.7: сокращение отдыха кнопкой «Начать раунд» (нет поля — отдых полный)
+            if (!(Number.isFinite(s.tUsed) && s.tUsed >= 0 && s.st === 'done')) delete s.tUsed;   // v7.6.13: время этапа — только у закрытого этапа
             if (EX_ST[id].run) { delete s.cut; return; }
             s.cut = Array.isArray(c) && c.length === 4 ? c.map((v, i) => i < 3 && Number.isFinite(v) ? Math.max(0, Math.min(exRest(e) - 10, v)) : 0) : [0, 0, 0, 0]; }); } }
     }
@@ -10775,6 +10794,7 @@
     if (!data.exam) data.exam = null;
     if (data.examPost && !(data.examPost.kind && ['ok', 'late', 'refuse', 'time', 'low'].includes(data.examPost.kind))) data.examPost = null;
     if (data.examPost && data.examPost.kind === 'ok' && !(Array.isArray(data.examPost.ranks) && data.examPost.ranks.every(okRank))) data.examPost = null;
+    if (data.examPost && data.examPost.kind === 'ok') { const pc = data.examPost.pace; data.examPost.pace = Number.isFinite(pc) ? Math.max(0, Math.min(EX_PACE_MAX, Math.round(pc))) : 0; }   // v7.6.13
     data.examDelayUntil = Number.isFinite(data.examDelayUntil) ? data.examDelayUntil : null;
     data.examNarrow = !!data.examNarrow;
     data.examLastOffer = Number.isFinite(data.examLastOffer) ? data.examLastOffer : null;

@@ -70,16 +70,16 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   const tampered = Buffer.from(JSON.stringify(Object.assign({}, inner, { payload: inner.payload.replace('"level":37', '"level":99') })), 'utf8').toString('base64');
   check('K4 подменённая цифра при прежней подписи — отказ', E(w, `parseBackupText(${JSON.stringify(tampered)}) === null`) && inner.payload.includes('"level":37'));
   const unsigned = Buffer.from(inner.payload, 'utf8').toString('base64');   // подпись снята, остались голые данные
-  check('K5 подпись снята: до 5.11.2026 принимается как старый', E(w, `parseBackupText(${JSON.stringify(unsigned)}).state.level`) === 37);
+  check('K5 v7.6.13: подпись снята — отказ (старый формат не принимается)', E(w, `parseBackupText(${JSON.stringify(unsigned)}) === null`));
   const legacyJson = inner.payload, legacyPretty = JSON.stringify(JSON.parse(inner.payload), null, 2);
-  check('K6 старые .json (в том числе с отступами) и старые коды — принимаются молча до 5.11.2026', E(w, `parseBackupText(${JSON.stringify(legacyPretty)}).state.level`) === 37 && E(w, `parseBackupText(${JSON.stringify(legacyJson)}).state.level`) === 37);
+  check('K6 v7.6.13: старые .json (в том числе с отступами) и старые коды — отказ при любой дате', E(w, `parseBackupText(${JSON.stringify(legacyPretty)}) === null && parseBackupText(${JSON.stringify(legacyJson)}) === null && parseBackupText(${JSON.stringify(unsigned)}) === null`));
   E(w, `window.__realNow = Date.now; Date.now = () => new Date(2026, 10, 5, 23, 59).getTime();`);
-  check('K7 5 ноября 23:59 — старый ещё принимается', E(w, `parseBackupText(${JSON.stringify(legacyPretty)}) !== null`));
+  check('K7 v7.6.13: и «до 5 ноября» по часам устройства — тоже отказ (константы срока нет)', E(w, `parseBackupText(${JSON.stringify(legacyPretty)}) === null`) && !/LEGACY_BACKUP_UNTIL/.test(html));
   E(w, `Date.now = () => new Date(2026, 10, 6, 0, 1).getTime();`);
-  check('K8 с 6 ноября — старые и снятая подпись: отказ; подписанный — принимается', E(w, `parseBackupText(${JSON.stringify(legacyPretty)}) === null && parseBackupText(${JSON.stringify(unsigned)}) === null && parseBackupText(${JSON.stringify(code)}) !== null`));
+  check('K8 подписанный — принимается при любой дате', E(w, `parseBackupText(${JSON.stringify(code)}).state.level`) === 37);
   E(w, `Date.now = window.__realNow;`);
   check('K9 мусор и испорченный base64 — отказ', E(w, `parseBackupText('привет') === null && parseBackupText('@@@###') === null && parseBackupText('') === null && parseBackupText(${JSON.stringify(code.slice(0, -12))}) === null`));
-  check('K10 выбор файла: .slbackup и .json', /accept="\.slbackup,\.json,/.test(html));
+  check('K10 v7.6.13: выбор файла — .slbackup (без .json)', /accept="\.slbackup,application\/octet-stream,text\/plain"/.test(html) && !/accept="[^"]*\.json/.test(html));
   // вставка кода и выбор файла — через настоящие обработчики
   E(w, `backupModalStep = 'importCodeInput'; renderBackupModal(); document.getElementById('importCodeInputField').value = ${JSON.stringify(code)}; submitImportCode();`);
   check('K11 вставка подписанного кода — переход к подтверждению импорта', E(w, 'backupModalStep') === 'importConfirm' && E(w, 'pendingImport && pendingImport.state.level') === 37);
@@ -90,10 +90,10 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   check('K13 файл .slbackup — принимается', E(w, 'pendingImport && pendingImport.state.level') === 37);
   E(w, `window.__N = []; pendingImport = null; handleBackupFileSelected({ target: { files: [new File([${JSON.stringify(tampered)}], 'b.slbackup')], value: '' } });`);
   await sleep(100);
-  check('K14 изменённый файл — отказ с прежним текстом', E(w, 'pendingImport') === null && N(w).includes('Ошибка: файл повреждён или это не бэкап этого приложения.'), N(w));
+  check('K14 изменённый файл — отказ (v7.6.13: текст под лор)', E(w, 'pendingImport') === null && N(w).includes('Ошибка: файл повреждён или не является бэкапом Системы.'), N(w));
   E(w, `window.__N = []; pendingImport = null; handleBackupFileSelected({ target: { files: [new File([${JSON.stringify(legacyPretty)}], 'old.json')], value: '' } });`);
   await sleep(100);
-  check('K15 старый файл .json — принимается молча', E(w, 'pendingImport && pendingImport.state.level') === 37 && !N(w)); }
+  check('K15 v7.6.13: старый файл .json — отказ с общим текстом', E(w, 'pendingImport') === null && N(w).includes('Ошибка: файл повреждён или не является бэкапом Системы.'), N(w)); }
 
 // ===== v6.10.4: Длань — опыт, кредиты, уровень =====
 { const w = freshB('data.level = 20; data.exp = 1500; data.expDebt = 0; data.credits = 500; data.totalPenalties = 2; data.consecutiveDays = 7; data.beadStreak = 1;');
