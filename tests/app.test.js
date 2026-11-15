@@ -1232,10 +1232,10 @@ async function bootTests() {
   check('B13 страховка узких экранов: перенос длинного слова', /\.tstrip \.reset-label \{ overflow-wrap: break-word; hyphens: auto; \}/.test(css));
   // шрифты
   const fam = sel => w.getComputedStyle(D.querySelector(sel)).fontFamily;
-  const ORB = ['.quest-name', '.counter', '.target', '.reward', '.buttons button', '.sc-exp .n', '.sc-chip .n'];
+  const ORB = ['.counter', '.target', '.reward', '.buttons button', '.sc-exp .n', '.sc-chip .n'];
   const badO = ORB.filter(sel => !/^["']?Orbitron/.test(fam(sel)));
-  check('B14 названия упражнений и игровые числа — Orbitron', badO.length === 0, badO.map(x => x + '=' + fam(x)).join(', '));
-  check('B15 названия упражнений: Orbitron + Exo 2 (кириллица)', /Orbitron["']?, ["']Exo 2["']/.test(fam('.quest-name')), fam('.quest-name'));
+  check('B14 игровые числа — Orbitron (названия упражнений — Exo 2 Text с v7.6.16)', badO.length === 0, badO.map(x => x + '=' + fam(x)).join(', '));
+  check('B15 (v7.6.16) названия упражнений: Exo 2 Text, обычный, без разрядки', /^["']?Exo 2 Text/.test(fam('.quest-name')) && w.getComputedStyle(D.querySelector('.quest-name')).fontWeight === '400' && /^(0|0px|normal)$/.test(w.getComputedStyle(D.querySelector('.quest-name')).letterSpacing), fam('.quest-name') + ' / ' + w.getComputedStyle(D.querySelector('.quest-name')).fontWeight + ' / ' + w.getComputedStyle(D.querySelector('.quest-name')).letterSpacing);
   const MONO = ['.notif-log-time'].concat(D.querySelector('#appVersionTag') ? ['#appVersionTag'] : []);
   const probe = D.createElement('span'); probe.className = 'notif-log-time'; D.body.appendChild(probe);
   const badM = MONO.filter(sel => !/Roboto Mono/.test(fam(sel)));
@@ -1506,7 +1506,7 @@ async function designTests() {
   const badNum = NUM.filter(sel => D.querySelector(sel) && (fam(sel) || '').includes('Exo 2 Text'));
   check('F4 цифры и данные не перешли на Exo 2', badNum.length === 0, badNum.join(', '));
   const quest = fam('.quest-name') || '';
-  check('F5 названия упражнений не изменились', !quest.includes('Exo 2 Text'), quest);
+  check('F5 (v7.6.16) названия упражнений — Exo 2 Text', quest.includes('Exo 2 Text'), quest);
   check('F6 кнопки остались в Orbitron', (fam('.sell-btn') || '').includes('Orbitron'), fam('.sell-btn'));
   const faces = css.match(/@font-face \{[^}]*'Exo 2 Text'[^}]*\}/g) || [];
   const fs = require('fs'), path = require('path');
@@ -1689,8 +1689,8 @@ async function penaltyV750Tests() {
   const prices = E(w, `JSON.stringify(['rune_protection','rune_stability','rune_protection_charged','rune_cleansing','potion_restoration','rune_restoration_charged','rune_redemption','crystal_clarity'].map(k => SHOP_CATALOG[k] && SHOP_CATALOG[k].price))`);
   check('PN13 цены: 5000 / 7200 / 10600 / 2200 / 3000 / 5400 / 6600 / 15000; Кристалл Ясности — в Магазине с 40-го', prices === '[5000,7200,10600,2200,3000,5400,6600,15000]' && E(w, 'SHOP_CATALOG.crystal_clarity.level') === 40, prices);
   const pen = E(w, 'CODEX_CHAPTERS.penalty.content'), sts = E(w, 'CODEX_CHAPTERS.stats.content'), lore = E(w, 'STAT_LORE.str.text');
-  check('PN14 тексты: глава «Наказание за Слабость», «Характеристики», описание Силы',
-    pen === 'Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Чем выше уровень Игрока, тем тяжелее штраф; сила смягчает его. Каждый следующий провал обходится дороже предыдущего, а выполненное задание лишь постепенно снижает тяжесть штрафа. Если накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Система не прощает бездействия!'
+  check('PN14 тексты: глава «Наказание за Слабость» (с v7.6.16 — фраза об обмене уровня), «Характеристики», описание Силы',
+    pen === 'Невыполнение дневного задания влечёт за собой штраф — часть накопленного опыта аннулируется. Чем выше уровень Игрока, тем тяжелее штраф; сила смягчает его. Каждый следующий провал обходится дороже предыдущего, а выполненное задание лишь постепенно снижает тяжесть штрафа. Если накопленного опыта недостаточно для покрытия штрафа — недостача становится долгом: весь новый опыт Игрока идёт на его погашение, пока долг не будет закрыт полностью. Если долг велик, Игрок может обменять его на понижение уровня, часть долга списывается, оплата за эту возможность производится кредитами. Система не прощает бездействия!'
     && sts.includes('Сила снижает тяжесть штрафа за невыполненное задание и увеличивает опыт за силовые упражнения.')
     && lore.endsWith('тем меньше опыта заберёт Система в наказание за пропущенный день или невыполненное задание, а силовые упражнения приносят больше опыта.'), pen);
 }
