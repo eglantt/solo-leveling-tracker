@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.14 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.6.15 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1371,6 +1371,23 @@
     .ex-card .ex-tm span { font-family: 'Orbitron', sans-serif; color: #cfe6fb; letter-spacing: .5px; }
     .ex-card .ex-tm.ex-cut span { color: #40ffaa; }
     .ex-rw .ex-pace { color: #40ffaa; font-size: .9em; }
+    /* ===== v7.6.15: Летопись — итоги месяца в две строки ===== */
+    .cal-month-summary .cms-l { display: block; }
+    .cal-month-summary .cms-i { white-space: nowrap; }
+    /* ===== v7.6.15: обмен уровня — кнопка в строке долга «Статуса», эффекты (только transform и opacity) ===== */
+    .sc-debt.dex-row { align-items: center; justify-content: space-between; gap: 8px; margin-top: 9px; }
+    .dex-row .dex-t { flex: 1 1 auto; min-width: 0; }
+    .dex-row .dex-v { display: inline-block; text-align: left; }
+    .dex-btn { flex: 0 0 auto; max-width: 48%; font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; font-size: .58rem; letter-spacing: .4px; line-height: 1.25;
+      padding: 5px 8px; border-radius: 4px; background: #3a0008; border: 1px solid #ff3344; color: #ffaaaa; text-shadow: none; cursor: pointer; white-space: normal; text-align: center; }
+    .dex-btn:not(:disabled):hover { background: #600010; box-shadow: 0 0 10px rgba(255,0,0,.45); }
+    .dex-btn:not(:disabled):active { background: #7a0014; }
+    .dex-btn:disabled { opacity: .35; cursor: default; }
+    .sc-hex .dex-fx { position: absolute; left: -40px; right: -40px; top: -14px; bottom: -14px; display: grid; place-items: center; pointer-events: none; z-index: 2; }
+    .sc-hex .dex-fx > .dex-w { grid-area: 1 / 1; display: grid; place-items: center; will-change: transform, opacity; }
+    .sc-hex .dex-w > b { grid-area: 1 / 1; }
+    .sc-hex b.dex-r { color: #ff3344; text-shadow: 0 0 10px #ff2233, 0 0 22px #ff0022; opacity: 0; }
+    .eq-slot .dex-flash { position: absolute; inset: -1px; border: 1px solid #ff3344; border-radius: inherit; box-shadow: 0 0 14px rgba(255,40,60,.7), inset 0 0 12px rgba(255,40,60,.35); opacity: 0; pointer-events: none; }
     /* ===== v7.6.14: Длань — галочка недоступна ===== */
     .sound-checkbox-zone.dis { cursor: default; opacity: .4; }
     /* ===== v7.6.10: Летопись — всегда 6 рядов; Реестр — ранг в карточке, подсказка ===== */
@@ -1869,6 +1886,13 @@
     body.theme-sys #exLayer button.ex-go.in { animation: xLineIn .4s ease-out; }
     body.theme-sys :is(#legendBody, [data-gid="legendBody"]).legend { margin-bottom: 12px; }
     body.theme-sys :is(#leaderboardOverlay, [data-gid="leaderboardOverlay"]) .sf-win.mwin { height: auto; }   /* v7.6.10: высота «Классики» (90vh) не действует на оболочку — рамка по содержимому (92vh), «Закрыть» внутри рамки */   /* v7.6.9: под легендой вдвое больше (было 12 px до «Закрыть») */
+    /* v7.6.15: обмен уровня — своя красная кнопка (общее правило кнопок темы перекрашивает её), красная копия цифры */
+    body.theme-sys .sf-win.mwin button.dex-btn { background: rgba(70,0,10,.55) !important; border: 1px solid #ff3344 !important; color: #ffaaaa !important; border-radius: 0 !important; padding: 5px 8px !important; font-size: .58rem !important; box-shadow: none !important; }
+    body.theme-sys .sf-win.mwin button.dex-btn:not(:disabled):hover { background: rgba(110,0,16,.7) !important; box-shadow: 0 0 10px rgba(255,0,0,.45) !important; border-color: #ff5566 !important; color: #ffd0d0 !important; }
+    body.theme-sys .sf-win.mwin button.dex-btn:not(:disabled):active { background: rgba(140,0,20,.8) !important; }
+    body.theme-sys .sf-win.mwin button.dex-btn:disabled { opacity: .35 !important; }
+    body.theme-sys .sf-win.mwin .sc-hex b.dex-r { color: #ff3344; text-shadow: none; filter: drop-shadow(0 0 5px #ff2233) drop-shadow(0 0 14px #ff0022); }
+    body.theme-sys .sf-win.mwin .eq-slot .dex-flash { border-radius: 0; }
 </style>
 </head>
 <body>
@@ -1892,7 +1916,7 @@
       <div class="st-sec">
         <div class="sc-exp" id="stExpRow"><span class="k">Опыт</span><span class="n" id="stExp">0 / 1 000 EXP</span></div>
         <div class="sc-bar" id="stBar"><i id="stBarFill"></i></div>
-        <div class="sc-debt" id="stDebt" style="display:none;">Долг перед Системой: −<span id="stDebtVal">0</span> EXP</div>
+        <div class="sc-debt dex-row" id="stDebt" style="display:none;"><span class="dex-t">Долг перед Системой: −<span id="stDebtVal">0</span> EXP</span><button class="dex-btn" id="dexBtn" style="display:none;" onclick="dexAsk()">Обменять уровень</button></div>   <!-- v7.6.15: обмен уровня -->
         <div class="sc-debt sc-pstreak" id="stPSev" style="display:none;">Тяжесть штрафа: <span id="stPSevVal">×1</span></div>   <!-- v7.5.10 -->
         <div class="sc-debt sc-pstreak" id="stPStreak" style="display:none;">Штрафов подряд: <span id="stPStreakVal">0</span></div>
         <div class="sc-chips"><div class="sc-chip cr"><span class="k">Кредиты</span><span class="n" id="stCredits">0 <span class="cr-ic" role="img" aria-label="кредитов"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#credSeal"/></svg><span class="gl"></span></span></span></div><div class="sc-chip st"><span class="k">Серия дней</span><span class="n" id="stStreak">0</span></div></div>
@@ -2428,7 +2452,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.14';
+  const APP_VERSION = '7.6.15';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2923,6 +2947,127 @@
   }
   // v7.6.12: пересмотр снаряжения по текущему уровню — артефакты из закрывшихся ячеек контура уходят в Инвентарь (любое понижение уровня — через неё)
   function contourRecheck() { data.equippedArtifacts = sanitizeEquippedArtifacts(data.equippedArtifacts, data.inventory, data.level); }
+
+  // ---------- v7.6.15: обмен уровня (погашение долга понижением уровня; демо 121–121d) ----------
+  // Шаг — один уровень за подтверждение. Ступень — по уровню, с которого Игрок опускается: 2–10 — 1, 11–20 — 2, …
+  // Списывается до 1500 × ступень долга, цена 5000 × ступень кредитов. Долг меньше суммы шага — гасится, остаток —
+  // в опыт нового уровня, но не до повышения (сразу вернуть уровень нельзя). Кнопка видна при уровне выше 1, долге больше
+  // 50% опыта до следующего уровня и вне испытания ранга; без кредитов на шаг — неактивна. Ранг, тяжесть штрафа,
+  // «штрафов подряд», серия, цели дня, очки характеристик не меняются; контур пересматривается (contourRecheck).
+  var DEX_DEBT = 1500, DEX_PRICE = 5000;   // var: «Статус» может отрисоваться при загрузке раньше этой строки
+  var dexBusy = false;
+  function dexStep() {
+    const t = Math.max(1, Math.ceil(data.level / 10)), cap = DEX_DEBT * t, price = DEX_PRICE * t, debt = Math.floor(data.expDebt || 0);
+    const wr = Math.min(debt, cap), nl = data.level - 1, full = wr >= debt;
+    const add = full ? Math.max(0, Math.min(cap - wr, getExpToNext(nl) - 1)) : 0;
+    return { t, cap, price, debt, wr, nl, add, full, ok: Math.floor(data.credits) >= price, cut: openContourCount(nl) < openContourCount(data.level) };
+  }
+  function dexAvail() {
+    return data.level > 1 && (data.expDebt || 0) > getExpToNext(data.level) * 0.5 && !examOn() && !data.examPost;
+  }
+  function dexSync() {
+    const b = document.getElementById('dexBtn'); if (!b) return;
+    if (dexBusy) { b.disabled = true; return; }   // во время анимации кнопка остаётся на месте (неактивной) — строка не перестраивается
+    const on = dexAvail();
+    b.style.display = on ? '' : 'none';
+    b.disabled = dexBusy || (on && !dexStep().ok);
+  }
+  function dexAsk() {
+    if (dexBusy || !dexAvail()) return;
+    const s = dexStep(); if (!s.ok) return;
+    const L = [`Уровень будет понижен: ${data.level} → ${s.nl}.`];
+    if (s.full) { L.push('Долг будет погашен.'); if (s.add > 0) L.push(`В опыт будет зачислено: ${s.add} EXP.`); }
+    else L.push(`Долг будет уменьшен на ${s.wr} EXP.`);
+    L.push(`Цена: ${s.price} ◈.`);
+    if (s.cut) L.push('Вместимость контура снаряжения уменьшится.');
+    pendingConfirmAction = dexDo;
+    document.getElementById('confirmContent').innerHTML = `
+      <div class="danger-warning-step">
+        <div class="danger-text" style="color:#a8d8ff;">${creditsHtml(L.join('\n'))}</div>
+        <div class="danger-btn-row">
+          <button class="danger-btn-cancel" onclick="closeConfirmModal()">Отмена</button>
+          <button class="danger-btn-confirm" onclick="runConfirmedAction()">Подтвердить</button>
+        </div>
+      </div>`;
+    document.getElementById('confirmOverlay').style.display = 'flex';
+  }
+  // анимации — Web Animations (только transform и opacity); где их нет (тестовый браузер) — сразу
+  const dexAnim = (el, kf, ms, o) => (el && el.animate) ? el.animate(kf, Object.assign({ duration: ms, fill: 'both' }, o || {})) : { finished: Promise.resolve() };
+  const dexWait = ms => new Promise(r => setTimeout(r, ms));
+  const dexRaf = f => (window.requestAnimationFrame ? requestAnimationFrame(f) : setTimeout(() => f(performance.now()), 16));
+  const dexTween = (ms, f) => new Promise(r => { const t0 = performance.now(); const fr = n => { const k = Math.min(1, ((n || performance.now()) - t0) / ms); f(k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2); if (k < 1) dexRaf(fr); else r(); }; dexRaf(fr); });
+  async function dexDigit(lv, ol, nl) {   // цифра вспыхивает красным: старая уходит вверх, новая выезжает снизу (0,9 с)
+    const T = 900, cls = n => 'd' + Math.min(3, String(n).length), hex = lv.parentNode;
+    lv.textContent = nl; lv.className = cls(nl);
+    if (!lv.animate || !hex) return;
+    lv.style.visibility = 'hidden';
+    const fx = document.createElement('div'); fx.className = 'dex-fx'; hex.appendChild(fx);
+    const mk = n => { const w = document.createElement('div'); w.className = 'dex-w'; w.innerHTML = `<b class="${cls(n)}">${n}</b><b class="${cls(n)} dex-r">${n}</b>`; fx.appendChild(w); return { w, r: w.children[1] }; };
+    const o = mk(ol), n = mk(nl);
+    const P = [
+      dexAnim(o.r, [{ opacity: 0 }, { opacity: 1, offset: .18 }, { opacity: 1 }], T),
+      dexAnim(n.r, [{ opacity: 1 }, { opacity: 1, offset: .7 }, { opacity: 0 }], T),
+      dexAnim(o.w, [{ transform: 'none', opacity: 1 }, { transform: 'scale(1.06)', opacity: 1, offset: .18 }, { transform: 'translateY(-40%)', opacity: 0, offset: .48 }, { transform: 'translateY(-40%)', opacity: 0 }], T, { easing: 'ease-in' }),
+      dexAnim(n.w, [{ transform: 'translateY(40%)', opacity: 0 }, { transform: 'translateY(40%)', opacity: 0, offset: .46 }, { transform: 'none', opacity: 1, offset: .76 }, { transform: 'none', opacity: 1 }], T, { easing: 'ease-out' })
+    ];
+    await Promise.all(P.map(a => a.finished));
+    lv.style.visibility = ''; fx.remove();
+  }
+  async function dexDo() {
+    if (dexBusy || !dexAvail()) return;
+    const s = dexStep(); if (!s.ok) return;
+    const $ = id => document.getElementById(id);
+    const ol = data.level, od = Math.floor(data.expDebt || 0), oc = Math.floor(data.credits), openOld = openContourCount(ol);
+    data.credits -= s.price; data.level = s.nl;
+    data.expDebt = Math.max(0, od - s.wr);
+    data.exp = s.full ? s.add : 0;
+    contourRecheck(); saveData();
+    const notice = s.full ? `Уровень понижен до ${s.nl}. Долг погашен.` + (s.add > 0 ? ` Остаток зачислен в опыт: ${s.add} EXP.` : '') : `Уровень понижен до ${s.nl}. Долг уменьшен на ${s.wr} EXP.`;
+    const open = $('statusOverlay') && $('statusOverlay').style.display === 'flex';
+    const finish = () => {
+      dexBusy = false; render(); updateStatusUI();
+      showNotice(notice, 'info');
+      if (s.cut) showNotice('Вместимость контура снаряжения уменьшена.', 'info');
+    };
+    if (!open || !$('stLevel')) { finish(); return; }
+    dexBusy = true; dexSync();
+    try {
+      const nd = Math.floor(data.expDebt), toN = getExpToNext(s.nl);
+      await dexDigit($('stLevel'), ol, s.nl);
+      const dv = $('stDebtVal'); dv.classList.add('dex-v'); dv.style.minWidth = dv.getBoundingClientRect().width + 'px';   // ширина числа не меняется — строка не переносится заново
+      await dexTween(1000, k => {
+        const d = Math.round(od + (nd - od) * k);
+        $('stExp').textContent = `Долг −${d} EXP`; dv.textContent = d;
+        if (s.full) $('stBarFill').style.width = (100 * (1 - k)) + '%';   // шкала уходит, только если долг погашен
+        $('stCredits').innerHTML = creditsHtml(Math.round(oc + (Math.floor(data.credits) - oc) * k) + ' ◈');
+      });
+      if (s.full) {
+        const r = $('stDebt'), h = r.offsetHeight;
+        r.style.overflow = 'hidden';
+        await dexAnim(r, [{ height: h + 'px', opacity: 1, marginTop: '9px' }, { height: '0px', opacity: 0, marginTop: '0px' }], 300, { easing: 'ease-in-out', fill: 'none' }).finished;
+        r.style.display = 'none'; r.style.overflow = '';
+        $('stExpRow').classList.remove('debt'); $('stBar').classList.remove('debt');
+        $('stBarFill').style.width = '0%'; $('stExp').textContent = `0 / ${toN} EXP`;
+        if (s.add > 0) { await dexWait(200); await dexTween(800, k => { const e = Math.round(s.add * k); $('stExp').textContent = `${e} / ${toN} EXP`; $('stBarFill').style.width = (e / toN * 100) + '%'; }); }
+      }
+      if (s.cut) {   // ячейка вспыхивает красным, артефакт сжимается и гаснет, ячейка закрывается (без прокрутки)
+        const slots = $('eqSlots') ? $('eqSlots').querySelectorAll('.eq-slot') : [], P = [];
+        for (let i = openContourCount(s.nl); i < openOld; i++) {
+          const el = slots[i]; if (!el) continue;
+          const f = document.createElement('div'); f.className = 'dex-flash'; el.appendChild(f);
+          P.push(dexAnim(f, [{ opacity: 0 }, { opacity: 1, offset: .25 }, { opacity: 0 }], 800));
+          el.querySelectorAll('img, .eq-rk, .eq-mark').forEach(x => P.push(dexAnim(x, [{ transform: 'none', opacity: 1 }, { transform: 'scale(1.06)', opacity: 1, offset: .3 }, { transform: 'scale(.55)', opacity: 0 }], 800, { easing: 'ease-in' })));
+        }
+        await Promise.all(P.map(a => a.finished));
+        renderEquipment();
+        const ns = $('eqSlots') ? $('eqSlots').querySelectorAll('.eq-slot') : [];
+        const Q = []; for (let i = openContourCount(s.nl); i < openOld; i++) if (ns[i]) Q.push(dexAnim(ns[i], [{ opacity: 0 }, { opacity: 1 }], 450, { easing: 'ease-out', fill: 'none' }));
+        await Promise.all(Q.map(a => a.finished));
+      }
+      dv.classList.remove('dex-v'); dv.style.minWidth = '';
+    } catch (e) { /* анимация не должна мешать шагу: данные уже сохранены */ }
+    finish();
+  }
   // Действует ли артефакт: только если размещён в контуре снаряжения.
   function isArtifactEquipped(id) { return Array.isArray(data.equippedArtifacts) && data.equippedArtifacts.includes(id); }
 
@@ -8466,6 +8611,7 @@
   function xpDraw(prefix) {   // уровень, ранг, опыт, полоса, долг — по тому, что сейчас на экране
     const top = document.getElementById(prefix + 'Top');
     if (!top) return;
+    if (prefix === 'st' && dexBusy) return;   // v7.6.15: идёт анимация обмена уровня — «Статус» рисует она
     const v = xpView();
     const rank = playerRank();   // v7.6.0: ранг отдельно от уровня
     top.className = 'sc-top rk-' + rank.class;
@@ -8479,7 +8625,7 @@
     document.getElementById(prefix + 'Exp').textContent = inDebt ? `Долг −${v.debt} EXP` : `${v.exp} / ${expToNext} EXP`;
     document.getElementById(prefix + 'Bar').classList.toggle('debt', inDebt);
     document.getElementById(prefix + 'BarFill').style.width = inDebt ? '100%' : Math.max(0, Math.min(100, v.exp / expToNext * 100)) + '%';
-    document.getElementById(prefix + 'Debt').style.display = inDebt ? 'block' : 'none';
+    document.getElementById(prefix + 'Debt').style.display = inDebt ? (prefix === 'st' ? 'flex' : 'block') : 'none';   // v7.6.15: в «Статусе» — строка с кнопкой обмена
     document.getElementById(prefix + 'DebtVal').textContent = v.debt;
     const ps = document.getElementById(prefix + 'PStreak');   // v7.5.0: только в «Статусе», с двух штрафов подряд
     if (ps) { const n = data.penaltyRun || 0; ps.style.display = n >= 2 ? 'block' : 'none'; document.getElementById(prefix + 'PStreakVal').textContent = n; }   // v7.5.10: штрафов подряд
@@ -8492,6 +8638,7 @@
     if (!top) return;
     xpUpdate();
     xpDraw(prefix);
+    if (prefix === 'st') dexSync();   // v7.6.15
     document.getElementById(prefix + 'Name').textContent = data.playerName || 'Игрок';
     const iconId = TITLE_ICON_IDS[data.activeTitle];
     document.getElementById(prefix + 'Title').innerHTML = 'Титул: ' +
@@ -8705,7 +8852,11 @@
     }
 
     document.getElementById('calStreakLine').textContent = `Рекорд серии: ${data.bestStreak} ${pluralDays(data.bestStreak)}`;
-    document.getElementById('calMonthSummary').textContent = `В этом месяце: выполнено ${successCount} · штрафов ${penaltyCount} · под защитой ${protectedCount} · заморожено ${frozenCount}${veilCount ? ` · пелена покоя ${veilCount}` : ''}`;
+    // v7.6.15: итоги — две строки с постоянным разрывом; пункт не разрывается внутри себя
+    const cmsI = t => `<span class="cms-i">${t}</span>`;
+    document.getElementById('calMonthSummary').innerHTML =
+      `<span class="cms-l">${cmsI(`В этом месяце: выполнено ${successCount}`)} · ${cmsI(`штрафов ${penaltyCount}`)}</span> ` +
+      `<span class="cms-l">${cmsI(`под защитой ${protectedCount}`)} · ${cmsI(`заморожено ${frozenCount}`)}${veilCount ? ` · ${cmsI(`пелена покоя ${veilCount}`)}` : ''}</span>`;
   }
 
   // v7.6.1: мини-шестигранник испытания: успех — залит цветом ранга, провал — тусклый контур
