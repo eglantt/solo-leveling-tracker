@@ -162,7 +162,10 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
   check('X18 Архив во время испытания: импорт и «Сбросить всё» заблокированы, тема — только во время этапа', (() => { E(w, 'openBackupModal()'); const imp = E(w, "[...document.querySelectorAll('#backupContent button')].find(b => b.textContent === 'Выбрать файл').disabled"),
     rst = E(w, "document.querySelector('#backupContent .reset-all').disabled"), th = E(w, "document.querySelector('#backupContent .theme-seg button').disabled"); E(w, 'closeBackupModal()'); return imp && rst && !th; })());
   E(w, "examBegin('pushups')");
-  check('X19a v7.6.3: шкала усталости видна на открытом слое этапа (без внесённых повторений)', E(w, "fzPopUntil = 0; fzDraw(false); fzBar.classList.contains('on') && fzBar.classList.contains('fz-ex')"));
+  check('X19a v7.7.1: на открытом слое этапа шкала усталости — только при усталости от 1%: 0 — не видна; 30 — видна поверх слоя; 0,4 — не видна',
+    E(w, "data.fatigue = emptyFatigue(); fzPopUntil = 0; fzDraw(false); !fzBar.classList.contains('on') && fzBar.classList.contains('fz-ex')")
+    && E(w, "data.fatigue.fast = 30; data.fatigue.t = Date.now(); fzDraw(false); fzBar.classList.contains('on') && fzBar.classList.contains('fz-ex')")
+    && E(w, "data.fatigue.fast = 0.4; data.fatigue.slow = 0; data.fatigue.t = Date.now(); fzPopUntil = Date.now() + 4000; fzDraw(false); const r = !fzBar.classList.contains('on'); data.fatigue = emptyFatigue(); fzPopUntil = 0; r"));
   E(w, 'examLayer(false)');
   check('X19b на экране испытания без открытого этапа — обычное правило (без повторений и ниже 70 — не видна)', E(w, "data.fatigue = emptyFatigue(); fzPopUntil = 0; fzDraw(false); !fzBar.classList.contains('on') && !fzBar.classList.contains('fz-ex')"));
   E(w, 'examLayer(true)');
@@ -184,7 +187,9 @@ const HIDE = `document.querySelectorAll('.status-overlay').forEach(o => o.style.
     && Math.abs(E(w, 'data.tn.pushups') - tn0 - 0.14 * E(w, 'data.tnMul')) < 1e-9 && E(w, 'totalStats.pushups') === st0 + 14 && /Раунды: 14 · 0 · 0 · 0/.test(E(w, 'exk_pushups.textContent')));
   // бег, карманный режим, ускоритель
   E(w, "data.examAccel = true; examBegin('steps')"); E(w, 'data.exam.S.steps.t0 -= 12'); await sleep(300);
-  check('X24a v7.6.3: шкала усталости в карманном режиме видна и лежит поверх него', E(w, "fzBar.classList.contains('on') && fzBar.classList.contains('fz-ex')") && w.getComputedStyle(w.document.getElementById('fzBar')).zIndex === '1955');
+  check('X24a v7.7.1: карманный режим — при усталости 0 шкалы нет; при усталости 30 видна и лежит поверх него',
+    E(w, "data.fatigue = emptyFatigue(); fzPopUntil = 0; fzDraw(false); !fzBar.classList.contains('on') && fzBar.classList.contains('fz-ex')")
+    && E(w, "data.fatigue.fast = 30; data.fatigue.t = Date.now(); fzDraw(false); fzBar.classList.contains('on') && fzBar.classList.contains('fz-ex')") && w.getComputedStyle(w.document.getElementById('fzBar')).zIndex === '1955');
   check('X24 бег: карманный режим включается сам на старте; ускоритель виден и приглушён', E(w, "exPocket.classList.contains('on')") && E(w, "exAcc.classList.contains('on')") && E(w, "exAcc.classList.contains('dim')"));
   const v0 = E(w, 'examNow()'); E(w, "document.querySelector('#exAcc button[data-v=\"20\"]').click()"); E(w, 'data.exam.vAt -= 1000'); const v1 = E(w, 'examNow()');
   check('X25 ×20: за 1 с проходит 20 с испытания, без скачка при переключении', v1 - v0 > 19 && v1 - v0 < 21.5, v1 - v0);

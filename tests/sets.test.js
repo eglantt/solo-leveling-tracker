@@ -235,6 +235,35 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
     w3.close();
   }
 
+
+  // v7.7.1: шкала усталости на слое таймера — только при усталости от 1%
+  {
+    const w = await mk('data.setTimer = true; data.fatigueOn = true; data.fzPopup = true; data.fatigue = emptyFatigue();');
+    const bar = () => J(w, "(() => { fzDraw(false); return { on: fzBar.classList.contains('on'), ex: fzBar.classList.contains('fz-ex') }; })()");
+    const main0 = bar();
+    E(w, "document.querySelector('.quest-item[data-id=pushups] .sx-btn').click()");
+    const setup0 = bar();
+    E(w, "document.getElementById('sxStart').click()");
+    const prep0 = bar();
+    E(w, "data.fatigue.fast = 25; data.fatigue.t = Date.now();");
+    const prep25 = bar();
+    E(w, "data.fatigue.fast = 0.4; data.fatigue.slow = 0; data.fatigue.t = Date.now(); fzPopUntil = Date.now() + 4000;");
+    const low = bar();
+    E(w, "fzPopUntil = 0; data.fatigue = emptyFatigue(); sxCloseView(); document.querySelector('.quest-item[data-id=steps] .sx-btn').click(); document.getElementById('sxStart').click();");
+    E(w, "(() => { const s = data.setRun.steps; s.vB = 30; s.rB = Date.now(); setsTick(); [...document.querySelectorAll('#sxLayer button')].find(x => /Карманный/.test(x.textContent)).click(); })()");
+    const pk0 = bar();
+    E(w, "data.fatigue.fast = 25; data.fatigue.t = Date.now();");
+    const pk25 = bar();
+    E(w, "sxPocket(false); sxCloseView(); data.fatigue = emptyFatigue(); data.fatigue.fast = 25; data.fatigue.t = Date.now(); fzPopUntil = 0;");
+    const mainNo = bar();
+    E(w, "fzPopUntil = Date.now() + 4000;");
+    const mainPop = bar();
+    check('SX26 v7.7.1: шкала усталости на слое таймера и в карманном режиме — только при усталости от 1% (0 и 0,4 — нет, 25 — да, поверх слоя); главный экран — прежнее правило (25 без повторений — нет, после повторений 4 с — да)',
+      !main0.on && !setup0.on && setup0.ex && !prep0.on && prep25.on && prep25.ex && !low.on && !pk0.on && pk25.on && pk25.ex && !mainNo.on && !mainNo.ex && mainPop.on && !mainPop.ex,
+      JSON.stringify({ main0, setup0, prep0, prep25, low, pk0, pk25, mainNo, mainPop }));
+    w.close();
+  }
+
   console.log(`\nИтого: ${pass} OK, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 })();

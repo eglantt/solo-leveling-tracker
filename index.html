@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.7.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.7.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2563,7 +2563,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.7.0';
+  const APP_VERSION = '7.7.1';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -5508,7 +5508,7 @@
       z.style.setProperty('--fill', (anim ? 0.8 : 1) + 's');
       fzPaint(z, v);
       const exStage = typeof examStageView === 'function' && examStageView();   // v7.6.3: слой этапа или карманный режим — шкала видна всё время, поверх них
-      const show = on && data.fzPopup !== false && (exStage || v >= 70 || Date.now() < fzPopUntil) && !fzWinOpen();   // v7.4.1: выключена в Архиве — не всплывает
+      const show = on && data.fzPopup !== false && (exStage ? v >= 0.5 : (v >= 70 || Date.now() < fzPopUntil)) && !fzWinOpen();   // v7.7.1: на слоях — только при усталости от 1% (в «Статусе» не «0%»)   // v7.4.1: выключена в Архиве — не всплывает
       z.classList.toggle('fz-ex', exStage);
       if (show) fzPlace(z);   // v7.6.3: место пересчитывается при каждом показе и обновлении — шкала, которая держится видимой, не остаётся на старом месте
       z.classList.toggle('pulse', on && v >= 90);
