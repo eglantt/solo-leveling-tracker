@@ -236,31 +236,32 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
   }
 
 
-  // v7.7.1: шкала усталости на слое таймера — только при усталости от 1%
+  // v7.7.2: шкала усталости на слое таймера — как на главном экране (4 с после внесения, с 70 — постоянно)
   {
-    const w = await mk('data.setTimer = true; data.fatigueOn = true; data.fzPopup = true; data.fatigue = emptyFatigue();');
+    const w = await mk('data.setTimer = true; data.fatigueOn = true; data.fzPopup = true; data.fatigue = emptyFatigue(); data.paceControl = false;');
     const bar = () => J(w, "(() => { fzDraw(false); return { on: fzBar.classList.contains('on'), ex: fzBar.classList.contains('fz-ex') }; })()");
-    const main0 = bar();
-    E(w, "document.querySelector('.quest-item[data-id=pushups] .sx-btn').click()");
-    const setup0 = bar();
-    E(w, "document.getElementById('sxStart').click()");
-    const prep0 = bar();
-    E(w, "data.fatigue.fast = 25; data.fatigue.t = Date.now();");
-    const prep25 = bar();
-    E(w, "data.fatigue.fast = 0.4; data.fatigue.slow = 0; data.fatigue.t = Date.now(); fzPopUntil = Date.now() + 4000;");
-    const low = bar();
-    E(w, "fzPopUntil = 0; data.fatigue = emptyFatigue(); sxCloseView(); document.querySelector('.quest-item[data-id=steps] .sx-btn').click(); document.getElementById('sxStart').click();");
+    E(w, "data.fatigue.fast = 19; data.fatigue.t = Date.now(); fzPopUntil = 0;");
+    E(w, "document.querySelector('.quest-item[data-id=pushups] .sx-btn').click(); document.getElementById('sxStart').click()");
+    const idle19 = bar();
+    E(w, "(() => { const s = data.setRun.pushups; s.vB = 55; s.rB = Date.now(); setsTick(); sxDraw(); })()");
+    E(w, "document.querySelector('#sxLayer [data-add=\"5\"]').click()");
+    const added = bar(), popSet = E(w, "fzPopUntil > Date.now() && fzPopUntil <= Date.now() + FZ.popMs");
+    E(w, "fzPopUntil = Date.now() - 1;");
+    const after4 = bar();
+    E(w, "data.fatigue.fast = 75; data.fatigue.slow = 0; data.fatigue.t = Date.now();");
+    const high = bar();
+    E(w, "data.fatigue = emptyFatigue(); data.fatigue.fast = 19; data.fatigue.t = Date.now(); sxCloseView(); document.querySelector('.quest-item[data-id=steps] .sx-btn').click(); document.getElementById('sxStart').click();");
     E(w, "(() => { const s = data.setRun.steps; s.vB = 30; s.rB = Date.now(); setsTick(); [...document.querySelectorAll('#sxLayer button')].find(x => /Карманный/.test(x.textContent)).click(); })()");
-    const pk0 = bar();
-    E(w, "data.fatigue.fast = 25; data.fatigue.t = Date.now();");
-    const pk25 = bar();
-    E(w, "sxPocket(false); sxCloseView(); data.fatigue = emptyFatigue(); data.fatigue.fast = 25; data.fatigue.t = Date.now(); fzPopUntil = 0;");
-    const mainNo = bar();
-    E(w, "fzPopUntil = Date.now() + 4000;");
+    const pk19 = bar();
+    E(w, "fzPopUntil = Date.now() + FZ.popMs;");
+    const pkPop = bar();
+    E(w, "sxPocket(false); sxCloseView(); fzPopUntil = 0;");
+    const main19 = bar();
+    E(w, "fzPopUntil = Date.now() + FZ.popMs;");
     const mainPop = bar();
-    check('SX26 v7.7.1: шкала усталости на слое таймера и в карманном режиме — только при усталости от 1% (0 и 0,4 — нет, 25 — да, поверх слоя); главный экран — прежнее правило (25 без повторений — нет, после повторений 4 с — да)',
-      !main0.on && !setup0.on && setup0.ex && !prep0.on && prep25.on && prep25.ex && !low.on && !pk0.on && pk25.on && pk25.ex && !mainNo.on && !mainNo.ex && mainPop.on && !mainPop.ex,
-      JSON.stringify({ main0, setup0, prep0, prep25, low, pk0, pk25, mainNo, mainPop }));
+    check('SX26 v7.7.2: шкала на слое таймера и в карманном режиме — как на главном экране: 19 без внесения — нет; внесение в слое — видна 4 с поверх слоя, затем гаснет; 75 — видна; главный экран — то же правило',
+      !idle19.on && idle19.ex && added.on && added.ex && popSet && !after4.on && high.on && !pk19.on && pkPop.on && pkPop.ex && !main19.on && !main19.ex && mainPop.on && !mainPop.ex,
+      JSON.stringify({ idle19, added, popSet, after4, high, pk19, pkPop, main19, mainPop }));
     w.close();
   }
 
