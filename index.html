@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.6.16 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.7.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1371,6 +1371,101 @@
     .ex-card .ex-tm span { font-family: 'Orbitron', sans-serif; color: #cfe6fb; letter-spacing: .5px; }
     .ex-card .ex-tm.ex-cut span { color: #40ffaa; }
     .ex-rw .ex-pace { color: #40ffaa; font-size: .9em; }
+    /* ===== v7.7.0: подходы и бег по таймеру (демо 122–122k). Без настройки (body без sx-on) карточки не меняются ===== */
+    :root { --sx: #40c0ff; --sxg: rgba(64,192,255,.45); --sxd: rgba(64,192,255,.14); --sx2: #8fdcff; }
+    body.sx-red { --sx: #ff4455; --sxg: rgba(255,40,70,.5); --sxd: rgba(255,40,70,.15); --sx2: #ff8a96; }
+    body.sx-on .quest-item { position: relative; }
+    body.sx-on .quest-item .quest-progress { padding-top: 8px; }   /* место под кнопку над числом повторений */
+    .sx-btn { position: absolute; top: 10px; right: 14px; z-index: 2; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; min-width: 0; padding: 0; box-sizing: border-box; line-height: 1;
+      border-radius: 50%; border: 1px solid var(--sx); background: rgba(0,10,22,.6); color: var(--sx); cursor: pointer; box-shadow: 0 0 6px var(--sxd); }
+    .sx-btn svg.ic { width: 70%; height: 70%; }
+    .sx-btn .tm { display: none; font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 7px; letter-spacing: 0; line-height: 1; }
+    .sx-btn.live { background: var(--sxd); }
+    .sx-btn.live .tm { display: inline; } .sx-btn.live svg.ic { display: none; }
+    .sx-btn svg.rg { display: none; position: absolute; inset: -3px; width: calc(100% + 6px); height: calc(100% + 6px); transform: rotate(-90deg); pointer-events: none; }
+    .sx-btn.live svg.rg { display: block; }
+    .sx-btn:disabled { opacity: .3; cursor: default; box-shadow: none; }
+    .sx-dg { display: inline-block; width: .78em; text-align: center; } .sx-cl { display: inline-block; width: .34em; text-align: center; }
+    .sx-sum { display: block; font-family: 'Exo 2 Text', sans-serif; font-size: .74rem; color: #8fb2d2; margin-top: 3px; letter-spacing: 0; }
+    .sx-sum b { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; color: var(--sx); font-size: .9em; }
+    /* слой */
+    #sxLayer { position: fixed; inset: 0; z-index: 950; display: none; overflow-y: auto; box-sizing: border-box; background: #02060e; font-family: 'Exo 2 Text', sans-serif; color: #cfe6fb; }
+    #sxLayer.on { display: block; }
+    #sxLayer .sx-in { position: relative; z-index: 1; width: 100%; max-width: 420px; margin: 0 auto; padding: 88px 16px 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    #sxBg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; background: repeating-linear-gradient(0deg, rgba(64,192,255,.045) 0 1px, transparent 1px 4px), radial-gradient(circle at 50% 330px, rgba(8,22,40,.85), #02060e 420px); }
+    #sxBg .band { position: absolute; left: 0; right: 0; top: 0; height: 140px; background: linear-gradient(transparent, var(--sxd), transparent); opacity: .5; animation: sxBand 7s linear infinite; will-change: transform; }
+    @keyframes sxBand { from { transform: translateY(-160px); } to { transform: translateY(110vh); } }
+    #sxLayer .tab { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; letter-spacing: 3px; font-size: .92rem; color: var(--sx); padding: 7px 20px; border: 1px solid var(--sx); border-radius: 8px; background: rgba(2,8,18,.6); box-shadow: 0 0 12px var(--sxd), inset 0 0 12px var(--sxd); text-shadow: 0 0 10px var(--sxg); }
+    #sxLayer .prog { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 1.02rem; color: #8fb2d2; }
+    #sxLayer .prog .counter { font-size: 1.3rem; font-weight: 500; letter-spacing: 0; }
+    #sxLayer .ring { position: relative; width: 200px; height: 200px; margin: 0; flex-shrink: 0; --pc: var(--sx); --R: 90px; --w: 1.5px; --L: 200deg; --f1: .62; --f2: .9; --s: 9px; --sb: 1.6; }
+    #sxLayer .ring.ph-rest { --pc: var(--sx2); } #sxLayer .ring.ph-prep { --pc: #e8f4ff; } #sxLayer .ring.ph-over { --pc: #ffaa44; } #sxLayer .ring.ph-pause { --pc: #6f8aa6; }
+    #sxLayer .ring .bgl { position: absolute; inset: -46px; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, color-mix(in srgb, var(--pc) 16%, transparent), transparent 100%); }
+    #sxLayer .ring.ph-rest .bgl { animation: sxBreath 4.2s ease-in-out infinite; }
+    @keyframes sxBreath { 50% { opacity: .55; } }
+    #sxLayer .ring > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    #sxLayer .ring .tk line { stroke: rgba(255,255,255,.22); stroke-width: .5; } #sxLayer .ring .tk line.m { stroke: rgba(255,255,255,.4); stroke-width: .8; }
+    #sxLayer .ring .trk { fill: none; stroke: rgba(255,255,255,.05); stroke-width: 1.2; }
+    #sxLayer .ring .pr { fill: none; stroke: var(--pc); stroke-width: 1.6; opacity: .18; transform: rotate(-90deg); transform-origin: 50px 50px; transition: stroke .6s; }
+    #sxLayer .ring .sg path { fill: none; stroke-width: 1.4; stroke-linecap: round; }
+    #sxLayer .ring .sg .d { stroke: var(--pc); stroke-opacity: .75; } #sxLayer .ring .sg .e { stroke: rgba(255,255,255,.12); } #sxLayer .ring .sg .c { stroke: var(--pc); animation: sxPip 1.6s ease-in-out infinite; }
+    @keyframes sxPip { 50% { opacity: .35; } }
+    #sxLayer .ring .rot { position: absolute; inset: 0; will-change: transform; pointer-events: none; }
+    #sxLayer .ring .com, #sxLayer .ring .glo { position: absolute; inset: 0; border-radius: 50%; }
+    #sxLayer .ring .com { background: conic-gradient(from calc(-1 * var(--L)), transparent 0deg, color-mix(in srgb, var(--pc) calc(var(--f1) * 100%), transparent) calc(var(--L) * .5), color-mix(in srgb, var(--pc) calc(var(--f2) * 100%), transparent) calc(var(--L) * .82), var(--pc) var(--L), transparent var(--L));
+      -webkit-mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) / 2 - .7px), #000 calc(var(--R) - var(--w) / 2), #000 calc(var(--R) + var(--w) / 2), transparent calc(var(--R) + var(--w) / 2 + .7px));
+              mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) / 2 - .7px), #000 calc(var(--R) - var(--w) / 2), #000 calc(var(--R) + var(--w) / 2), transparent calc(var(--R) + var(--w) / 2 + .7px)); }
+    #sxLayer .ring .glo { background: conic-gradient(from calc(-1 * var(--L)), transparent 0deg, color-mix(in srgb, var(--pc) calc(var(--f1) * 50%), transparent) calc(var(--L) * .5), color-mix(in srgb, var(--pc) 55%, transparent) var(--L), transparent var(--L));
+      -webkit-mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) * 3 - 6px), rgba(0,0,0,.55) var(--R), transparent calc(var(--R) + var(--w) * 3 + 6px));
+              mask: radial-gradient(circle at center, transparent calc(var(--R) - var(--w) * 3 - 6px), rgba(0,0,0,.55) var(--R), transparent calc(var(--R) + var(--w) * 3 + 6px)); }
+    #sxLayer .ring .spk { position: absolute; left: 50%; top: calc(50% - var(--R)); width: 0; height: 0; }
+    #sxLayer .ring .spk i, #sxLayer .ring .spk b { position: absolute; left: 0; top: 0; border-radius: 50%; transform: translate(-50%, -50%); }
+    #sxLayer .ring .spk i { width: var(--s); height: var(--s); background: radial-gradient(circle, #fff 0 32%, var(--pc) 52%, transparent 74%); }
+    #sxLayer .ring .spk b { width: calc(var(--s) * 4.2); height: calc(var(--s) * 4.2); background: radial-gradient(circle, color-mix(in srgb, var(--pc) calc(42% * var(--sb)), transparent) 0, transparent 68%); }
+    #sxLayer .ring .fl { position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; opacity: 0; box-shadow: 0 0 22px 4px color-mix(in srgb, var(--pc) 55%, transparent), inset 0 0 18px 2px color-mix(in srgb, var(--pc) 35%, transparent); }
+    #sxLayer .ring .ctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    #sxLayer .ph { font-family: 'Orbitron', 'Exo 2', sans-serif; letter-spacing: 1px; font-size: .74rem; color: var(--pc); text-transform: uppercase; margin-bottom: 6px; }
+    #sxLayer .tt { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; font-size: 2.5rem; line-height: 1; color: var(--pc); text-shadow: 0 0 12px var(--pc); }
+    #sxLayer .sub { font-size: .72rem; color: #7f9ab6; min-height: 1em; max-width: 140px; text-align: center; line-height: 1.3; margin-top: 6px; }
+    #sxLayer .ring.ph-pause .tt { opacity: .5; }
+    #sxLayer .setup { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    #sxLayer .lbl { font-size: .84rem; color: #8fb2d2; margin-bottom: 6px; }
+    #sxLayer .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    #sxLayer button { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; letter-spacing: .5px; cursor: pointer; color: #cfe6fb; }
+    #sxLayer .chips button { flex: 1 1 0; min-width: 52px; padding: 10px 2px; font-size: .78rem; background: rgba(0,12,26,.75); border: 1px solid #2a4a6a; color: #9fc4e6; border-radius: 6px; }
+    #sxLayer .chips button.on { border-color: var(--sx); color: #fff; background: var(--sxd); box-shadow: 0 0 10px var(--sxd), inset 0 0 8px var(--sxd); text-shadow: 0 0 8px var(--sxg); }
+    #sxLayer .main { width: 100%; padding: 13px; font-size: .86rem; letter-spacing: 1px; background: var(--sxd); border: 1px solid var(--sx); color: #fff; border-radius: 6px; box-shadow: 0 0 12px var(--sxd), inset 0 0 10px var(--sxd); text-shadow: 0 0 8px var(--sxg); }
+    #sxLayer .main:disabled { opacity: .3; cursor: default; box-shadow: none; text-shadow: none; }
+    #sxLayer .inp { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    #sxLayer .inp .cur { height: 22px; line-height: 22px; white-space: nowrap; font-size: .86rem; color: #8fb2d2; }
+    #sxLayer .inp .cur b { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; color: #40ffaa; }
+    #sxLayer .inp .bt { display: flex; gap: 8px; width: 100%; }
+    #sxLayer .inp .bt button { flex: 1; padding: 12px 4px; font-size: .92rem; background: rgba(0,40,80,.45); border: 1px solid #40c0ff; color: #cfeeff; border-radius: 4px; }
+    #sxLayer .inp .bt button:disabled { opacity: .28; cursor: default; text-shadow: none; }
+    #sxLayer .inp .bt button.pace-hot { border-color: #ffaa44; background: rgba(80,45,0,.45); color: #ffcc88; box-shadow: 0 0 8px rgba(255,170,68,.35); text-shadow: 0 0 8px rgba(255,170,68,.6); }
+    #sxLayer .list { width: 100%; height: 22px; line-height: 22px; font-size: .82rem; color: #8fb2d2; white-space: nowrap; overflow-x: auto; overflow-y: hidden; text-align: center; scrollbar-width: none; }
+    #sxLayer .list::-webkit-scrollbar { display: none; }
+    #sxLayer .list.fl { -webkit-mask: linear-gradient(90deg, transparent, #000 24px); mask: linear-gradient(90deg, transparent, #000 24px); }
+    #sxLayer .list.fr { -webkit-mask: linear-gradient(270deg, transparent, #000 24px); mask: linear-gradient(270deg, transparent, #000 24px); }
+    #sxLayer .list.fl.fr { -webkit-mask: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent); mask: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent); }
+    #sxLayer .list .li { display: inline-block; min-width: 100%; }
+    #sxLayer .list b { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; color: var(--sx); }
+    #sxLayer .ctl { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; margin-top: 4px; }   /* 12 + 4 = 16 px до кнопок управления */
+    #sxLayer .ctl button { padding: 11px 4px; font-size: .72rem; background: rgba(0,12,26,.75); border: 1px solid #2a4a6a; color: #9fc4e6; border-radius: 6px; }
+    #sxLayer .ctl button.end { border-color: #ff556677; color: #ff9aa6; }
+    #sxLayer .ctl.run .end { grid-column: 1 / -1; }
+    #sxLayer .ctl.one { grid-template-columns: 1fr; }
+    #sxLayer .ctl button:disabled { opacity: .3; cursor: default; }
+    /* карманный режим (только у бега) */
+    #sxPocket { position: fixed; inset: 0; z-index: 1900; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px; user-select: none; -webkit-user-select: none; touch-action: none; }
+    #sxPocket.on { display: flex; }
+    #sxPocket .ph { font-family: 'Orbitron', 'Exo 2', sans-serif; letter-spacing: 1.5px; font-size: .9rem; color: #8a96a6; text-transform: uppercase; }
+    #sxPocket .xt { font-family: 'Orbitron', 'Exo 2', sans-serif; font-size: 3.4rem; color: var(--sx); text-shadow: 0 0 14px var(--sxg); }
+    #sxPocket.over .xt { color: #ffaa44; text-shadow: 0 0 14px rgba(255,170,68,.5); }
+    #sxPocket .hint { font-family: 'Exo 2 Text', sans-serif; font-size: .85rem; color: #6f7c8c; max-width: 260px; line-height: 1.45; }
+    #sxPocket .hold { position: relative; width: 86px; height: 86px; margin-top: 18px; }
+    #sxPocket .hold svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    #sxPocket .hold .lk { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #6f7c8c; }
     /* ===== v7.6.16: названия упражнений — 'Exo 2 Text' 400 без разрядки (в Orbitron нет кириллицы: был запасной Exo 2 500, скобки — из Orbitron) ===== */
     .quest-name { font-family: 'Exo 2 Text', sans-serif; font-weight: 400; letter-spacing: 0; }
     /* ===== v7.6.15: Летопись — итоги месяца в две строки ===== */
@@ -1895,6 +1990,20 @@
     body.theme-sys .sf-win.mwin button.dex-btn:disabled { opacity: .35 !important; }
     body.theme-sys .sf-win.mwin .sc-hex b.dex-r { color: #ff3344; text-shadow: none; filter: drop-shadow(0 0 5px #ff2233) drop-shadow(0 0 14px #ff0022); }
     body.theme-sys .sf-win.mwin .eq-slot .dex-flash { border-radius: 0; }
+    /* v7.7.0: подходы и бег по таймеру — тема «Система» (своя кнопка на карточке: общее правило кнопок окна её перекрашивает) */
+    body.theme-sys .sf-win.mwin button.sx-btn { width: 26px !important; height: 26px !important; min-width: 0 !important; padding: 0 !important; border: 1px solid var(--sx) !important; background: rgba(0,10,22,.6) !important; color: var(--sx) !important; border-radius: 50% !important; box-shadow: 0 0 6px var(--sxd) !important; }
+    body.theme-sys .sf-win.mwin button.sx-btn.live { background: var(--sxd) !important; }
+    body.theme-sys .sf-win.mwin button.sx-btn:not(:disabled):hover { background: var(--sxd) !important; border-color: var(--sx) !important; color: var(--sx) !important; box-shadow: 0 0 10px var(--sxg) !important; }
+    body.theme-sys .sf-win.mwin button.sx-btn:not(:disabled):active { background: var(--sxd) !important; box-shadow: 0 0 12px var(--sxg) !important; }
+    body.theme-sys .sf-win.mwin button.sx-btn:disabled { opacity: .3 !important; box-shadow: none !important; }
+    body.theme-sys #sxLayer .tab { border-radius: 0; position: relative; }
+    body.theme-sys #sxLayer .tab::before, body.theme-sys #sxLayer .tab::after { content: ''; position: absolute; top: 50%; width: 22px; height: 1px; background: var(--sx); opacity: .6; }
+    body.theme-sys #sxLayer .tab::before { right: 100%; margin-right: 6px; } body.theme-sys #sxLayer .tab::after { left: 100%; margin-left: 6px; }
+    body.theme-sys #sxLayer .chips button, body.theme-sys #sxLayer .main, body.theme-sys #sxLayer .inp .bt button, body.theme-sys #sxLayer .ctl button { border-radius: 0; }
+    body.theme-sys #sxLayer .inp .bt button { background: rgba(2,10,20,.55); border-color: #cfe6fb; color: #e8f6ff; text-shadow: 0 0 6px rgba(160,220,255,.6); }
+    body.theme-sys #sxLayer .inp .bt button.pace-hot { border-color: #ffaa44; background: rgba(80,45,0,.45); color: #ffcc88; box-shadow: 0 0 8px rgba(255,170,68,.35); text-shadow: 0 0 8px rgba(255,170,68,.6); }
+    body.theme-sys #sxLayer .counter.cursed-scroll { animation-name: sysCursedScrollPulse; }
+    body.theme-sys #sxLayer .counter.limit-scroll { animation-name: sysLimitScrollPulse; }
 </style>
 </head>
 <body>
@@ -2454,7 +2563,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.6.16';
+  const APP_VERSION = '7.7.0';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2576,6 +2685,7 @@
         paceWindow: oldData.paceWindow,
         fatigueOn: typeof oldData.fatigueOn === 'boolean' ? oldData.fatigueOn : true, fatigue: oldData.fatigue,   // v7.4.0
         fzPopup: typeof oldData.fzPopup === 'boolean' ? oldData.fzPopup : true,   // v7.4.1
+        setTimer: typeof oldData.setTimer === 'boolean' ? oldData.setTimer : false, setPrefs: oldData.setPrefs, setRun: oldData.setRun,   // v7.7.0 (проверка — ниже, при загрузке)
         notificationLog: oldData.notificationLog || [],
         remindersFiredHours: oldData.remindersFiredHours || [],
         lastNoticeText: oldData.lastNoticeText || {},
@@ -2637,6 +2747,7 @@
         equippedArtifacts: [null, null, null, null],
         paceControl: true, paceWindow: { start: null, used: 0, locked: false, hot: [] },
         fatigueOn: true, fatigue: emptyFatigue(), fzPopup: true,   // v7.4.0, v7.4.1
+        setTimer: false, setPrefs: {}, setRun: {},   // v7.7.0: подходы и бег по таймеру
         beadStreak: 0, beadBlockUntil: null, veilLifted: false,
         notificationLog: [], remindersFiredHours: [], lastNoticeText: {},
         progressNoticesShown: [],
@@ -2689,6 +2800,9 @@
   data.paceWindow = sanitizePaceWindow(data.paceWindow);
   if (typeof data.fatigueOn !== 'boolean') data.fatigueOn = true;   // v7.4.0: шкала усталости, у всех включена
   if (typeof data.fzPopup !== 'boolean') data.fzPopup = true;       // v7.4.1: всплывающая шкала на главном экране
+  if (typeof data.setTimer !== 'boolean') data.setTimer = false;   // v7.7.0: подходы и бег по таймеру
+  data.setPrefs = sanitizeSetPrefs(data.setPrefs);
+  data.setRun = sanitizeSetRun(data.setRun);
   data.fatigue = data.fatigueOn ? sanitizeFatigue(data.fatigue) : emptyFatigue();
   // Догоняющая проверка — та же логика, что уже применена выше к title_probuzhdenny.
   // Разблокировка индивидуальных глав свитков обычно срабатывает только в момент
@@ -2908,6 +3022,35 @@
   // APP_VERSION: нормализация сохранения при загрузке выполняется раньше.)
 
   // v6.8.0: окно контроля темпа.
+  // v7.7.0: проверка полей таймера упражнений (загрузка, импорт). Объявлены функциями — вызываются при загрузке раньше модуля таймера.
+  function sanitizeSetPrefs(v) {
+    const out = {}; if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+    ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(id => {
+      const p = v[id]; if (!p || typeof p !== 'object') return;
+      const o = {};
+      if ([30, 40].includes(p.work)) o.work = p.work;
+      if ([180, 210, 240, 270, 300].includes(p.rest)) o.rest = p.rest;
+      if ([10, 20, 30, 40, 60].includes(p.lim)) o.lim = p.lim;
+      if (Object.keys(o).length) out[id] = o;
+    });
+    return out;
+  }
+  function sanitizeSetRun(v) {
+    const out = {}; if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+    const num = x => typeof x === 'number' && isFinite(x);
+    ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(id => {
+      const r = v[id]; if (!r || typeof r !== 'object') return;
+      const m = r.m === 'run' && id === 'steps' ? 'run' : (r.m === 'sets' && id !== 'steps' ? 'sets' : null);
+      const phs = m === 'run' ? ['prep', 'run', 'over', 'stop'] : ['prep', 'work', 'rest'];
+      if (!m || !phs.includes(r.ph) || ![r.t0, r.vB, r.rB].every(num)) return;
+      const sets = Array.isArray(r.sets) ? r.sets.filter(x => Number.isInteger(x) && x >= 0 && x < 100000).slice(0, 200) : [];
+      out[id] = { m, ph: r.ph, t0: r.t0, vB: r.vB, rB: r.rB, p: !!r.p, cut: num(r.cut) && r.cut >= 0 ? r.cut : 0,
+        n: Number.isInteger(r.n) && r.n >= 0 ? r.n : sets.length, base: Number.isInteger(r.base) && r.base >= 0 && r.base <= sets.length ? r.base : 0, sets,
+        ran: Number.isInteger(r.ran) && r.ran >= 0 ? r.ran : 0, work: [30, 40].includes(r.work) ? r.work : 40, rest: [180, 210, 240, 270, 300].includes(r.rest) ? r.rest : 240,
+        lim: [10, 20, 30, 40, 60].includes(r.lim) ? r.lim : 30, fin: !!r.fin };
+    });
+    return out;
+  }
   function emptyPaceWindow() { return { start: null, used: 0, locked: false, hot: [] }; }
   function sanitizePaceWindow(w) {
     if (!w || typeof w !== 'object' || typeof w.start !== 'number' || !Number.isFinite(w.start) || w.start > Date.now()) return emptyPaceWindow();
@@ -4960,6 +5103,316 @@
     if (lbl) lbl.textContent = data.paceControl ? 'Контроль: включён.' : 'Контроль: выключен.';
   }
 
+  // ===== v7.7.0: ПОДХОДЫ И БЕГ ПО ТАЙМЕРУ (демо 122–122k; инструмент — на награды не влияет) =====
+  // Включается в Архиве (data.setTimer). Состояние отсчёта — data.setRun[id] по настоящим часам: идёт и при закрытой
+  // Системе; при открытии фаза пересчитывается без звуков. Выбор времени — data.setPrefs[id].
+  // Подходы: подготовка 10 с (ввод закрыт) → подход → отдых (последние 10 с — «Подготовка», ввод открыт) → подход …
+  // Бег: подготовка 10 с → бег → «Завершение» 10 мин → «Бег окончен»; ввод шагов — кроме подготовки.
+  // Повторения вносятся кнопками «+» карточки (тот же путь: контроль темпа, усталость, ТН) и записываются в подход (setsCount).
+  // Признак «идёт отсчёт» — строго true/false (classList.toggle с пустым вторым аргументом переключает класс — мигание 122b–122c).
+  var SX_IDS = ['pushups', 'squats', 'pullups', 'press', 'steps'];   // var: отрисовка при загрузке может случиться раньше этого места (до sxReady — ничего не делается)
+  var SX_NM = { pushups: 'ОТЖИМАНИЯ', squats: 'ПРИСЕДАНИЯ', pullups: 'ПОДТЯГИВАНИЯ', press: 'ПРЕСС', steps: 'БЕГ' };
+  var SX_WORK = [30, 40], SX_REST = [180, 210, 240, 270, 300], SX_LIM = [10, 20, 30, 40, 60];
+  var sxReady = false, sxView = null, sxPocketOn = false, sxRaf = 0, sxWakeLock = null, sxLastPh = '';
+  const sxNow = () => Date.now();
+  function sxPref(id) {
+    const p = (data.setPrefs && data.setPrefs[id]) || {};
+    return { work: SX_WORK.includes(p.work) ? p.work : 40, rest: SX_REST.includes(p.rest) ? p.rest : 240, lim: SX_LIM.includes(p.lim) ? p.lim : 30 };
+  }
+  function sxSetPref(id, k, v) { if (!data.setPrefs || typeof data.setPrefs !== 'object') data.setPrefs = {}; data.setPrefs[id] = Object.assign(sxPref(id), { [k]: v }); }
+  const sxRun = id => (data.setRun && data.setRun[id]) || null;
+  const sxVt = s => s.p ? s.vB : s.vB + (sxNow() - s.rB) / 1000;
+  const sxRebase = s => { s.vB = sxVt(s); s.rB = sxNow(); };
+  const sxMmss = x => { x = Math.max(0, Math.ceil(x - 1e-6)); const m = Math.floor(x / 60); return m + ':' + String(x % 60).padStart(2, '0'); };
+  const sxItem = id => document.querySelector(`.quest-item[data-id="${id}"]`);
+  function sxTarget(id) { const it = sxItem(id); return it ? getDynamicTarget(parseInt(it.dataset.target), data.dailyTargetLevel, id) : Infinity; }
+  const sxDone = id => (data.completed[id] || 0) >= sxTarget(id) || !!data.examCredited;
+  function sxActive(s) { return !!(s && !s.fin && s.ph !== 'stop'); }
+  function sxAnyActive() { return SX_IDS.some(id => sxActive(sxRun(id))); }
+  function sxAvail() { return !!data.setTimer && !dayEffectHold() && !examOn(); }
+  function sxLen(s) {
+    if (s.ph === 'prep') return 10;
+    if (s.ph === 'work') return s.work;
+    if (s.ph === 'rest') return s.cut || s.rest;
+    if (s.ph === 'run') return s.lim * 60;
+    if (s.ph === 'over') return 600;
+    return Infinity;
+  }
+  const sxInPrep = s => s.ph === 'prep' || (s.ph === 'rest' && s.t0 + sxLen(s) - sxVt(s) <= 10);
+  // ---------- звук и вибрация (набор «Сигналы»; при выключенном звуке Системы — без звука) ----------
+  const SX_SND = {
+    tick: () => tone(1320, 0, .07, 'sine', .45),
+    short: () => tone(880, 0, .14, 'sine', .5),
+    dbl: () => { tone(880, 0, .14, 'sine', .5); tone(1175, .18, .16, 'sine', .5); },
+    long: () => { tone(660, 0, .7, 'triangle', .55); tone(1320, 0, .7, 'sine', .12); }
+  };
+  const SX_VIB = { tick: [35], short: [60], dbl: [70, 80, 70], long: [400] };
+  function sxSig(k) {
+    if (data.soundEnabled) { try { if (audioCtx.state === 'suspended') audioCtx.resume(); SX_SND[k](); } catch (e) {} }
+    try { if (navigator.vibrate) navigator.vibrate(SX_VIB[k]); } catch (e) {}
+  }
+  function sxWake(on) {
+    try {
+      if (on && !sxWakeLock && navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { sxWakeLock = l; }).catch(() => {});
+      if (!on && sxWakeLock) { sxWakeLock.release().catch(() => {}); sxWakeLock = null; }
+    } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && sxAnyActive()) { sxWakeLock = null; sxWake(true); } });
+  // ---------- фазы ----------
+  function sxNext(s, silent) {   // переход в момент конца текущей фазы
+    const t = s.t0 + sxLen(s);
+    if (s.m === 'sets') {
+      if (s.ph === 'prep' || s.ph === 'rest') { s.ph = 'work'; s.n++; s.sets.push(0); s.t0 = t; s.cut = 0; silent || sxSig('dbl'); }   // как в испытании: после отдыха сразу подход
+      else if (s.ph === 'work') { s.ph = 'rest'; s.t0 = t; s.cut = 0; silent || sxSig('long'); }
+    } else {
+      if (s.ph === 'prep') { s.ph = 'run'; s.t0 = t; silent || sxSig('dbl'); }
+      else if (s.ph === 'run') { s.ph = 'over'; s.t0 = t; silent || sxSig('long'); }
+      else if (s.ph === 'over') { s.ph = 'stop'; s.t0 = t; silent || (sxSig('long'), setTimeout(() => sxSig('long'), 700)); }
+    }
+  }
+  function sxStep(s) {   // переходы, которые уже наступили; запоздавшие больше чем на 1,5 с (Система была закрыта) — без звуков
+    let k = 0, moved = false;
+    while (sxActive(s) && !s.p && sxVt(s) >= s.t0 + sxLen(s) && k++ < 1000) { sxNext(s, sxVt(s) - (s.t0 + sxLen(s)) > 1.5); moved = true; }
+    return moved;
+  }
+  function sxCountdown(s) {   // щелчок на каждой из последних 3 с подготовки, подхода и времени бега; вход в подготовку в конце отдыха — короткий сигнал
+    if (s.p || !['prep', 'work', 'rest', 'run'].includes(s.ph)) return;
+    const rem = s.t0 + sxLen(s) - sxVt(s);
+    if (s.ph === 'rest' && rem <= 10 && s.pk !== s.t0 + ':' + s.n) { s.pk = s.t0 + ':' + s.n; if (rem > 9.6) sxSig('short'); }
+    if ((s.ph === 'rest' || s.ph === 'prep') && rem > 10) return;
+    const k = Math.ceil(rem - 1e-6);
+    if (k >= 1 && k <= 3) { const key = s.ph + s.n + ':' + s.t0 + ':' + k; if (s.cd !== key) { s.cd = key; if (rem > k - .35) sxSig('tick'); } }
+  }
+  const sxInputOpen = s => !!s && (s.m === 'run' ? (s.ph !== 'prep') : (s.ph === 'rest' && s.sets.length > 0));
+  const sxGoOk = s => !!s && s.m === 'sets' && sxActive(s) && !s.p && s.ph === 'rest' && sxVt(s) - s.t0 >= 30 && s.t0 + sxLen(s) - sxVt(s) > 10 && s.sets[s.sets.length - 1] > 0;
+  // Засчитанное нажатие «+» (из слоя или с карточки): в текущий подход / в пробежку. До первого подхода — только в задание.
+  function setsCount(id, val) {
+    if (!sxReady) return;
+    const s = sxRun(id); if (!s || s.fin || !(sxActive(s) || s.ph === 'stop')) return;
+    if (s.m === 'sets') { if (s.sets.length > s.base && s.ph !== 'prep') s.sets[s.sets.length - 1] += val; }
+    else if (s.ph !== 'prep') s.ran += val;
+  }
+  function sxFinish(id) {   // упражнение выполнено — отсчёт прекращается, подходы остаются
+    const s = sxRun(id); if (!s) return;
+    s.fin = true; s.p = false;
+    if (sxView === id) sxCloseView();
+    if (!sxAnyActive()) sxWake(false);
+    saveData(); setsCards();
+  }
+  // Тихая остановка всех отсчётов (испытание, выключение настройки, Предел, сброс дня). clear — подходы дня тоже обнулить.
+  function setsStopAll(clear) {
+    if (!sxReady) { if (clear) data.setRun = {}; return; }
+    SX_IDS.forEach(id => { const s = sxRun(id); if (s) { if (clear) delete data.setRun[id]; else { s.fin = true; s.p = false; } } });
+    if (sxView) sxCloseView();
+    if (sxPocketOn) sxPocket(false);
+    sxWake(false);
+  }
+  function setsStop(id) { if (!sxReady) return; const s = sxRun(id); if (s) { s.fin = true; s.p = false; } if (sxView === id) sxCloseView(); if (!sxAnyActive()) sxWake(false); }
+  // ---------- карточки ----------
+  const SX_ICON = '<svg class="ic" viewBox="0 0 24 24" fill="none"><rect x="4.6" y="1.8" width="14.8" height="2.7" rx="1.2" fill="currentColor"/><rect x="4.6" y="19.5" width="14.8" height="2.7" rx="1.2" fill="currentColor"/><path d="M6.9 4.5V6.3C6.9 9.3 10.5 10.6 10.5 12C10.5 13.4 6.9 14.7 6.9 17.7V19.5M17.1 4.5V6.3C17.1 9.3 13.5 10.6 13.5 12C13.5 13.4 17.1 14.7 17.1 17.7V19.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.5 18.6C8.5 16.4 10.7 15.1 12 13.9C13.3 15.1 15.5 16.4 15.5 18.6Z" fill="currentColor"/><path d="M9.9 9C11.1 9.9 11.7 10.5 12 11C12.5 10.3 14.2 9 15.4 6.9C13.7 8 11.7 8.7 9.9 9Z" fill="currentColor"/></svg>';
+  const sxCellHtml = t => [...t].map(ch => /\d/.test(ch) ? `<span class="sx-dg">${ch}</span>` : ch === ':' ? '<span class="sx-cl">:</span>' : ch).join('');
+  function sxCells(el, t) { if (el && el.dataset.t !== t) { el.dataset.t = t; el.innerHTML = sxCellHtml(t); } }   // меняется только при смене значения
+  function setsCards() {
+    if (!sxReady) return;
+    const on = !!data.setTimer;
+    if (document.body.classList.contains('sx-on') !== on) document.body.classList.toggle('sx-on', on);
+    const red = !!data.curseActiveToday;
+    if (document.body.classList.contains('sx-red') !== red) document.body.classList.toggle('sx-red', red);
+    const C = 2 * Math.PI * 16;
+    SX_IDS.forEach(id => {
+      const it = sxItem(id); if (!it) return;
+      let b = it.querySelector('.sx-btn'), sm = it.querySelector('.sx-sum');
+      if (!on) { if (b) b.remove(); if (sm) sm.remove(); return; }
+      if (!b) {
+        b = document.createElement('button'); b.className = 'sx-btn'; b.type = 'button'; b.setAttribute('aria-label', 'Таймер упражнения');
+        b.innerHTML = SX_ICON + `<span class="tm"></span><svg class="rg" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="${C}" stroke-dashoffset="${C}" opacity=".9"/></svg>`;
+        b.onclick = () => sxOpenView(id); it.appendChild(b);
+      }
+      if (!sm) { sm = document.createElement('span'); sm.className = 'sx-sum'; it.querySelector('.quest-name').after(sm); }
+      const s = sxRun(id), live = sxActive(s);
+      const show = sxAvail() ? '' : 'none'; if (b.style.display !== show) b.style.display = show;
+      const dis = sxDone(id) && !live; if (b.disabled !== dis) b.disabled = dis;
+      if (b.classList.contains('live') !== live) b.classList.toggle('live', live);
+      if (live) {
+        const n = sxLen(s), fr = isFinite(n) ? Math.min(1, Math.max(0, (sxVt(s) - s.t0) / n)) : 0;
+        sxCells(b.querySelector('.tm'), s.p ? 'II' : sxMmss(isFinite(n) ? n - (sxVt(s) - s.t0) : 0));
+        const off = String(Math.round(C * (1 - fr) * 10) / 10), c = b.querySelector('.rg circle'); if (c.getAttribute('stroke-dashoffset') !== off) c.setAttribute('stroke-dashoffset', off);
+      }
+      const L = s && s.m === 'sets' ? s.sets.filter((v, i) => v > 0 || i < s.sets.length - 1) : [];
+      const h = L.length && show === '' ? 'Подходы: ' + L.map(v => `<b>${v}</b>`).join(' · ') : '';
+      if (sm.dataset.h !== h) { sm.dataset.h = h; sm.innerHTML = h; sm.style.display = h ? '' : 'none'; }
+    });
+  }
+  // ---------- слой ----------
+  const sxL = () => document.getElementById('sxLayer');
+  function sxEnsureDom() {
+    if (document.getElementById('sxLayer')) return;
+    const l = document.createElement('div'); l.id = 'sxLayer'; l.innerHTML = '<div id="sxBg"><div class="band"></div></div><div class="sx-in"></div>'; document.body.appendChild(l);
+    const p = document.createElement('div'); p.id = 'sxPocket'; document.body.appendChild(p);
+  }
+  function sxOpenView(id) {
+    if (!sxAvail()) return;
+    const s = sxRun(id);
+    if (sxDone(id) && !sxActive(s)) return;
+    sxEnsureDom(); sxView = id; sxL().classList.add('on'); sxBuild(); sxDraw(); sxLoop();
+  }
+  function sxCloseView() { sxView = null; const l = sxL(); if (l) l.classList.remove('on'); if (!sxPocketOn) cancelAnimationFrame(sxRaf); }
+  const sxPt = (a, r) => [(50 + r * Math.sin(a * Math.PI / 180)).toFixed(2), (50 - r * Math.cos(a * Math.PI / 180)).toFixed(2)];
+  const SX_TICKS = (() => { let t = '<svg viewBox="0 0 100 100"><g class="tk">'; for (let i = 0; i < 60; i++) { const m = i % 5 === 0, [x1, y1] = sxPt(i * 6, m ? 40.2 : 41.2), [x2, y2] = sxPt(i * 6, 42.6); t += `<line${m ? ' class="m"' : ''} x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`; } return t + '</g></svg>'; })();
+  const sxArc = (a0, a1, r, c) => { if (a1 - a0 < .3) return ''; const [x0, y0] = sxPt(a0, r), [x1, y1] = sxPt(a1, r); return `<path class="${c}" d="M${x0},${y0} A${r},${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1},${y1}"/>`; };
+  function sxSegs(id, s) {   // внешняя шкала: подходы — метки (сделанные и текущий); бег — шаги к норме дня
+    const R = 49, g = 2;
+    if (!s || s.ph === 'setup') return '';
+    if (s.m === 'run') {
+      const a = Math.min(1, (data.completed[id] || 0) / sxTarget(id)) * 360;
+      return (a > 0 ? sxArc(g / 2, Math.max(g / 2 + .4, a - g / 2), R, 'd') : '') + (a < 360 ? sxArc(a + g / 2, 360 - g / 2, R, 'e') : '');
+    }
+    const L = s.sets.slice(s.base), w = s.ph === 'work' ? 1 : 0, n = Math.max(1, L.length + 1 - w); let h = '';
+    for (let i = 0; i < n; i++) h += sxArc(i * 360 / n + g, (i + 1) * 360 / n - g, R, i < L.length - w ? 'd' : 'c');
+    return h;
+  }
+  function sxPhName(s) {
+    if (s.p) return 'Пауза';
+    if (s.m === 'sets' && sxInPrep(s)) return 'Подготовка';
+    return ({ prep: 'Подготовка', work: 'Подход ' + s.n, rest: 'Отдых', run: 'Бег', over: 'Завершение', stop: 'Бег окончен' })[s.ph] || '';
+  }
+  function sxSetupState(id) { const p = sxPref(id), s = sxRun(id); return { m: id === 'steps' ? 'run' : 'sets', ph: 'setup', work: p.work, rest: p.rest, lim: p.lim, prev: s }; }
+  let sxDraft = null;   // выбор перед стартом (в памяти, до «Начать»)
+  function sxBuild() {
+    const id = sxView, box = sxL().querySelector('.sx-in'), cur = sxRun(id), run = id === 'steps';
+    const setup = !sxActive(cur) && !(run && cur && cur.ph === 'stop' && !cur.fin);
+    if (setup) sxDraft = sxSetupState(id); else sxDraft = null;
+    const d = sxDraft;
+    const chips = (k, list, f) => `<div class="chips">${list.map(v => `<button type="button" data-k="${k}" data-v="${v}" class="${d[k] === v ? 'on' : ''}">${f(v)}</button>`).join('')}</div>`;
+    const tint = '<span class="counter" id="sxP"></span><span class="target" id="sxPT"></span>';
+    const vals = [...sxItem(id).querySelectorAll('.add')].map(b => parseInt(b.dataset.value));
+    box.innerHTML = `<div class="tab">${SX_NM[id]}</div><div class="prog">${tint}</div>` + (setup
+      ? `<div class="setup">${run
+          ? `<div><div class="lbl">Время бега:</div>${chips('lim', SX_LIM, v => v + ' мин')}</div>`
+          : `<div><div class="lbl">Подход:</div>${chips('work', SX_WORK, v => v + ' с')}</div><div><div class="lbl">Отдых между подходами:</div>${chips('rest', SX_REST, sxMmss)}</div>`}
+          <div class="lbl" style="margin:0">${run ? 'Перед бегом — подготовка 10 с. Шаги можно вносить во время бега и после.' : 'Перед первым подходом — подготовка 10 с. Повторения вносятся во время отдыха после подхода.'}</div>
+          <button type="button" class="main" id="sxStart">${run ? 'Начать бег' : 'Начать подходы'}</button></div>
+        <div class="ctl one"><button type="button" id="sxMin">Закрыть</button></div>`
+      : `<div class="ring" id="sxRing"><div class="bgl"></div>${SX_TICKS}<svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="45"/><circle class="pr" id="sxArc" cx="50" cy="50" r="45" pathLength="1000" stroke-dasharray="1000" stroke-dashoffset="1000"/><g class="sg" id="sxSeg"></g></svg>
+          <div class="rot" id="sxRot"><div class="glo"></div><div class="com"></div><div class="spk"><b></b><i></i></div></div><div class="fl" id="sxFl"></div>
+          <div class="ctr"><div class="ph" id="sxPh"></div><div class="tt" id="sxT"></div><div class="sub" id="sxSub"></div></div></div>
+        <div class="inp"><div class="cur" id="sxCur"></div><div class="bt">${vals.map(v => `<button type="button" data-add="${v}">+${v}</button>`).join('')}</div></div>
+        ${run ? '<button type="button" class="main" id="sxAgain" disabled>Бежать ещё</button>' : '<button type="button" class="main" id="sxGo"></button>'}
+        <div class="list" id="sxList"></div>
+        <div class="ctl${run ? ' run' : ''}"><button type="button" id="sxPause"></button>${run ? '<button type="button" id="sxPk">Карманный режим</button>' : ''}<button type="button" id="sxMin">Свернуть</button><button type="button" class="end" id="sxEnd">${run ? 'Закончить бег' : 'Закончить подходы'}</button></div>`);
+    const g = i => box.querySelector('#' + i);
+    sxLastPh = '';
+    box.querySelectorAll('.chips button').forEach(b => b.onclick = () => { const k = b.dataset.k, v = parseInt(b.dataset.v); d[k] = v; sxSetPref(id, k, v); saveData(); box.querySelectorAll(`.chips button[data-k="${k}"]`).forEach(x => x.classList.toggle('on', parseInt(x.dataset.v) === v)); });
+    if (g('sxStart')) g('sxStart').onclick = () => sxStart(id);
+    box.querySelectorAll('[data-add]').forEach(b => b.onclick = () => sxAdd(id, parseInt(b.dataset.add)));
+    if (g('sxGo')) g('sxGo').onclick = () => { const s = sxRun(id); if (!sxGoOk(s)) return; s.cut = sxVt(s) - s.t0 + 10; saveData(); sxDraw(); };   // остаются 10 с подготовки (часть отдыха, ввод открыт)
+    if (g('sxAgain')) g('sxAgain').onclick = () => { const s = sxRun(id); if (!s || s.ph !== 'stop') return; s.fin = true; saveData(); sxBuild(); sxDraw(); setsCards(); };   // к выбору (прежнее время выбрано)
+    if (g('sxPause')) g('sxPause').onclick = () => { const s = sxRun(id); if (!sxActive(s) || s.ph === 'stop') return; sxRebase(s); s.p = !s.p; s.rB = sxNow(); saveData(); sxDraw(); setsCards(); };
+    if (g('sxPk')) g('sxPk').onclick = () => sxPocket(true);
+    g('sxMin').onclick = () => { sxCloseView(); setsCards(); };
+    if (g('sxEnd')) g('sxEnd').onclick = () => showConfirm(run ? 'Закончить бег? Внесённые шаги сохранятся.' : 'Закончить подходы? Внесённые повторения сохранятся.', () => { setsStop(id); saveData(); setsCards(); });
+    const ls = g('sxList'); if (ls) ls.addEventListener('scroll', () => sxListFade(ls), { passive: true });
+  }
+  function sxStart(id) {
+    const d = sxDraft; if (!d || !sxAvail() || sxDone(id)) return;
+    const prev = sxRun(id), sets = prev && prev.m === 'sets' ? prev.sets.slice() : [];
+    if (!data.setRun || typeof data.setRun !== 'object') data.setRun = {};
+    data.setRun[id] = { m: d.m, ph: 'prep', t0: 0, vB: 0, rB: sxNow(), p: false, cut: 0, n: sets.length, base: sets.length, sets, ran: 0, work: d.work, rest: d.rest, lim: d.lim, fin: false };
+    sxSig('short'); sxWake(true); saveData(); sxBuild(); sxDraw(); setsCards();
+  }
+  function sxAdd(id, v) {   // ввод из слоя — нажатие той же кнопки «+» карточки
+    const s = sxRun(id); if (!sxInputOpen(s)) return;
+    const b = sxItem(id).querySelector(`.add[data-value="${v}"]`); if (!b || b.disabled) return;
+    b.click();
+  }
+  function sxListFade(ls) { const mx = ls.scrollWidth - ls.clientWidth; ls.classList.toggle('fl', ls.scrollLeft > 1); ls.classList.toggle('fr', mx > 1 && ls.scrollLeft < mx - 1); }
+  const SX_TINTS = ['cursed', 'scroll-tinted', 'cursed-scroll', 'limit-break', 'limit-scroll'];
+  function sxPhaseFx() {   // смена фазы — вспышка кольца и короткий сбой надписи (только transform / opacity)
+    const fl = sxL().querySelector('#sxFl'), ph = sxL().querySelector('#sxPh');
+    if (fl && fl.animate) fl.animate([{ opacity: 0 }, { opacity: .9, offset: .2 }, { opacity: 0 }], { duration: 900, easing: 'ease-out' });
+    if (ph && ph.animate) ph.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateX(-3px)', opacity: .4, offset: .2 }, { transform: 'translateX(3px)', opacity: 1, offset: .4 }, { transform: 'translateX(-1px)', opacity: .6, offset: .6 }, { transform: 'none', opacity: 1 }], { duration: 420 });
+  }
+  function sxDraw() {
+    const id = sxView, l = sxL(); if (!id || !l || !l.classList.contains('on')) return;
+    const P = l.querySelector('#sxP'), PT = l.querySelector('#sxPT'), cc = sxItem(id).querySelector('.counter');
+    const cv = String(data.completed[id] || 0); if (P.textContent !== cv) P.textContent = cv;
+    const tv = ' / ' + sxTarget(id); if (PT.textContent !== tv) PT.textContent = tv;
+    SX_TINTS.forEach(c => { const has = !!(cc && cc.classList.contains(c)); if (P.classList.contains(c) !== has) P.classList.toggle(c, has); if (PT.classList.contains(c) !== has) PT.classList.toggle(c, has); });   // цвет — как у числа на карточке
+    const s = sxRun(id); if (!s || !l.querySelector('#sxRing')) return;
+    const T = sxVt(s) - s.t0, n = sxLen(s), fin = isFinite(n);
+    const shown = s.m === 'run' ? (s.ph === 'prep' ? n - T : s.ph === 'run' ? T : s.ph === 'over' ? s.lim * 60 + T : s.lim * 60 + 600) : (fin ? n - T : 0);
+    sxCells(l.querySelector('#sxT'), sxMmss(shown));
+    const ph = sxPhName(s); if (l.querySelector('#sxPh').textContent !== ph) l.querySelector('#sxPh').textContent = ph;
+    const sub = s.m === 'run' ? (s.ph === 'run' ? 'Время бега — ' + s.lim + ' мин' : s.ph === 'over' || s.ph === 'stop' ? 'Внесите шаги' : '') : (sxInPrep(s) ? 'Подход ' + (s.n + 1) + ' через' : s.ph === 'rest' ? 'Подготовка — за 10 с до подхода' : '');
+    if (l.querySelector('#sxSub').textContent !== sub) l.querySelector('#sxSub').textContent = sub;
+    const io = sxInputOpen(s);
+    const hot = !!(data.paceControl && data.paceWindow && Array.isArray(data.paceWindow.hot) && data.paceWindow.hot.includes(id));
+    l.querySelectorAll('[data-add]').forEach(b => { if (b.disabled !== !io) b.disabled = !io; const h = hot && io; if (b.classList.contains('pace-hot') !== h) b.classList.toggle('pace-hot', h); });
+    const curH = s.m === 'run' ? `Шаги за пробежку: <b>${s.ran}</b>` : (s.sets.length > s.base ? `Подход ${s.sets.length}: <b>${s.sets[s.sets.length - 1]}</b>` : `Подход ${s.base + 1}: <b>—</b>`);
+    const cu = l.querySelector('#sxCur'); if (cu.dataset.h !== curH) { cu.dataset.h = curH; cu.innerHTML = curH; }
+    const go = l.querySelector('#sxGo'); if (go) { const t = 'Начать подход ' + (s.n + 1); if (go.textContent !== t) go.textContent = t; const dd = !sxGoOk(s); if (go.disabled !== dd) go.disabled = dd; }
+    const ag = l.querySelector('#sxAgain'); if (ag) { const dd = s.ph !== 'stop'; if (ag.disabled !== dd) ag.disabled = dd; }
+    const pb = l.querySelector('#sxPause'), pt = s.p ? 'Продолжить' : 'Пауза'; if (pb.textContent !== pt) pb.textContent = pt; const pd = s.ph === 'stop'; if (pb.disabled !== pd) pb.disabled = pd;
+    const L2 = s.m === 'sets' ? s.sets : [], lsH = L2.length ? L2.map((v, i) => `${i + 1} — <b>${v}</b>`).join(' · ') : '', ls = l.querySelector('#sxList');
+    if (ls.dataset.h !== lsH) { const grew = (ls.dataset.n | 0) !== L2.length; ls.dataset.h = lsH; ls.dataset.n = L2.length; ls.innerHTML = `<span class="li">${lsH}</span>`; if (grew) ls.scrollLeft = ls.scrollWidth; sxListFade(ls); }
+    const fr = fin ? Math.min(1, Math.max(0, T / n)) : 1, ring = l.querySelector('#sxRing');
+    const pk = s.p ? 'pause' : (s.ph === 'over' || s.ph === 'stop') ? 'over' : sxInPrep(s) ? 'prep' : s.ph === 'rest' ? 'rest' : 'work', rc = 'ring ph-' + pk;
+    if (ring.className !== rc) ring.className = rc;
+    l.querySelector('#sxArc').style.strokeDashoffset = 1000 * (1 - fr);
+    l.querySelector('#sxRot').style.transform = `rotate(${fr * 360}deg)`;
+    const key = s.ph + s.n + (s.p ? 'p' : '') + (sxInPrep(s) ? 'g' : '');
+    if (key !== sxLastPh) { if (sxLastPh) sxPhaseFx(); sxLastPh = key; }
+    const sg = sxSegs(id, s), sge = l.querySelector('#sxSeg'); if (sge.dataset.h !== sg) { sge.dataset.h = sg; sge.innerHTML = sg; }
+    if (sxPocketOn) sxPocketDraw(s);
+  }
+  function sxLoop() {
+    if (typeof requestAnimationFrame !== 'function') return;
+    cancelAnimationFrame(sxRaf);
+    const f = () => { if (!sxView && !sxPocketOn) return; sxDraw(); sxRaf = requestAnimationFrame(f); };
+    sxRaf = requestAnimationFrame(f);
+  }
+  // ---------- карманный режим (только бег, только кнопкой) ----------
+  function sxPocket(on) {
+    sxEnsureDom();
+    const P = document.getElementById('sxPocket'); sxPocketOn = on; P.classList.toggle('on', on);
+    if (!on) { P.innerHTML = ''; sxLoop(); return; }
+    P.innerHTML = `<div class="ph" id="sxQPh"></div><span class="xt" id="sxQT"></span><div class="hint">Карманный режим. Касания не действуют. Удерживайте кнопку 2 секунды, чтобы выйти.</div>
+      <div class="hold"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#1c2633" stroke-width="5"/><circle class="hp" cx="50" cy="50" r="44" fill="none" stroke="var(--sx)" stroke-width="5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg><div class="lk">🔒</div></div>`;
+    const h = P.querySelector('.hold'), hp = P.querySelector('.hp'); let t0 = 0, r2 = 0;
+    const stop = () => { cancelAnimationFrame(r2); t0 = 0; hp.style.strokeDashoffset = 1; };
+    const lp = () => { const k = (performance.now() - t0) / 2000; if (k >= 1) { stop(); sxPocket(false); return; } hp.style.strokeDashoffset = 1 - k; r2 = requestAnimationFrame(lp); };
+    h.addEventListener('pointerdown', e => { e.preventDefault(); t0 = performance.now(); lp(); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => h.addEventListener(k, stop));
+    sxLoop();
+  }
+  function sxPocketDraw(s) {
+    const P = document.getElementById('sxPocket'); P.classList.toggle('over', s.ph === 'over' || s.ph === 'stop');
+    const nm = SX_NM[sxView || 'steps'], ph = sxPhName(s), t = ph.toUpperCase() === nm.toUpperCase() ? nm : nm + ' · ' + ph;   // «Бег», а не «Бег · Бег»
+    const q = P.querySelector('#sxQPh'); if (q && q.textContent !== t) q.textContent = t;
+    sxCells(P.querySelector('#sxQT'), sxL().querySelector('#sxT').dataset.t || '');
+  }
+  function setsStageView() { return !!sxView || sxPocketOn; }   // шкала усталости — поверх слоя, как на этапе испытания
+  // ---------- тик ----------
+  function setsTick() {
+    if (!sxReady || !data.setRun) return;
+    let save = false;
+    SX_IDS.forEach(id => {
+      const s = sxRun(id); if (!s || s.fin) return;
+      if (sxActive(s) && sxAvail()) { if (sxStep(s)) save = true; sxCountdown(s); }
+      if (sxDone(id)) { sxFinish(id); save = false; }   // норма набрана (в том числе после «Бег окончен») — отсчёт прекращается
+    });
+    if (save) saveData();
+    if (data.setTimer) setsCards();
+  }
+  function toggleSetTimer() {
+    data.setTimer = !data.setTimer;
+    if (!data.setTimer) setsStopAll(false);
+    saveData(); render(); renderBackupModal();
+  }
+  sxReady = true;
+  setsTick();   // догнать отсчёт, шедший при закрытой Системе (без звуков), и нарисовать кнопки
+  setInterval(setsTick, 100);
+
   // ===== v7.4.0: ШКАЛА УСТАЛОСТИ (демо 107.5) =====
   // Подход — засчитанные нажатия «+» по одному упражнению с паузой не больше 30 с (отказ контроля темпа не считается).
   // Усталость подхода — 25·x·(1 + 1,5·y²): x — доля нормы уровня (только со снижением Выносливостью), y = (x − c)/(1 − c),
@@ -6502,6 +6955,7 @@
         data.earlySaveNoticeShown = true;
         setTimeout(() => showNotice('Система рекомендует сохранить прогресс в Архиве. Регулярное сохранение убережёт от случайной потери данных.', 'danger', false, 'saveReminder'), 5500);
       }
+      setsStopAll(true);   // v7.7.0: новый цикл — отсчёты и подходы дня обнуляются (выбор времени остаётся)
       if (dayStatus !== 'frozen') {
         data.completed = {};
         data.paceWindow = emptyPaceWindow();   // v6.8.0: новый цикл — новое окно темпа
@@ -7573,6 +8027,7 @@
                   showExerciseChoice(zeroIds, (chosenId) => {
                       data.activeScroll = 'transfer';
                       data.transferExerciseId = chosenId;
+                      setsStop(chosenId);   // v7.7.0: снятое упражнение — его отсчёт останавливается
                       data.transferStreakDays = (data.transferStreakDays || 0) + 1;
                       data.consumables[id]--;
                       if (data.consumables[id] <= 0) delete data.consumables[id];
@@ -8361,6 +8816,9 @@
   }
 
   function render() {
+    try { renderMain(); } finally { setsCards(); if (sxReady && sxView) sxDraw(); }   // v7.7.0: кнопки таймера — после каждой отрисовки
+  }
+  function renderMain() {
     try {
       renderInner();
     } catch (e) {
@@ -8456,6 +8914,7 @@
       if (data.curseActiveToday) setTimeout(() => questGlitch(item, 360), 0);   // v6.9.0: сбой при засчитанном нажатии — после перерисовки (она переписывает число)
       tnAdd(id, val, current, target);   // v7.6.0: ТН — до изменения счётчика (компенсация Выносливости в пределах цели)
       data.completed[id] = current + val;
+      setsCount(id, val);   // v7.7.0: в текущий подход / пробежку таймера
       totalStats[id] += val;
       const progDayKey = dateKeyFromTimestamp(data.lastReset);
       if (!data.dailyExerciseLog[progDayKey]) data.dailyExerciseLog[progDayKey] = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
@@ -9108,6 +9567,7 @@
       fatigueOn: typeof s.fatigueOn === 'boolean' ? s.fatigueOn : true,   // v7.4.0: переключатель — из копии,
       fatigue: emptyFatigue(),                                            // усталость — с нуля
       fzPopup: typeof s.fzPopup === 'boolean' ? s.fzPopup : true,         // v7.4.1: из копии
+      setTimer: typeof s.setTimer === 'boolean' ? s.setTimer : false, setPrefs: sanitizeSetPrefs(s.setPrefs), setRun: {},   // v7.7.0: отсчёты из копии не переносятся
       consumables: cleanConsumables,
       insurance: !!s.insurance,
       activeTitle: cleanActiveTitle,
@@ -9329,6 +9789,10 @@
             <span>Всплывающая шкала усталости: ${data.fzPopup ? 'включена' : 'выключена'}.</span>
             <div class="sound-checkbox-zone" onclick="toggleFzPopup()"><div class="sound-checkbox ${data.fzPopup ? 'on' : ''}">✓</div></div>
           </div>` : ''}
+          <div class="backup-summary" id="setTimerRow" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px;">
+            <span>Кнопка таймера упражнений: ${data.setTimer ? 'включена' : 'выключена'}.</span>
+            <div class="sound-checkbox-zone" onclick="toggleSetTimer()"><div class="sound-checkbox ${data.setTimer ? 'on' : ''}">✓</div></div>
+          </div>
           <div class="backup-summary theme-row">
             <span>Оформление</span>
             <div class="theme-seg"><button class="${isSysTheme() ? 'on' : ''}" onclick="switchThemeFx('system')" ${examStageOn() ? 'disabled' : ''}>Система</button><button class="${isSysTheme() ? '' : 'on'}" onclick="switchThemeFx('classic')" ${examStageOn() ? 'disabled' : ''}>Классика</button></div>
@@ -9568,6 +10032,7 @@
     showConfirm('Активировать «Преодоление предела»? Награды в кредитах будут удвоены.', () => {
         data.limitBreaksToday++;
         data.examCredited = false;   // v7.6.1: дальше — обычный раунд Предела
+        setsStopAll(true);   // v7.7.0: раунд Предела — подходы заново (как счётчики)
         data.isGoalMet = true; data.completed = {}; data.paceWindow = emptyPaceWindow(); 
         data.limitBreakRoundPending = true;
         // v6.6.8: без перезагрузки страницы — перерисовка на месте. Раньше здесь была
@@ -9911,6 +10376,7 @@
   }
 
   function resetDailyProgressAction() {
+    setsStopAll(true);   // v7.7.0
     data.completed = {};
     data.paceWindow = emptyPaceWindow();
     data.isGoalMet = false;
@@ -10110,7 +10576,7 @@
 
   // ---------- состояние и время ----------
   function examOn() { return !!(data.exam && data.exam.st === 'running'); }
-  function examStageView() { const L = document.getElementById('exLayer'); return examOn() && (exPocketOn || !!(L && L.classList.contains('on'))); }   // v7.6.3
+  function examStageView() { const L = document.getElementById('exLayer'); return (examOn() && (exPocketOn || !!(L && L.classList.contains('on')))) || setsStageView(); }   // v7.7.0: и слой таймера упражнений   // v7.6.3
   function examStageOn() { return examOn() && !!data.exam.act; }
   function examNow() { const e = data.exam; if (!e || e.st !== 'running') return 0; return e.vt + Math.max(0, Date.now() - e.vAt) / 1000 * (e.sp || 1); }
   function examSetSpeed(sp) { const e = data.exam; if (!e || e.st !== 'running') return; e.vt = examNow(); e.vAt = Date.now(); e.sp = sp; saveData(); }
@@ -10317,13 +10783,14 @@
 
   // ---------- экран испытания ----------
   function examStart() {
+    setsStopAll(false);   // v7.7.0: на экране испытания таймера упражнений нет
     const e = data.exam; if (!e || e.st !== 'accepted') return;
     if (Date.now() >= e.dl) { examHideWin(3); examFail('late'); return; }
     examHideWin(3); examIconShow(false);
     e.st = 'running'; e.vt = 0; e.vAt = Date.now(); e.sp = 1; e.act = null; e.S = {};
     e.rest = EX_REST(e.adm); e.fin = EX_FIN; e.tot = EX_TOTAL;   // v7.6.4: отдых по высшему рангу допуска, запоминается на всё испытание
     EX_IDS.forEach(id => { e.S[id] = { st: 'idle', t0: 0, vals: [null, null, null, null], steps: 0, re: 1, auto: false }; });
-    saveData();
+    saveData(); setsCards();   // v7.7.0: кнопки таймера упражнений скрываются сразу
     examGlitch(() => examEnterUI());
   }
   function examEnterUI() {

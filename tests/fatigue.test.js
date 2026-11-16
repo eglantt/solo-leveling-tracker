@@ -230,7 +230,7 @@ const ARCH = w => { E(w, "backupModalStep = 'main'; renderBackupModal()");
 const BAR = w => E(w, "document.getElementById('fzBar').classList.contains('on')");
 { const w = fresh();
   const r = ARCH(w);
-  check('P1 Архив: строка после «Уведомлений», перед «Оформлением», включена', JSON.stringify(r) === JSON.stringify(['Звуковые сигналы Системы: включены.', 'Уведомления Системы: включены.', 'Всплывающая шкала усталости: включена.', 'Оформление']) || (r[2] === 'Всплывающая шкала усталости: включена.' && r[3] === 'Оформление'), r.join(' | '));
+  check('P1 Архив: строка после «Уведомлений», перед «Оформлением», включена', JSON.stringify(r) === JSON.stringify(['Звуковые сигналы Системы: включены.', 'Уведомления Системы: включены.', 'Всплывающая шкала усталости: включена.', 'Кнопка таймера упражнений: выключена.', 'Оформление']) || (r[2] === 'Всплывающая шкала усталости: включена.' && r[3] === 'Кнопка таймера упражнений: выключена.' && r[4] === 'Оформление'), r.join(' | '));
   check('P2 галочка в стиле звука, отмечена', E(w, "!!document.querySelector('#fzPopupRow .sound-checkbox-zone .sound-checkbox.on')"));
   E(w, 'toggleFzPopup()');
   check('P3 выключение: текст, поле, сохранено', ARCH(w)[2] === 'Всплывающая шкала усталости: выключена.' && E(w, 'data.fzPopup') === false && E(w, "JSON.parse(localStorage.getItem(STORAGE_KEY)).fzPopup") === false && E(w, "!document.querySelector('#fzPopupRow .sound-checkbox.on')"));
@@ -249,7 +249,7 @@ const BAR = w => E(w, "document.getElementById('fzBar').classList.contains('on')
   check('P10 выключение при видимой шкале — уходит (класс снят, переход 1 с)', !BAR(w) && /1s/.test(E(w, "getComputedStyle(document.getElementById('fzBar')).transition") || '1s'));
   E(w, 'data.fatigueOn = false; data.fatigue = emptyFatigue()');
   const r2 = ARCH(w);
-  check('P11 механика выключена в Длани — строки нет', !r2.some(t => /Всплывающая/.test(t)) && r2[2] === 'Оформление', r2.join(' | ')); }
+  check('P11 механика выключена в Длани — строки нет', !r2.some(t => /Всплывающая/.test(t)) && r2[2] === 'Кнопка таймера упражнений: выключена.' && r2[3] === 'Оформление', r2.join(' | ')); }
 { const w0 = boot(); const old = JSON.parse(SEED); delete old.fzPopup; w0.close();
   const w = boot(JSON.stringify(old));
   check('P12 старое сохранение: включена', E(w, 'data.fzPopup') === true);
