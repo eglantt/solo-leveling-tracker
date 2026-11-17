@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.7.2 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.7.3 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2563,7 +2563,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.7.2';
+  const APP_VERSION = '7.7.3';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -3028,7 +3028,7 @@
     ['pushups', 'squats', 'pullups', 'press', 'steps'].forEach(id => {
       const p = v[id]; if (!p || typeof p !== 'object') return;
       const o = {};
-      if ([30, 40].includes(p.work)) o.work = p.work;
+      if ([20, 30, 40, 50, 60].includes(p.work)) o.work = p.work;
       if ([180, 210, 240, 270, 300].includes(p.rest)) o.rest = p.rest;
       if ([10, 20, 30, 40, 60].includes(p.lim)) o.lim = p.lim;
       if (Object.keys(o).length) out[id] = o;
@@ -3046,7 +3046,7 @@
       const sets = Array.isArray(r.sets) ? r.sets.filter(x => Number.isInteger(x) && x >= 0 && x < 100000).slice(0, 200) : [];
       out[id] = { m, ph: r.ph, t0: r.t0, vB: r.vB, rB: r.rB, p: !!r.p, cut: num(r.cut) && r.cut >= 0 ? r.cut : 0,
         n: Number.isInteger(r.n) && r.n >= 0 ? r.n : sets.length, base: Number.isInteger(r.base) && r.base >= 0 && r.base <= sets.length ? r.base : 0, sets,
-        ran: Number.isInteger(r.ran) && r.ran >= 0 ? r.ran : 0, work: [30, 40].includes(r.work) ? r.work : 40, rest: [180, 210, 240, 270, 300].includes(r.rest) ? r.rest : 240,
+        ran: Number.isInteger(r.ran) && r.ran >= 0 ? r.ran : 0, work: [20, 30, 40, 50, 60].includes(r.work) ? r.work : 40, rest: [180, 210, 240, 270, 300].includes(r.rest) ? r.rest : 240,
         lim: [10, 20, 30, 40, 60].includes(r.lim) ? r.lim : 30, fin: !!r.fin };
     });
     return out;
@@ -5112,7 +5112,7 @@
   // Признак «идёт отсчёт» — строго true/false (classList.toggle с пустым вторым аргументом переключает класс — мигание 122b–122c).
   var SX_IDS = ['pushups', 'squats', 'pullups', 'press', 'steps'];   // var: отрисовка при загрузке может случиться раньше этого места (до sxReady — ничего не делается)
   var SX_NM = { pushups: 'ОТЖИМАНИЯ', squats: 'ПРИСЕДАНИЯ', pullups: 'ПОДТЯГИВАНИЯ', press: 'ПРЕСС', steps: 'БЕГ' };
-  var SX_WORK = [30, 40], SX_REST = [180, 210, 240, 270, 300], SX_LIM = [10, 20, 30, 40, 60];
+  var SX_WORK = [20, 30, 40, 50, 60], SX_REST = [180, 210, 240, 270, 300], SX_LIM = [10, 20, 30, 40, 60];
   var sxReady = false, sxView = null, sxPocketOn = false, sxRaf = 0, sxWakeLock = null, sxLastPh = '';
   const sxNow = () => Date.now();
   function sxPref(id) {

@@ -70,7 +70,7 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
     E(w, "document.getElementById('sxStart').click()");
     const r0 = lay(w), s0 = J(w, RUN('pushups'));
     check('SX2 выбор: тексты, по умолчанию 40 с и 4:00; выбор сохраняется (30 с, 3:00); старт — подготовка 10 с, ввод закрыт, «Подход 1: —»',
-      setup === 'Подход:30 с40 сОтдых между подходами:3:003:304:004:305:00 Перед первым подходом — подготовка 10 с. Повторения вносятся во время отдыха после подхода. Начать подходы'
+      setup === 'Подход:20 с30 с40 с50 с60 сОтдых между подходами:3:003:304:004:305:00 Перед первым подходом — подготовка 10 с. Повторения вносятся во время отдыха после подхода. Начать подходы'
       && defs.join() === '40 с,4:00' && prefs.work === 30 && prefs.rest === 180 && s0.ph === 'prep' && s0.work === 30 && s0.rest === 180 && r0.ph === 'Подготовка' && r0.sub === 'Подход 1 через' && r0.cur === 'Подход 1: —' && r0.inp.every(x => !x), JSON.stringify({ setup, defs, prefs, s0, r0 }));
     E(w, "document.querySelector('.quest-item[data-id=pushups] .add[data-value=\"1\"]').click()");
     const pre = J(w, `({ c: data.completed.pushups, sets: ${RUN('pushups')}.sets })`);
@@ -263,6 +263,32 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
       !idle19.on && idle19.ex && added.on && added.ex && popSet && !after4.on && high.on && !pk19.on && pkPop.on && pkPop.ex && !main19.on && !main19.ex && mainPop.on && !mainPop.ex,
       JSON.stringify({ idle19, added, popSet, after4, high, pk19, pkPop, main19, mainPop }));
     w.close();
+  }
+
+  // v7.7.3: длительность подхода 20 / 30 / 40 / 50 / 60 с
+  {
+    const R = {};
+    for (const wv of [20, 60]) {
+      const w = await mk('data.setTimer = true;');
+      E(w, "document.querySelector('.quest-item[data-id=squats] .sx-btn').click()");
+      R['chips' + wv] = J(w, "[...document.querySelectorAll('#sxLayer [data-k=work]')].map(b => b.dataset.v).join()");
+      E(w, `document.querySelector('[data-k=work][data-v="${wv}"]').click(); document.getElementById('sxStart').click()`);
+      E(w, "(() => { const s = data.setRun.squats; s.vB = 12; s.rB = Date.now(); setsTick(); sxDraw(); saveData(); })()");
+      R['ph' + wv] = J(w, "({ ph: data.setRun.squats.ph, tt: document.getElementById('sxT').dataset.t })");
+      const seed = w.localStorage.getItem('sl_daily_v5_5_0'); w.close();
+      const w2 = boot(seed); await sleep(300);
+      R['reload' + wv] = J(w2, "({ work: data.setRun.squats && data.setRun.squats.work, ph: data.setRun.squats && data.setRun.squats.ph, pref: data.setPrefs.squats.work })");
+      E(w2, `(() => { const s = data.setRun.squats; s.vB = 10 + ${wv} + 1; s.rB = Date.now(); setsTick(); })()`);
+      R['rest' + wv] = E(w2, "data.setRun.squats.ph");
+      w2.close();
+    }
+    const w = await mk("data.setTimer = true; data.setPrefs = { pushups: { work: 50 }, press: { work: 20 }, pullups: { work: 25 } }; saveData();");
+    R.imp = J(w, "(() => { const c = sanitizeImportedData(parseBackupText(buildSignedBackupCode())); return c.state.setPrefs; })()");
+    const seed = w.localStorage.getItem('sl_daily_v5_5_0'); w.close();
+    const w3 = boot(seed); await sleep(300); R.load = J(w3, "data.setPrefs"); w3.close();
+    check('SX27 v7.7.3: «Подход:» — 20 / 30 / 40 / 50 / 60 с; подход 20 и 60 с идёт своё время (10 с подготовки + подход → отдых) и после перезапуска не превращается в 40; выбор 50 / 20 с сохраняется и переносится в бэкап, 25 с — отбрасывается',
+      R.chips20 === '20,30,40,50,60' && R.ph20.ph === 'work' && R.ph20.tt === '0:18' && R.ph60.tt === '0:58' && R.reload20.work === 20 && R.reload20.pref === 20 && R.reload60.work === 60 && R.rest20 === 'rest' && R.rest60 === 'rest'
+      && R.imp.pushups.work === 50 && R.imp.press.work === 20 && !R.imp.pullups && R.load.pushups.work === 50 && !R.load.pullups, JSON.stringify(R));
   }
 
   console.log(`\nИтого: ${pass} OK, ${fail} FAIL`);
