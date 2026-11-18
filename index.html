@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.7.3 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.7.4 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1562,6 +1562,10 @@
     @keyframes xLineIn { 0% { transform: scaleY(.04); filter: brightness(2.4); opacity: 1; } 55% { transform: scaleY(1.04); } 100% { transform: none; filter: none; } }
     @keyframes xRiseIn { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: none; opacity: 1; } }
     @keyframes xPk { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+    /* v7.7.4: Длань «Перерождение» — строки галочек как «Ускоритель», пояснения — мельче и тусклее */
+    .sys-rb-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
+    .sys-rb-h { margin-top: 14px; }
+    .sys-rb-note { font-size: 0.86em; opacity: 0.72; margin-top: 4px; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -2355,6 +2359,21 @@
         <button id="resetBeadPauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.beadBlockUntil = null; saveData(); this.disabled = true; })">Сбросить паузу Костяной бусины</button>
         <button id="resetNamePauseBtn" class="reset-all" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, () => { data.nameNextAvailableAt = null; saveData(); this.disabled = true; })">Сбросить паузу смены имени</button>
       </div>
+      <!-- v7.7.4: Перерождение — уровень 1 и сброс всего, что меняется игрой; ID, имя и настройки — не трогаются -->
+      <div class="backup-section danger-zone" id="sysRebirth">
+        <div class="backup-section-title danger">Перерождение</div>
+        <div class="backup-summary sys-rb-note">Уровень 1, титулы, эффекты, штрафы, Кодекс, испытание ранга и дневное задание сбрасываются всегда.</div>
+        <div class="backup-summary sys-rb-h">Сбросить:</div>
+        <div class="backup-summary sys-rb-row"><span>Кредиты</span><div class="sound-checkbox-zone" onclick="sysRbToggle('credits')"><div class="sound-checkbox" id="sysRb_credits">✓</div></div></div>
+        <div class="backup-summary sys-rb-row"><span>Характеристики</span><div class="sound-checkbox-zone" onclick="sysRbToggle('stats')"><div class="sound-checkbox" id="sysRb_stats">✓</div></div></div>
+        <div class="backup-summary sys-rb-row"><span>Артефакты</span><div class="sound-checkbox-zone" onclick="sysRbToggle('artifacts')"><div class="sound-checkbox" id="sysRb_artifacts">✓</div></div></div>
+        <div class="backup-summary sys-rb-row"><span>Предметы</span><div class="sound-checkbox-zone" onclick="sysRbToggle('items')"><div class="sound-checkbox" id="sysRb_items">✓</div></div></div>
+        <div class="backup-summary sys-rb-row"><span>Прогресс</span><div class="sound-checkbox-zone" onclick="sysRbToggle('progress')"><div class="sound-checkbox" id="sysRb_progress">✓</div></div></div>
+        <div class="backup-summary sys-rb-row"><span>Ранг</span><div class="sound-checkbox-zone" onclick="sysRbToggle('rank')"><div class="sound-checkbox" id="sysRb_rank">✓</div></div></div>
+        <div class="backup-summary sys-rb-note">Ранг — подтверждённый ранг, его главы Кодекса, титул «Пробужденный» и накопленная нагрузка для испытания.</div>
+        <div class="backup-summary sys-rb-row"><span>Летопись</span><div class="sound-checkbox-zone" onclick="sysRbToggle('history')"><div class="sound-checkbox" id="sysRb_history">✓</div></div></div>
+        <button class="reset-all" style="margin-top:12px;" onclick="sysToolsFlashThenRun(this, sysRebirthAsk)">Начать путь заново</button>
+      </div>
     </div>
     <button class="close-status" onclick="closeSysTools()">ЗАКРЫТЬ</button>
   </div>
@@ -2563,7 +2582,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.7.3';
+  const APP_VERSION = '7.7.4';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -3938,11 +3957,12 @@
 
   // Unlocks a Codex chapter (personal order — never tied to a fixed table of contents,
   // so there are never gaps even though different players unlock chapters in different order).
+  var rbQuiet = false;   // v7.7.4: Перерождение — титулы и главы по сохранённому прогрессу возвращаются тихо
   function unlockCodexChapter(id) {
     if (data.codexUnlocked.includes(id)) return;
     data.codexUnlocked.push(id);
     const chapter = CODEX_CHAPTERS[id];
-    if (chapter) {
+    if (chapter && !rbQuiet) {
       playSound('titleCodex');
       fxNotice(() => showNotice(`Записано в Кодекс: ${chapter.title}`, 'info'));
     }
@@ -6693,15 +6713,24 @@
     clearTimeout(fx.timer); themeFxClear(fx.f);
     if (fx.lossEl) fx.lossEl.remove();
     const d = fx.ov.querySelector(':scope > .tfx-dim'); if (d) d.remove();
-    if (!fx.swapped) setTheme(fx.to);   // Архив закрыли до пика — тема переключается сразу, без эффекта
+    if (fx.lockEl) fx.lockEl.style.pointerEvents = '';
+    if (!fx.swapped) fx.swap();   // окно закрыли до пика — действие выполняется сразу, без эффекта (тема — без сбоя)
   }
   function switchThemeFx(theme) {
     const to = theme === 'classic' ? 'classic' : 'system';
     if (themeFx || data.theme === to || examStageOn()) return;   // v7.6.1: не во время этапа испытания
     const ov = document.getElementById('backupOverlay'), win = ov && ov.querySelector('.status-window');
     if (!win || ov.style.display !== 'flex') { setTheme(to); return; }
-    const col = THEME_FX.col[to], dim = themeFxDim(ov);
-    const fx = themeFx = { to, phase: 'rise', t0: Date.now(), timer: null, f: themeFxAdd(win, true, col), swapped: false, win, ov, lossEl: null };
+    winGlitchSwap(ov, THEME_FX.col[to], () => setTheme(to), { to });
+  }
+  // v7.7.4: сбой окна с действием в момент потери сигнала — смена темы (Архив) и Перерождение (Длань).
+  // Окно не закрывается; пока идёт сбой, нажатия в окне не действуют (lock). extra — поля состояния (to — у смены темы).
+  function winGlitchSwap(ov, col, swap, extra, lock) {
+    const win = ov && ov.querySelector('.status-window');
+    if (themeFx || !win || ov.style.display !== 'flex') { swap(); return; }
+    const dim = themeFxDim(ov);
+    const fx = themeFx = Object.assign({ phase: 'rise', t0: Date.now(), timer: null, f: themeFxAdd(win, true, col), swapped: false, win, ov, lossEl: null, swap, lockEl: lock ? win : null }, extra || {});
+    if (fx.lockEl) fx.lockEl.style.pointerEvents = 'none';
     const later = (fn, ms) => { fx.timer = setTimeout(() => { if (themeFx === fx) fn(); }, ms); };
     const afterPaint = fn => { if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(() => { if (themeFx === fx) fn(); })); else later(fn, 32); };
     const rise = () => {
@@ -6714,7 +6743,7 @@
       fx.phase = 'loss'; fx.lossEl = themeFxLossEl(col); win.appendChild(fx.lossEl);
       const ls = Date.now();
       afterPaint(() => {   // тёмный кадр уже на экране — под ним тяжёлая перестройка
-        fx.lossEl.remove(); setTheme(to); fx.swapped = true; win.appendChild(fx.lossEl);
+        fx.lossEl.remove(); fx.swapped = true; fx.swap(); win.appendChild(fx.lossEl);
         later(startFall, Math.max(0, THEME_FX.loss - (Date.now() - ls)));
       });
     };
@@ -7266,7 +7295,7 @@
       data.titlesUnlocked.push(name);
       if (titleRank(name) < titleRank(data.activeTitle)) data.activeTitle = name;
       const t = TITLES_DB[name];
-      fxNotice(() => showSystemPopup(`Новый титул: ${name}`, t ? t.desc : ''));
+      if (!rbQuiet) fxNotice(() => showSystemPopup(`Новый титул: ${name}`, t ? t.desc : ''));
       if (TITLE_CODEX_MAP[name]) unlockCodexChapter(TITLE_CODEX_MAP[name]);
     }
   }
@@ -8547,8 +8576,9 @@
     const d = legacyMs === undefined ? fxConst().LEGACY : legacyMs;
     if (!d || fxDirectN) fn();   // v7.6.3: fxDirectN — уведомления итога испытания встают в очередь сразу (перед уведомлениями уровня)
     else if (fxSceneOn()) { const S = fxS(); S.late = true; try { fn(); } finally { S.late = false; } }
-    else setTimeout(fn, d);
+    else { const t0 = Date.now(); setTimeout(() => { if (t0 < rbStamp) return; fn(); }, d); }   // v7.7.4: отложенные до Перерождения — не выводятся
   }
+  var rbStamp = 0;
   // Засчитанное нажатие «+»: уведомления, поставленные в очередь до надписи этого же нажатия (усталость), ждут конца его обработки.
   // Удержание само снимается через 1 с — на случай ошибки посреди нажатия очередь не застрянет.
   function fxHold() { fxS().holdUntil = Date.now() + 1000; setTimeout(processNotificationQueue, 1020); }
@@ -10122,11 +10152,14 @@
     document.getElementById('resetBeadPauseBtn').disabled = !(data.beadBlockUntil && Date.now() < data.beadBlockUntil);   // v6.10.2: блок после снятия
     const namePauseBtn = document.getElementById('resetNamePauseBtn');
     namePauseBtn.disabled = !(data.nameNextAvailableAt && Date.now() < data.nameNextAvailableAt);
+    sysRbClear();   // v7.7.4
     document.getElementById('sysToolsOverlay').style.display = 'flex';
   }
 
   function closeSysTools() {
+    if (themeFx && themeFx.rebirth) themeFxStop();   // v7.7.4: сбой Перерождения не переживает закрытие Длани
     document.getElementById('sysToolsOverlay').style.display = 'none';
+    sysRbClear();
     sysExamCondArm();   // v7.6.14
     renderBackupModal();
   }
@@ -10393,6 +10426,107 @@
     data.history = {};
     saveData(); render();
     if (calViewYear !== null) calRenderCalendar();
+  }
+
+  // ===== v7.7.4: ПЕРЕРОЖДЕНИЕ (Длань) =====
+  // Уровень 1 и всё, что меняется игрой, — к началу; по галочкам — кредиты, характеристики, артефакты, предметы,
+  // прогресс, ранг, Летопись. Не трогаются: ID, имя и пауза смены имени, настройки, выбор времени таймера, Правила,
+  // усталость, счётчик запусков. Галочки — только в памяти, пока открыта Длань (по умолчанию сняты).
+  const RB_KEYS = ['credits', 'stats', 'artifacts', 'items', 'progress', 'rank', 'history'];
+  const RB_NAMES = { credits: 'кредиты', stats: 'характеристики', artifacts: 'артефакты', items: 'предметы', progress: 'прогресс', rank: 'ранг', history: 'Летопись' };
+  const REBIRTH_CODEX = ["daily_quota", "penalty", "chronicle", "shop", "boxes", "titles", "archive", "stats", "equipment"];   // как у нового Игрока
+  let sysRb = {};
+  function sysRbSync() { RB_KEYS.forEach(k => { const el = document.getElementById('sysRb_' + k); if (el) el.classList.toggle('on', sysRb[k] === true); }); }
+  function sysRbToggle(k) { if (themeFx) return; sysRb[k] = sysRb[k] !== true; playSound('tap'); sysRbSync(); }
+  function sysRbClear() { sysRb = {}; sysRbSync(); }
+  function sysRebirthAsk() {
+    const sel = RB_KEYS.filter(k => sysRb[k] === true).map(k => RB_NAMES[k]);
+    const L = ['Уровень, опыт, титулы, эффекты, штрафы, Кодекс и дневное задание будут сброшены к началу.'];
+    if (sel.length) L.push('Также будет сброшено: ' + sel.join(', ') + '.');
+    L.push('Отменить сброс нельзя — перед ним стоит сделать бэкап.');
+    const opts = Object.assign({}, sysRb);
+    pendingConfirmAction = () => sysRebirthRun(opts);
+    document.getElementById('confirmContent').innerHTML = `
+      <div class="danger-warning-step">
+        <div class="danger-text" style="color:#a8d8ff;">${escapeHtml(L.join('\n'))}</div>
+        <div class="danger-btn-row">
+          <button class="danger-btn-cancel" onclick="closeConfirmModal()">Отмена</button>
+          <button class="danger-btn-confirm" onclick="runConfirmedAction()">Подтвердить</button>
+        </div>
+      </div>`;
+    document.getElementById('confirmOverlay').style.display = 'flex';
+  }
+  // окно запроса уходит обычным уходом, затем сбой окна Длани; сам сброс — в момент потери сигнала
+  function sysRebirthRun(o) {
+    setTimeout(() => {
+      const ov = document.getElementById('sysToolsOverlay');
+      const done = () => { rebirthApply(o); sysRbClear(); };
+      if (!ov || ov.style.display !== 'flex') { done(); return; }
+      winGlitchSwap(ov, THEME_FX.col[isSysTheme() ? 'system' : 'classic'], done, { rebirth: true }, true);
+    }, 400);
+  }
+  function rebirthApply(o) {
+    o = o || {};
+    const keepRank = o.rank !== true && PLAYER_RANKS.includes(data.rank);
+    // таймер упражнений и испытание ранга (снимается без штрафа)
+    setsStopAll(true);
+    const exUI = document.body.classList.contains('exm');
+    for (let n = 1; n <= 6; n++) { const el = exOv(n); if (el) el.style.display = 'none'; }
+    const pen = document.getElementById('exPenOverlay'); if (pen) pen.style.display = 'none';
+    try { examIconShow(false); } catch (e) {}
+    try { examWake(false); } catch (e) {}
+    exHeldN.length = 0; exAllowN = false;
+    Object.assign(data, { exam: null, examPost: null, examDelayUntil: null, examNarrow: false, examLastOffer: null, examLast: null, examToday: null, examCredited: false });
+    // уровень и опыт
+    Object.assign(data, { level: 1, exp: 0, expDebt: 0, statPoints: 0, dailyTargetLevel: 1, pendingLevelUpToday: 0, notifiedLimitBreakUnlock: false });
+    // дневное задание
+    Object.assign(data, { completed: {}, isGoalMet: false, paceWindow: emptyPaceWindow(), progressNoticesShown: [], expGainedToday: 0, creditsGainedToday: 0 });
+    if (data.dailyNotices) data.dailyNotices.complete = false;
+    // эффекты — активные и ожидающие
+    Object.assign(data, { insurance: false, insuranceHoldScroll: null, insuranceSourceId: null,
+      targetDiscountToday: false, targetDiscountRate: 0, targetDiscountSourceId: null, expBoostToday: 0, expBoostSourceId: null,
+      creditBoostToday: 0, creditBoostSourceId: null, streakShield: false, streakShieldSourceId: null,
+      activeScroll: null, pendingScroll: null, transferExerciseId: null, transferStreakDays: 0, focusExerciseId: null, focusRewardExp: 0, focusRewardCredits: 0,
+      extraLimitBreaksToday: 0, limitBreaksToday: 0, limitBreaksCompletedToday: 0, limitBreakRoundPending: false,
+      pendingCurse: false, curseActiveToday: false,
+      freezeEndTimestamp: null, freezeAnimPlayed: false, freezeJustEndedWithCurse: false, freezeNextAvailableAt: null,
+      beadStreak: 0, beadBlockUntil: null, veilLifted: false });
+    // штрафы
+    Object.assign(data, { penaltyStreak: 0, penaltyRun: 0, totalPenalties: 0, penaltyStack: [] });
+    // титулы и Кодекс (главы рангов и «Пробужденный» остаются, если ранг оставлен)
+    data.titlesUnlocked = ['Новичок']; data.activeTitle = 'Новичок';
+    const rankCh = keepRank ? PLAYER_RANKS.slice(0, rankIndex(data.rank) + 1).map(k => RANK_CODEX_MAP[k]) : [];
+    data.codexUnlocked = (Array.isArray(data.codexUnlocked) ? data.codexUnlocked : []).filter(c => REBIRTH_CODEX.includes(c) || rankCh.includes(c));
+    REBIRTH_CODEX.forEach(c => { if (!data.codexUnlocked.includes(c)) data.codexUnlocked.push(c); });
+    if (keepRank) awakenedGrant();
+    // по галочкам
+    if (o.credits === true) data.credits = 0;
+    if (o.stats === true) data.stats = { str: 10, agi: 10, sta: 10, int: 10, per: 10 };
+    if (o.artifacts === true) { data.inventory = (data.inventory || []).filter(k => !ARTEFACTS[k]); data.equippedArtifacts = [null, null, null, null]; }
+    if (o.items === true) { data.consumables = {}; data.boxes = {}; data.keys = {}; }
+    if (o.progress === true) {
+      totalStats = { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 };
+      Object.assign(data, { totalDays: 0, dailyExerciseLog: {}, consecutiveDays: 0, bestStreak: 0, limitBreaksCount: 0, totalItemsSold: 0 });
+    }
+    if (o.rank === true) {
+      data.rank = null; data.tn = {}; TN_IDS.forEach(id => { data.tn[id] = 0; });
+      Object.assign(data, { tnToday: 0, tnAdj: 0, tnMul: 1, tnRegimeOverride: null, rankHoldDays: 0 });
+    }
+    if (o.history === true) data.history = {};
+    // титулы по сохранённому прогрессу (серия, упражнения, раунды Предела, продажи) и главы оставленных артефактов — тихо
+    data.activeTitle = keepRank ? data.activeTitle : 'Новичок';
+    rbQuiet = true;
+    try {
+      updateTitleStatus();
+      (data.inventory || []).filter(k => ARTEFACTS[k] && CODEX_CHAPTERS['artifact_' + k]).forEach(k => unlockCodexChapter('artifact_' + k));
+    } finally { rbQuiet = false; }
+    contourRecheck();   // уровень 1 — контур закрыт, артефакты из него — в Инвентарь
+    notificationQueue.length = 0; rbStamp = Date.now() + 1;   // и отложенные уведомления, поставленные до сброса
+    try { xpSnap(); } catch (e) {}
+    saveData();
+    if (exUI) examExitUI(); else render();
+    if (typeof calViewYear !== 'undefined' && calViewYear !== null) { try { calRenderCalendar(); } catch (e) {} }
+    try { updateSysCurrent(); fzDraw(false); } catch (e) {}
   }
   /* SL:SYS-TOOLS:END */
 
