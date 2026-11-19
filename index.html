@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.7.5 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.7.6 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1589,6 +1589,11 @@
     #hdrLevel.cfx-count { color: #fff !important; text-shadow: 0 0 8px rgba(160,225,255,.9), 0 0 18px rgba(64,192,255,.7) !important; }
     .cfx-fall { position: fixed; z-index: 2050; }
     .codex-chapter-text { white-space: pre-line; }   /* абзацы глав (первой — глава Чаши) */
+    /* v7.7.6: отметка Летописи «Чаша испита» — золотая чаша 12 px в правом нижнем углу клетки; пункт «Обозначений» не разрывается */
+    .day-cell .cal-rl { position: absolute; right: 2px; bottom: 2px; width: 12px; height: 12px; pointer-events: none; }
+    .day-cell .cal-rl svg, .legend .cal-rl svg { width: 100%; height: 100%; display: block; overflow: visible; }
+    .legend .cal-rl { position: relative; display: inline-block; width: 12px; height: 12px; vertical-align: middle; margin-right: 3px; }
+    .legend .leg-rl { white-space: nowrap; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -2118,6 +2123,7 @@
       <span>⭐ Новый уровень</span>
       <span><span class="cal-swatch" id="legExOk" style="border:2px solid #ffd34d; box-shadow:0 0 5px rgba(255,211,77,0.5);"></span>Испытание ранга пройдено</span>   <!-- v7.6.1; v7.6.8: только золотой квадратик -->
       <span><span class="cal-ex" id="legExFail"></span>Испытание ранга</span>   <!-- v7.6.8: только шестигранник -->
+      <span class="leg-rl" id="legRelic" style="display:none;"><span class="cal-rl" id="legRelicIc"></span>Чаша Перерождения</span>   <!-- v7.7.6: только после первого применения -->
     </div>
     </div>
     <div id="calTooltip" class="cal-tooltip" style="display:none;">
@@ -2605,7 +2611,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.7.5';
+  const APP_VERSION = '7.7.6';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2772,7 +2778,8 @@
         expDebt: oldData.expDebt || 0,
         penaltyStreak: 0,   // v7.5.0: у всех с нуля
         penaltyRun: 0,   // v7.5.10
-        relicMiss: Number.isInteger(oldData.relicMiss) ? oldData.relicMiss : 0   // v7.7.5 (проверка — при загрузке, rankSysNormalize)
+        relicMiss: Number.isInteger(oldData.relicMiss) ? oldData.relicMiss : 0,   // v7.7.5 (проверка — при загрузке, rankSysNormalize)
+        relicToday: relicMarkClean(oldData.relicToday)   // v7.7.6
       };
     } else {
       isFreshInstall = true;
@@ -2807,7 +2814,8 @@
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, theme: 'system',
         rank: null, tn: { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 }, tnToday: 0, tnAdj: 0, tnMul: 1, tnRegimeOverride: null, rankSysV: 1,   // v7.6.0
         exam: null, examPost: null, examDelayUntil: null, examNarrow: false, examLastOffer: null, rankHoldDays: 0, examLast: null, examToday: null, examCredited: false, examAccel: false,   // v7.6.1
-        relicMiss: 0   // v7.7.5: выдачи Чаши Перерождения без находки подряд (+4% к шансу за каждую)
+        relicMiss: 0,   // v7.7.5: выдачи Чаши Перерождения без находки подряд (+4% к шансу за каждую)
+        relicToday: null   // v7.7.6: Чаша испита в текущем цикле — { from: уровень до }; при сбросе дня — в запись Летописи (entry.relic)
       };
     }
   }
@@ -3057,11 +3065,16 @@
   // v7.7.5: реликвии — не расходники и не артефакты: не из шкатулок и не из Магазина, без продажи, не больше одной.
   // Хранятся в data.consumables (как редкие расходники), в Инвентаре — свой раздел «Реликвии» (только при наличии).
   const RELIC_CATALOG = {
-    "relic_rebirth": { name: "Чаша Перерождения", icon: "🏆", desc: "Обращает время вспять: путь вновь начинается с первой ступени. Всё обретённое остаётся, а вложенная сила возвращается нерастраченной." }
+    "relic_rebirth": { name: "Чаша Перерождения", icon: "🏆", desc: "Уровень снижается до 1, опыт и долг обнуляются. Характеристики возвращаются к начальному значению, вложенные очки становятся свободными. Предметы, артефакты, кредиты, ранг и Летопись сохраняются." }
   };
   const RELIC_MAX = 1;
   const RELIC_ID = 'relic_rebirth';
   function relicMissClean(v) { return Number.isFinite(v) ? Math.max(0, Math.min(30, Math.floor(v))) : 0; }
+  // v7.7.6: отметка Летописи «Чаша испита» — { from: уровень до применения } или null
+  function relicMarkClean(v) { return (v && typeof v === 'object' && Number.isFinite(v.from) && v.from >= 1) ? { from: Math.min(100000, Math.floor(v.from)) } : null; }
+  // v7.7.6: значок Летописи — силуэт Чаши (контур по картинке relic_rebirth.png), залит золотом
+  const RELIC_CAL_SVG = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M21.4 2.1 L22.7 16.0 L24.8 23.1 L23.9 27.7 L20.2 30.7 L20.2 35.3 L23.9 42.0 L22.3 52.9 L31.9 60.9 L37.0 58.8 L41.6 62.2 L43.3 67.6 L39.9 74.4 L43.3 81.5 L41.2 86.1 L37.8 89.1 L28.6 92.4 L19.7 92.4 L18.1 91.2 L13.0 93.7 L14.3 96.2 L49.2 99.6 L84.9 96.6 L86.6 94.1 L82.4 91.6 L77.7 92.9 L71.0 92.4 L61.3 89.1 L56.3 81.9 L59.7 74.4 L56.3 67.6 L58.4 61.8 L62.6 58.8 L67.6 60.9 L74.8 55.9 L77.3 52.5 L75.6 41.6 L79.0 36.1 L79.4 31.1 L75.2 27.3 L74.8 23.1 L78.6 2.5 L55.0 0.0 L34.5 0.4Z" fill="#ffd77a"/></svg>';
+  function relicEverUsed() { return !!data.relicToday || Object.values(data.history || {}).some(e => e && e.relic); }
 
   function getConsumableInfo(id) {
     return SHOP_CATALOG[id] || UNIQUE_CATALOG[id] || RELIC_CATALOG[id];
@@ -4441,6 +4454,8 @@
     const lines = [formatDateRu(dateKey), statusLine];
     { const exm = entry ? entry.exam : (isToday ? data.examToday : null);   // v7.6.1: испытание ранга — без чисел
       if (exm) lines.push(exm.ok ? `Испытание ранга пройдено. Подтверждён ранг ${RANK_BOX_NAME[exm.rank]}.` : `Испытание ранга: ${EX_FAIL[exm.kind].log}.`); }
+    { const rm = entry ? entry.relic : (isToday ? data.relicToday : null);   // v7.7.6: Чаша Перерождения
+      if (rm) lines.push(`Испита Чаша Перерождения: уровень ${rm.from} → 1.`); }
     if (typeof donePercent === 'number') lines.push(`Прогресс дня: ${donePercent}%`);
     if (donePercent < 100 && completedExercises.length > 0) lines.push(`Выполнено полностью: ${completedExercises.join(', ')}.`);
     if (expGained > 0) lines.push(`Получено опыта: +${expGained} EXP`);
@@ -7011,6 +7026,7 @@
       }
       if (data.pendingLevelUpToday) historyEntry.level = data.pendingLevelUpToday;
       examAtReset(historyEntry);   // v7.6.1: отметка испытания, засчитанный день, выдержка, ускоритель
+      if (data.relicToday) { historyEntry.relic = data.relicToday; data.relicToday = null; }   // v7.7.6: Чаша испита в этот день
       data.history[dayKey] = historyEntry;
       data.pendingLevelUpToday = 0;
 
@@ -7619,7 +7635,7 @@
     html += '<div class="section-title">Реликвии</div>';   // v7.7.5: не больше одной
     for (let id in RELIC_CATALOG) {
       html += catalogCard(id, RELIC_CATALOG[id], 'devAddItem', 'devRemoveItem', !(data.consumables[id] > 0), (data.consumables[id] || 0) >= RELIC_MAX);
-    }
+    }   // v7.7.6: блик и блёстки на иконке — после вывода каталога (relicFxCatalog)
     html += '<div class="section-title">Ключи</div>';
     for (let id in KEY_CATALOG) {
       const has = data.keys[id] > 0;
@@ -7643,6 +7659,7 @@
     }
     cont.innerHTML = html;
     document.getElementById('fullCatalogOverlay').style.display = 'flex';
+    relicFxCatalog();   // v7.7.6: блик и блёстки на иконке Чаши — всегда (карточка обновляется на месте, слой не пропадает)
   }
 
   // v7.0.5: после «+1» / «−1» обновляются только кнопки этой карточки. Пересборка всего каталога (≈50 карточек с картинками)
@@ -9320,7 +9337,10 @@
   }
 
   function calRenderCalendar() {
-    { const b = document.getElementById('legExFail'); if (b && !b.firstChild) b.innerHTML = calExHex('currentColor'); }   // v7.6.1; v7.6.8: у «пройдено» шестигранника нет; v7.6.9: цвет — от «дыхания» (color)
+    { const b = document.getElementById('legExFail'); if (b && !b.firstChild) b.innerHTML = calExHex('currentColor'); }
+    { const r = document.getElementById('legRelic'), ic = document.getElementById('legRelicIc');   // v7.7.6: пункт Чаши — после первого применения
+      if (ic && !ic.firstChild) ic.innerHTML = RELIC_CAL_SVG;
+      if (r) r.style.display = relicEverUsed() ? '' : 'none'; }   // v7.6.1; v7.6.8: у «пройдено» шестигранника нет; v7.6.9: цвет — от «дыхания» (color)
     document.getElementById('calTooltip').style.display = 'none';
     const now = new Date();
     const isCurrentMonth = (calViewYear === now.getFullYear() && calViewMonth === now.getMonth());
@@ -9383,6 +9403,8 @@
         ex.innerHTML = calExHex(exMark.ok ? (RANK_COLORS[exMark.rank] || '#ffd34d') : null);
         cell.appendChild(ex);
       }
+      { const rm = entry ? entry.relic : (dateKey === todayKey ? data.relicToday : null);   // v7.7.6: Чаша испита — золотая чаша в углу
+        if (rm) { const r = document.createElement('span'); r.className = 'cal-rl'; r.innerHTML = RELIC_CAL_SVG; cell.appendChild(r); } }
       if (entry && entry.level) {
         const star = document.createElement('span');
         star.className = 'cal-star';
@@ -9583,6 +9605,7 @@
         const el = sanitizeNumber(entry.expLost, 0, 0);
         if (el > 0) clean.expLost = Math.floor(el);
         if (entry.status === 'success' && (entry.fixedBy === 'redemption' || entry.fixedBy === 'correction')) clean.fixedBy = entry.fixedBy;
+        { const rm = relicMarkClean(entry.relic); if (rm) clean.relic = rm; }   // v7.7.6: Чаша испита
         { const em = sanitizeExamMark(entry.exam); if (em) clean.exam = em; if (entry.examCredited === true && entry.status === 'success') clean.examCredited = true; }   // v7.6.1: отметка испытания ранга
         if (Array.isArray(entry.completedExercises)) {
           const validNames = Object.values(QUEST_DISPLAY_NAMES);
@@ -9739,6 +9762,7 @@
       // v7.6.1: испытание ранга. Идущее испытание и галочка ускорителя в бэкап не переносятся.
       rankHoldDays: Math.max(0, Math.floor(sanitizeNumber(s.rankHoldDays, 0))),
       relicMiss: relicMissClean(s.relicMiss),   // v7.7.5
+      relicToday: relicMarkClean(s.relicToday),   // v7.7.6
       examDelayUntil: Number.isFinite(s.examDelayUntil) ? s.examDelayUntil : null,
       examNarrow: !!s.examNarrow,
       examLastOffer: Number.isFinite(s.examLastOffer) ? s.examLastOffer : null,
@@ -10488,6 +10512,7 @@
 
   function resetChronicleAction() {
     data.history = {};
+    data.relicToday = null;   // v7.7.6
     saveData(); render();
     if (calViewYear !== null) calRenderCalendar();
   }
@@ -10577,7 +10602,7 @@
       data.rank = null; data.tn = {}; TN_IDS.forEach(id => { data.tn[id] = 0; });
       Object.assign(data, { tnToday: 0, tnAdj: 0, tnMul: 1, tnRegimeOverride: null, rankHoldDays: 0 });
     }
-    if (o.history === true) data.history = {};
+    if (o.history === true) { data.history = {}; data.relicToday = null; }   // v7.7.6: и отметка Чаши текущего дня
     // титулы по сохранённому прогрессу (серия, упражнения, раунды Предела, продажи) и главы оставленных артефактов — тихо
     data.activeTitle = keepRank ? data.activeTitle : 'Новичок';
     rbQuiet = true;
@@ -10656,6 +10681,9 @@
   function relicFxInv() {
     document.querySelectorAll(`#invContent .item-card[data-consumable-id="${RELIC_ID}"] .item-icon img`).forEach(img => relicFxAttach(img, false));
   }
+  function relicFxCatalog() {   // v7.7.6
+    document.querySelectorAll(`#fullCatalogContent .item-card[data-cat-id="${RELIC_ID}"] .item-icon img`).forEach(img => relicFxAttach(img, false));
+  }
   function relicFxPreview(iconId) {
     const pimg = document.getElementById('itemPreviewImg'); if (!pimg) return;
     if (iconId === RELIC_ID) relicFxAttach(pimg, true); else relicFxStop(pimg.parentElement);
@@ -10679,13 +10707,14 @@
   // Сам сброс: Перерождение без галочек, затем вложенные очки — свободными, глава Чаши остаётся.
   function relicApply() {
     if (!(data.consumables[RELIC_ID] > 0)) return false;
-    const st = data.stats || {}, free = Math.max(0, Math.floor(data.statPoints || 0));
+    const st = data.stats || {}, free = Math.max(0, Math.floor(data.statPoints || 0)), fromLv = Math.max(1, Math.floor(data.level || 1));
     const invested = ['str', 'agi', 'sta', 'int', 'per'].reduce((sum, k) => sum + Math.max(0, Math.floor((st[k] || 10) - 10)), 0);
     delete data.consumables[RELIC_ID];
     rebirthApply({});
     data.stats = { str: 10, agi: 10, sta: 10, int: 10, per: 10 };
     data.statPoints = free + invested;
     data.relicMiss = 0;
+    if (!data.relicToday) data.relicToday = { from: fromLv };   // v7.7.6: отметка Летописи; дважды за день — первая (уровень, с которого начат путь)
     if (!data.codexUnlocked.includes(RELIC_ID)) data.codexUnlocked.push(RELIC_ID);
     saveData(); render();
     return true;
@@ -11833,6 +11862,7 @@
     data.examCredited = !!data.examCredited;
     data.examAccel = !!data.examAccel;
     data.relicMiss = relicMissClean(data.relicMiss);   // v7.7.5
+    data.relicToday = relicMarkClean(data.relicToday);   // v7.7.6
     if (data.consumables && data.consumables[RELIC_ID] > RELIC_MAX) data.consumables[RELIC_ID] = RELIC_MAX;
     if (data.consumables && data.consumables[RELIC_ID] > 0 && Array.isArray(data.codexUnlocked) && !data.codexUnlocked.includes(RELIC_ID)) data.codexUnlocked.push(RELIC_ID);   // глава — вместе с Чашей (догоняющая, тихо)
   }

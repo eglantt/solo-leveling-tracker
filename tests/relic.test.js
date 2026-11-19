@@ -49,7 +49,7 @@ const mk = async extra => { const w = boot(); await sleep(250); E(w, TOP + (extr
   { const w = await mk();
     check('RL1 предмет: название, ранг Monarch, тип «Реликвия», применение', E(w, "getConsumableInfo('relic_rebirth').name") === 'Чаша Перерождения'
       && E(w, "ITEM_META.relic_rebirth.rank") === 'Monarch' && E(w, "ITEM_META.relic_rebirth.type") === 'Реликвия' && E(w, "ITEM_META.relic_rebirth.usage") === 'Используется один раз');
-    check('RL2 окно предмета: Ранг / Тип / Применение / Эффект', E(w, "itemPreviewText('relic_rebirth')") === 'Ранг: Monarch\nТип: Реликвия\nПрименение: Используется один раз\nЭффект: Обращает время вспять: путь вновь начинается с первой ступени. Всё обретённое остаётся, а вложенная сила возвращается нерастраченной.');
+    check('RL2 окно предмета: Ранг / Тип / Применение / Эффект', E(w, "itemPreviewText('relic_rebirth')") === 'Ранг: Monarch\nТип: Реликвия\nПрименение: Используется один раз\nЭффект: Уровень снижается до 1, опыт и долг обнуляются. Характеристики возвращаются к начальному значению, вложенные очки становятся свободными. Предметы, артефакты, кредиты, ранг и Летопись сохраняются.');
     check('RL3 не в Магазине и не в шкатулках', E(w, "!SHOP_CATALOG.relic_rebirth && !UNIQUE_CATALOG.relic_rebirth") && !/"box_[a-z_]+": \[[^\]]*relic_rebirth/.test(html) && !/relic_rebirth[^\n]*RANK_BOX_LOOT|RANK_BOX_LOOT[^;]*relic_rebirth/.test(html));
     check('RL4 глава Кодекса — два абзаца, последний кончается «…вновь становятся свободными.»', /^Чаша была создана много веков назад Абсолютным Существом/.test(E(w, "CODEX_CHAPTERS.relic_rebirth.content"))
       && E(w, "CODEX_CHAPTERS.relic_rebirth.content.split('\\n\\n').length") === 2 && /вновь становятся свободными\.$/.test(E(w, "CODEX_CHAPTERS.relic_rebirth.content")));
@@ -179,6 +179,60 @@ const mk = async extra => { const w = boot(); await sleep(250); E(w, TOP + (extr
     const old = E(w, "(() => { const o = JSON.parse(JSON.stringify(data)); delete o.relicMiss; return JSON.stringify(o); })()");
     const w3 = boot(old); await sleep(250);
     check('RL44 сохранение без поля — подстраховка 0', E(w3, "data.relicMiss") === 0);
+  }
+
+  // ---- v7.7.6: эффект в каталоге Длани ----
+  { const w = await mk("data.consumables = {};");
+    E(w, "openFullCatalog()");
+    const sel = "#fullCatalogContent [data-cat-id=\"relic_rebirth\"] .item-icon > .cfx .cfx-sweep";
+    check('RL47 каталог Длани: блик на иконке Чаши — и при 0 в Инвентаре', E(w, `!!document.querySelector('${sel}')`));
+    E(w, "flashThenRun = (sel, fn) => fn(); devAddItem('relic_rebirth');");
+    const a = E(w, `!!document.querySelector('${sel}')`);
+    E(w, "devRemoveItem('relic_rebirth')");
+    check('RL48 после +1 / −1 слой эффекта на месте (карточка не пересоздаётся)', a && E(w, `document.querySelectorAll('${sel}').length`) === 1);
+    check('RL49 у других карточек каталога слоя нет', E(w, "document.querySelectorAll('#fullCatalogContent .cfx').length") === 1);
+  }
+  // ---- v7.7.6: отметка в Летописи ----
+  { const w = await mk("data.consumables = { relic_rebirth: 1 }; data.level = 147;");
+    E(w, "openChronicle()");
+    check('RL50 до применения: пункта «Чаша Перерождения» в «Обозначениях» нет', E(w, "document.getElementById('legRelic').style.display") === 'none');
+    E(w, HIDE + " relicApply()");
+    check('RL51 применение: отметка дня { from: 147 }', JSON.stringify(J(w, "data.relicToday")) === '{"from":147}');
+    E(w, "data.level = 30; data.consumables.relic_rebirth = 1; relicApply()");
+    check('RL52 второе применение в тот же день — отметка прежняя (147)', E(w, "data.relicToday.from") === 147 && E(w, "data.level") === 1);
+    const line = E(w, "buildDayDetail('x', null, true)");
+    check('RL53 окошко сегодняшнего дня: «Испита Чаша Перерождения: уровень 147 → 1.» после статуса', line.split('\n')[2] === 'Испита Чаша Перерождения: уровень 147 → 1.', line);
+    E(w, "openChronicle()");
+    check('RL54 после применения: пункт «Чаша Перерождения» в «Обозначениях» виден, последним, со значком', E(w, "document.getElementById('legRelic').style.display") === ''
+      && E(w, "document.getElementById('legendBody').lastElementChild.id") === 'legRelic' && E(w, "!!document.querySelector('#legRelicIc svg path[fill=\"#ffd77a\"]')")
+      && E(w, "document.getElementById('legRelic').textContent.trim()") === 'Чаша Перерождения');
+    check('RL55 сегодняшняя клетка — золотая чаша', E(w, "document.querySelectorAll('#calendarGrid .day-cell .cal-rl, .cal-grid .day-cell .cal-rl, .day-cell .cal-rl').length") === 1);
+    // сброс дня — отметка уходит в запись Летописи
+    E(w, "data.lastReset -= 86400000; checkMissedDays();");
+    const hk = J(w, "Object.keys(data.history).filter(k => data.history[k].relic)");
+    check('RL56 сброс дня: отметка — в запись дня, поле дня очищено', hk.length === 1 && E(w, `data.history['${hk[0]}'].relic.from`) === 147 && E(w, "data.relicToday") === null, JSON.stringify(hk));
+    check('RL57 окошко прошедшего дня — та же строка', E(w, `buildDayDetail('${hk[0]}', data.history['${hk[0]}'], false)`).includes('Испита Чаша Перерождения: уровень 147 → 1.'));
+    E(w, HIDE + " openChronicle()");
+    check('RL58 пункт «Обозначений» остаётся после сброса дня', E(w, "document.getElementById('legRelic').style.display") === '' && E(w, "relicEverUsed()") === true);
+    // бэкап
+    const SAN = o => `sanitizeImportedData({ state: Object.assign(JSON.parse(JSON.stringify(data)), ${o}), total: {} }).state`;
+    const c = J(w, SAN(`{ relicToday: { from: 88.6, x: 1 }, history: { '2026-01-02': { status: 'success', relic: { from: 120 } }, '2026-01-03': { status: 'success', relic: { from: -4 } }, '2026-01-04': { status: 'success', relic: 'да' } } }`));
+    check('RL59 импорт: отметки Чаши проверяются (кривые — отбрасываются)', JSON.stringify(c.relicToday) === '{"from":88}' && JSON.stringify(c.history['2026-01-02'].relic) === '{"from":120}' && !c.history['2026-01-03'].relic && !c.history['2026-01-04'].relic, JSON.stringify([c.relicToday, c.history]));
+    // Перерождение Дланью: без «Летописи» отметка остаётся, с «Летописью» — нет
+    E(w, "data.relicToday = { from: 50 }; rebirthApply({})");
+    check('RL60 Перерождение Дланью без «Летописи» — отметки остаются, новой нет', E(w, "data.relicToday.from") === 50 && E(w, "relicEverUsed()") === true);
+    E(w, "rebirthApply({ history: true })");
+    check('RL61 Перерождение Дланью с «Летописью» — отметок нет, пункт «Обозначений» скрыт', E(w, "data.relicToday") === null && E(w, "relicEverUsed()") === false);
+    E(w, "data.relicToday = { from: 9 }; resetChronicleAction()");
+    check('RL62 «Очистить Летопись» — и отметка текущего дня', E(w, "data.relicToday") === null);
+  }
+  { const w = await mk();
+    const seed = E(w, "JSON.stringify(Object.assign(JSON.parse(JSON.stringify(data)), { relicToday: { from: 'x' } }))");
+    const w2 = boot(seed); await sleep(250);
+    const seed2 = E(w, "(() => { const o = JSON.parse(JSON.stringify(data)); delete o.relicToday; return JSON.stringify(o); })()");
+    const w3 = boot(seed2); await sleep(250);
+    check('RL63 загрузка: кривая отметка → нет, старое сохранение без поля → нет', E(w2, "data.relicToday") === null && E(w3, "data.relicToday") === null);
+    check('RL64 у нового Игрока отметки нет', E(w, "data.relicToday") === null);
   }
   // ---- пауза под окнами ----
   { const src = html;
