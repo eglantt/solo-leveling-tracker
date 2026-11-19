@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v7.7.4 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v7.7.5 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1566,6 +1566,29 @@
     .sys-rb-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
     .sys-rb-h { margin-top: 14px; }
     .sys-rb-note { font-size: 0.86em; opacity: 0.72; margin-top: 4px; }
+    /* v7.7.5: Чаша Перерождения (демо 123a) — блик по золоту и блёстки на иконке; слой точно по картинке и обрезан по ней */
+    .cfx { position: absolute; pointer-events: none; z-index: 2; overflow: hidden; --c: #ffd77a; }
+    .cfx > i { position: absolute; display: block; pointer-events: none; }
+    .cfx-m { position: absolute; inset: 0; overflow: hidden; -webkit-mask: var(--mk) center / 100% 100% no-repeat; mask: var(--mk) center / 100% 100% no-repeat; }
+    .cfx-m i { position: absolute; display: block; }
+    .cfx-sweep i { top: -25%; bottom: -25%; left: -30%; width: 24%; background: linear-gradient(100deg, transparent, rgba(255,252,232,.95) 50%, transparent);
+      transform: translateX(0) skewX(-14deg); animation: cfxSweep 6.5s linear infinite; }
+    @keyframes cfxSweep { 0% { transform: translateX(0) skewX(-14deg); } 65%, 100% { transform: translateX(665%) skewX(-14deg); } }
+    .cfx-gl { width: 9px; height: 9px; will-change: transform, opacity;
+      background: linear-gradient(90deg, transparent 42%, #fff 50%, transparent 58%), linear-gradient(0deg, transparent 42%, #fff 50%, transparent 58%);
+      filter: drop-shadow(0 0 2px var(--c)); }
+    .cfx.big .cfx-gl { width: 16px; height: 16px; }
+    /* применение: свет из Чаши, белый экран, обратный счёт уровня */
+    .cfx-full { position: fixed; inset: 0; z-index: 2050; pointer-events: none; }
+    .cfx-block { position: fixed; inset: 0; z-index: 2060; }
+    .cfx-white { background: #fff; opacity: 0; }
+    .cfx-light { background: rgba(0,4,10,.55); }
+    .cfx-light img { position: absolute; left: 50%; top: 46%; width: min(56vw, 260px); transform: translate(-50%,-50%); opacity: 0; filter: drop-shadow(0 0 18px rgba(200,240,255,.9)); }
+    .cfx-light .cfx-glowb { position: absolute; left: 50%; top: 46%; width: 120vmax; height: 120vmax; transform: translate(-50%,-50%) scale(.3); border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(255,255,255,1), rgba(200,240,255,.75) 30%, rgba(120,200,255,.25) 60%, transparent); opacity: 0; }
+    #hdrLevel.cfx-count { color: #fff !important; text-shadow: 0 0 8px rgba(160,225,255,.9), 0 0 18px rgba(64,192,255,.7) !important; }
+    .cfx-fall { position: fixed; z-index: 2050; }
+    .codex-chapter-text { white-space: pre-line; }   /* абзацы глав (первой — глава Чаши) */
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -2582,7 +2605,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '7.7.4';
+  const APP_VERSION = '7.7.5';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2748,7 +2771,8 @@
         limitBreakRoundPending: !!oldData.limitBreakRoundPending,
         expDebt: oldData.expDebt || 0,
         penaltyStreak: 0,   // v7.5.0: у всех с нуля
-        penaltyRun: 0   // v7.5.10
+        penaltyRun: 0,   // v7.5.10
+        relicMiss: Number.isInteger(oldData.relicMiss) ? oldData.relicMiss : 0   // v7.7.5 (проверка — при загрузке, rankSysNormalize)
       };
     } else {
       isFreshInstall = true;
@@ -2782,7 +2806,8 @@
         pendingCurse: false, curseActiveToday: false, limitBreakRoundPending: false,
         soundEnabled: true, rulesAcknowledged: false, earlySaveNoticeShown: false, totalItemsSold: 0, notificationsEnabled: true, theme: 'system',
         rank: null, tn: { pushups: 0, squats: 0, pullups: 0, press: 0, steps: 0 }, tnToday: 0, tnAdj: 0, tnMul: 1, tnRegimeOverride: null, rankSysV: 1,   // v7.6.0
-        exam: null, examPost: null, examDelayUntil: null, examNarrow: false, examLastOffer: null, rankHoldDays: 0, examLast: null, examToday: null, examCredited: false, examAccel: false   // v7.6.1
+        exam: null, examPost: null, examDelayUntil: null, examNarrow: false, examLastOffer: null, rankHoldDays: 0, examLast: null, examToday: null, examCredited: false, examAccel: false,   // v7.6.1
+        relicMiss: 0   // v7.7.5: выдачи Чаши Перерождения без находки подряд (+4% к шансу за каждую)
       };
     }
   }
@@ -3029,8 +3054,17 @@
     "crystal_impulse": { name: "Кристалл Импульса", icon: "🔮", desc: "Увеличивает получаемые опыт и кредиты на 40% до следующего сброса." }
   };
 
+  // v7.7.5: реликвии — не расходники и не артефакты: не из шкатулок и не из Магазина, без продажи, не больше одной.
+  // Хранятся в data.consumables (как редкие расходники), в Инвентаре — свой раздел «Реликвии» (только при наличии).
+  const RELIC_CATALOG = {
+    "relic_rebirth": { name: "Чаша Перерождения", icon: "🏆", desc: "Обращает время вспять: путь вновь начинается с первой ступени. Всё обретённое остаётся, а вложенная сила возвращается нерастраченной." }
+  };
+  const RELIC_MAX = 1;
+  const RELIC_ID = 'relic_rebirth';
+  function relicMissClean(v) { return Number.isFinite(v) ? Math.max(0, Math.min(30, Math.floor(v))) : 0; }
+
   function getConsumableInfo(id) {
-    return SHOP_CATALOG[id] || UNIQUE_CATALOG[id];
+    return SHOP_CATALOG[id] || UNIQUE_CATALOG[id] || RELIC_CATALOG[id];
   }
 
   // ---- v6.5.35: стопка штрафов ----
@@ -3905,6 +3939,7 @@
     scroll_focus: { title: "Свиток Сосредоточения", content: "Свиток Сосредоточения — игрок сам выбирает упражнение, в котором хочет стать сильнее, и Система поднимает его цель. Остальное задание не отменяется: сосредоточение — не замена дня, а усилие сверх него. За полное исполнение Система повторно начисляет награду за выбранное упражнение." },
     scroll_contract: { title: "Свиток Договора", content: "Свиток Договора — игрок сам поднимает цели предстоящего дневного задания, зная заранее: полное исполнение будет вознаграждено сверх обычного. Условие названо прежде, чем сделан первый шаг." },
     bone_bead: { title: "Костяная бусина", content: "Костяная бусина — знак, который Игрок может получить за выполненное дневное задание. Её использование активирует на следующий цикл эффект «Пелена покоя»: пока он действует, Система не назначает упражнений, не выдаёт наград и не начисляет штраф, а серия не прерывается и не растёт — Игрок может восстановить силы. Бусин немного: чем дальше путь Игрока, тем реже они ему попадаются." },
+    relic_rebirth: { title: "Чаша Перерождения", content: "Чаша была создана много веков назад Абсолютным Существом — тем, кто дал начало всем правителям и самой мере силы. Её содержимое способно повернуть время вспять для одного-единственного существа. Мир не замечает перемены, но тот, кто испил из Чаши, вновь стоит у начала пути. Сила, обретённая трудом, не исчезает: исчезает лишь пройденная дорога. Чаша достаётся лишь тому, кто достиг вершины. Испить из неё можно лишь однажды.\n\nИспивший из Чаши возвращается к первому уровню. Предметы, артефакты, кредиты, ранг и Летопись остаются при нём; вложенные очки характеристик вновь становятся свободными." },   // v7.7.5
     scroll_freeze: { title: "Свиток Заморозки", content: "Свиток Заморозки — дневное задание приостанавливается на несколько циклов, без исхода, без награды, без штрафа. Уже сделанное сегодня не пропадает — Система лишь откладывает его до истечения срока заморозки. Серия дней при этом прерывается: заморозка — это честная причина остановки, а не способ её скрыть. Повторно использовать Свиток Заморозки можно не раньше чем через 30 дней после предыдущей активации." },
     archive: { title: "Архив", content: "Система хранит полный архив данных Игрока. Через него можно изменить своё имя, сохранить прогресс во внешний файл, восстановить его при необходимости, либо стереть весь путь целиком и начать заново." },
     limit_break: { title: "Преодоление Предела", content: "Игрок достиг 3-го уровня. Система открывает доступ к превышению дневного задания — раз в сутки Игрок может продолжить выполнение, получая удвоенное вознаграждение в кредитах." },
@@ -4299,6 +4334,7 @@
     "rune_return": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "crystal_impulse": { rank: "A", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
     "rune_correction": { rank: "S", type: "Редкий расходный предмет", usage: "Одноразовое использование" },
+    "relic_rebirth": { rank: "Monarch", type: "Реликвия", usage: "Используется один раз" },   // v7.7.5
   };
 
   const STAT_LORE = {
@@ -7580,6 +7616,10 @@
     for (let id in UNIQUE_CATALOG) {
       html += catalogCard(id, UNIQUE_CATALOG[id], 'devAddItem', 'devRemoveItem', !(data.consumables[id] > 0), id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX);
     }
+    html += '<div class="section-title">Реликвии</div>';   // v7.7.5: не больше одной
+    for (let id in RELIC_CATALOG) {
+      html += catalogCard(id, RELIC_CATALOG[id], 'devAddItem', 'devRemoveItem', !(data.consumables[id] > 0), (data.consumables[id] || 0) >= RELIC_MAX);
+    }
     html += '<div class="section-title">Ключи</div>';
     for (let id in KEY_CATALOG) {
       const has = data.keys[id] > 0;
@@ -7614,7 +7654,7 @@
     let has, addOff = false;
     if (BOX_CATALOG[id]) has = data.boxes[id] > 0;
     else if (KEY_CATALOG[id]) { has = data.keys[id] > 0; addOff = has; }
-    else { has = data.consumables[id] > 0; addOff = id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX; }
+    else { has = data.consumables[id] > 0; addOff = (id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX) || (!!RELIC_CATALOG[id] && (data.consumables[id] || 0) >= RELIC_MAX); }
     if (minus) minus.disabled = !has;
     if (plus) plus.disabled = addOff;
     const q = card.querySelector('.cat-qty');   // v7.5.6
@@ -7623,6 +7663,7 @@
 
   function devAddItem(id) {
     if (id === 'bone_bead' && (data.consumables[id] || 0) >= BEAD_MAX) return;   // v6.10.0: не больше 3
+    if (RELIC_CATALOG[id] && (data.consumables[id] || 0) >= RELIC_MAX) return;   // v7.7.5: реликвия — не больше одной
     flashThenRun(`[data-cat-id="${id}"]`, () => {
       playSound('boxOpen');
       data.consumables[id] = (data.consumables[id] || 0) + 1;
@@ -7684,6 +7725,7 @@
     for (let id in ARTEFACTS) CATALOG_ORDER[id] = idx++;
     for (let id in SHOP_CATALOG) CATALOG_ORDER[id] = idx++;
     for (let id in UNIQUE_CATALOG) CATALOG_ORDER[id] = idx++;
+    for (let id in RELIC_CATALOG) CATALOG_ORDER[id] = idx++;   // v7.7.5
     for (let id in BOX_CATALOG) CATALOG_ORDER[id] = idx++;
     for (let id in KEY_CATALOG) CATALOG_ORDER[id] = idx++;
   })();
@@ -7740,6 +7782,22 @@
             </div>
           </div>`;
     });
+    // v7.7.5: «Реликвии» — только когда реликвия есть; без продажи и без «×N» (не больше одной)
+    const relicIds = Object.keys(RELIC_CATALOG).filter(id => data.consumables[id] > 0);
+    if (relicIds.length) {
+      cont.innerHTML += `<div class="section-title">Реликвии</div>`;
+      relicIds.forEach(id => {
+        const item = RELIC_CATALOG[id];
+        cont.innerHTML += `
+        <div class="item-card" data-consumable-id="${id}">
+          <div class="item-icon"><img class="item-icon-img" src="${iconS(id)}" alt="" onclick="showItemPreview('${id}','${escapeHtml(item.name)}')"></div>
+          <div class="item-info"><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div></div>
+          <div class="item-btn-stack">
+            <button onclick="useItem('${id}')" class="use-btn">ИСПОЛЬЗОВАТЬ</button>
+          </div>
+        </div>`;
+      });
+    }
     cont.innerHTML += `<div class="section-title">Артефакты</div>`;
     const ownedArts = sortByRank(data.inventory.filter(k => ARTEFACTS[k]));
     const openContours = openContourCount(data.level);
@@ -7801,7 +7859,7 @@
         </div>`;
     });
     cont.innerHTML += `<div class="section-title">Расходники</div>`;
-    const consumableIds = sortByRank(Object.keys(data.consumables).filter(id => data.consumables[id] > 0 && !(ITEM_META[id] && ITEM_META[id].type === 'Свиток')));
+    const consumableIds = sortByRank(Object.keys(data.consumables).filter(id => data.consumables[id] > 0 && !(ITEM_META[id] && ITEM_META[id].type === 'Свиток') && !RELIC_CATALOG[id]));
     if (!consumableIds.length) cont.innerHTML += `<div style="font-size:0.7rem; opacity:0.5; padding: 10px;">Пусто</div>`;
     consumableIds.forEach(id => {
       const item = getConsumableInfo(id);
@@ -7818,6 +7876,7 @@
         </div>`;
     });
     document.getElementById('invOverlay').style.display = 'flex';
+    if (relicIds.length) relicFxInv();   // v7.7.5: блик и блёстки на иконке Чаши
   }
 
   function closeInv() {
@@ -7853,6 +7912,7 @@
     if (SHOP_CATALOG[id]) return SHOP_CATALOG[id].desc;
     if (BOX_CATALOG[id]) return BOX_CATALOG[id].desc;
     if (UNIQUE_CATALOG[id]) return UNIQUE_CATALOG[id].desc;
+    if (RELIC_CATALOG[id]) return RELIC_CATALOG[id].desc;   // v7.7.5
     return null;
   }
 
@@ -7905,6 +7965,7 @@
   function showItemPreview(iconId, name) {
     const pimg = document.getElementById('itemPreviewImg');
     pimg.src = `icons/items/${ICON_ALIAS(iconId)}.png`;
+    relicFxPreview(iconId);    // v7.7.5: Чаша — блик и блёстки; у остальных слой снимается
     previewRankGlow(iconId);   // v7.6.2: шкатулка ранга — светится сама шкатулка (цветом ранга), рамка окна — как у всех
     document.getElementById('itemPreviewName').textContent = name;
     document.getElementById('itemPreviewMeta').textContent = itemPreviewText(iconId);
@@ -7939,6 +8000,7 @@
   }
 
   function useItem(id) {
+    if (RELIC_CATALOG[id]) { relicUseAsk(); return; }   // v7.7.5: своё окно подтверждения и свой эффект
     const item = getConsumableInfo(id);
     if (!item || !(data.consumables[id] > 0)) return;
     const warning = getUseWarning(id);
@@ -9005,6 +9067,7 @@
         if (!data.dailyNotices.complete && wasAllDone) {
           data.dailyNotices.complete = true;
           grantBoneBead();   // v6.10.0: +1 Костяная бусина за выполненный день (не больше 3)
+          relicTryFind();    // v7.7.5: Чаша Перерождения — 100+, Shadow Monarch, выдержка 10 дней, шанс 10% + 4% за каждый день без находки
           if (data.insurance && data.insuranceSourceId !== 'rune_protection_absolute') {
             // Спящая руна (усыплена Договором/Переносом) переживает успешный
             // день и ждёт следующего цикла. Проверка стоит ДО того, как
@@ -9460,7 +9523,7 @@
       for (const key in s.consumables) {
         if (getConsumableInfo(key)) {
           const n = sanitizeNumber(s.consumables[key], 0, 0);
-          if (n > 0) cleanConsumables[key] = Math.floor(n);
+          if (n > 0) cleanConsumables[key] = RELIC_CATALOG[key] ? Math.min(RELIC_MAX, Math.floor(n)) : Math.floor(n);   // v7.7.5: реликвия — не больше одной
         }
       }
     }
@@ -9675,6 +9738,7 @@
       rankSysV: s.rankSysV === RANK_SYS_V ? RANK_SYS_V : 0,
       // v7.6.1: испытание ранга. Идущее испытание и галочка ускорителя в бэкап не переносятся.
       rankHoldDays: Math.max(0, Math.floor(sanitizeNumber(s.rankHoldDays, 0))),
+      relicMiss: relicMissClean(s.relicMiss),   // v7.7.5
       examDelayUntil: Number.isFinite(s.examDelayUntil) ? s.examDelayUntil : null,
       examNarrow: !!s.examNarrow,
       examLastOffer: Number.isFinite(s.examLastOffer) ? s.examLastOffer : null,
@@ -10493,10 +10557,11 @@
       beadStreak: 0, beadBlockUntil: null, veilLifted: false });
     // штрафы
     Object.assign(data, { penaltyStreak: 0, penaltyRun: 0, totalPenalties: 0, penaltyStack: [] });
+    data.relicMiss = 0;   // v7.7.5: подстраховка находки Чаши — с начала
     // титулы и Кодекс (главы рангов и «Пробужденный» остаются, если ранг оставлен)
     data.titlesUnlocked = ['Новичок']; data.activeTitle = 'Новичок';
     const rankCh = keepRank ? PLAYER_RANKS.slice(0, rankIndex(data.rank) + 1).map(k => RANK_CODEX_MAP[k]) : [];
-    data.codexUnlocked = (Array.isArray(data.codexUnlocked) ? data.codexUnlocked : []).filter(c => REBIRTH_CODEX.includes(c) || rankCh.includes(c));
+    data.codexUnlocked = (Array.isArray(data.codexUnlocked) ? data.codexUnlocked : []).filter(c => REBIRTH_CODEX.includes(c) || rankCh.includes(c) || c === RELIC_ID);   // v7.7.5: глава Чаши остаётся
     REBIRTH_CODEX.forEach(c => { if (!data.codexUnlocked.includes(c)) data.codexUnlocked.push(c); });
     if (keepRank) awakenedGrant();
     // по галочкам
@@ -10529,6 +10594,163 @@
     try { updateSysCurrent(); fzDraw(false); } catch (e) {}
   }
   /* SL:SYS-TOOLS:END */
+
+  // ===== v7.7.5: ЧАША ПЕРЕРОЖДЕНИЯ (демо 123–123a) =====
+  // Находка: после закрытия дневного задания, на 100-м уровне и выше, с рангом Shadow Monarch и выдержкой в нём от 10 рабочих дней,
+  // если Чаши нет; шанс 10% + 4% за каждое закрытое задание без находки (relicMiss). Применение — Перерождение (rebirthApply)
+  // без галочек: ранг, предметы, артефакты, кредиты, Летопись и прогресс остаются, вложенные очки характеристик — свободными.
+  const RELIC_FIND_LEVEL = 100, RELIC_FIND_RANK = 'monarch', RELIC_FIND_HOLD = 10, RELIC_CHANCE = 0.10, RELIC_CHANCE_STEP = 0.04;
+  const RELIC_TEXTS = {
+    find: 'Получена реликвия: Чаша Перерождения', findSub: 'Путь пройден до вершины. Чаша обретена.',
+    ask: 'Испить из Чаши Перерождения? Путь начнётся с первого уровня. Всё обретённое сохранится, очки характеристик высвободятся. Действующие и ожидающие эффекты будут сняты. Чаша исчезнет.',
+    done: 'Чаша Перерождения испита. Путь начинается заново.',
+    curse: 'Чашу Перерождения нельзя использовать: действует Бремя Аномалии.'
+  };
+  function relicCanFind() {
+    return data.level >= RELIC_FIND_LEVEL && data.rank === RELIC_FIND_RANK && (data.rankHoldDays || 0) >= RELIC_FIND_HOLD && !(data.consumables[RELIC_ID] > 0);
+  }
+  function relicTryFind() {   // вызывается один раз за закрытое дневное задание
+    if (!relicCanFind()) return false;
+    const miss = relicMissClean(data.relicMiss);
+    if (Math.random() >= RELIC_CHANCE + RELIC_CHANCE_STEP * miss) { data.relicMiss = miss + 1; return false; }
+    data.relicMiss = 0;
+    data.consumables[RELIC_ID] = 1;
+    if (!data.codexUnlocked.includes(RELIC_ID)) data.codexUnlocked.push(RELIC_ID);   // глава — вместе с Чашей; уведомление — после окна находки
+    fxNotice(() => { showSystemPopup(RELIC_TEXTS.find, RELIC_TEXTS.findSub); showNotice(`Записано в Кодекс: ${CODEX_CHAPTERS[RELIC_ID].title}`, 'info'); });   // очередь: окно находки, затем Кодекс
+    return true;
+  }
+
+  // ---- блик по золоту и блёстки на иконке (Инвентарь, окно предмета; обе темы) ----
+  // Слой — точно по картинке (без отступов и линии рамки) и обрезан по ней; блик — по маске золота, блёстки — в точках на золотых кромках.
+  const RELIC_GOLD_MASK = 'data:image/png;base64,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';
+  const RELIC_GLINTS = (function (s) { const a = s.split(',').map(Number), r = []; for (let i = 0; i < a.length; i += 2) r.push([a[i] / 1000, a[i + 1] / 1000]); return r; })('496,266,461,121,453,723,309,246,664,922,484,691,535,195,469,207,516,211,320,328,547,199,598,926,500,777,672,273,676,320,359,922,594,250,312,301,504,246,344,309,496,770,344,922,492,254,691,270,566,926,297,918,699,227,465,191,477,699,453,98,602,254,574,234,664,301,559,207,305,918,480,891,469,148,496,883,312,297,484,227,535,156,367,273,449,203,660,293,332,301,480,148,527,910,465,914,480,699,637,289,676,266,488,238,492,863,527,711,531,715,586,242,531,902,332,922,383,258,609,262,539,215,356,285,508,887,512,891,504,250,461,184,578,219,527,94,375,273,473,711,297,258,402,926,348,70,406,246,664,332,477,719,297,254,629,258,547,922,688,285,402,250,465,160,656,320,465,125,586,223,621,926,551,219,504,680,688,238,629,281,613,926,445,86,508,742,352,301,672,293,492,867,340,922,461,180,445,219,356,270,367,922,324,297,477,164,691,273,617,926,340,297,504,738,535,94,668,297,398,66,648,305,539,730,539,102,625,277,496,156,457,195,504,863,316,266,484,762,508,750,594,230,461,195,340,66,508,691,676,328,535,148,422,926,320,289,305,238,508,234,523,94,414,66,555,223,520,90,336,922,523,738,551,734,375,926,582,219,441,742,504,883,453,70,469,742,641,297,297,227,492,164,500,762,449,734,660,328,449,94,613,242,562,926,320,270,672,289,496,672,516,750,570,230,543,98,676,324,508,688,512,742,531,144,480,754,348,922,492,684,410,242,352,70,535,734,680,918,590,926,441,207,516,891,387,926,508,238,332,328,309,242,633,922,695,266,508,62,496,789,414,926,465,133,590,246,453,922,387,254,707,238,520,74,609,926,328,922,668,340,387,66,457,109,465,70,414,242,660,297,348,297,574,926,359,70,473,703,582,242,555,922,492,262,688,281,430,230,656,289,363,277,531,137,457,113,320,324,637,293,504,746,637,266,547,719,539,715,516,738,449,219,644,301,434,926,520,78,555,738,492,250,359,281,711,211,617,262,426,926,531,914,660,922,504,258,703,250,539,94,551,922,488,121,676,922,543,199,469,141,465,211,496,766,535,211,531,94,504,867,492,676,324,293,535,113,301,262,648,922,356,277,539,164,527,734,480,168,652,312,402,242,566,230,477,137,301,230,480,219,680,316,289,215,445,734,723,164,457,168');
+  function relicFxStop(host) { const o = host && host.querySelector(':scope > .cfx'); if (o) o.remove(); }
+  function relicFxAttach(img, big) {
+    const host = img && img.parentElement; if (!host) return;
+    relicFxStop(host);
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+    const o = document.createElement('div'); o.className = 'cfx' + (big ? ' big' : ''); o.setAttribute('aria-hidden', 'true');
+    o.style.setProperty('--mk', `url(${RELIC_GOLD_MASK})`);
+    o.innerHTML = '<div class="cfx-m cfx-sweep"><i></i></div>';
+    const place = () => { if (!o.isConnected) return; const cs = getComputedStyle(img), px = v => parseFloat(v) || 0, pl = px(cs.paddingLeft), pr = px(cs.paddingRight), pt = px(cs.paddingTop), pb = px(cs.paddingBottom);
+      o.style.left = (img.offsetLeft + img.clientLeft + pl) + 'px'; o.style.top = (img.offsetTop + img.clientTop + pt) + 'px';
+      o.style.width = Math.max(0, img.clientWidth - pl - pr) + 'px'; o.style.height = Math.max(0, img.clientHeight - pt - pb) + 'px'; };
+    host.appendChild(o); place(); requestAnimationFrame(place); setTimeout(place, 120);
+    if (!img.complete) img.addEventListener('load', place, { once: true });
+    const every = big ? 650 : 1700;
+    const loop = () => {
+      if (!o.isConnected) return;
+      if (!document.hidden && !o.closest('.anim-paused')) relicGlint(o);   // свёрнуто или под открытым окном — пропуск
+      setTimeout(loop, every * (0.6 + Math.random() * 0.8));
+    };
+    setTimeout(loop, 150 + Math.random() * 300);
+  }
+  function relicGlint(o) {   // блёстка вспыхивает и гаснет на месте
+    if (!o.animate) return;
+    const [x, y] = RELIC_GLINTS[Math.floor(Math.random() * RELIC_GLINTS.length)];
+    const d = document.createElement('i'); d.className = 'cfx-gl'; d.style.left = (x * 100) + '%'; d.style.top = (y * 100) + '%'; o.appendChild(d);
+    const a = d.animate([{ transform: 'translate(-50%,-50%) scale(0) rotate(0deg)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1) rotate(25deg)', opacity: 1, offset: .45 },
+      { transform: 'translate(-50%,-50%) scale(0) rotate(45deg)', opacity: 0 }], { duration: 750 + Math.random() * 300, easing: 'ease-in-out' });
+    a.onfinish = () => d.remove(); a.oncancel = () => d.remove();
+  }
+  function relicFxInv() {
+    document.querySelectorAll(`#invContent .item-card[data-consumable-id="${RELIC_ID}"] .item-icon img`).forEach(img => relicFxAttach(img, false));
+  }
+  function relicFxPreview(iconId) {
+    const pimg = document.getElementById('itemPreviewImg'); if (!pimg) return;
+    if (iconId === RELIC_ID) relicFxAttach(pimg, true); else relicFxStop(pimg.parentElement);
+  }
+
+  // ---- применение ----
+  function relicUseAsk() {
+    if (!(data.consumables[RELIC_ID] > 0) || relicBusy) return;
+    if (data.curseActiveToday) { showNotice(RELIC_TEXTS.curse, 'warn', true); return; }
+    pendingConfirmAction = () => setTimeout(relicRun, 400);   // окно запроса уходит обычным уходом
+    document.getElementById('confirmContent').innerHTML = `
+      <div class="danger-warning-step">
+        <div class="danger-text" style="color:#a8d8ff;">${escapeHtml(RELIC_TEXTS.ask)}</div>
+        <div class="danger-btn-row">
+          <button class="danger-btn-cancel" onclick="closeConfirmModal()">Отмена</button>
+          <button class="danger-btn-confirm" onclick="runConfirmedAction()">Испить</button>
+        </div>
+      </div>`;
+    document.getElementById('confirmOverlay').style.display = 'flex';
+  }
+  // Сам сброс: Перерождение без галочек, затем вложенные очки — свободными, глава Чаши остаётся.
+  function relicApply() {
+    if (!(data.consumables[RELIC_ID] > 0)) return false;
+    const st = data.stats || {}, free = Math.max(0, Math.floor(data.statPoints || 0));
+    const invested = ['str', 'agi', 'sta', 'int', 'per'].reduce((sum, k) => sum + Math.max(0, Math.floor((st[k] || 10) - 10)), 0);
+    delete data.consumables[RELIC_ID];
+    rebirthApply({});
+    data.stats = { str: 10, agi: 10, sta: 10, int: 10, per: 10 };
+    data.statPoints = free + invested;
+    data.relicMiss = 0;
+    if (!data.codexUnlocked.includes(RELIC_ID)) data.codexUnlocked.push(RELIC_ID);
+    saveData(); render();
+    return true;
+  }
+  let relicBusy = false;
+  const RELIC_COUNT_MS = 2600, RELIC_NOTICE_DELAY = 3000;
+  // Эффект «свет + счёт»: Чаша в свете, белый экран, затем уровень на главном экране отсчитывает вниз до 1 (искры осыпаются),
+  // сброс — в конце счёта; через 3 с — уведомление. Без Web Animations — сразу.
+  async function relicRun() {
+    if (relicBusy || !(data.consumables[RELIC_ID] > 0)) return;
+    relicBusy = true;
+    const block = document.createElement('div'); block.className = 'cfx-block'; document.body.appendChild(block);   // нажатий нет до конца
+    try {
+      try { closeInv(); } catch (e) {}
+      document.querySelectorAll('.status-overlay').forEach(o => { if (o.style.display === 'flex') o.style.display = 'none'; });
+      if (!document.body.animate) { relicApply(); }
+      else {
+        window.scrollTo(0, 0);
+        await relicWait(450);
+        await relicLight();
+        await relicCount();
+      }
+    } finally { block.remove(); relicBusy = false; }
+    setTimeout(() => showNotice(RELIC_TEXTS.done, 'info'), RELIC_NOTICE_DELAY);
+  }
+  const relicWait = ms => new Promise(r => setTimeout(r, ms));
+  const relicA = (el, kf, o) => el.animate(kf, Object.assign({ fill: 'forwards' }, o)).finished.catch(() => {});
+  function relicLayer(cls) { const d = document.createElement('div'); d.className = 'cfx-full ' + cls; d.setAttribute('aria-hidden', 'true'); document.body.appendChild(d); return d; }
+  async function relicLight() {
+    const L = relicLayer('cfx-light'); L.innerHTML = `<div class="cfx-glowb"></div><img src="icons/items/${RELIC_ID}.png" alt="">`;
+    const im = L.querySelector('img'), gl = L.querySelector('.cfx-glowb'), W = relicLayer('cfx-white');
+    relicA(im, [{ transform: 'translate(-50%,-50%) scale(.55)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }], { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    relicA(gl, [{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: .9, offset: .5 }, { transform: 'translate(-50%,-50%) scale(4)', opacity: 1 }], { duration: 1500, easing: 'ease-in' });
+    await relicWait(900);
+    await relicA(W, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: 'ease-in' });
+    L.remove(); await relicWait(200);
+    await relicA(W, [{ opacity: 1 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' }); W.remove();
+  }
+  async function relicCount() {
+    const el = document.getElementById('hdrLevel');
+    if (!el || data.level <= 1) { relicApply(); return; }
+    const from = data.level, n = from - 1, t0 = performance.now(), rc = el.getBoundingClientRect();
+    el.classList.add('cfx-count');
+    let sparking = true;
+    const spark = () => {   // искры осыпаются всё время счёта
+      if (!sparking) return;
+      const d = document.createElement('i'); d.className = 'lvx-spark cfx-fall';
+      d.style.left = (rc.left + Math.random() * rc.width) + 'px'; d.style.top = (rc.top + rc.height * .6) + 'px'; document.body.appendChild(d);
+      relicA(d, [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${((Math.random() - .5) * 30).toFixed(0)}px,${(40 + Math.random() * 70).toFixed(0)}px) scale(.4)`, opacity: 0 }], { duration: 1000 + Math.random() * 600, easing: 'ease-in' }).then(() => d.remove());
+      setTimeout(spark, 110);
+    };
+    spark();
+    await new Promise(res => {
+      const f = now => {
+        const k = Math.min(1, (now - t0) / RELIC_COUNT_MS), e = 1 - Math.pow(1 - k, 2.2), v = String(Math.max(1, Math.round(from - n * e)));
+        if (el.textContent !== v) { el.textContent = v; el.classList.remove('d1', 'd2', 'd3'); el.classList.add('d' + Math.min(3, v.length)); }
+        if (k < 1) requestAnimationFrame(f); else res();
+      };
+      requestAnimationFrame(f);
+    });
+    sparking = false;
+    relicApply();
+    el.classList.remove('cfx-count');
+    const el2 = document.getElementById('hdrLevel'); if (el2) relicA(el2, [{ filter: 'brightness(2.6)' }, { filter: 'brightness(1)' }], { duration: 700, fill: 'none' });
+  }
 
   document.getElementById('rankInfoBtn').onclick = () => { updateStatusUI(); document.getElementById('statusOverlay').style.display='flex'; }; // карточка статуса → окно «СТАТУС»
   document.getElementById('closeStatusBtn').onclick = () => document.getElementById('statusOverlay').style.display='none';
@@ -11610,6 +11832,9 @@
     data.examToday = (data.examToday && typeof data.examToday === 'object') ? data.examToday : null;
     data.examCredited = !!data.examCredited;
     data.examAccel = !!data.examAccel;
+    data.relicMiss = relicMissClean(data.relicMiss);   // v7.7.5
+    if (data.consumables && data.consumables[RELIC_ID] > RELIC_MAX) data.consumables[RELIC_ID] = RELIC_MAX;
+    if (data.consumables && data.consumables[RELIC_ID] > 0 && Array.isArray(data.codexUnlocked) && !data.codexUnlocked.includes(RELIC_ID)) data.codexUnlocked.push(RELIC_ID);   // глава — вместе с Чашей (догоняющая, тихо)
   }
   function sanitizeExamMark(m) {
     if (!m || typeof m !== 'object') return null;

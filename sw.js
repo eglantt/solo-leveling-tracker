@@ -16,7 +16,7 @@
 // установку, ни активацию.
 // ============================================================================
 
-const CACHE_VERSION = 'v7-7-4';
+const CACHE_VERSION = 'v7-7-5';
 const ASSETS_VERSION = 'v2';
 const APP_CACHE = `solo-leveling-app-${CACHE_VERSION}`;
 const ASSETS_CACHE = `solo-leveling-assets-${ASSETS_VERSION}`;
@@ -90,6 +90,7 @@ const ASSET_FILES = [
   './icons/items/crystal_impulse.png',
   './icons/items/box_anomaly.png',
   './icons/items/box_rank.png',
+  './icons/items/relic_rebirth.png',
   './icons/items/tablet_of_reassessment.png',
   './icons/items/title_marathoner.png',
   './icons/items/title_horizon_conqueror.png',
@@ -118,6 +119,7 @@ const ASSET_FILES = [
   './icons/items-s/bone_bead.png',
   './icons/items-s/box_anomaly.png',
   './icons/items-s/box_rank.png',
+  './icons/items-s/relic_rebirth.png',
   './icons/items-s/box_basalt.png',
   './icons/items-s/box_crimson.png',
   './icons/items-s/box_dark_quartz.png',

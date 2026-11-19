@@ -1081,7 +1081,7 @@ async function completeTests() {
   const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');
   check('K4 старой надписи, её анимации и неиспользуемой вспышки нет', !/\.complete-popup|@keyframes completeText|\.completion-effect|@keyframes flash\b/.test(css) && !D.querySelector('.complete-popup'));
   const raw = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf-8');
-  check('K5 в коде нет отложенных на 4,5 с уведомлений и прямых показов доплат свитков', !/, 4500\)/.test(raw) && (raw.match(/fxNotice\(\(\) =>/g) || []).length === 17);   // v7.6.0: окна «Новый ранг» при повышении уровня больше нет
+  check('K5 в коде нет отложенных на 4,5 с уведомлений и прямых показов доплат свитков', !/, 4500\)/.test(raw) && (raw.match(/fxNotice\(\(\) =>/g) || []).length === 18);   // v7.6.0: окна «Новый ранг» при повышении уровня больше нет; v7.7.5: +1 — находка Чаши Перерождения
   await sleep(Math.max(0, 1900 - (Date.now() - kT0)));
   check('K6 надпись ещё на экране в 1,9 с', Date.now() - kT0 < 1990 && !!D.querySelector('.quest-item[data-id="pushups"] .cpx'), Date.now() - kT0);
   await sleep(250);
