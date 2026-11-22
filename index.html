@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v8.0.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v8.0.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -2775,7 +2775,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '8.0.0';
+  const APP_VERSION = '8.0.1';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -12102,7 +12102,7 @@
     const TX = { start: 'Трек запущен. Расстояние засчитывается Системой.', loss: 'Сигнал потерян. Бег приостановлен.', nofix: 'Сигнал не получен. Выйдите на открытое место.',
       hint: 'Нажмите «Начать». Трек появится с первым сигналом.', search: 'Поиск сигнала…', nogeo: 'Устройство не передаёт местоположение Системе.',
       https: 'Настоящий сигнал работает только на странице по адресу https (сайт на GitHub Pages).', deny: 'Доступ к местоположению запрещён. Разрешите его в настройках браузера.', nocmp: 'Компас недоступен.',
-      lock: 'Идёт бег в режиме трека. Другие упражнения и ввод данных недоступны до завершения бега.', tmr: 'Идёт отсчёт таймера. Режим трека недоступен до его окончания.', done: 'Задание по бегу уже выполнено.' };
+      weak: 'Сигнал слабый. Трек начнётся, когда точность улучшится.', lock: 'Идёт бег в режиме трека. Другие упражнения и ввод данных недоступны до завершения бега.', tmr: 'Идёт отсчёт таймера. Режим трека недоступен до его окончания.', done: 'Задание по бегу уже выполнено.' };
     const SIG = { best: 'Сигнал отличный', good: 'Сигнал хороший', weak: 'Сигнал слабый', lost: 'Нет сигнала', search: 'Поиск сигнала', off: 'Сигнал не включён', pause: 'Пауза' };
 
 
@@ -12216,7 +12216,8 @@
       const t0 = performance.now(); JL.cnt('fix');
       r.lastFix = t; r.acc = acc; r.gotFix = true; errMsg = ''; JL.acc(acc);
       r.lv = acc > 40 ? 'weak' : acc > 10 ? 'good' : 'best';   // 124h: отличный до 10 м, хороший 10–40 м, слабый хуже 40 м
-      if (acc > 40) { JL.cnt('weak'); draw(); return; }   // неточная — не в трек и не двигает камеру
+      if (!r.any || hav(r.any, [lat, lon]) > 5) r.any = [lat, lon];   // v8.0.1: место Игрока для вида поля — по любой точке (в трек идут только точные)
+      if (acc > 40) { JL.cnt('weak'); draw(); return; }   // неточная — не в трек
       if (!r.raw) r.raw = []; if (!r.qz) r.qz = [];
       const p = [lat, lon, t, Math.round(acc)];
       // скачок: дальше, чем можно пробежать (> 30 км/ч), и дальше 50 м / трёх погрешностей — ждёт подтверждения
@@ -12390,7 +12391,7 @@
       gestures($('#gpFld'));
       qbBuild();
       $('#gpFb').onclick = () => { L.classList.toggle('fshow'); JL.ev(L.classList.contains('fshow') ? '«Показать трек»' : '«Скрыть трек»'); fieldSync(); };
-      $('#gpRc').onclick = () => { L.classList.remove('qbon'); cam.follow = true; cam.touchT = 0; const r = run(); if (r && r.st === 'done') fitAll(); else { const h = headPos(); if (h) camTo(h[0], h[1]); } redraw(); };
+      $('#gpRc').onclick = () => { L.classList.remove('qbon'); cam.follow = true; cam.touchT = 0; const r = run(); if (r && r.st === 'done') fitAll(); else { const h = camPos(); if (h) camTo(h[0], h[1]); } redraw(); };
     }
     // поле видно? («только цифры» — во время бега поле скрыто, пока не нажата «Показать трек»)
     const fieldOn = () => !!L && !PIP.on && (O.field === 'show' || !live() || L.classList.contains('fshow'));
@@ -12407,7 +12408,7 @@
     function open() {
       ensure(); if (L.classList.contains('on')) return;   // уже открыт — ничего не перерисовываем
       const t0 = performance.now(); L.classList.add('on'); under();
-      const r = run(); if (r && r.st === 'done') setTimeout(fitAll, 30); else { const h = headPos(); if (h) camTo(h[0], h[1]); }
+      const r = run(); if (r && r.st === 'done') setTimeout(fitAll, 30); else { const h = camPos(); if (h) camTo(h[0], h[1]); }
       if (optDirty) { optDirty = false; applyOpt(); } else { build(); draw(); fieldSync(); cam.drawn = null; if (fieldOn()) redraw(); }
       loop(); JL.ms('open', performance.now() - t0); JL.ev('слой бега открыт');
     }
@@ -12456,7 +12457,7 @@
       else if (now() - r.lastFix > 10000) { cls = 'lost'; tx = SIG.lost; }
       else { cls = r.lv || 'best'; tx = SIG[cls]; }
       const sc = 'sig ' + cls; if (sg.className !== sc) sg.className = sc; if (sg.getAttribute('aria-label') !== tx) { sg.setAttribute('aria-label', tx); sg.title = tx; }
-      const msg = $('#gpMsg'), mt = errMsg && live() ? errMsg : (st === 'idle' && !(r && r.pts.length) ? TX.hint : (live() && !r.pts.length ? (r.st === 'pause' ? '' : TX.search) : ''));
+      const msg = $('#gpMsg'), mt = errMsg && live() ? errMsg : (st === 'idle' && !(r && r.pts.length) ? TX.hint : (live() && !r.pts.length ? (r.st === 'pause' ? '' : r.gotFix && r.lv === 'weak' ? TX.weak : TX.search) : ''));
       if (msg.textContent !== mt) msg.textContent = mt;
       const goal = $('#gpGoal');
       if (goal) { const left = Math.max(0, T - cur); const t = doneSteps() ? '<b>Задание по бегу выполнено.</b>' : `До цели: <b>${data.runUnit === 'km' ? km1(left + 109) + ' км' : left + ' шагов'}</b>`; if (goal.innerHTML !== t) goal.innerHTML = t; }
@@ -12491,6 +12492,8 @@
     // ---------- поле трека ----------
     let S = 0, dpr = 1;
     const headPos = () => { const r = run(); if (!r || !r.pts.length) return null; return hp.cur || r.pts[r.pts.length - 1]; };
+    // v8.0.1: где Игрок — голова трека, а если трек ещё пуст — последняя точка любой точности; места нет — null (поле не показывает чужую местность)
+    const camPos = () => headPos() || ((run() || {}).any || null);
     const hp = { from: null, to: null, t0: 0, cur: null };
     function camTo(lat, lon) { cam.lat = lat; cam.lon = lon; }
     function sizeGround() {
@@ -12697,6 +12700,7 @@
     function vecStyle() { return [O.bld, O.water, O.park, getComputedStyle(document.body).getPropertyValue('--sx').trim()].join('|'); }
     function drawVec(x) {
       if (VEC.off) return 0;
+      if (!camPos()) return 0;   // v8.0.1: место Игрока ещё неизвестно — схема не рисуется (иначе — местность заготовленного маршрута)
       const d = cam.drawn; vecTpl(); const w = vecWorker(); if (!VEC.tpl || !w) { if (VEC.wFail) note('Фоновый поток недоступен: схема не рисуется.'); return 0; }
       let drew = 0;
       const st = vecStyle(); if (st !== VEC.style) { VEC.style = st; VEC.cache.forEach(b => b.close()); VEC.cache.clear(); VEC.pend.clear(); }
@@ -12709,7 +12713,7 @@
       let FP = null, FR = 0;
       if (O.fog > 0) { const r = run(), src = r && r.pts.length ? r.pts : [], step = Math.max(1, Math.floor(src.length / 400)); FP = [];
         for (let i = 0; i < src.length; i += step) FP.push(merc(src[i][0], src[i][1], vz)); if (src.length) FP.push(merc(src[src.length - 1][0], src[src.length - 1][1], vz));
-        const h = headPos(); FP.push(h ? merc(h[0], h[1], vz) : ctr); FR = O.fog / mppZ(d.lat, vz) + 48; }
+        const h = camPos(); FP.push(h ? merc(h[0], h[1], vz) : ctr); FR = O.fog / mppZ(d.lat, vz) + 48; }
       const near = (tx, ty) => { if (!FP) return true; const a0 = tx * 256, a1 = a0 + 256, b0 = ty * 256, b1 = b0 + 256;
         for (const q of FP) { const dx = q[0] < a0 ? a0 - q[0] : q[0] > a1 ? q[0] - a1 : 0, dy = q[1] < b0 ? b0 - q[1] : q[1] > b1 ? q[1] - b1 : 0; if (dx * dx + dy * dy <= FR * FR) return true; } return false; };
       for (let tx = x0; tx <= x1; tx++) for (let ty = y0; ty <= y1; ty++) {
@@ -12736,7 +12740,7 @@
         const P = proj(d.z, d.lat, d.lon, d.mpp), R = O.fog / d.mpp, E = Math.min(60, O.fog * 0.3) / d.mpp;
         const pts = r && r.pts.length ? r.pts : [[cam.lat, cam.lon]];
         const line = () => { g.beginPath(); pts.forEach((p, i) => { const a = P(p[0], p[1]); i ? g.lineTo(a[0], a[1]) : g.moveTo(a[0], a[1]); }); if (pts.length === 1) { const a = P(pts[0][0], pts[0][1]); g.lineTo(a[0] + 0.1, a[1]); } };
-        line(); const h = headPos(); if (h) { const a = P(h[0], h[1]); g.lineTo(a[0] + 0.1, a[1]); }
+        line(); const h = camPos(); if (h) { const a = P(h[0], h[1]); g.lineTo(a[0] + 0.1, a[1]); }
         g.strokeStyle = '#fff'; g.lineCap = g.lineJoin = 'round';
         for (let i = 0; i < 5; i++) { g.globalAlpha = 0.2; g.lineWidth = 2 * (R + E / 2 - E * i / 5); g.stroke(); }
         g.globalAlpha = 1; g.lineWidth = Math.max(1, 2 * (R - E / 2)); g.stroke();
@@ -12871,10 +12875,10 @@
         const r = run(), running = r && r.st === 'run';
         // возврат к виду «вперёд» после жестов
         if (!cam.follow && running && cam.touchT && Date.now() - cam.touchT > O.back * 1000) cam.follow = true;
-        const h = r && r.pts.length ? r.pts[r.pts.length - 1] : null;
+        const h = r && r.pts.length ? r.pts[r.pts.length - 1] : null, ch = h || (r && r.st !== 'done' && r.any) || null;   // v8.0.1: вид — и по неточной точке, голова — только по треку
         headSrc(r);
         if (cam.follow && !(r && r.st === 'done')) {
-          if (h) { const k = 1 - Math.pow(0.02, dt);   // плавно; дальше 200 м — сразу, без полёта
+          if (ch) { const h = ch; const k = 1 - Math.pow(0.02, dt);   // плавно; дальше 200 м — сразу, без полёта
             if (hav([cam.lat, cam.lon], h) > 200) { cam.lat = h[0]; cam.lon = h[1]; JL.cnt('teleport'); } else { cam.lat += (h[0] - cam.lat) * k; cam.lon += (h[1] - cam.lon) * k; }
             const z0 = O.view === '3d' ? 1.0 : 1.4; cam.mpp += (z0 - cam.mpp) * (1 - Math.pow(0.2, dt)); }
           const want = O.view === 'north' ? 0 : HS.src === 'cmp' ? CMP.t : (r && r.hd != null ? r.hd : cam.b);

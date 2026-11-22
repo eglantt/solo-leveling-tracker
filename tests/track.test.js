@@ -51,7 +51,7 @@ const runPts = (w, n, from) => E(w, `(() => { const t0 = Date.now(); for (let i 
   // ---- поля данных ----
   { const w = await mk();
     check('TR1 новый Игрок: бег — расстояние, фон чёрный, вид 3D', E(w, "data.runUnit") === 'km' && E(w, "data.trackBg") === 'black' && E(w, "data.trackView") === '3d');
-    check('TR2 версия 8.0.0 (APP_VERSION и заголовок)', E(w, 'APP_VERSION') === '8.0.0' && /v8\.0\.0/.test(w.document.title));
+    check('TR2 версия 8.0.1 (APP_VERSION и заголовок)', E(w, 'APP_VERSION') === '8.0.1' && /v8\.0\.1/.test(w.document.title));
     check('TR3 модуль трека подключён', E(w, "!!(window.Track && Track.ready)"));
     const raw = JSON.parse(E(w, "localStorage.getItem('sl_daily_v5_5_0')"));
     delete raw.runUnit; delete raw.trackBg; delete raw.trackView;
@@ -193,6 +193,16 @@ const runPts = (w, n, from) => E(w, `(() => { const t0 = Date.now(); for (let i 
     check('TR49 карман: под числом пройденного — цель «/ N км», строка «Шаги N · время» осталась', !!tg && /^\/ \d+,\d ?км$/.test(tg.textContent) && /^Шаги \d+ · /.test(Q(w, '#gpQ2').textContent), tg && tg.textContent);
     const hp = Q(w, '#gpPocket .hp');
     check('TR50 карман трека: до касания кольцо удержания скрыто', !!hp && hp.style.opacity === '0');
+  }
+  // ---- v8.0.1: слабый сигнал до первой точной точки ----
+  { const w = await mk("Track.simSet(false);");
+    E(w, "Track._t.open(); Track._t.start(); Track._t.fix(43.65, 51.17, 100, Date.now());");
+    await sleep(400);
+    check('TR51 неточная точка: в трек не идёт, но место Игрока запомнено (для вида поля)', E(w, "Track._t.run().pts.length") === 0 && J(w, "Track._t.run().any").join(',') === '43.65,51.17');
+    check('TR52 значок — «слабый», надпись — «Сигнал слабый. Трек начнётся, когда точность улучшится.»', Q(w, '#gpSig').className === 'sig weak' && Q(w, '#gpMsg').textContent === 'Сигнал слабый. Трек начнётся, когда точность улучшится.', Q(w, '#gpMsg').textContent);
+    const w2 = await mk("Track.simSet(false);", null, w => { Object.defineProperty(w.navigator, 'geolocation', { value: { watchPosition() { return 1; }, clearWatch() {} } }); Object.defineProperty(w, 'isSecureContext', { value: true }); });
+    E(w2, "Track._t.open(); Track._t.start();"); await sleep(400);
+    check('TR53 точек ещё нет — «Поиск сигнала…» и белая бегущая полоска', Q(w2, '#gpSig').className === 'sig search' && Q(w2, '#gpMsg').textContent === 'Поиск сигнала…');
   }
   console.log(`\nИтого: ${pass} OK, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
