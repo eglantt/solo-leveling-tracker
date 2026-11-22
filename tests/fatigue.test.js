@@ -26,7 +26,7 @@ function fresh(extra) {
   const w = boot();
   E(w, `window.__T = Date.now(); Date.now = () => window.__T;
     data.completed={}; data.isGoalMet=false; data.activeScroll=null; data.pendingScroll=null; data.curseActiveToday=false; data.pendingCurse=false;
-    data.targetDiscountToday=false; data.targetDiscountRate=0; data.paceControl=false; data.paceWindow=emptyPaceWindow();
+    data.targetDiscountToday=false; data.targetDiscountRate=0; data.paceControl=false; data.paceWindow=emptyPaceWindow(); data.runUnit='steps';   /* v8.0.0: кнопки шагов */
     data.level=10; data.dailyTargetLevel=10; data.stats.sta=10; data.fatigueOn=true; data.fatigue=emptyFatigue(); fzPopUntil=0; ${extra || ''}; render();`);
   return w;
 }
@@ -210,7 +210,7 @@ function scen(w, n, rest, mult) {
   E(w, 'resetFatigueAction()');
   check('A4 «Сбросить усталость»', F(w) === 0 && E(w, 'data.fatigueOn') === true);
   const sec = E(w, "Array.from(document.querySelectorAll('#sysToolsOverlay .backup-section-title')).map(t => t.textContent).join('|')");
-  check('A5 Длань: раздел «Шкала усталости» после «Контроля темпа», перед «Сбросами»', /Контроль темпа\|Шкала усталости\|Сбросы/.test(sec), sec);
+  check('A5 Длань: раздел «Шкала усталости» после «Контроля темпа», перед «Бегом по треку» (v8.0.0) и «Сбросами»', /Контроль темпа\|Шкала усталости\|Бег по треку\|Сбросы/.test(sec), sec);
   E(w, 'syncFatigueCheckbox()');
   check('A6 галочка и подпись', E(w, "document.getElementById('fatigueCheckbox').classList.contains('on')") && E(w, "document.getElementById('fatigueLabel').textContent") === 'Механика усталости: включена.'); }
 { const w = fresh(); add(w, 'pushups', 50);

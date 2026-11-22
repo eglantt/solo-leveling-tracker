@@ -611,8 +611,8 @@ async function paceSectionTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 250));
   const D = w.document;
   const titles = [...D.querySelectorAll('.backup-section-title')].map(t => t.textContent.trim());
-  const iR = titles.indexOf('Реестр Игроков'), iP = titles.indexOf('Контроль темпа'), iF = titles.indexOf('Шкала усталости'), iS = titles.indexOf('Сбросы');
-  check('PS1 порядок: «Реестр Игроков» → «Контроль темпа» → «Шкала усталости» (v7.4.0) → «Сбросы»', iR >= 0 && iP === iR + 1 && iF === iP + 1 && iS === iF + 1, titles.join(' | '));
+  const iR = titles.indexOf('Реестр Игроков'), iP = titles.indexOf('Контроль темпа'), iF = titles.indexOf('Шкала усталости'), iT = titles.indexOf('Бег по треку'), iS = titles.indexOf('Сбросы');
+  check('PS1 порядок: «Реестр Игроков» → «Контроль темпа» → «Шкала усталости» (v7.4.0) → «Бег по треку» (v8.0.0) → «Сбросы»', iR >= 0 && iP === iR + 1 && iF === iP + 1 && iT === iF + 1 && iS === iT + 1, titles.join(' | '));
   const tP = [...D.querySelectorAll('.backup-section-title')].find(t => t.textContent.trim() === 'Контроль темпа');
   const tR = [...D.querySelectorAll('.backup-section-title')].find(t => t.textContent.trim() === 'Реестр Игроков');
   const cs = el => w.getComputedStyle(el);
@@ -654,6 +654,7 @@ async function paceTests() {
     check('PC6 уведомление о темпе одно, при нескольких отказах подряд', n === 1, n);
     check('PC7 текст и тон уведомления', E(w, `PACE_NOTICE`) === 'Зафиксирован недопустимый темп. Последнее внесение не засчитано. Система восстанавливает контроль.'
       && E(w, `(notificationQueue.find(x => x.body === PACE_NOTICE) || { tone: 'warn' }).tone`) === 'warn');
+    E(w, "data.runUnit = 'steps'; render()");   // v8.0.0: кнопки шагов (+100 / +500 / +1000) — в режиме шагов
     tap(w, 'steps', 1000, 80);
     check('PC8 шаги без ограничений: вся норма разом, запас окна не тратится', cnt(w, 'steps') >= E(w, `getDynamicTarget(10000, data.dailyTargetLevel, 'steps')`) && !hot(w, 'steps'));
     adv(w, 2 * 60000 + 10);
@@ -1051,7 +1052,7 @@ async function limitActivateTests() {
   D.querySelector('#confirmContent .confirm-btn-continue').click();
   check('L2 страница не перезагружалась (тот же документ и те же элементы)', E(w, 'window.__marker') === 'тот же документ' && $('pushups') === counterEl);
   check('L3 состояние: Предел начат, раунд идёт, счётчик Преодолений +1', E(w, 'data.isGoalMet && data.limitBreakRoundPending && data.limitBreaksToday === 1'));
-  check('L4 счётчики упражнений обнулены на экране', [...D.querySelectorAll('.quest-item .counter')].every(c => c.textContent === '0'));
+  check('L4 счётчики упражнений обнулены на экране', [...D.querySelectorAll('.quest-item .counter')].every(c => c.textContent === (c.id === 'steps' && E(w, 'data.runUnit') === 'km' ? '0,0' : '0')));   // v8.0.0: бег в км — «0,0»
   const tintBad = [...D.querySelectorAll('.quest-item')].filter(q => !q.querySelector('.counter').classList.contains('limit-break') || !q.querySelector('.qbar-fill').classList.contains('limit-break'));
   check('L5 цифры и полоски голубые', tintBad.length === 0, tintBad.length);
   check('L6 блок Предела: «Завершите текущий раунд…»', $('limitStatus').textContent === 'Завершите текущий раунд Преодоления предела' && $('limitBreakBtn').disabled, $('limitStatus').textContent);
@@ -1288,7 +1289,9 @@ async function nameAndSpacingTests() {
 async function cleanupTests() {
   const w = boot(); await new Promise(r => setTimeout(r, 300));
   const D = w.document, html = D.documentElement.outerHTML;
-  check('C1 карточка называется «Бег (шаги)»', D.querySelector('.quest-item[data-id="steps"] .quest-name').textContent === 'Бег (шаги)');
+  check('C1 карточка называется «Бег» (расстояние, по умолчанию с v8.0.0) или «Бег (шаги)»', D.querySelector('.quest-item[data-id="steps"] .quest-name').textContent === 'Бег'
+    && (E(w, "data.runUnit = 'steps'; render(); 0"), D.querySelector('.quest-item[data-id="steps"] .quest-name').textContent === 'Бег (шаги)'));
+  E(w, "data.runUnit = 'km'; render()");
   check('C2 название для Летописи и уведомлений — «Бег (шаги)»', E(w, 'QUEST_DISPLAY_NAMES.steps') === 'Бег (шаги)');
   check('C3 «Пробежка» нигде не осталась', !html.includes('Пробежка'));
   const css = [...D.querySelectorAll('style')].map(s => s.textContent).join('\n').replace(/:is\(#([\w-]+), \[data-gid="\1"\]\)/g, '#$1');

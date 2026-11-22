@@ -36,7 +36,7 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
 
 (async () => {
   const HIDE = "document.querySelectorAll('.status-overlay').forEach(o => o.style.display = 'none'); notificationQueue.length = 0; notificationActive = false;";
-  const base = extra => `data.rulesAcknowledged = true; data.playerName = 'Тест'; data.level = 20; data.dailyTargetLevel = 20; data.completed = {}; data.exam = null; data.examPost = null; data.activeScroll = null; data.curseActiveToday = false; data.paceWindow = emptyPaceWindow(); ${extra || ''} saveData(); render(); ${HIDE}`;
+  const base = extra => `data.rulesAcknowledged = true; data.playerName = 'Тест'; data.level = 20; data.dailyTargetLevel = 20; data.completed = {}; data.exam = null; data.examPost = null; data.activeScroll = null; data.curseActiveToday = false; data.paceWindow = emptyPaceWindow(); data.runUnit = 'steps'; /* v8.0.0: таймер бега — в режиме шагов */ ${extra || ''} saveData(); render(); ${HIDE}`;
   const mk = async extra => { const w = boot(); await sleep(250); E(w, base(extra)); return w; };
   const RUN = id => `data.setRun.${id}`;
   const at = (w, id, v) => { E(w, `(() => { const s = ${RUN(id)}; s.vB = ${v}; s.rB = Date.now(); setsTick(); sxDraw(); })()`); };   // виртуальное время фазы, сек
