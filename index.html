@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v8.1.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v8.1.2 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1744,6 +1744,9 @@
     #gpLayer .xph { width: 100%; text-align: center; font-size: .84rem; color: #cfe6fb; min-height: 1.3em; }
     #gpLayer .xph b { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; color: var(--sx); }
     #gpLayer.gpx .ctl button:disabled { opacity: .35; }
+    /* v8.1.2: отпечаток пальца в кольце удержания карманов (демо 127) — обе темы одинаково */
+    :is(#gpPocket, #sxPocket, #exPocket) .hold .lk .fp { position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px; transform: none; overflow: visible; color: #6f7c8c; pointer-events: none; }
+    :is(#gpPocket, #sxPocket, #exPocket) .hold .lk .fpc { opacity: 0; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -2798,7 +2801,25 @@
 </div> 
 
 <script>
-  const APP_VERSION = '8.1.1';
+  const APP_VERSION = '8.1.2';
+  // v8.1.2: кольцо удержания карманов (трек, таймер, испытание) — отпечаток пальца вместо замка (демо 127):
+  // в покое серый, при удержании разгорается цветом кольца вместе с заполнением (2 с), отпустили раньше — гаснет 0,3 с
+  const FP_PATH = 'M7800 1463c336,174 2186,228 3624,1771 826,887 1565,2129 1638,3795 103,2355 -1303,4099 -886,4330 379,210 520,-466 614,-708 413,-1067 772,-2129 771,-3316 -3,-2928 -1969,-5463 -4783,-6154 -379,-93 -1185,-366 -978,282z M6835 4022c-1195,177 -1998,840 -2443,1612 -375,652 -543,1769 -1212,2870 -301,495 -822,1034 -705,1260 184,355 500,-92 584,-197 1131,-1412 1138,-2377 1655,-3480 960,-2051 3948,-2143 5018,-108 123,235 171,545 271,738 233,448 1014,13 -249,-1594 -492,-626 -1659,-1287 -2919,-1101z M6844 3016c-518,55 -1894,433 -2003,786 -42,135 24,485 483,217 880,-514 1957,-692 3046,-365 1744,524 3147,2404 2557,4737l-447 1412c-43,340 324,413 466,144 96,-181 184,-512 249,-713 370,-1154 526,-2013 154,-3247 -509,-1689 -2263,-3212 -4505,-2971z M11334 4363c-247,230 89,436 383,1166 630,1562 298,2947 -248,4416 -481,1292 -1231,2640 -2083,3668 -64,77 -151,170 -200,239 -222,310 80,551 334,381 227,-151 1267,-1728 1470,-2088 858,-1524 1761,-3683 1520,-5521 -60,-456 -655,-2747 -1176,-2261z M6855 2010c-3493,273 -4815,3567 -4676,3930 101,266 379,188 480,-64 441,-1095 798,-1784 1838,-2509 1560,-1088 3642,-1196 5345,-131 172,107 339,273 480,356 303,176 1050,-169 -650,-1023 -797,-401 -1775,-641 -2817,-559z M6582 1131c-527,-252 -2112,496 -2528,739 -1687,990 -2365,2240 -2958,3981 -155,455 -311,797 -513,1198 -287,571 -701,888 -551,1122 405,636 1320,-1571 1419,-1835 377,-1009 497,-1605 1075,-2394 892,-1219 2170,-2088 3704,-2356 328,-57 457,-120 352,-455z M6586 5259c-555,-281 -1337,766 -1515,1273 -657,1867 -1117,3335 -2853,4565 -422,300 -899,468 -660,768 197,246 792,-247 941,-355 833,-600 1584,-1437 2083,-2396 356,-686 631,-1324 853,-2086 488,-1668 1350,-1066 1151,-1769z M7231 5420c442,199 1136,123 1593,985 372,702 238,1355 9,2090 -564,1810 -1045,2286 -1190,2682 -73,202 26,395 244,368 158,-20 235,-199 318,-343 464,-801 1344,-2687 1355,-3823 11,-1091 -645,-1972 -1584,-2279 -368,-120 -911,-241 -745,320z M10411 8034c-14,-9 -33,-31 -47,-38 -483,-252 -413,428 -881,1631 -640,1648 -1486,2868 -2676,4083 -117,119 -692,488 -474,761 217,272 532,-124 759,-343 123,-118 204,-215 321,-338 133,-140 225,-205 344,-358 495,-636 683,-815 1159,-1563 336,-526 661,-1145 913,-1766 159,-392 700,-1662 582,-2069z M4238 4245c-351,209 -850,1103 -1015,1534 -652,1695 -848,2698 -2403,3965 -601,490 -114,628 71,562 292,-103 1066,-931 1307,-1247 1182,-1551 1092,-2356 1640,-3453 329,-657 750,-956 762,-1129 15,-215 -189,-335 -362,-232z M8264 8567c289,-438 395,-1377 149,-1882 -230,-472 -907,-900 -1639,-603 -613,249 -735,669 -946,1382 -178,602 -385,1180 -663,1708 -263,496 132,639 333,424 353,-377 841,-2225 988,-2573 262,-620 1093,-748 1447,-166 440,725 -528,1820 331,1710z M11196 1324c-458,260 268,557 822,1097 717,698 1364,1686 1695,2695 289,880 245,1728 677,1476 288,-169 -124,-1421 -229,-1704 -477,-1294 -1223,-2375 -2259,-3230 -285,-236 -500,-452 -706,-334z M7642 9182c-134,106 -123,154 -199,336 -337,806 -918,1742 -1463,2357 -517,584 -1060,1127 -1693,1598 -363,271 -99,630 230,456 192,-102 962,-791 1156,-999 893,-957 1144,-1172 1887,-2505 99,-178 503,-945 447,-1139 -52,-181 -231,-210 -365,-104z M5037 11604c319,156 366,23 535,-181 156,-189 233,-294 383,-497 579,-787 1768,-3341 1465,-3774 -21,-30 -349,-322 -472,243 -280,1289 -842,2609 -1670,3603 -161,193 -334,283 -241,606z M10064 10859c-129,104 -490,821 -613,1020 -599,965 -799,1113 -1441,1893 -56,68 -384,415 -399,444 -133,259 123,459 367,318 414,-240 2180,-2637 2437,-3366 99,-280 -116,-498 -351,-309z M1662 2588c-340,348 -930,1396 -1094,1766 -171,384 -481,1313 -528,1761 -26,251 109,461 345,342 167,-84 288,-910 369,-1172 486,-1560 1265,-2257 1362,-2461 382,-381 751,-741 1204,-1073 273,-199 542,-353 851,-508 626,-316 1256,-539 2020,-660 1149,-182 2349,-67 3425,332 236,88 791,430 959,230 297,-353 -385,-531 -609,-625 -1037,-433 -2325,-607 -3454,-479 -814,93 -1435,254 -2121,544 -396,167 -1453,745 -1700,1014 -442,348 -875,786 -1029,989l0 0z M14179 7424c-168,131 -123,629 -212,1108 -69,371 -163,714 -278,1042 -115,326 -239,636 -393,925 -60,112 -211,334 -222,443 -21,213 185,363 393,216 563,-400 1671,-4482 712,-3734z M4798 9964c-186,65 -85,-5 -206,173 -65,95 -84,118 -148,202 -425,558 -507,621 -1029,1079 -350,306 -1178,789 -1228,880 -114,206 33,403 292,344 346,-80 1450,-986 1647,-1174 141,-136 886,-965 954,-1164 83,-243 -74,-411 -282,-340z M1834 6844c-202,130 -516,1211 -1420,2011 -96,85 -232,161 -199,360 32,194 224,244 390,142 426,-260 1658,-1981 1603,-2361 -25,-169 -196,-266 -374,-152z M7418 12026c-326,-128 -424,61 -681,386 -173,220 -376,431 -561,625 -551,576 -1275,950 -968,1245 202,193 473,-99 691,-294 228,-204 412,-375 607,-578l826 -929c153,-185 171,-217 86,-455z M3023 12981c-97,1099 1737,-726 1745,-748 89,-267 -166,-419 -381,-287 -111,68 -300,260 -432,361 -315,243 -595,416 -932,674z M11581 12194c-141,63 -616,832 -611,979 6,161 145,265 330,206 116,-37 627,-795 604,-993 -19,-167 -174,-259 -323,-192z M1934 10351c-333,-118 -422,71 -637,222 -130,92 -501,265 -278,520 188,214 504,-71 632,-166 248,-185 423,-212 283,-576z';
+  function holdRingHtml(col, dash) {
+    const fp = c => `<svg class="fp${c}" viewBox="0 0 14556 14581" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="${FP_PATH}"/></svg>`;
+    return `<div class="hold"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#1c2633" stroke-width="5"/><circle class="hp" cx="50" cy="50" r="44" fill="none" stroke="${col}" stroke-width="5" pathLength="1" stroke-dasharray="${dash || '1'}" stroke-dashoffset="1"/></svg><div class="lk">${fp('')}${fp(' fpc')}</div></div>`.replace('class="fp fpc"', `class="fp fpc" style="color:${col}"`);
+  }
+  function holdRingBind(P, done) {
+    const h = P.querySelector('.hold'), hp = P.querySelector('.hp'), fc = P.querySelector('.fpc'); let t0 = 0, raf = 0, fr = 0, g = 0;
+    const glow = v => { g = v; const on = v > 0.002; fc.style.opacity = on ? v.toFixed(3) : '0'; fc.style.filter = on ? `drop-shadow(0 0 ${(3 * v).toFixed(2)}px currentColor) drop-shadow(0 0 ${(1.35 * v).toFixed(2)}px currentColor)` : 'none'; };
+    const fade = () => { cancelAnimationFrame(fr); const g0 = g, s0 = performance.now(); if (g0 <= 0) return; const f = () => { const q = Math.min(1, (performance.now() - s0) / 300); glow(g0 * (1 - q)); if (q < 1) fr = requestAnimationFrame(f); }; f(); };
+    const stop = soft => { cancelAnimationFrame(raf); t0 = 0; hp.style.strokeDashoffset = 1; hp.style.opacity = '0'; if (soft) fade(); else { cancelAnimationFrame(fr); glow(0); } };
+    hp.style.opacity = '0';   // v8.0.0: до касания заполнение не рисуется (иначе браузер оставляет чёрточку в начале кольца)
+    glow(0);
+    const lp = () => { const k = (performance.now() - t0) / 2000; if (k >= 1) { stop(false); done(); return; } hp.style.strokeDashoffset = 1 - k; hp.style.opacity = k > 0.002 ? '1' : '0'; glow(Math.max(0, k)); raf = requestAnimationFrame(lp); };
+    h.addEventListener('pointerdown', e => { e.preventDefault(); cancelAnimationFrame(fr); t0 = performance.now(); lp(); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => h.addEventListener(k, () => { if (t0) stop(true); }));
+  }
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -5646,13 +5667,8 @@
     const P = document.getElementById('sxPocket'); sxPocketOn = on; P.classList.toggle('on', on);
     if (!on) { P.innerHTML = ''; sxLoop(); return; }
     P.innerHTML = `<div class="ph" id="sxQPh"></div><span class="xt" id="sxQT"></span><div class="hint">Карманный режим. Касания не действуют. Удерживайте кнопку 2 секунды, чтобы выйти.</div>
-      <div class="hold"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#1c2633" stroke-width="5"/><circle class="hp" cx="50" cy="50" r="44" fill="none" stroke="var(--sx)" stroke-width="5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg><div class="lk">🔒</div></div>`;
-    const h = P.querySelector('.hold'), hp = P.querySelector('.hp'); let t0 = 0, r2 = 0;
-    hp.style.opacity = '0';   // v8.0.0: до касания заполнение не рисуется (иначе браузер оставляет чёрточку в начале кольца)
-    const stop = () => { cancelAnimationFrame(r2); t0 = 0; hp.style.strokeDashoffset = 1; hp.style.opacity = '0'; };
-    const lp = () => { const k = (performance.now() - t0) / 2000; if (k >= 1) { stop(); sxPocket(false); return; } hp.style.strokeDashoffset = 1 - k; hp.style.opacity = k > 0.002 ? '1' : '0'; r2 = requestAnimationFrame(lp); };
-    h.addEventListener('pointerdown', e => { e.preventDefault(); t0 = performance.now(); lp(); });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => h.addEventListener(k, stop));
+      ${holdRingHtml('var(--sx)')}`;
+    holdRingBind(P, () => sxPocket(false));   // v8.1.2: общее кольцо удержания с отпечатком
     sxLoop();
   }
   function sxPocketDraw(s) {
@@ -11729,13 +11745,8 @@
     const P = document.getElementById('exPocket'); exPocketOn = on; P.classList.toggle('on', on);
     if (!on) { P.innerHTML = ''; examAccSync(); fzDraw(false); return; }
     P.innerHTML = `<div class="ph"></div><span class="xt" id="exPT"></span><div class="hint">Карманный режим. Касания не действуют. Удерживайте кнопку 2 с, чтобы разблокировать.</div>
-      <div class="hold"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#1c2633" stroke-width="5"/><circle class="hp" cx="50" cy="50" r="44" fill="none" stroke="var(--ac)" stroke-width="5" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/></svg><div class="lk">🔒</div></div>`;
-    const h = P.querySelector('.hold'), hp = P.querySelector('.hp'); let t0 = 0, raf = 0;
-    hp.style.opacity = '0';   // v8.0.0: до касания заполнение не рисуется (чёрточка в начале кольца)
-    const stop = () => { cancelAnimationFrame(raf); t0 = 0; hp.style.strokeDashoffset = 1; hp.style.opacity = '0'; };
-    const loop = () => { const k = (performance.now() - t0) / 2000; if (k >= 1) { stop(); examPocket(false); return; } hp.style.strokeDashoffset = 1 - k; hp.style.opacity = k > 0.002 ? '1' : '0'; raf = requestAnimationFrame(loop); };
-    h.addEventListener('pointerdown', ev => { ev.preventDefault(); t0 = performance.now(); loop(); });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => h.addEventListener(ev, stop));
+      ${holdRingHtml('var(--ac)', '1 1')}`;
+    holdRingBind(P, () => examPocket(false));   // v8.1.2: общее кольцо удержания с отпечатком
     examTickUI(); examAccSync(); fzDraw(false);
   }
   // ---------- экран не гаснет во время этапа ----------
@@ -13163,13 +13174,8 @@
       if (!on) { P.innerHTML = ''; if (L && L.classList.contains('on')) { cam.drawn = null; redraw(); } return; }
       release();
       P.innerHTML = `${O.pocket === 'track' ? '<canvas id="gpPc"></canvas>' : ''}<div class="ph" id="gpQPh">БЕГ · ${NM()}</div><span class="xt" id="gpQT"></span><div class="tg" id="gpQTg"></div><div class="x2" id="gpQ2"></div><div class="hint">Карманный режим. Касания не действуют. Удерживайте кнопку 2 секунды, чтобы выйти.</div>
-        <div class="hold"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#1c2633" stroke-width="5"/><circle class="hp" cx="50" cy="50" r="44" fill="none" stroke="var(--sx)" stroke-width="5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg><div class="lk">🔒</div></div>`;
-      const h = P.querySelector('.hold'), hpc = P.querySelector('.hp'); let t0 = 0, r2 = 0;
-      hpc.style.opacity = '0';   // до касания заполнение не рисуется (иначе браузер оставляет чёрточку в начале кольца)
-      const stop = () => { cancelAnimationFrame(r2); t0 = 0; hpc.style.strokeDashoffset = 1; hpc.style.opacity = '0'; };
-      const lp = () => { const k = (performance.now() - t0) / 2000; if (k >= 1) { stop(); pocket(false); return; } hpc.style.strokeDashoffset = 1 - k; hpc.style.opacity = k > 0.002 ? '1' : '0'; r2 = requestAnimationFrame(lp); };
-      h.addEventListener('pointerdown', e => { e.preventDefault(); t0 = performance.now(); lp(); });
-      ['pointerup', 'pointerleave', 'pointercancel'].forEach(k => h.addEventListener(k, stop));
+        ${holdRingHtml('var(--sx)')}`;
+      holdRingBind(P, () => pocket(false));   // v8.1.2: общее кольцо удержания с отпечатком
       Object.assign(PK, { v: null, hd: null, cum: [], th: 0, hdD: 0, toD: null, arr: 0, lastArr: 0, n: 0, last: 0, quiet: 0, ck: '', cn: 0 });
       wake(true); drawPocket(); loop();
     }
