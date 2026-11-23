@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v8.0.1 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v8.1.0 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1727,6 +1727,20 @@
     .gp-btn.fin { color: #40ffaa; --sxg: rgba(64,255,170,.45); --sxd: rgba(64,255,170,.14); }
     .gp-btn.fin .hx .p { opacity: .9; }
     body.sx-red .gp-btn.fin { color: #ff4455; --sxg: rgba(255,40,70,.5); --sxd: rgba(255,40,70,.15); }
+    /* ===== v8.1.0: этап бега испытания по треку (демо 125) ===== */
+    body.exm { --sx: #ffd34d; --sxg: rgba(255,205,60,.45); --sxd: rgba(255,205,60,.14); --sx2: #fff0b8; }
+    /* «Трек» / «Таймер» — друг под другом, шириной ровно с «Начать этап»: невидимая кнопка «Начать этап» в той же колонке задаёт ширину */
+    .ex-card .ex-acts.ex-2 { display: grid; grid-template-columns: max-content; justify-content: end; row-gap: 6px; }
+    .ex-card .ex-acts.ex-2 button { width: 100%; white-space: nowrap; margin: 0; }
+    .ex-card .ex-acts.ex-2 button:first-child, .ex-card .ex-acts.ex-2 button.ex-ghost { grid-row: 1; grid-column: 1; }   /* обе — в первой строке (иначе «Трек» уходит ниже, а первая строка пустая) */
+    .ex-card .ex-acts.ex-2 button.ex-ghost { visibility: hidden; pointer-events: none; }
+    .sx-cm { display: inline-block; width: .3em; text-align: center; }
+    /* 125a: строка «Время · Темп · ±м» — у темпа и точности места постоянной ширины, значения прижаты влево: соседи не сдвигаются */
+    #gpLayer .r3 > span:nth-child(2) { display: inline-block; min-width: 6.9em; text-align: left; }
+    #gpLayer .r3 > span:nth-child(3) { display: inline-block; min-width: 3.7em; text-align: left; }
+    #gpLayer .xph { width: 100%; text-align: center; font-size: .84rem; color: #cfe6fb; min-height: 1.3em; }
+    #gpLayer .xph b { font-family: 'Orbitron', 'Exo 2', sans-serif; font-weight: 500; color: var(--sx); }
+    #gpLayer.gpx .ctl button:disabled { opacity: .35; }
     /* ===== v7.2.2: карточки предметов в «Классике» — раскладка как в «Системе» (Магазин, Инвентарь, каталог Длани):
        название во всю ширину → иконка 44 px (с v7.4.7 — в рамке 58 px) + описание → кнопки. Две кнопки — пополам (зазор 10 px),
        одна кнопка или цена — на месте второй. Строки через 4 px (до кнопок — 8 px, с v7.2.6); поля карточки, цвета и размер кнопок — прежние.
@@ -2501,6 +2515,11 @@
         <div class="backup-summary sys-pen-info" id="sysPenInfo" style="margin-top:6px;"></div>
         <button class="backup-action-btn" id="sysPStreakReset" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyStreakAction)">Сбросить цепь штрафов</button>
         <button class="backup-action-btn" style="margin-top:10px;" onclick="sysToolsFlashThenRun(this, resetPenaltyCountAction)">Обнулить общее число штрафов</button>
+        <!-- v8.1.0: штрафы за пропуски — для тестовых аккаунтов -->
+        <div class="backup-summary" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px;">
+          <span id="sysPenOffLabel">Штрафы за пропуски: начисляются.</span>
+          <div class="sound-checkbox-zone" onclick="sysPenaltiesToggle()"><div class="sound-checkbox" id="sysPenOffCheckbox">✓</div></div>
+        </div>
       </div>
       <div class="backup-section">
         <div class="backup-section-title">Реестр Игроков</div>
@@ -2630,6 +2649,7 @@
 <div class="status-overlay ex-ov" id="exOv3" style="z-index: 1500;"><div class="status-window hud-frame exgv"><div class="status-header"><span class="ex-hexin"></span>УВЕДОМЛЕНИЕ</div><div class="status-body"><div id="exC3"></div></div></div></div>
 <div class="status-overlay ex-ov" id="exOv4" style="z-index: 1600;"><div class="status-window hud-frame exgv"><div class="status-header">ЗАПРОС РЕШЕНИЯ</div><div class="status-body"><div id="exC4"></div></div></div></div>
 <div class="status-overlay ex-ov" id="exOv5" style="z-index: 1600;" onclick="examRankClose()"><div class="status-window hud-frame exgv"><div class="status-header"><span class="ex-hexin"></span>УВЕДОМЛЕНИЕ</div><div class="status-body"><div id="exC5"></div></div></div></div>
+<div class="status-overlay ex-ov" id="exOv7" style="z-index: 1600;"><div class="status-window hud-frame exgv"><div class="status-header">ЗАПРОС РЕШЕНИЯ</div><div class="status-body"><div id="exC7"></div></div></div></div>
 <div class="status-overlay ex-ov" id="exOv6" style="z-index: 1600;"><div class="status-window hud-frame exgv"><div class="status-header">ЗАПРОС РЕШЕНИЯ</div><div class="status-body"><div id="exC6"></div></div></div></div>
 <div class="status-overlay" id="exPenOverlay" style="z-index: 1650;">
   <div class="status-window hud-frame" style="border-color:#ff4444; box-shadow: 0 0 40px rgba(255,68,68,0.4);">
@@ -2775,7 +2795,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '8.0.1';
+  const APP_VERSION = '8.1.0';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -2944,7 +2964,7 @@
         penaltyRun: 0,   // v7.5.10
         relicMiss: Number.isInteger(oldData.relicMiss) ? oldData.relicMiss : 0,   // v7.7.5 (проверка — при загрузке, rankSysNormalize)
         relicToday: relicMarkClean(oldData.relicToday),   // v7.7.6
-        runUnit: oldData.runUnit === 'steps' ? 'steps' : 'km', trackBg: oldData.trackBg === 'vec' ? 'vec' : 'black', trackView: oldData.trackView === 'head' ? 'head' : '3d'   // v8.0.0: бег — расстояние / шаги, фон и вид поля трека
+        runUnit: oldData.runUnit === 'steps' ? 'steps' : 'km', trackBg: oldData.trackBg === 'vec' ? 'vec' : 'black', trackView: oldData.trackView === 'head' ? 'head' : '3d', penaltiesOff: oldData.penaltiesOff === true   // v8.1.0: Длань — штрафы за пропуски; v8.0.0: бег — расстояние / шаги, фон и вид поля трека
       };
     } else {
       isFreshInstall = true;
@@ -2981,7 +3001,7 @@
         exam: null, examPost: null, examDelayUntil: null, examNarrow: false, examLastOffer: null, rankHoldDays: 0, examLast: null, examToday: null, examCredited: false, examAccel: false,   // v7.6.1
         relicMiss: 0,   // v7.7.5: выдачи Чаши Перерождения без находки подряд (+4% к шансу за каждую)
         relicToday: null,   // v7.7.6: Чаша испита в текущем цикле — { from: уровень до }; при сбросе дня — в запись Летописи (entry.relic)
-        runUnit: 'km', trackBg: 'black', trackView: '3d'   // v8.0.0: бег — расстояние (km) / шаги (steps); фон и вид поля трека
+        runUnit: 'km', trackBg: 'black', trackView: '3d', penaltiesOff: false   // v8.1.0: Длань — штрафы за пропуски выключены; v8.0.0: бег — расстояние (km) / шаги (steps); фон и вид поля трека
       };
     }
   }
@@ -3019,6 +3039,7 @@
   if (typeof data.fatigueOn !== 'boolean') data.fatigueOn = true;   // v7.4.0: шкала усталости, у всех включена
   if (typeof data.fzPopup !== 'boolean') data.fzPopup = true;       // v7.4.1: всплывающая шкала на главном экране
   if (typeof data.setTimer !== 'boolean') data.setTimer = false;   // v7.7.0: подходы и бег по таймеру
+  data.penaltiesOff = data.penaltiesOff === true;   // v8.1.0: Длань — штрафы за пропуски выключены (по умолчанию — начисляются)
   if (data.runUnit !== 'km' && data.runUnit !== 'steps') data.runUnit = (data.setRun && data.setRun.steps && !data.setRun.steps.fin && data.setRun.steps.ph !== 'stop') ? 'steps' : 'km';   // v8.0.0: идёт таймер бега — режим шагов
   if (data.trackBg !== 'vec' && data.trackBg !== 'black') data.trackBg = 'black';
   if (data.trackView !== 'head' && data.trackView !== '3d') data.trackView = '3d';
@@ -6739,7 +6760,7 @@
     const WIN_SEL = ':scope > .status-window, :scope > .item-preview-box, :scope > .stat-lore-box';
     const HDR_SEL = ':scope > .status-header, :scope > .item-preview-name, :scope > .stat-lore-header';
     // Значок «!» перед заголовком — только у запросов и уведомлений; правила — когда окно открыто как уведомление (первый вход).
-    const IC_ALWAYS = ['confirmOverlay', 'exerciseChoiceOverlay', 'nameOverlay', 'sysToolsAuthOverlay', 'exOv1', 'exOv3', 'exOv4', 'exOv5', 'exOv6'];   // v7.6.1: окна испытания
+    const IC_ALWAYS = ['confirmOverlay', 'exerciseChoiceOverlay', 'nameOverlay', 'sysToolsAuthOverlay', 'exOv1', 'exOv3', 'exOv4', 'exOv5', 'exOv6', 'exOv7'];   // v7.6.1: окна испытания
     const wins = [];
     let on = false, mainWin = null, mainTimer = 0;
     const anomaly = () => document.body.classList.contains('sys-anom');
@@ -7138,6 +7159,7 @@
     let lastPct = 0, lastMult = 1, totalDebt = 0;   // v7.5.10; v7.5.12: долг за все пропущенные дни
     let runeHalvedAny = false;
     let lastCompletedCount = 0;
+    if (now >= nextReset && window.Track && Track.dayEnd) { try { Track.dayEnd(); } catch (e) {} }   // v8.1.0: остаток бега по треку — в уходящий день, до итога
     while (now >= nextReset) {
       const dayKey = dateKeyFromTimestamp(data.lastReset);
       // If the day was ever fully completed, record 100% even if data.completed
@@ -7493,6 +7515,7 @@
       updateTitleStatus();
       return null;
     }
+    if (data.penaltiesOff) { lastProtectedBy = null; return 'protected'; }   // v8.1.0: Длань — штрафы за пропуски выключены (как Руна Абсолютной Защиты, без руны)
     return computePenaltyAndApply(dayKey);
   }
 
@@ -9940,6 +9963,7 @@
       rankHoldDays: Math.max(0, Math.floor(sanitizeNumber(s.rankHoldDays, 0))),
       relicMiss: relicMissClean(s.relicMiss),   // v7.7.5
       relicToday: relicMarkClean(s.relicToday),   // v7.7.6
+      penaltiesOff: false,   // v8.1.0: тестовая настройка Длани с бэкапом не переезжает — штрафы включены
       runUnit: s.runUnit === 'steps' ? 'steps' : 'km', trackBg: s.trackBg === 'vec' ? 'vec' : 'black', trackView: s.trackView === 'head' ? 'head' : '3d',   // v8.0.0
       examDelayUntil: Number.isFinite(s.examDelayUntil) ? s.examDelayUntil : null,
       examNarrow: !!s.examNarrow,
@@ -10421,6 +10445,7 @@
     namePauseBtn.disabled = !(data.nameNextAvailableAt && Date.now() < data.nameNextAvailableAt);
     sysRbClear();   // v7.7.4
     sysTrackSync();   // v8.0.0
+    sysPenaltiesSync();   // v8.1.0
     document.getElementById('sysToolsOverlay').style.display = 'flex';
   }
   // v8.0.0: бег по треку — заготовленный маршрут (только в памяти, у Игрока не сохраняется)
@@ -10432,6 +10457,13 @@
     const lb = document.getElementById('sysTrackLost'); if (lb) lb.textContent = st.lost ? 'Вернуть сигнал' : 'Потеря сигнала';
   }
   function sysTrackSim() { if (!window.Track) return; Track.simSet(!Track.simState().on); sysTrackSync(); }
+  // v8.1.0: Длань — штрафы за пропуски (галочка стоит — начисляются; снята — невыполненный день как под Руной Абсолютной Защиты)
+  function sysPenaltiesSync() {
+    const l = document.getElementById('sysPenOffLabel'), c = document.getElementById('sysPenOffCheckbox'); if (!l || !c) return;
+    l.textContent = data.penaltiesOff ? 'Штрафы за пропуски: не начисляются.' : 'Штрафы за пропуски: начисляются.';
+    c.classList.toggle('on', !data.penaltiesOff);
+  }
+  function sysPenaltiesToggle() { data.penaltiesOff = !data.penaltiesOff; saveData(); sysPenaltiesSync(); }
   function sysTrackSpeed(v) { if (!window.Track) return; Track.simSet(null, v); sysTrackSync(); }
   function sysTrackEv(k) { if (!window.Track || !Track.simState().on) return; Track.sim(k); sysTrackSync(); }
 
@@ -10753,7 +10785,7 @@
     setsStopAll(true);
     if (window.Track) Track.halt('day');   // v8.0.0: бег по треку
     const exUI = document.body.classList.contains('exm');
-    for (let n = 1; n <= 6; n++) { const el = exOv(n); if (el) el.style.display = 'none'; }
+    for (let n = 1; n <= 7; n++) { const el = exOv(n); if (el) el.style.display = 'none'; } exSigAsk = false;
     const pen = document.getElementById('exPenOverlay'); if (pen) pen.style.display = 'none';
     try { examIconShow(false); } catch (e) {}
     try { examWake(false); } catch (e) {}
@@ -11150,7 +11182,7 @@
     <rect x="46" y="30" width="8" height="26" rx="4" fill="currentColor"/><circle cx="50" cy="66" r="5" fill="currentColor"/></svg>`;
   const EX_PH = { prep: ['Подготовка', '#7fd8ff'], work: ['Работа', 'AC'], rest: ['Отдых. Внесите повторения', '#40ffaa'], fin: ['Внесите повторения', '#40ffaa'],
     run: ['Бег', 'AC'], rin: ['Внесите количество шагов', '#40ffaa'], late: ['Внесите количество шагов', '#40ffaa'],
-    go: ['Подготовка', '#7fd8ff'] };   // v7.6.7: последние 10 с отдыха, сокращённого кнопкой «Начать раунд»
+    go: ['Подготовка', '#7fd8ff'], wait: ['Поиск сигнала', '#7fd8ff'] };   // v7.6.7: последние 10 с отдыха, сокращённого кнопкой «Начать раунд»
 
   // ---------- состояние и время ----------
   function examOn() { return !!(data.exam && data.exam.st === 'running'); }
@@ -11184,8 +11216,14 @@
     if (t < 2410) return { ph: 'late', el: 300, len: 300 };
     return { ph: 'end', el: 0, len: 1 };
   }
-  function exStageT(id) { const s = data.exam.S[id]; return Math.max(0, examNow() - s.t0); }
-  function exPhase(id) { return EX_ST[id].run ? exRunAt(exStageT(id)) : exStrengthAt(exStageT(id), exCutOf(id)); }
+  function exStageT(id) { const s = data.exam.S[id]; if (s.t0 == null) return 0; return Math.max(0, examNow() - s.t0); }
+  // v8.1.0: этап бега по треку — до устойчивого сигнала отсчёт этапа стоит (t0 = null), поиск сигнала — EX_WAIT с (часы испытания)
+  const EX_WAIT = 120;
+  const exTrk = id => { const e = data.exam, s = e && e.S && e.S[id]; return !!(s && EX_ST[id].run && s.mode === 'track'); };
+  const exWaiting = id => exTrk(id) && data.exam.S[id].t0 == null;
+  function exPhase(id) {
+    if (exWaiting(id)) { const w = Math.max(0, examNow() - data.exam.S[id].w0); return { ph: 'wait', el: Math.min(w, EX_WAIT), len: EX_WAIT }; }
+    return EX_ST[id].run ? exRunAt(exStageT(id)) : exStrengthAt(exStageT(id), exCutOf(id)); }
   function examDeadlineTs() { return getNextCleanReset(data.lastReset) - EX_DL_BEFORE; }
   function exHm(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
   function exCyclesSince(ts) { return Math.round((data.lastReset - ts) / EX_DAY); }
@@ -11247,7 +11285,7 @@
       const P = ['Испытание включает пять этапов: отжимания, приседания, подтягивания, пресс и бег. Порядок этапов определяет Игрок.',
         `Этап силового упражнения включает 4 раунда: 40 секунд работы и ${EX_REST_TXT[EX_REST(e ? e.adm : 'e')]} отдыха. Перед первым раундом даётся 10 секунд на подготовку. Количество выполненных повторений вносится во время отдыха после каждого раунда, после последнего раунда на это отводится 90 секунд. Не внесённый раунд засчитывается как 0.`,
         'Сокращённый отдых между раундами увеличивает опыт за пройденное испытание.',   // v7.6.13
-        'Бег длится 20 минут, перед стартом даётся 10 секунд на подготовку. На внесение показаний шагомера отводится 5 минут.',
+        'Бег длится 20 минут, перед стартом даётся 10 секунд на подготовку. Бег можно пройти по треку — отсчёт начнётся, когда будет получен устойчивый сигнал, и Система сама засчитает расстояние, преодолённое за 20 минут, — или по таймеру: тогда на внесение показаний шагомера отводится 5 минут.',
         'На всё испытание отводится 5 часов с момента начала.',
         'Отсчёт этапа не останавливается, даже если Игрок покидает Систему. Каждый этап можно начать заново один раз, результат первой попытки при этом аннулируется.',
         'Бонусы характеристик, артефакты и эффекты расходных предметов во время испытания не действуют.',
@@ -11380,7 +11418,7 @@
     EX_IDS.forEach(examCard); examAdmFill(); examReframe(); examTickUI(); examAccSync();
   }
   function examExitUI() {
-    document.body.classList.remove('exm');
+    document.body.classList.remove('exm'); examSigClose();
     examLayer(false); examPocket(false);
     const qp = document.querySelector('.quest-panel'); qp.classList.remove('exgv');
     const title = qp.querySelector('.title'); if (title && title.dataset.old) title.textContent = title.dataset.old;
@@ -11400,30 +11438,61 @@
     const b = el.querySelector('.ex-b'), chk = el.querySelector('.qcheck');
     chk.classList.toggle('done', s.st === 'done');
     el.classList.toggle('ex-lock', !!e.act && e.act !== id && s.st !== 'done');
-    if (s.st === 'idle') { b.innerHTML = `<div class="ex-acts"><button class="ex-gold" onclick="examBegin('${id}')">Начать этап</button></div>`; return; }
+    if (s.st === 'idle') { b.innerHTML = d.run ? `<div class="ex-acts ex-2"><button class="ex-gold" onclick="examBegin('${id}', 'track')">Трек</button><button class="ex-gold" onclick="examBegin('${id}')">Таймер</button><button class="ex-gold ex-ghost" tabindex="-1" aria-hidden="true">Начать этап</button></div>`
+      : `<div class="ex-acts"><button class="ex-gold" onclick="examBegin('${id}')">Начать этап</button></div>`; return; }   // v8.1.0: бег — по треку или по таймеру
     if (s.st === 'done') {
       const cutS = d.run ? 0 : (Array.isArray(s.cut) ? s.cut.reduce((a, v) => a + (v || 0), 0) : 0);   // v7.6.13: время этапа и сокращение отдыха — над повторениями
       const tm = Number.isFinite(s.tUsed) ? `<div class="ex-tm">Время этапа: <span>${exMs(s.tUsed)}</span></div>${cutS > 0 ? `<div class="ex-tm ex-cut">Отдых сокращён на <span>${exMs(cutS)}</span></div>` : ''}` : '';
-      b.innerHTML = tm + (d.run ? `<div class="ex-vals">Шаги за бег</div><div class="ex-res">${s.steps}</div>`
+      const dist = d.run ? `<div class="ex-tm">Расстояние: <span>${(Math.floor((s.steps || 0) / 110 + 1e-9) / 10).toFixed(1).replace('.', ',')}</span> км</div>` : '';   // v8.1.0: расстояние — из шагов (1 км = 1100 шагов), для трека и таймера
+      b.innerHTML = tm + dist + (d.run ? `<div class="ex-vals">Шаги за бег</div><div class="ex-res">${s.steps}</div>`
         : `<div class="ex-vals">${exVals(s)}</div><div class="ex-res">${s.vals.reduce((a, v) => a + (v || 0), 0)}</div>`);
       return;
     }
-    b.innerHTML = `<div class="ex-tot">Этап идёт<span class="xt"></span></div>${d.run ? '' : '<div class="ex-vals"></div>'}<div class="ex-acts"><button class="ex-gold" onclick="examLayer(true)">Открыть этап</button></div>`;
+    b.innerHTML = `<div class="ex-tot">Этап идёт<span class="xt"></span></div>${d.run ? '' : '<div class="ex-vals"></div>'}<div class="ex-acts"><button class="ex-gold" onclick="${exTrk(id) ? 'Track.exOpen()' : 'examLayer(true)'}">Открыть этап</button></div>`;
   }
-  function examBegin(id) {
+  function examBegin(id, mode) {
     const e = data.exam; if (!e || e.st !== 'running' || e.act) return;
     const s = e.S[id]; if (s.st !== 'idle') return;
+    const trk = mode === 'track' && EX_ST[id].run && !!window.Track;
     Object.assign(s, { st: 'run', t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut; delete s.tUsed;   // v7.6.7: cut — только у силовых этапов
+    delete s.mode; delete s.w0;
+    if (trk) { const sp = Track.exSpeed(); if ((e.sp || 1) !== sp) examSetSpeed(sp); s.mode = 'track'; s.t0 = null; s.w0 = examNow(); }   // v8.1.0: ускоритель — только в режиме таймера; Длань: заготовленный маршрут — с его скоростью
     e.act = id; exLastT[id] = 0; saveData();
-    EX_IDS.forEach(examCard); examLayer(true); examWake(true);
+    EX_IDS.forEach(examCard); examWake(true);
+    if (trk) { Track.exStart(id); examAccSync(); } else examLayer(true);
+  }
+  // v8.1.0: сигнал не получен за EX_WAIT или доступ запрещён — выбор; ни один вариант не тратит попытку «Начать этап заново»
+  let exSigAsk = false;
+  function examSigFail() {
+    if (exSigAsk) return; exSigAsk = true;
+    if (window.Track) Track.exAbort();
+    const ov = document.getElementById('exOv7');
+    document.getElementById('exC7').innerHTML = `<div class="danger-warning-step"><div class="ex-line">Сигнал не получен. Этап можно продолжить по таймеру или начать заново.</div>
+      <div class="danger-btn-row ex-pair">${exBtn('Продолжить по таймеру', 'examSigTimer()')}${exBtn('Начать этап заново', 'examSigRetry()')}</div></div>`;
+    ov.style.display = 'flex';
+    ov.querySelectorAll('.ex-hexin').forEach(h => { h.innerHTML = EX_HEX_SMALL; });
+    examAccSync();
+  }
+  function examSigClose() { exSigAsk = false; const ov = document.getElementById('exOv7'); if (ov) ov.style.display = 'none'; examAccSync(); }
+  function examSigTimer() {
+    const e = data.exam, id = e && e.act; examSigClose(); if (!examOn() || !id || !exTrk(id)) return;
+    const s = e.S[id]; delete s.mode; delete s.w0; Object.assign(s, { t0: examNow(), steps: 0, auto: false }); exLastT[id] = 0;
+    saveData(); EX_IDS.forEach(examCard); examLayer(true); examAccSync();
+  }
+  function examSigRetry() {
+    const e = data.exam, id = e && e.act; examSigClose(); if (!examOn() || !id || !exTrk(id)) return;
+    const sp = Track.exSpeed(); if ((e.sp || 1) !== sp) examSetSpeed(sp);
+    const s = e.S[id]; Object.assign(s, { t0: null, w0: examNow(), steps: 0, auto: false }); exLastT[id] = 0;
+    saveData(); EX_IDS.forEach(examCard); Track.exStart(id);
   }
   function examRestart() {
     const e = data.exam, id = e && e.act; if (!id) return; const s = e.S[id]; if (s.re < 1) return;
     s.re = 0; Object.assign(s, { t0: examNow(), vals: [null, null, null, null], steps: 0, auto: false, cut: [0, 0, 0, 0] }); if (EX_ST[id].run) delete s.cut; delete s.tUsed; exLastT[id] = 0;
+    if (exTrk(id)) { s.t0 = null; s.w0 = examNow(); saveData(); EX_IDS.forEach(examCard); Track.exStart(id); return; }   // v8.1.0: трек — заново с поиска сигнала
     examPocket(false); saveData(); examTickUI();
   }
-  function examCanIn(id) { const p = exPhase(id).ph; return EX_ST[id].run ? (p === 'rin' || p === 'late') : (p === 'rest' || p === 'fin'); }
-  function examCanFinish(id) { const s = data.exam.S[id], p = exPhase(id).ph; return EX_ST[id].run ? ((p === 'rin' || p === 'late') && s.steps > 0) : p === 'fin'; }
+  function examCanIn(id) { if (exTrk(id)) return false; const p = exPhase(id).ph; return EX_ST[id].run ? (p === 'rin' || p === 'late') : (p === 'rest' || p === 'fin'); }
+  function examCanFinish(id) { if (exTrk(id)) return false; const s = data.exam.S[id], p = exPhase(id).ph; return EX_ST[id].run ? ((p === 'rin' || p === 'late') && s.steps > 0) : p === 'fin'; }
   // v7.6.7: «Начать раунд N» — во время отдыха после раунда 1–3, не раньше 30 с отдыха и когда повторения раунда уже внесены;
   // отдых сокращается так, чтобы осталось 10 с «Подготовки», затем раунд N. Состояние проверяется в момент нажатия.
   function examGoState() {
@@ -11456,7 +11525,7 @@
     const s = e.S[id], d = EX_ST[id];
     if (!auto && !examCanFinish(id)) return;
     if (!d.run) s.vals = s.vals.map(v => v == null ? 0 : v);
-    s.tUsed = Math.round(Math.min(exStageT(id), d.run ? 2410 : exStrengthLen(exCutOf(id))));   // v7.6.13: время этапа (часы испытания), не больше полного срока
+    s.tUsed = Math.round(Math.min(exStageT(id), d.run ? (s.mode === 'track' ? 1210 : 2410) : exStrengthLen(exCutOf(id))));   // v8.1.0: по треку — подготовка и 20 минут   // v7.6.13: время этапа (часы испытания), не больше полного срока
     s.st = 'done'; e.act = null;
     // повторения испытания — в ТН (с множителем режима), в «Прогресс» и в дневной журнал упражнений; в задание дня не идут
     const reps = d.run ? s.steps : s.vals.reduce((a, v) => a + (v || 0), 0);
@@ -11609,7 +11678,18 @@
     if (id) {
       const s = e.S[id], d = EX_ST[id], t = exStageT(id), prev = exLastT[id] != null ? exLastT[id] : t;
       exLastT[id] = t;
-      if (d.run) {
+      if (d.run && s.mode === 'track') {   // v8.1.0: этап бега по треку
+        if (s.t0 == null) {
+          if (Track.exArmed()) { s.t0 = examNow(); exLastT[id] = 0; saveData(); exSnd('tick'); EX_IDS.forEach(examCard); }
+          else if (!exSigAsk && (Track.exDenied() || examNow() - s.w0 >= EX_WAIT)) examSigFail();
+        } else {
+          const p0 = exRunAt(prev), p = exRunAt(t);
+          if (p.ph !== p0.ph && p.ph === 'run') { exSnd('go'); Track.exGo(); if (!s.auto) { s.auto = true; saveData(); Track.exPocket(); } }
+          if (p.ph === 'prep' && Math.floor(10 - t) !== Math.floor(10 - prev) && 10 - t < 3) exSnd('tick');
+          if (p.ph !== 'prep' && p.ph !== 'run') { s.steps = Track.exStop(); examFinish(true); return; }
+          if (p.ph === 'run') { const st = Track.exSteps(); if (st !== s.steps) s.steps = st; }
+        }
+      } else if (d.run) {
         const p0 = exRunAt(prev), p = exRunAt(t);
         if (p.ph !== p0.ph) {
           if (p.ph === 'run') { exSnd('go'); if (!s.auto) { s.auto = true; saveData(); examPocket(true); } }
@@ -11652,7 +11732,9 @@
     const t = exStageT(id), tot = exMmss(d.run ? Math.min(t, 1510) : Math.min(t, exStrengthLen(exCutOf(id)))), cur = exMmss(p.el), canIn = examCanIn(id);
     const rd = d.run ? (p.ph === 'prep' ? 'Положите телефон в карман' : p.ph === 'run' ? 'Бег, 20 минут' : 'Окно ввода, 5 минут') : `Раунд ${p.r} / 4`;
     const el = document.getElementById('exk_' + id);
-    if (el) { exSetT(el.querySelector('.ex-tot .xt'), tot); const v = el.querySelector('.ex-vals'); if (v) v.textContent = exVals(s); }
+    if (el) { exSetT(el.querySelector('.ex-tot .xt'), tot); const v = el.querySelector('.ex-vals'); if (v) v.textContent = exVals(s);
+      const et = el.querySelector('.ex-tot'), wt = p.ph === 'wait' ? 'Поиск сигнала' : 'Этап идёт'; if (et && et.firstChild && et.firstChild.nodeType === 3 && et.firstChild.textContent !== wt) et.firstChild.textContent = wt; }   // v8.1.0
+    if (exTrk(id)) return;   // v8.1.0: по треку — слой трека, время рисует он
     const L = document.getElementById('exLayer');
     if (L.classList.contains('on')) {
       exSetT(document.getElementById('exLTot'), tot); exSetT(document.getElementById('exLT'), cur);
@@ -11684,12 +11766,18 @@
     }
   }
 
+  // v8.1.0: для слоя трека — фаза этапа и время (часы испытания)
+  function examTrackInfo() {
+    const e = data.exam, id = e && e.act; if (!examOn() || !id || !exTrk(id)) return null;
+    const s = e.S[id], p = exPhase(id);
+    return { ph: p.ph, el: p.el, len: p.len, t: exStageT(id), re: s.re };
+  }
   // ---------- ускоритель таймера (Длань; сборка демо 118) ----------
   function examAccSync() {
     const a = document.getElementById('exAcc'); if (!a) return;
     if (examOn()) examEdgePlace();
     const winOpen = [...document.querySelectorAll('.status-overlay')].some(o => o.style.display === 'flex' || o.style.display === 'block');
-    const show = examOn() && !!data.examAccel && !winOpen;
+    const show = examOn() && !!data.examAccel && !winOpen && !(data.exam.act && exTrk(data.exam.act));   // v8.1.0: в режиме трека ускорителя нет
     a.classList.toggle('on', show);
     a.classList.toggle('dim', show && exPocketOn);
     const sp = examOn() ? (data.exam.sp || 1) : 1;
@@ -12040,7 +12128,7 @@
         if (!e.S || !EX_IDS.every(id => e.S[id])) data.exam = null; else { if (e.act && !EX_IDS.includes(e.act)) e.act = null;
           EX_IDS.forEach(id => { const s = e.S[id], c = s.cut;   // v7.6.7: сокращение отдыха кнопкой «Начать раунд» (нет поля — отдых полный)
             if (!(Number.isFinite(s.tUsed) && s.tUsed >= 0 && s.st === 'done')) delete s.tUsed;   // v7.6.13: время этапа — только у закрытого этапа
-            if (EX_ST[id].run) { delete s.cut; return; }
+            if (EX_ST[id].run) { delete s.cut; if (s.mode !== 'track') { delete s.mode; delete s.w0; } else if (!Number.isFinite(s.t0)) { s.t0 = null; if (!Number.isFinite(s.w0)) s.w0 = e.vt; } return; }   // v8.1.0: этап бега по треку
             s.cut = Array.isArray(c) && c.length === 4 ? c.map((v, i) => i < 3 && Number.isFinite(v) ? Math.max(0, Math.min(exRest(e) - 10, v)) : 0) : [0, 0, 0, 0]; }); } }
     }
     if (data.exam && data.exam.st === 'offered') data.exam.min = !!data.exam.min; else if (data.exam) delete data.exam.min;   // v7.6.6: «свёрнуто» — только у предложения
@@ -12121,12 +12209,16 @@
     let G = { runs: [], day: data.lastReset };
     try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && Array.isArray(s.runs) && s.day === data.lastReset) G = s; } catch (e) {}
     G.runs = G.runs.filter(r => r && Array.isArray(r.pts) && typeof r.st === 'string');
+    // v8.1.0: трек этапа бега испытания — отдельно от треков дня (G.ex); без идущего испытания — не нужен
+    if (!(G.ex && Array.isArray(G.ex.pts) && (G.ex.st === 'run' || G.ex.st === 'pause') && G.ex.ex === 'steps')) G.ex = null;
     // прошлый запуск завис со схемой (признак остался) — фон чёрный
     try { if (localStorage.getItem(ALIVE)) { localStorage.removeItem(ALIVE); if (data.trackBg === 'vec') { data.trackBg = 'black'; saveData(); } } } catch (e) {}
     // сохранение — раз в 15 с, без сырых точек (они только в памяти)
     let saveT = 0; const save = force => { const n = Date.now(); if (!force && n - saveT < 15000) return; saveT = n; const t0 = performance.now();
       G.day = data.lastReset; try { localStorage.setItem(KEY, JSON.stringify(G, (k, v) => k === 'raw' || k === 'qz' ? undefined : v)); } catch (e) {} JL.ms('save', performance.now() - t0); };
-    const run = () => G.runs[G.runs.length - 1] || null;
+    const exLive = () => !!G.ex && (G.ex.st === 'run' || G.ex.st === 'pause');
+    const run = () => exLive() ? G.ex : (G.runs[G.runs.length - 1] || null);
+    const isEx = r => !!(r && r.ex);
     const live = () => { const r = run(); return !!r && (r.st === 'run' || r.st === 'pause'); };
     // часы: настоящее время или ускоренное (заготовленный маршрут)
     let simT = Date.now(), simLast = performance.now();
@@ -12145,6 +12237,8 @@
     const fmtT = ms => { const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(x).padStart(2, '0'); };
     const fmtPace = kmh => kmh < 2 ? '—' : (() => { const s = Math.round(3600 / kmh); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); })();
     const cells = t => typeof sxCellHtml === 'function' ? sxCellHtml(t) : t;
+    // 125a: цифры Orbitron разной ширины — каждая цифра, запятая и двоеточие в ячейке постоянной ширины (числа не «скачут»)
+    const dg = t => String(t).replace(/[0-9]|,|:/g, ch => ch === ':' ? '<span class="sx-cl">:</span>' : ch === ',' ? '<span class="sx-cm">,</span>' : `<span class="sx-dg">${ch}</span>`);
 
     // ---------- задание (карточка бега) ----------
     // цель бега округляется до 0,1 км (кратно 110 шагам), и задание засчитывается по этой же цели
@@ -12207,6 +12301,7 @@
     }
     function flush(r, all) {
       const want = Math.floor(r.sf), d = want - r.cr;
+      if (isEx(r)) { if (d >= CREDIT_MIN || (all && d > 0)) r.cr += d; return; }   // v8.1.0: этап испытания — шаги в этап, не в задание дня
       if (d >= CREDIT_MIN || (all && d > 0)) { const got = credit(d); r.cr += got > 0 ? got : d; }
       if (doneSteps() && r.st === 'run') { setTimeout(() => finish(true), 50); }
     }
@@ -12217,6 +12312,7 @@
       r.lastFix = t; r.acc = acc; r.gotFix = true; errMsg = ''; JL.acc(acc);
       r.lv = acc > 40 ? 'weak' : acc > 10 ? 'good' : 'best';   // 124h: отличный до 10 м, хороший 10–40 м, слабый хуже 40 м
       if (!r.any || hav(r.any, [lat, lon]) > 5) r.any = [lat, lon];   // v8.0.1: место Игрока для вида поля — по любой точке (в трек идут только точные)
+      if (r.arm) { r.good = acc > 40 ? 0 : (r.good || 0) + 1; draw(); return; }   // v8.1.0: этап испытания — до старта бега точки только проверяют сигнал
       if (acc > 40) { JL.cnt('weak'); draw(); return; }   // неточная — не в трек
       if (!r.raw) r.raw = []; if (!r.qz) r.qz = [];
       const p = [lat, lon, t, Math.round(acc)];
@@ -12314,7 +12410,9 @@
       if (SIM.jump > 0) { SIM.jump--; la += 600 / 111000; lo += 450 / 63000; acc = 25; }   // точка «у вышки»: ~750 м в сторону
       fix(la + (Math.random() - .5) * n / 111000 * 1.2, lo + (Math.random() - .5) * n / 63000 * 1.2, acc, t);
     }
-    D.simSet = (on, speed) => { const was = O.src; if (on != null) SIMC.on = !!on; if (speed) SIMC.speed = speed; if (live() && was !== O.src) { srcStop(); srcStart(); } };
+    D.simSet = (on, speed) => { const was = O.src; if (on != null) SIMC.on = !!on; if (speed) SIMC.speed = speed; if (live() && was !== O.src) { srcStop(); srcStart(); }
+      if (exLive() && typeof examSetSpeed === 'function') examSetSpeed(D.exSpeed()); };   // v8.1.0: этап по треку — с той же скоростью, что заготовленный маршрут
+    D.exSpeed = () => SIMC.on ? SIMC.speed : 1;   // скорость часов испытания в этапе по треку (у Игрока — всегда ×1)
     D.simState = () => ({ on: SIMC.on, speed: SIMC.speed, lost: SIM.lost });
     D.sim = k => {
       if (k === 'weak') { SIM.mode = 'weak'; SIM.modeT = now() + 90000; }
@@ -12322,6 +12420,9 @@
       if (k === 'lost') { SIM.lost = !SIM.lost; }
       if (k === 'jump') { SIM.jump = 2; }   // две точки у «вышки», затем обратно
       if (k === 'tower') { SIM.jump = 6; }  // шесть точек — как будто правда переместились
+      if (k === 'lostOn') SIM.lost = true; if (k === 'lostOff') SIM.lost = false;   // v8.1.0: для проверки этапа испытания — сигнал пропал / вернулся
+      if (k === 'weakOn') { SIM.mode = 'weak'; SIM.modeT = Infinity; } if (k === 'weakOff' && SIM.mode === 'weak') SIM.mode = '';
+      if (k === 'deny' && O.src === 'sim' && live()) gpsErr(TX.deny);
       draw();
     };
 
@@ -12360,7 +12461,7 @@
       b.classList.toggle('live', lv);
       if (lv) {
         const t = r.st === 'pause' ? 'II' : fmtD(r.m).replace(' км', '').replace(' м', 'м');
-        const tm = b.querySelector('.tm'); if (tm.textContent !== t) tm.textContent = t;
+        const tm = b.querySelector('.tm'); if (tm.dataset.t !== t) { tm.dataset.t = t; tm.innerHTML = dg(t); }
         const tg = target(), fr = tg ? Math.min(1, (data.completed.steps || 0) / tg) : 0;
         b.querySelector('.hx .p').setAttribute('stroke-dashoffset', String(Math.round(1000 * (1 - fr))));
       }
@@ -12419,6 +12520,18 @@
       if (!L) return;
       const r = run(), st = r ? r.st : 'idle', n = $('#gpNums'), c = $('#gpCtl');
       L.classList.toggle('lB', O.layout === 'B');
+      const ex = isEx(r); L.classList.toggle('gpx', ex); { const t = ex ? 'ИСПЫТАНИЕ · БЕГ' : 'БЕГ · ' + NM(); if ($('#gpTab').textContent !== t) $('#gpTab').textContent = t; }
+      if (ex) {   // v8.1.0: этап испытания — без паузы и «Завершить»: этап закрывается сам через 20 минут бега
+        {
+          n.innerHTML = `<div class="xph" id="gpXph"></div><div class="cells"><div><b id="gpD"></b>Расстояние</div><div><b id="gpS"></b>Шаги</div><div><b id="gpV"></b>км/ч</div></div><div class="r3"><span>Время этапа <b id="gpT"></b></span><span>Темп <b id="gpP"></b></span><span id="gpA"></span></div>`;
+          c.innerHTML = `<div class="ctl"><button type="button" id="gpRe">Начать этап заново</button><button type="button" id="gpPk">В карман</button><button type="button" id="gpX">Свернуть</button></div>`;
+        }
+        const g = i => $('#' + i, L);
+        if (g('gpX')) g('gpX').onclick = close;
+        if (g('gpPk')) g('gpPk').onclick = () => pocket(true);
+        if (g('gpRe')) g('gpRe').onclick = () => { if (typeof examRestart === 'function') examRestart(); };
+        fieldSync(); return;
+      }
       if (st === 'done') {
         n.innerHTML = `<div class="sum" id="gpSum"></div>`;
         c.innerHTML = doneSteps() ? `<div class="ctl one"><button type="button" id="gpX">Закрыть</button></div>`
@@ -12457,29 +12570,31 @@
       else if (now() - r.lastFix > 10000) { cls = 'lost'; tx = SIG.lost; }
       else { cls = r.lv || 'best'; tx = SIG[cls]; }
       const sc = 'sig ' + cls; if (sg.className !== sc) sg.className = sc; if (sg.getAttribute('aria-label') !== tx) { sg.setAttribute('aria-label', tx); sg.title = tx; }
-      const msg = $('#gpMsg'), mt = errMsg && live() ? errMsg : (st === 'idle' && !(r && r.pts.length) ? TX.hint : (live() && !r.pts.length ? (r.st === 'pause' ? '' : r.gotFix && r.lv === 'weak' ? TX.weak : TX.search) : ''));
+      const msg = $('#gpMsg'), mt = isEx(r) && r.arm && !errMsg ? (exWaitNow() ? (r.gotFix && r.lv === 'weak' ? TX.weak : TX.search) : '') : errMsg && live() ? errMsg : (st === 'idle' && !(r && r.pts.length) ? TX.hint : (live() && !r.pts.length ? (r.st === 'pause' ? '' : r.gotFix && r.lv === 'weak' ? TX.weak : TX.search) : ''));
       if (msg.textContent !== mt) msg.textContent = mt;
+      if (isEx(r)) drawEx(r);
       const goal = $('#gpGoal');
       if (goal) { const left = Math.max(0, T - cur); const t = doneSteps() ? '<b>Задание по бегу выполнено.</b>' : `До цели: <b>${data.runUnit === 'km' ? km1(left + 109) + ' км' : left + ' шагов'}</b>`; if (goal.innerHTML !== t) goal.innerHTML = t; }
       if (st === 'done') {
         const s = $('#gpSum'), v = r.el > 0 ? r.m / (r.el / 1000) * 3.6 : 0;
+        {
         const h = `<div class="t">Бег завершён</div>Расстояние: <b>${fmtD(r.m)}</b><br>Засчитано шагов: <b>${r.cr}</b><br>Время: <b>${fmtT(r.el)}</b><br>Средний темп: <span class="nw"><b>${fmtPace(v)}</b> /км</span><br>Средняя скорость: <span class="nw"><b>${v.toFixed(1).replace('.', ',')}</b> км/ч</span>` + (r.goal ? '<br><span class="ok">Цель задания достигнута.</span>' : '');
-        if (s.innerHTML !== h) s.innerHTML = h;
+        if (s.innerHTML !== h) s.innerHTML = h; }
       }
       if (live()) {
         const set = (i, h) => { const e = $('#' + i, L); if (e && e.innerHTML !== h) e.innerHTML = h; };
         const kmh = st === 'run' && r.gotFix && now() - r.lastFix < 10000 ? curSpeed(r) : 0;
         const D_ = fmtD(r.m), S_ = String(r.cr + Math.max(0, Math.floor(r.sf) - r.cr));
-        if (O.layout === 'C') { set('gpD', D_); set('gpS', S_); }
+        if (O.layout === 'C') { set('gpD', dg(D_)); set('gpS', dg(S_)); }
         else {
           const km = data.runUnit === 'km';
           set('gpMn', km ? D_.replace(/ (км|м)$/, '<small>$1</small>') : S_ + '<small>шагов</small>');
           set('gpR2a', km ? `Шаги <b>${S_}</b>` : `Расстояние <b>${D_}</b>`);
         }
-        set('gpV', kmh.toFixed(1).replace('.', ','));
-        set('gpT', cells(fmtT(el(r))));
-        set('gpP', fmtPace(kmh));
-        set('gpA', r.acc ? '±' + Math.round(r.acc) + ' м' : '');
+        set('gpV', dg(kmh.toFixed(1).replace('.', ',')));
+        set('gpT', cells(isEx(r) ? exClock() : fmtT(el(r))));
+        set('gpP', dg(fmtPace(kmh)));
+        set('gpA', r.acc ? '±' + dg(Math.round(r.acc)) + ' м' : '');
         const ps = $('#gpPs', L); if (ps) { const t = st === 'pause' ? 'Продолжить' : 'Пауза'; if (ps.textContent !== t) ps.textContent = t; }
       }
       $('#gpRc').classList.toggle('on', !cam.follow); L.classList.toggle('qbon', !cam.follow);
@@ -12907,7 +13022,8 @@
       const p = performance.now(), dt = p - simLast; simLast = p; simT += dt * (O.src === 'sim' ? O.speed : 1);
       simTick();
       const r = run();
-      if (r && r.st === 'run' && now() - r.lastFix > LOSS_MS) { pause(true, 'lost'); showNotice(TX.loss, 'warn'); }
+      if (r && r.st === 'run' && !isEx(r) && now() - r.lastFix > LOSS_MS) { pause(true, 'lost'); showNotice(TX.loss, 'warn'); }
+      exWatch();
       if (live() && !(L && L.classList.contains('on'))) cardDraw();
       cmpSync();
       { const on = L && L.classList.contains('on') && O.bg === 'vec' && !VEC.off && document.visibilityState === 'visible'; const n = Date.now(); if (on) { if (n - (alive.t || 0) > 2000) { alive.t = n; alive(true); } } else if (alive.t) { alive.t = 0; alive(false); } }
@@ -12917,7 +13033,7 @@
     // ---------- карманный режим ----------
     let pocketOn = false;
     function pocket(on) {
-      ensure(); const P = $('#gpPocket'); if (pocketOn !== on) JL.ev(on ? 'карман включён' : 'карман выключен'); pocketOn = on; P.classList.toggle('on', on); under();
+      ensure(); const P = $('#gpPocket'); if (pocketOn !== on) JL.ev(on ? 'карман включён' : 'карман выключен'); pocketOn = on; P.classList.toggle('on', on); P.classList.toggle('gpx', on && isEx(run())); under();
       if (!on) { P.innerHTML = ''; if (L && L.classList.contains('on')) { cam.drawn = null; redraw(); } return; }
       release();
       P.innerHTML = `${O.pocket === 'track' ? '<canvas id="gpPc"></canvas>' : ''}<div class="ph" id="gpQPh">БЕГ · ${NM()}</div><span class="xt" id="gpQT"></span><div class="tg" id="gpQTg"></div><div class="x2" id="gpQ2"></div><div class="hint">Карманный режим. Касания не действуют. Удерживайте кнопку 2 секунды, чтобы выйти.</div>
@@ -12934,8 +13050,13 @@
     function drawPocket() {
       const P = $('#gpPocket'), r = run(); if (!r) return;
       const km = data.runUnit === 'km', D_ = fmtD(r.m), S_ = String(r.cr + Math.max(0, Math.floor(r.sf) - r.cr));
-      const a = km ? D_.replace(/ (км|м)$/, '<small>$1</small>') : S_ + '<small>шагов</small>', b = (km ? `Шаги <b>${S_}</b>` : `Расстояние <b>${D_}</b>`) + ` · <b>${fmtT(el(r))}</b>`;
+      const a = km ? dg(D_).replace(/ (км|м)$/, '<small>$1</small>') : dg(S_) + '<small>шагов</small>', b = (km ? `Шаги <b>${dg(S_)}</b>` : `Расстояние <b>${dg(D_)}</b>`) + ` · <b>${dg(fmtT(el(r)))}</b>`;
       const q = $('#gpQT'), q2 = $('#gpQ2'), ph = $('#gpQPh'); if (q && q.innerHTML !== a) q.innerHTML = a; if (q2 && q2.innerHTML !== b) q2.innerHTML = b;
+      if (isEx(r)) {   // v8.1.0: этап испытания — без цели (нормативы не показываются), время этапа, фаза
+        const qt = $('#gpQTg'); if (qt && qt.innerHTML !== '') qt.innerHTML = '';
+        const b2 = (km ? `Шаги <b>${dg(S_)}</b>` : `Расстояние <b>${dg(D_)}</b>`) + ` · <b>${dg(exClock())}</b>`; if (q2 && q2.innerHTML !== b2) q2.innerHTML = b2;
+        const pt = 'ИСПЫТАНИЕ · ' + exPhTxt(); if (ph && ph.textContent !== pt) ph.textContent = pt; return;
+      }
       const qt = $('#gpQTg'), tz = km ? '/ ' + km1(target()) + '<small>км</small>' : '/ ' + target(); if (qt && qt.innerHTML !== tz) qt.innerHTML = tz;   // цель — под числом пройденного
       const pt = r.st === 'pause' ? 'БЕГ · ' + NM() + ' · ПАУЗА' : 'БЕГ · ' + NM(); if (ph && ph.textContent !== pt) ph.textContent = pt;
     }
@@ -13017,9 +13138,60 @@
       const r = run();
       if (live()) { if (r.st === 'run') r.el += now() - r.rs; if (how === 'exam') flush(r, true); r.st = 'done'; r.goal = false; r.t1 = now(); }
       srcStop(); wake(false); if (pocketOn) pocket(false); close();
-      if (how === 'day') { G.runs = []; }
+      if (how === 'day') { G.runs = []; G.ex = null; }
       save(true); cardDraw();
     };
+    // ---------- v8.1.0: этап бега испытания ранга по треку ----------
+    // поиск сигнала (arm) → три точные точки подряд → испытание начинает отсчёт (10 с подготовки) → exGo: запись трека → через 20 минут exStop: зачёт, этап закрывается
+    const exWaitNow = () => { const i = exInfo(); return !i || i.ph === 'wait'; };
+    const exInfo = () => (typeof examTrackInfo === 'function' ? examTrackInfo() : null);
+    const exClock = () => { const i = exInfo(); return fmtT(Math.max(0, i ? i.t : 0) * 1000); };
+    const exPhTxt = () => { const i = exInfo(), r = run(); if (!i || i.ph === 'wait') return 'ПОИСК СИГНАЛА'; if (i.ph === 'prep') return 'ПОДГОТОВКА · ' + Math.max(1, Math.ceil(i.len - i.el)); return r && now() - r.lastFix > 10000 ? 'БЕГ · НЕТ СИГНАЛА' : 'БЕГ'; };
+    function drawEx(r) {
+      const i = exInfo(), e = $('#gpXph', L); if (!e) return;
+      const t = !i ? '' : i.ph === 'wait' ? 'Поиск сигнала. Отсчёт этапа начнётся, когда сигнал станет устойчивым.' : i.ph === 'prep' ? 'Подготовка: <b>' + Math.max(1, Math.ceil(i.len - i.el)) + '</b>' : 'Бег, 20 минут';
+      if (e.innerHTML !== t) e.innerHTML = t;
+      const re = $('#gpRe', L); if (re) { const dis = !i || i.re < 1 || i.ph === 'wait'; if (re.disabled !== dis) re.disabled = dis; }
+    }
+    function exNew(id) {
+      return { st: 'run', ex: id, arm: true, good: 0, t0: now(), rs: now(), el: 0, pts: [], raw: [], qz: [], m: 0, sf: 0, cr: 0, km: 0, lastFix: now(), acc: null, spd: 0, hd: null, goal: false, gotFix: false, lost: false };
+    }
+    D.exStart = id => {   // поиск сигнала; слой трека открыт
+      srcStop(); errMsg = ''; G.ex = exNew(id);
+      cam.follow = true; cam.touchT = 0; if (pocketOn) pocket(false);
+      srcStart(); wake(true); save(true); close(); open(); build(); draw();
+    };
+    D.exArmed = () => !!(G.ex && G.ex.arm && exLive() && (G.ex.good || 0) >= 3);
+    D.exDenied = () => !!(G.ex && G.ex.arm && exLive() && (errMsg === TX.deny || errMsg === TX.nogeo || errMsg === TX.https));
+    D.exGo = () => { const r = G.ex; if (!r || !exLive()) return; r.arm = false; r.rs = now(); r.el = 0; r.lastFix = now(); r.lost = false; r.raw = []; r.qz = []; save(true); build(); draw(); };
+    D.exSteps = () => (G.ex && exLive() ? G.ex.cr : 0);
+    D.exStop = () => {   // 20 минут бега — зачёт (и остаток меньше 100 шагов), этап закрывается
+      const r = G.ex; if (!r) return 0;
+      if (exLive()) { if (r.st === 'run') r.el += now() - r.rs; if (!r.arm) flush(r, true); r.st = 'done'; r.t1 = now(); }
+      const n = r.cr; srcStop(); wake(false); if (pocketOn) pocket(false); pipClose(); close(); G.ex = null; save(true);   // трек этапа после закрытия не хранится
+      return n;
+    };
+    D.exAbort = () => { if (!G.ex) return; if (exLive()) { G.ex.st = 'done'; G.ex.cr = 0; } srcStop(); wake(false); if (pocketOn) pocket(false); close(); G.ex = null; save(true); };
+    // сброс дня: остаток бега дня (меньше 100 шагов) засчитывается в этот день до подведения итога
+    D.dayEnd = () => { const r = G.runs[G.runs.length - 1]; if (!r || r.ex || !(r.st === 'run' || r.st === 'pause')) return; if (r.st === 'run') r.el += now() - r.rs; r.st = 'done'; r.goal = false; r.t1 = now(); const d = Math.floor(r.sf) - r.cr; if (d > 0) { const got = credit(d); r.cr += got > 0 ? got : d; } save(true); };
+    D.exOpen = () => { if (!exLive()) return; open(); build(); draw(); };
+    D.exPocket = () => { if (exLive()) pocket(true); };
+    // сигнал пропал во время бега — звук и вибрация; вернулся — другой звук; трек этапа без испытания — снимается
+    function exWatch() {
+      const r = G.ex; if (!r) return;
+      const e = data.exam, ok = typeof examOn === 'function' && examOn() && e.act === r.ex && e.S && e.S[r.ex] && e.S[r.ex].mode === 'track';
+      if (exLive() && !ok) { D.exAbort(); return; }
+      if (!exLive() || r.arm || r.st !== 'run') return;
+      const lost = now() - r.lastFix > 10000;
+      if (lost !== !!r.lost) { r.lost = lost; exSig(lost); }
+    }
+    function exSig(lost) {
+      try { if (typeof exTone === 'function') { if (lost) { exTone(660, 0, 0.16); exTone(440, 0.2, 0.32); } else { exTone(523, 0, 0.1); exTone(784, 0.13, 0.14); } } } catch (e) {}
+      try { if (navigator.vibrate) navigator.vibrate(lost ? [300, 150, 300] : [120]); } catch (e) {}
+      draw();
+    }
+    if (exLive()) { srcStart(); wake(true); }   // перезапуск посреди этапа — сигнал включается снова
+    else if (live()) srcStart();   // и посреди бега дня
     D._t = { start, pause, finish, fix, run, G: () => G, open, close, pocket };   // для автотестов
     D.ready = true;
     window.Track = D;
