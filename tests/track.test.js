@@ -51,7 +51,7 @@ const runPts = (w, n, from) => E(w, `(() => { const t0 = Date.now(); for (let i 
   // ---- поля данных ----
   { const w = await mk();
     check('TR1 новый Игрок: бег — расстояние, фон чёрный, вид 3D', E(w, "data.runUnit") === 'km' && E(w, "data.trackBg") === 'black' && E(w, "data.trackView") === '3d');
-    check('TR2 версия 8.1.0 (APP_VERSION и заголовок)', E(w, 'APP_VERSION') === '8.1.0' && /v8\.1\.0/.test(w.document.title));
+    check('TR2 версия 8.1.1 (APP_VERSION и заголовок)', E(w, 'APP_VERSION') === '8.1.1' && /v8\.1\.1/.test(w.document.title));
     check('TR3 модуль трека подключён', E(w, "!!(window.Track && Track.ready)"));
     const raw = JSON.parse(E(w, "localStorage.getItem('sl_daily_v5_5_0')"));
     delete raw.runUnit; delete raw.trackBg; delete raw.trackView;

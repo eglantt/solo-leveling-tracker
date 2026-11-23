@@ -538,6 +538,41 @@ const CQ = 'Свиток вступит в силу со следующим ци
   }
 }
 
+// ===== AN. v8.1.1: открытие Шкатулки Аномалии — ожидание, бросок, резонанс с эффектом, уведомления после =====
+{
+  const prep = (w, roll) => E(w, `window.__S = []; const __ps = playSound; playSound = n => { window.__S.push(n); };
+    window.__V = []; navigator.vibrate = p => { window.__V.push(JSON.stringify(p)); return true; };
+    const __q = [${roll}], __r = Math.random; Math.random = () => __q.length ? __q.shift() : __r();
+    data.boxes = { box_anomaly: 2 }; data.pendingCurse = false; data.curseActiveToday = false; saveData(); openInv();`);
+  { const w = fresh(); prep(w, '0.9, 0.5');
+    E(w, "window.__clk = 0; const n = document.createElement('div'); n.className = 'sys-notice'; n.addEventListener('click', () => { window.__clk++; n.remove(); }); document.body.appendChild(n);");
+    E(w, 'window.__N = []; performOpenAnomalyBox(); performOpenAnomalyBox();');
+    await sleep(800);
+    check('AN1 до броска (0,8 с): шкатулка не потрачена, уведомлений нет, нажатия закрыты, очередь ждёт', E(w, "data.boxes.box_anomaly") === 2 && E(w, 'window.__N.length') === 0 && !!E(w, "document.querySelector('.anom-block')") && E(w, 'sealBusyUntil') > Date.now());
+    check('AN2 висящее уведомление закрыто в момент открытия', E(w, 'window.__clk') === 1);
+    check('AN3 голубая вспышка карточки — во время ожидания', E(w, "!!document.querySelector('[data-box-id=\"box_anomaly\"].item-flash')"));
+    await sleep(1100);
+    check('AN4 удачный исход после ожидания 1,6 с: одна шкатулка (повторное нажатие не сработало), предмет, уведомление, без звука проклятия и вибрации',
+      E(w, "data.boxes.box_anomaly") === 1 && /^Получен предмет: /.test(E(w, 'window.__N.join(" / ")')) && !E(w, 'data.pendingCurse') && E(w, 'window.__S[0]') === 'anomalyBless' && !E(w, 'window.__S.includes("anomalyCurse")') && E(w, 'window.__V.length') === 0, J(w, '[window.__N, window.__S, data.boxes]'));
+    check('AN5 после удачного исхода — нажатия и очередь свободны', !E(w, "document.querySelector('.anom-block')") && E(w, 'sealBusyUntil') === 0);
+  }
+  { const w = fresh(); prep(w, '0.1');
+    E(w, 'window.__N = []; performOpenAnomalyBox();'); await sleep(1900);
+    check('AN6 резонанс: в момент броска — Бремя записано и сохранено, звук проклятия и вибрация 200 · 80 · 300, уведомления ещё нет',
+      E(w, 'data.pendingCurse') === true && JSON.parse(E(w, "localStorage.getItem('sl_daily_v5_5_0')")).pendingCurse === true && E(w, "data.boxes.box_anomaly") === 1
+      && J(w, 'window.__S') === '["anomalyCurse"]' && J(w, 'window.__V') === '["[200,80,300]"]' && E(w, 'window.__N.length') === 0, J(w, '[window.__S, window.__V, window.__N]'));
+    await sleep(3500);
+    check('AN7 во время эффекта (≈5,4 с) уведомления нет, нажатия закрыты', E(w, 'window.__N.length') === 0 && !!E(w, "document.querySelector('.anom-block')"));
+    await sleep(1400);
+    const n = E(w, 'window.__N.join(" / ")');
+    check('AN8 после эффекта и паузы 1 с — уведомление о Бремени (текст прежний), звук проклятия один раз, глава Кодекса',
+      /Шкатулка Аномалии открыта\. Возникший резонанс исказил расчёты Системы\./.test(n) && J(w, 'window.__S.filter(x => x === "anomalyCurse")') === '["anomalyCurse"]' && E(w, "data.codexUnlocked.includes('anomaly_burden')"), n);
+    check('AN9 после резонанса — слоёв эффекта нет, нажатия и очередь свободны', E(w, "document.querySelectorAll('.anom-fx').length") === 0 && !E(w, "document.querySelector('.anom-block')") && E(w, 'sealBusyUntil') === 0);
+    E(w, 'window.__N = []; openAnomalyBox();');
+    check('AN10 под ожидающим Бременем открыть нельзя — прежний отказ', /Открытие Шкатулки Аномалии заблокировано/.test(E(w, 'window.__N.join(" / ")')) && !E(w, "document.querySelector('.anom-block')"));
+  }
+}
+
 console.log(results.join('\n'));
 const nFail = results.filter(r => r.startsWith('FAIL')).length;
 console.log(`\nИтого: ${results.length - nFail} OK, ${nFail} FAIL`);

@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   
-  <title>Solo Leveling — Тренировочный счётчик v8.1.0 (System Codex)</title>
+  <title>Solo Leveling — Тренировочный счётчик v8.1.1 (System Codex)</title>
   <style>
     @font-face {
       font-family: 'Orbitron';
@@ -1727,6 +1727,9 @@
     .gp-btn.fin { color: #40ffaa; --sxg: rgba(64,255,170,.45); --sxd: rgba(64,255,170,.14); }
     .gp-btn.fin .hx .p { opacity: .9; }
     body.sx-red .gp-btn.fin { color: #ff4455; --sxg: rgba(255,40,70,.5); --sxd: rgba(255,40,70,.15); }
+    /* ===== v8.1.1: резонанс при открытии Шкатулки Аномалии (демо 126b) — слои эффекта и запрет нажатий на время открытия ===== */
+    .anom-fx { position: fixed; pointer-events: none; overflow: hidden; }
+    .anom-block { position: fixed; inset: 0; z-index: 4100; }
     /* ===== v8.1.0: этап бега испытания по треку (демо 125) ===== */
     body.exm { --sx: #ffd34d; --sxg: rgba(255,205,60,.45); --sxd: rgba(255,205,60,.14); --sx2: #fff0b8; }
     /* «Трек» / «Таймер» — друг под другом, шириной ровно с «Начать этап»: невидимая кнопка «Начать этап» в той же колонке задаёт ширину */
@@ -2795,7 +2798,7 @@
 </div> 
 
 <script>
-  const APP_VERSION = '8.1.0';
+  const APP_VERSION = '8.1.1';
   // v7.2.0: упражнения, которые может выбрать Свиток Сосредоточения (объявлено рано — нужно нормализации при загрузке)
   const QUEST_IDS_FOCUS = ['pushups', 'squats', 'pullups', 'press', 'steps'];
   const PENALTY_STACK_MAX = 20; // стопка штрафов (v6.5.35) — сколько последних штрафов помнит Система
@@ -8685,21 +8688,143 @@
     showConfirm('Открыть «Шкатулку Аномалии»? Результат непредсказуем.', () => performOpenAnomalyBox());
   }
 
+  // v8.1.1: открытие Шкатулки Аномалии (демо 126–126b). «Подтвердить» → окно уходит → голубая вспышка карточки → бросок через 1,6 с
+  // после нажатия. Резонанс: звук проклятия, вибрация (Android) и эффект — «Разлом» (молнии), затем «Волна» + «Выброс»; пауза 1 с; уведомление.
+  // Висящее уведомление закрывается (остаётся в журнале), очередь ждёт до конца открытия (sealBusyUntil); нажатия на время открытия не действуют.
+  const ANOM_FX = { wait: 1600, a: 1500, b: 2000, d: 2200, pause: 1000, band: 0.18, vib: [200, 80, 300] };
+  let anomBusy = false;
+  const ANOM_RED = '#ff3344', anomRed = a => `rgba(255,40,60,${a})`;
+  const anomLater = ms => new Promise(r => setTimeout(r, ms));
+  function anomAnim(el, kf, ms, o) { try { return el.animate(kf, Object.assign({ duration: ms, easing: 'ease-out', fill: 'forwards' }, o || {})); } catch (e) { return null; } }
+  function anomLayer(r, z) {
+    const L = document.createElement('div'); L.className = 'anom-fx'; L.setAttribute('aria-hidden', 'true');
+    L.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:${z};`;
+    document.body.appendChild(L); return L;
+  }
+  const anomWin = () => { const o = document.getElementById('invOverlay'); return o && o.style.display === 'flex' ? o.querySelector('.status-window') : null; };
+  // молния — дробление: середина отрезка сдвигается поперёк, рекурсивно
+  function anomBolt(x0, y0, x1, y1, rough, depth) {
+    let pts = [[x0, y0], [x1, y1]], amp = Math.hypot(x1 - x0, y1 - y0) * rough;
+    for (let d = 0; d < depth; d++) {
+      const nx = [];
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [ax, ay] = pts[i], [bx, by] = pts[i + 1], len = Math.hypot(bx - ax, by - ay) || 1, off = (Math.random() - 0.5) * amp;
+        nx.push(pts[i], [(ax + bx) / 2 - (by - ay) / len * off, (ay + by) / 2 + (bx - ax) / len * off]);
+      }
+      nx.push(pts[pts.length - 1]); pts = nx; amp *= 0.55;
+    }
+    return 'M' + pts.map(q => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L');
+  }
+  function anomStrike(w, h, cx, cy) {
+    let main = '', br = '';
+    const n = 4 + Math.round(Math.random());
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + (Math.random() - 0.5) * (Math.PI / n), R = Math.hypot(w, h) * (0.35 + Math.random() * 0.25);
+      const d = anomBolt(cx, cy, cx + Math.cos(a) * R, cy + Math.sin(a) * R, 0.28, 5); main += `<path d="${d}"/>`;
+      const pts = d.slice(1).split(' L').map(t => t.split(' ').map(Number)), nb = 1 + Math.floor(Math.random() * 2);   // ветви
+      for (let j = 0; j < nb; j++) {
+        const p0 = pts[Math.floor(pts.length * (0.25 + Math.random() * 0.45))], ba = a + (Math.random() < 0.5 ? -1 : 1) * (0.4 + Math.random() * 0.5), bl = R * (0.25 + Math.random() * 0.25);
+        br += `<path d="${anomBolt(p0[0], p0[1], p0[0] + Math.cos(ba) * bl, p0[1] + Math.sin(ba) * bl, 0.3, 4)}"/>`;
+      }
+    }
+    // свечение — тремя слоями линии, без фильтров
+    return `<g fill="none" stroke-linecap="round" stroke-linejoin="round"><g stroke="${anomRed(.22)}" stroke-width="7">${main}</g><g stroke="${anomRed(.18)}" stroke-width="4">${br}</g>`
+      + `<g stroke="${anomRed(.85)}" stroke-width="2.6">${main}</g><g stroke="${anomRed(.7)}" stroke-width="1.4">${br}</g><g stroke="#fff0f2" stroke-width="1.1">${main}</g></g>`;
+  }
+  // «Разлом»: три удара молний из шкатулки (каждый — новая форма и вспышка карточки), последний гаснет; дрожь иконки, карточка гаснет
+  async function anomFxRift(card) {
+    const T = ANOM_FX.a, r = card.getBoundingClientRect(), L = anomLayer(r, 4001);
+    const icon = card.querySelector('.item-icon') || card, ir = icon.getBoundingClientRect(), cx = ir.left + ir.width / 2 - r.left, cy = ir.top + ir.height / 2 - r.top;
+    L.style.borderRadius = getComputedStyle(card).borderRadius;
+    const fl = document.createElement('div');
+    fl.style.cssText = `position:absolute;inset:0;background:radial-gradient(circle at ${cx}px ${cy}px, ${anomRed(.8)}, ${anomRed(.3)} 45%, ${anomRed(.12)});box-shadow:inset 0 0 0 1px ${ANOM_RED};opacity:0;`;
+    L.appendChild(fl);
+    [0, 0.14, 0.3].forEach((h, i, all) => {
+      const sv = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sv.setAttribute('width', r.width); sv.setAttribute('height', r.height);
+      sv.style.cssText = 'position:absolute;left:0;top:0;opacity:0;'; sv.innerHTML = anomStrike(r.width, r.height, cx, cy); L.appendChild(sv);
+      const last = i === all.length - 1, on = T * h;
+      anomAnim(sv, last ? [{ opacity: 0 }, { opacity: 1, offset: .04 }, { opacity: .9, offset: .25 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 1, offset: .1 }, { opacity: .8, offset: .5 }, { opacity: 0 }], last ? T * .62 : T * .1, { delay: on, easing: 'linear' });
+      anomAnim(fl, [{ opacity: 0 }, { opacity: 1, offset: .08 }, { opacity: last ? .45 : 0 }], last ? T * .5 : T * .1, { delay: on, fill: 'none', easing: 'linear' });
+    });
+    anomAnim(icon, [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => ({ transform: i === 8 ? 'translate(0,0)' : `translate(${((Math.random() - .5) * 6).toFixed(1)}px,${((Math.random() - .5) * 4).toFixed(1)}px)` })), T * .4, { easing: 'linear', fill: 'none' });
+    anomAnim(card, [{ opacity: 1 }, { opacity: 1, offset: .7 }, { opacity: .35, offset: .88 }, { opacity: 1 }], T, { fill: 'none' });
+    await anomLater(T); L.remove();
+  }
+  // «Волна»: три кольца с мягкой полосой (18% радиуса) от шкатулки по окну; рамка окна на время эффекта красная
+  async function anomFxWave(card) {
+    const T = ANOM_FX.b, w = anomWin(); if (!w) { await anomLater(T); return; }
+    const wr = w.getBoundingClientRect(), L = anomLayer(wr, 4002);
+    const icon = card.querySelector('.item-icon') || card, ir = icon.getBoundingClientRect();
+    const cx = ir.left + ir.width / 2 - wr.left, cy = ir.top + ir.height / 2 - wr.top;
+    const R = Math.hypot(Math.max(cx, wr.width - cx), Math.max(cy, wr.height - cy)), d = Math.ceil(R * 2), f = ANOM_FX.band * 100, st = x => (100 - x * f).toFixed(1) + '%';
+    for (let i = 0; i < 3; i++) {
+      const c = document.createElement('div');
+      c.style.cssText = `position:absolute;left:${(cx - d / 2).toFixed(0)}px;top:${(cy - d / 2).toFixed(0)}px;width:${d}px;height:${d}px;border-radius:50%;opacity:0;`
+        + `background:radial-gradient(closest-side, ${anomRed(0)} ${st(2)}, ${anomRed(.28)} ${st(1.5)}, ${anomRed(.85)} ${st(1)}, ${anomRed(.28)} ${st(.5)}, ${anomRed(0)} 100%);`;
+      L.appendChild(c);
+      anomAnim(c, [{ transform: 'scale(.04)', opacity: 0 }, { opacity: 1, offset: .1 }, { opacity: .85, offset: .55 }, { transform: 'scale(1)', opacity: 0 }], T * .7, { delay: i * T * .13, easing: 'cubic-bezier(.2,.55,.35,1)' });
+    }
+    const sys = isSysTheme() && w.classList.contains('sf-win');
+    if (sys) { try { SysFrame.render(w, 'red', SYS_FRAME_OPT); } catch (e) {} }
+    else {
+      const e = document.createElement('div');
+      e.style.cssText = `position:absolute;inset:0;border:1px solid ${ANOM_RED};border-radius:${getComputedStyle(w).borderRadius};box-shadow:0 0 18px ${anomRed(.6)}, inset 0 0 22px ${anomRed(.35)};opacity:0;`;
+      L.appendChild(e); anomAnim(e, [{ opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .6 }, { opacity: 0 }], T);
+    }
+    await anomLater(T * .85);
+    if (sys && w.isConnected) { try { SysFrame.render(w, 'blue', SYS_FRAME_OPT); } catch (e) {} }
+    await anomLater(T * .15); L.remove();
+  }
+  // «Выброс»: искры и клочья во все стороны равномерно, красная виньетка по краям экрана
+  async function anomFxBurst(card) {
+    const T = ANOM_FX.d, vw = innerWidth, vh = innerHeight, L = anomLayer({ left: 0, top: 0, width: vw, height: vh }, 4004);
+    const icon = card.querySelector('.item-icon') || card, ir = icon.getBoundingClientRect(), cx = ir.left + ir.width / 2, cy = ir.top + ir.height / 2;
+    const vg = document.createElement('div');
+    vg.style.cssText = `position:absolute;inset:0;background:radial-gradient(ellipse at center, ${anomRed(0)} 45%, ${anomRed(.28)} 75%, rgba(40,0,6,.75) 100%);opacity:0;`;
+    L.appendChild(vg); anomAnim(vg, [{ opacity: 0 }, { opacity: 1, offset: .2 }, { opacity: .8, offset: .55 }, { opacity: 0 }], T);
+    const N = 48;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div'), big = i % 4 === 0, dark = i % 3 === 0, sz = big ? 14 + Math.random() * 14 : 3 + Math.random() * 3;
+      p.style.cssText = `position:absolute;left:${(cx - sz / 2).toFixed(0)}px;top:${(cy - sz / 2).toFixed(0)}px;width:${sz.toFixed(0)}px;height:${(big ? sz * .6 : sz).toFixed(0)}px;border-radius:${big ? '40%' : '1px'};`
+        + `background:${dark ? 'rgba(30,0,4,.85)' : big ? anomRed(.45) : '#ffb3ba'};box-shadow:${dark ? 'none' : `0 0 ${big ? 10 : 4}px ${anomRed(.9)}`};opacity:0;`;
+      L.appendChild(p);
+      const a = (i / N) * Math.PI * 2 + (Math.random() - .5) * (Math.PI * 2 / N), dist = 60 + Math.random() * Math.min(vw, vh) * .45;
+      anomAnim(p, [{ transform: 'translate(0,0) scale(.6)', opacity: 0 }, { opacity: 1, offset: .1 }, { transform: `translate(${(Math.cos(a) * dist).toFixed(0)}px,${(Math.sin(a) * dist).toFixed(0)}px) rotate(${((Math.random() - .5) * 360).toFixed(0)}deg) scale(${big ? 1.6 : 1})`, opacity: 0 }],
+        T * (.6 + Math.random() * .4), { delay: Math.random() * 200, easing: 'cubic-bezier(.1,.7,.3,1)' });
+    }
+    await anomLater(T); L.remove();
+  }
   function performOpenAnomalyBox() {
-    flashThenRun(`[data-box-id="box_anomaly"]`, () => {
+    if (anomBusy || !(data.boxes['box_anomaly'] > 0) || data.pendingCurse || data.curseActiveToday) return;
+    anomBusy = true;
+    const t0 = Date.now(), block = document.createElement('div');
+    block.className = 'anom-block'; document.body.appendChild(block);   // нажатия на время открытия не действуют
+    sealBusyUntil = Date.now() + 60000;   // очередь уведомлений ждёт конца открытия
+    document.querySelectorAll('.system-popup:not(.sp-out), .sys-notice').forEach(n => { try { n.click(); } catch (e) {} });   // висящее уведомление закрывается (в журнале остаётся)
+    const out = isSysTheme() ? ClassicFx.SYS_OUT_MS : ClassicFx.OUT_MS;
+    const card = () => document.querySelector('[data-box-id="box_anomaly"]');
+    setTimeout(() => { const c = card(); if (c) { c.classList.remove('item-flash', 'item-flash-gold', 'item-flash-orange'); void c.offsetWidth; c.classList.add('item-flash'); } }, out);   // шкатулка «открывается» — обычная вспышка
+    const release = () => { block.remove(); sealBusyUntil = 0; anomBusy = false; };
+    setTimeout(async () => {   // бросок — только после ожидания
       data.boxes['box_anomaly']--;
       if (data.boxes['box_anomaly'] <= 0) delete data.boxes['box_anomaly'];
-
       if (Math.random() < 0.5) {
-        // Проклятие — applies to tomorrow, not today (see checkMissedDays()).
+        // Проклятие — applies to tomorrow, not today (see checkMissedDays()). Данные — сразу (перезапуск посреди эффекта их не теряет), экран — после эффекта.
+        data.pendingCurse = true; saveData();
         playSound('anomalyCurse');
-        data.pendingCurse = true;
-        unlockCodexChapter('anomaly_burden');
-        saveData(); render(); openInv();
+        try { if (navigator.vibrate) navigator.vibrate(ANOM_FX.vib); } catch (e) {}
+        const c = card();
+        try {
+          if (c) { await anomFxRift(c); await Promise.all([anomFxWave(c), anomFxBurst(c)]); }
+          else await anomLater(ANOM_FX.a + ANOM_FX.d);
+        } catch (e) {}
+        await anomLater(ANOM_FX.pause);
+        release();
+        unlockCodexChapter('anomaly_burden'); saveData();
+        render(); if (document.getElementById('invOverlay').style.display === 'flex') openInv();
         showNotice('Шкатулка Аномалии открыта. Возникший резонанс исказил расчёты Системы. Действует эффект Бремя Аномалии: задание следующего цикла усложняется, штраф за провал увеличен втрое.', 'danger');
         return;
       }
-
       // Благословение — 40% ключ / 30% кредиты / 30% усиленный расходник.
       playSound('anomalyBless');
       const roll = Math.random();
@@ -8726,9 +8851,10 @@
         data.consumables[itemId] = (data.consumables[itemId] || 0) + 1;
         resultText = SHOP_CATALOG[itemId].name;
       }
-      saveData(); render(); openInv();
+      saveData(); render(); if (document.getElementById('invOverlay').style.display === 'flex') openInv();
+      release();
       showNotice(`Получен предмет: ${resultText}`, 'info');
-    });
+    }, Math.max(out + 100, ANOM_FX.wait - (Date.now() - t0)));
   }
   function performOpenBox(id) {
     flashThenRun(`[data-box-id="${id}"]`, () => {
