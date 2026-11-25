@@ -168,10 +168,8 @@ for (const a of X) for (const b of X) {
   check('E Заморозка во время Предела: в очереди', E(w,'data.pendingScroll')==='freeze'); }
 
 // ===== F. Скрижаль Пересмотра =====
-const TW = 'Сброс характеристик изменит цели текущего задания. Уже закрытые упражнения могут снова стать незакрытыми.';
-{ const w = fresh(`data.stats.sta=30; data.completed={pushups:10};`); check('F Скрижаль: прогресс есть, задание не выполнено — предупреждение', warn(w,'tablet_of_reassessment') === TW); }
-{ const w = fresh(`data.stats.sta=30;`); check('F Скрижаль: прогресса нет — без предупреждения', warn(w,'tablet_of_reassessment') === ''); }
-{ const w = fresh(`data.stats.sta=30;`); complete(w); check('F Скрижаль: задание выполнено — без предупреждения', warn(w,'tablet_of_reassessment') === ''); }
+// v8.1.3: цели дня от Скрижали не меняются (Выносливость для целей запомнена при сбросе дня) — предупреждения нет
+{ const w = fresh(`data.stats.sta=30; data.completed={pushups:10};`); check('F Скрижаль (v8.1.3): прогресс есть, задание не выполнено — без предупреждения', warn(w,'tablet_of_reassessment') === ''); }
 { const w = fresh(`data.completed={pushups:10};`); E(w,'data.stats={str:10,agi:10,sta:10,int:10,per:10}'); check('F Скрижаль: очки не вложены — без предупреждения', warn(w,'tablet_of_reassessment') === ''); }
 
 // ===== G. Осколки Предела =====
@@ -472,7 +470,7 @@ const CQ = 'Свиток вступит в силу со следующим ци
     const st = failDayStatus(w);
     check('F32 провал — обычный штраф, без доплаты, свиток снят', st === 'penalty' && !E(w,'window.__N.join(" ")').includes('Сосредоточения') && E(w, `!data.activeScroll && data.focusExerciseId===null`), st); }
   { const w = fresh('data.curseActiveToday=true;'); useF(w, 'pullups');
-    const raw = E(w, `Math.floor(40 * getTargetGrowthMultiplier(data.dailyTargetLevel) * (1 - Math.min(0.6, Math.min(0.2, Math.max(0, data.stats.sta - 10) * 0.0005))))`);
+    const raw = E(w, `Math.floor(40 * getTargetGrowthMultiplier(data.dailyTargetLevel) * (1 + Math.min(0.2, Math.max(0, (data.dailyTargetSta || 10) - 10) * 0.0005)) + 1e-9)`);   // v8.1.3
     check('F33 Бремя: ×1,4 и поверх ×1,5', tgt(w,'pullups',40) === Math.floor(Math.ceil(raw*1.4)*1.5), tgt(w,'pullups',40) + ' / ' + raw); }
   // руны
   { const w = fresh(); useF(w, 'press');

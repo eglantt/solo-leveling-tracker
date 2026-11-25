@@ -259,9 +259,10 @@ const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'i
   E(w, `sysToolsFlashThenRun(document.createElement('button'), refundStatsAction)`); await sleep(450);
   check('S6 «Вернуть всё в свободные очки»: характеристики — к 10, вложенное (3+8+2+15=28) — в свободные очки (4+28=32); кнопка выключается',
     J(w, 'data.stats') === '{"str":10,"agi":10,"sta":10,"int":10,"per":10}' && E(w, 'data.statPoints') === 32 && D.getElementById('sysStatsRefundBtn').disabled);
+  // v8.1.3: Выносливость для целей запоминается при сбросе дня — изменение в Длани цели дня не трогает
   E(w, 'data.stats.sta = 210; render()'); const t210 = E(w, "document.querySelector('.quest-item[data-id=\"pullups\"] .target').textContent");
   E(w, 'data.stats.sta = 10; render()'); const t10 = E(w, "document.querySelector('.quest-item[data-id=\"pullups\"] .target').textContent");
-  check('S7 изменения действуют сразу: Выносливость меняет цели заданий', t210 !== t10, `${t210} / ${t10}`);
+  check('S7 (v8.1.3) Выносливость из Длани не меняет цели текущего дня', t210 === t10, `${t210} / ${t10}`);
   check('S8 сохраняется', JSON.parse(w.localStorage.getItem('sl_daily_v5_5_0')).statPoints === 32); }
 
 // ===== v7.0.5: каталог Длани и Магазин не пересобирают окно после нажатия =====

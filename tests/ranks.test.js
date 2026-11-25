@@ -83,18 +83,11 @@ const near = (a, b, e = 1e-9) => Math.abs(a - b) < e;
   const norms = { squats: 120, pullups: 40, press: 100, steps: 10000 };
   const okN = Object.keys(norms).every(id => { E(w, `data.completed.${id} = 0`); const v = val(id); clickN(id, 1); return near(E(w, `data.tn.${id}`), v / norms[id]); });
   check('R11 нормы: приседания 120, подтягивания 40, пресс 100, бег 10000', okN, JSON.stringify(J(w, 'data.tn')));
-  // Выносливость: в пределах цели × (цель без / цель с)
-  E(w, prep + ` data.stats.sta = 410; render();`);
-  const k = E(w, 'tnStaFactor()');
-  check('R12 Выносливость 410: коэффициент 1/0,8 = 1,25', near(k, 1.25), k);
-  E(w, `data.stats.sta = 410; data.targetDiscountToday = true; data.targetDiscountRate = 0.25; data.targetDiscountSourceId = 'rune_relief';`);
-  const k2 = E(w, 'tnStaFactor()');
-  check('R13 с руной облегчения 25%: (1 − 0,25) / (1 − 0,45) — руна не компенсируется', near(k2, 0.75 / 0.55), k2);
-  E(w, `data.targetDiscountToday = false; data.activeScroll = 'renunciation'`);
-  check('R14 под Отречением Выносливость не действует — коэффициент 1', E(w, 'tnStaFactor()') === 1);
-  E(w, prep + ` data.stats.sta = 410;`);
-  E(w, `tnAdd('pushups', 10, 95, 100)`);   // 5 в пределах цели, 5 сверх
-  check('R15 в пределах цели — с компенсацией, сверх цели (Предел) — без: (5×1,25 + 5) / 100', near(E(w, 'data.tn.pushups'), (5 * 1.25 + 5) / 100), E(w, 'data.tn.pushups'));
+  // v8.1.3: поправки на Выносливость нет — настоящие повторения
+  E(w, prep + ` data.stats.sta = 410; data.dailyTargetSta = 410; render();`);
+  check('R12 (v8.1.3) поправки на Выносливость больше нет', E(w, 'typeof tnStaFactor') === 'undefined');
+  E(w, `tnAdd('pushups', 10, 95, 100)`);
+  check('R15 (v8.1.3) Выносливость 410: 10 повторений = 10 / 100, в пределах цели и сверх — одинаково', near(E(w, 'data.tn.pushups'), 0.1), E(w, 'data.tn.pushups'));
   E(w, prep + ` data.tnMul = 1.25;`); E(w, `tnAdd('press', 100, 0, 1000)`);
   check('R16 цикл режима: ТН ×1,25', near(E(w, 'data.tn.press'), 1.25));
   // Предел: раунд — те же нажатия

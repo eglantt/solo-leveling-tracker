@@ -68,13 +68,16 @@ function scen(w, n, rest, mult) {
 (async () => {
 // ===== 1. Выносливость: цели заданий =====
 { const w = fresh();
-  const t = s => E(w, `data.stats.sta=${s}; getDynamicTarget(100, 10, 'pushups')`);
+  // v8.1.3: Выносливость повышает цели (по запомненной при сбросе дня) — подробно в stamina.test.js
+  const t = s => E(w, `data.dailyTargetSta=${s}; getDynamicTarget(100, 10, 'pushups')`);
   const r = [10, 110, 210, 310, 410, 610].map(t);
-  check('S1 цели: 0,05% за очко — 110 → −5%, 210 → −10%, 310 → −15%, 410 и выше → −20%', JSON.stringify(r) === '[100,95,90,85,80,80]', JSON.stringify(r));
-  const tr = E(w, `data.stats.sta=410; data.activeScroll='renunciation'; getDynamicTarget(100, 10, 'pushups')`);
-  check('S2 Отречение отключает снижение целей', tr === 100, tr);
-  const cb = E(w, `data.activeScroll=null; data.stats.sta=410; data.targetDiscountToday=true; data.targetDiscountRate=0.45; getDynamicTarget(100, 10, 'pushups')`);
-  check('S3 с руной общий потолок снижения — 60%', cb === 40, cb);
+  check('S1 (v8.1.3) цели: +0,05% за очко — 110 → +5%, 210 → +10%, 310 → +15%, 410 и выше → +20%', JSON.stringify(r) === '[100,105,110,115,120,120]', JSON.stringify(r));
+  const tr = E(w, `data.dailyTargetSta=410; data.activeScroll='renunciation'; getDynamicTarget(100, 10, 'pushups')`);
+  check('S2 Отречение отключает рост целей', tr === 100, tr);
+  const cb = E(w, `data.activeScroll=null; data.dailyTargetSta=410; data.targetDiscountToday=true; data.targetDiscountRate=0.45; getDynamicTarget(100, 10, 'pushups')`);
+  check('S3 (v8.1.3) руна 45% — с повышенной цели: 120 × 0,55 = 66', cb === 66, cb);
+  E(w, 'data.targetDiscountToday=false; data.dailyTargetSta=10');
+  check('S3a (v8.1.3) норма шкалы усталости — без Выносливости', E(w, `data.stats.sta=410; fzNorm('pushups')`) === 100, E(w, `fzNorm('pushups')`));
   const ef = [10, 210, 410, 610].map(s => E(w, `data.stats.sta=${s}; fzSta()`));
   check('S4 усталость: эффект Выносливости 0 / 10% / 20% / 20%', JSON.stringify(ef.map(x => +x.toFixed(4))) === '[0,0.1,0.2,0.2]', JSON.stringify(ef)); }
 
@@ -128,7 +131,7 @@ function scen(w, n, rest, mult) {
   check('SC1 пики как в демо: 70 / 50 / 72 / 100', r.every(x => x[1] === x[2] && x[3] < 1e-6), JSON.stringify(r)); }
 { const w = fresh('data.stats.sta=210'); const s = scen(w, 4, 1); const w2 = fresh('data.stats.sta=410'); const s2 = scen(w2, 4, 1);
   const s0 = scen(fresh(), 4, 1);
-  check('SC2 Выносливость 210 / 410: плотная тренировка легче (≈62 / ≈52 против 70) и совпадает с эталоном', s0.peak > s.peak && s.peak > s2.peak && Math.round(s.peak) === 62 && Math.round(s2.peak) === 52 && Math.abs(F(w) - s.ref.F()) < 1e-6 && Math.abs(F(w2) - s2.ref.F()) < 1e-6, [s0.peak, s.peak, s2.peak]);
+  check('SC2 Выносливость 210 / 410: плотная тренировка легче (≈61 / ≈52 против 70; с v8.1.3 норма без Выносливости) и совпадает с эталоном', s0.peak > s.peak && s.peak > s2.peak && Math.round(s.peak) === 61 && Math.round(s2.peak) === 52 && Math.abs(F(w) - s.ref.F()) < 1e-6 && Math.abs(F(w2) - s2.ref.F()) < 1e-6, [s0.peak, s.peak, s2.peak]);
   const rec = sta => { const w = fresh('data.stats.sta=' + sta); add(w, 'pushups', 35); const v0 = F(w); min(w, 20); E(w, 'fzTick()'); return F(w) / v0; };
   const r10 = rec(10), r610 = rec(610), r410 = rec(410);
   check('SC3 восстановление: на 410 и 610 одинаково быстрее, чем на 10', r410 < r10 && near(r410, r610), [r10, r410, r610]); }
@@ -345,8 +348,8 @@ const SET = (w, v) => { E(w, `document.getElementById('fzSetInput').value = ${JS
 
 // ===== 9. Тексты =====
 { const w = fresh();
-  check('X1 глава «Характеристики»', E(w, 'CODEX_CHAPTERS.stats.content').includes('Выносливость снижает повседневную нагрузку, увеличивает опыт при превышении задания, облегчает усталость и ускоряет восстановление.'));
-  check('X2 описание Выносливости', E(w, 'STAT_LORE.sta.text').includes('Выносливость снижает повседневную нагрузку заданий, облегчает усталость и ускоряет восстановление, а также заметно увеличивает опыт, если Игрок решается преодолеть предел.'));
+  check('X1 глава «Характеристики»', E(w, 'CODEX_CHAPTERS.stats.content').includes('Выносливость повышает цели дневного задания и увеличивает опыт и кредиты за выполненные упражнения, а ещё увеличивает опыт при превышении задания, облегчает усталость и ускоряет восстановление.'));
+  check('X2 описание Выносливости', E(w, 'STAT_LORE.sta.text').includes('Выносливость также облегчает усталость, ускоряет восстановление и заметно увеличивает опыт, если Игрок решается преодолеть предел.'));
   check('X3 главы «Усталость» нет', E(w, '!Object.keys(CODEX_CHAPTERS).some(k => /fatigue|ustal/i.test(k))')); }
 
 const fails = results.filter(r => r.startsWith('FAIL'));
